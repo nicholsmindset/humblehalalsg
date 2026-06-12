@@ -6,6 +6,8 @@ import { useState } from "react";
 import { HHData } from "@/lib/data";
 import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
+import { useSubmission } from "../use-submit";
+import { FileUpload } from "../file-upload";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard } from "./events";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
@@ -200,10 +202,11 @@ export function UserDashboardScreen() {
             <div className="card" style={{padding:22, maxWidth:540}}>
               <h3 style={{fontSize:'1.2rem'}}>Profile settings</h3>
               <div className="stack g14 mt16">
-                <div className="field"><label>Display name</label><input className="input" defaultValue={state.user.name} /></div>
-                <div className="field"><label>Email</label><input className="input" defaultValue="aisyah@email.com" /></div>
-                <div className="field"><label>Home area</label><select className="select" defaultValue="tampines">{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                <button className="btn btn-primary">Save changes</button>
+                <div className="field"><label>Display name</label><input className="input" defaultValue={state.user.name} disabled /></div>
+                <div className="field"><label>Email</label><input className="input" placeholder="you@email.com" disabled /></div>
+                <div className="field"><label>Home area</label><select className="select" defaultValue="tampines" disabled>{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                <button className="btn btn-primary" disabled title="Profile editing arrives with account sign-in">Save changes</button>
+                <p className="faint" style={{fontSize:'.82rem'}}>Profile editing is coming soon — it unlocks once account sign-in launches.</p>
               </div>
             </div>
           )}
@@ -223,12 +226,23 @@ export function UserDashboardScreen() {
 export function SuggestScreen() {
   const { navigate } = useApp();
   const [name, setName] = useState("");
+  const [area, setArea] = useState("");
+  const [category, setCategory] = useState("");
+  const [why, setWhy] = useState("");
+  const [link, setLink] = useState("");
+  const [filePaths, setFilePaths] = useState<string[]>([]);
   const [touched, setTouched] = useState(false);
+  const { submitting, error, submit: post } = useSubmission();
   const nameErr = !name.trim() ? "Please enter the business name" : "";
-  const submit = () => {
+  const submit = async () => {
     setTouched(true);
     if (nameErr) return;
-    navigate("success", { type: "suggest" });
+    const ok = await post({
+      type: "suggest",
+      payload: { businessName: name.trim(), area, category, why: why.trim(), link: link.trim() },
+      filePaths,
+    });
+    if (ok) navigate("success", { type: "suggest" });
   };
   return (
     <div className="screen-in hh-page">
@@ -244,12 +258,14 @@ export function SuggestScreen() {
               {touched && nameErr && <span id="sg-name-err" className="field-error"><Icon name="warning" size={13}/> {nameErr}</span>}
             </div>
             <div className="grid2">
-              <div className="field"><label>Area</label><select className="select"><option>Select area</option>{HHData.areas.map(a=><option key={a.id}>{a.name}</option>)}</select></div>
-              <div className="field"><label>Category</label><select className="select"><option>Select category</option>{HHData.categories.map(c=><option key={c.id}>{c.label}</option>)}</select></div>
+              <div className="field"><label htmlFor="sg-area">Area</label><select id="sg-area" className="select" value={area} onChange={e=>setArea(e.target.value)}><option value="">Select area</option>{HHData.areas.map(a=><option key={a.id} value={a.name}>{a.name}</option>)}</select></div>
+              <div className="field"><label htmlFor="sg-cat">Category</label><select id="sg-cat" className="select" value={category} onChange={e=>setCategory(e.target.value)}><option value="">Select category</option>{HHData.categories.map(c=><option key={c.id} value={c.label}>{c.label}</option>)}</select></div>
             </div>
-            <div className="field"><label>Why do you recommend it? <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Tell us what’s great about it" /></div>
-            <div className="field"><label>Link or photo <span className="hint">(optional)</span></label><div className="upload-zone" style={{padding:'18px'}}><Icon name="camera" size={22}/><span className="faint" style={{fontSize:'.82rem', marginTop:6}}>Add a photo or paste a link</span></div></div>
-            <button className="btn btn-primary btn-lg" onClick={submit}>Submit suggestion</button>
+            <div className="field"><label htmlFor="sg-why">Why do you recommend it? <span className="hint">(optional)</span></label><textarea id="sg-why" className="textarea" placeholder="Tell us what’s great about it" value={why} onChange={e=>setWhy(e.target.value)} /></div>
+            <div className="field"><label htmlFor="sg-link">Link <span className="hint">(optional)</span></label><input id="sg-link" className="input" placeholder="Website, Instagram or Google Maps link" value={link} onChange={e=>setLink(e.target.value)} /></div>
+            <div className="field"><label>Photo <span className="hint">(optional)</span></label><FileUpload label="Add a photo" hint="JPEG, PNG or WebP, up to 5MB" accept="image/jpeg,image/png,image/webp" onChange={setFilePaths} /></div>
+            {error && <span className="field-error" role="alert"><Icon name="warning" size={13}/> {error}</span>}
+            <button className="btn btn-primary btn-lg" disabled={submitting} onClick={submit}>{submitting ? "Sending…" : "Submit suggestion"}</button>
           </div>
         </div>
       </div>
@@ -396,7 +412,35 @@ export function ClaimScreen() {
   const { navigate, params } = useApp();
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState(params.id ? HHData.listings.find(l=>l.id===params.id) || null : null);
+  const [role, setRole] = useState("Owner");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [filePaths, setFilePaths] = useState<string[]>([]);
+  const [touched, setTouched] = useState(false);
+  const { submitting, error, submit: post } = useSubmission();
   const results = q ? HHData.listings.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())) : HHData.listings.slice(0,4);
+
+  const nameErr = !name.trim() ? "Please enter your name" : "";
+  const emailErr = !email.trim()
+    ? "Add an email so we can verify your claim"
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+      ? "Please enter a valid email"
+      : "";
+
+  const submit = async () => {
+    setTouched(true);
+    if (!picked || nameErr || emailErr) return;
+    const ok = await post({
+      type: "claim",
+      listingRef: picked.id,
+      name: name.trim(),
+      email: email.trim(),
+      payload: { listingName: picked.name, role, message: message.trim() },
+      filePaths,
+    });
+    if (ok) navigate("success", { type: "claim" });
+  };
 
   return (
     <div className="screen-in hh-page">
@@ -426,10 +470,25 @@ export function ClaimScreen() {
               <button className="btn btn-ghost btn-sm" onClick={()=>setPicked(null)}>Change</button>
             </div>
             <div className="stack g16 mt16">
-              <div className="field"><label>Your role</label><select className="select"><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
-              <div className="field"><label>Proof of ownership</label><div className="upload-zone"><Icon name="upload" size={24}/><div style={{fontWeight:700,marginTop:6}}>Upload document</div><p className="faint" style={{fontSize:'.8rem'}}>Business registration, utility bill, or MUIS cert</p><button className="btn btn-soft btn-sm mt8">Choose file</button></div></div>
-              <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" /></div>
-              <button className="btn btn-primary btn-lg" onClick={()=>navigate('success',{type:'claim'})}>Submit claim</button>
+              <div className="grid2">
+                <div className="field">
+                  <label htmlFor="cl-name">Your name</label>
+                  <input id="cl-name" className="input" placeholder="Full name" value={name} onChange={e=>setName(e.target.value)}
+                    aria-required="true" aria-invalid={touched && !!nameErr} aria-describedby={touched && nameErr ? "cl-name-err" : undefined} />
+                  {touched && nameErr && <span id="cl-name-err" className="field-error"><Icon name="warning" size={13}/> {nameErr}</span>}
+                </div>
+                <div className="field">
+                  <label htmlFor="cl-email">Email</label>
+                  <input id="cl-email" type="email" className="input" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}
+                    aria-required="true" aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "cl-email-err" : undefined} />
+                  {touched && emailErr && <span id="cl-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
+                </div>
+              </div>
+              <div className="field"><label htmlFor="cl-role">Your role</label><select id="cl-role" className="select" value={role} onChange={e=>setRole(e.target.value)}><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
+              <div className="field"><label>Proof of ownership</label><FileUpload label="Upload document" hint="Business registration, utility bill, or MUIS cert" onChange={setFilePaths} /></div>
+              <div className="field"><label htmlFor="cl-msg">Message to our team <span className="hint">(optional)</span></label><textarea id="cl-msg" className="textarea" placeholder="Anything we should know?" value={message} onChange={e=>setMessage(e.target.value)} /></div>
+              {error && <span className="field-error" role="alert"><Icon name="warning" size={13}/> {error}</span>}
+              <button className="btn btn-primary btn-lg" disabled={submitting} onClick={submit}>{submitting ? "Sending…" : "Submit claim"}</button>
             </div>
           </div>
         )}
@@ -444,7 +503,19 @@ export function ClaimScreen() {
 export function ReportScreen() {
   const { navigate, params } = useApp();
   const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const { submitting, error, submit: post } = useSubmission();
   const item = params.id ? HHData.listings.find(l=>l.id===params.id) : null;
+
+  const submit = async () => {
+    if (!reason) return;
+    const ok = await post({
+      type: "report",
+      listingRef: item?.id,
+      payload: { listingName: item?.name ?? null, reason, details: details.trim() },
+    });
+    if (ok) navigate("success", { type: "report" });
+  };
   const reasons = [
     ['halal','Wrong halal status','The certification or halal info is incorrect'],
     ['closed','Permanently closed','This place is no longer operating'],
@@ -470,8 +541,9 @@ export function ReportScreen() {
               </button>
             ))}
           </div>
-          <div className="field mt16"><label>Details <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Add any detail that helps us verify" /></div>
-          <button className="btn btn-primary btn-lg btn-block mt16" disabled={!reason} onClick={()=>navigate('success',{type:'report'})}>Submit report</button>
+          <div className="field mt16"><label htmlFor="rp-details">Details <span className="hint">(optional)</span></label><textarea id="rp-details" className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={e=>setDetails(e.target.value)} /></div>
+          {error && <span className="field-error" role="alert" style={{marginTop:12}}><Icon name="warning" size={13}/> {error}</span>}
+          <button className="btn btn-primary btn-lg btn-block mt16" disabled={!reason || submitting} onClick={submit}>{submitting ? "Sending…" : "Submit report"}</button>
         </div>
       </div>
     </div>

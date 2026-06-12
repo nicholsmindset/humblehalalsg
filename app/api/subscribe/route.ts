@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { simulatedOr503 } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 
 /* MailerLite email capture.
    Set MAILERLITE_API_KEY (and optional MAILERLITE_GROUP_ID) in env.
@@ -8,6 +9,10 @@ import { simulatedOr503 } from "@/lib/api";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  if (!rateLimit(req, { key: "subscribe", limit: 10, windowMs: 60_000 })) {
+    return NextResponse.json({ ok: false, error: "Too many requests — try again shortly" }, { status: 429 });
+  }
+
   let email = "";
   let source = "newsletter";
   try {

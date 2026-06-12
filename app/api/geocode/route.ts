@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 /* Address autocomplete via OneMap (Singapore's official government map service).
    The public search endpoint returns results without a token; if OneMap ever
@@ -15,6 +16,10 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
   if (q.length < 3) return NextResponse.json({ results: [] });
+  // Autocomplete fires per keystroke — generous limit, but caps abuse.
+  if (!rateLimit(req, { key: "geocode", limit: 60, windowMs: 60_000 })) {
+    return NextResponse.json({ results: [] }, { status: 429 });
+  }
 
   const url =
     `https://www.onemap.gov.sg/api/common/elastic/search` +

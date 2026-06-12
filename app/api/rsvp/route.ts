@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { simulatedOr503 } from "@/lib/api";
+import { rateLimit } from "@/lib/rate-limit";
 
 /* Free RSVP — the launch path. DB-backed when Supabase is configured; otherwise
    returns simulated:true so the client keeps using the local mock ticket. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  if (!rateLimit(req, { key: "rsvp", limit: 15, windowMs: 60_000 })) {
+    return NextResponse.json({ ok: false, reason: "rate_limited" }, { status: 429 });
+  }
+
   const body = (await req.json().catch(() => ({}))) as {
     eventId?: string;
     name?: string;

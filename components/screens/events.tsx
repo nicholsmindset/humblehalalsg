@@ -11,6 +11,8 @@ import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
 import { computeOrder } from "@/lib/fees";
 import { useApp } from "../app-context";
+import { useSubmission } from "../use-submit";
+import { FileUpload } from "../file-upload";
 import { Breadcrumbs } from "../breadcrumbs";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
 
@@ -662,18 +664,53 @@ export function CheckoutScreen() {
 
 /* ========================= HOST AN EVENT WIZARD ========================= */
 interface HostForm {
-  title: string; cat: string; desc: string; date: string; venue: string;
-  area: string; free: boolean; price: string; cap: string; photos: number;
+  title: string; cat: string; desc: string; email: string; date: string; time: string; venue: string;
+  area: string; prayer: boolean; catering: boolean; free: boolean; price: string; ticketName: string;
+  cap: string; photoPaths: string[];
 }
 export function HostEventScreen() {
   const { navigate, flags } = useApp();
   const [step, setStep] = useState(0);
+  const [touched, setTouched] = useState(false);
+  const { submitting, error, submit: post } = useSubmission();
   const [d, setD] = useState<HostForm>({
-    title: "", cat: "", desc: "", date: "", venue: "", area: "", free: true, price: "", cap: "", photos: 0,
+    title: "", cat: "", desc: "", email: "", date: "", time: "", venue: "", area: "",
+    prayer: false, catering: false, free: true, price: "", ticketName: "", cap: "", photoPaths: [],
   });
   const set = <K extends keyof HostForm>(k: K, v: HostForm[K]) => setD((s) => ({ ...s, [k]: v }));
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : navigate("success", { type: "event-listing" }));
+
+  const titleErr = !d.title.trim() ? "Please give the event a title" : "";
+  const emailErr = !d.email.trim()
+    ? "Add a contact email so we can review your event"
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim())
+      ? "Please enter a valid email"
+      : "";
+
+  const submit = async () => {
+    if (titleErr || emailErr) {
+      setTouched(true);
+      setStep(0);
+      return;
+    }
+    const { photoPaths, email, ...rest } = d;
+    const ok = await post({
+      type: "event",
+      email: email.trim(),
+      payload: { ...rest, title: d.title.trim() },
+      filePaths: photoPaths,
+    });
+    if (ok) navigate("success", { type: "event-listing" });
+  };
+
+  const next = () => {
+    if (step === 0) {
+      setTouched(true);
+      if (titleErr || emailErr) return;
+    }
+    if (step < steps.length - 1) setStep(step + 1);
+    else void submit();
+  };
   const prev = () => (step > 0 ? setStep(step - 1) : navigate("events"));
 
   return (
@@ -702,8 +739,16 @@ export function HostEventScreen() {
           {step === 0 && (
             <div className="stack g16">
               <div className="field">
-                <label>Event title</label>
-                <input className="input" placeholder="e.g. Ramadan Cooking Workshop" value={d.title} onChange={(e) => set("title", e.target.value)} />
+                <label htmlFor="he-title">Event title</label>
+                <input id="he-title" className="input" placeholder="e.g. Ramadan Cooking Workshop" value={d.title} onChange={(e) => set("title", e.target.value)}
+                  aria-required="true" aria-invalid={touched && !!titleErr} aria-describedby={touched && titleErr ? "he-title-err" : undefined} />
+                {touched && titleErr && <span id="he-title-err" className="field-error"><Icon name="warning" size={13} /> {titleErr}</span>}
+              </div>
+              <div className="field">
+                <label htmlFor="he-email">Contact email</label>
+                <input id="he-email" type="email" className="input" placeholder="you@email.com" value={d.email} onChange={(e) => set("email", e.target.value)}
+                  aria-required="true" aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "he-email-err" : undefined} />
+                {touched && emailErr && <span id="he-email-err" className="field-error"><Icon name="warning" size={13} /> {emailErr}</span>}
               </div>
               <div>
                 <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Category</label>
@@ -730,7 +775,7 @@ export function HostEventScreen() {
                 </div>
                 <div className="field">
                   <label>Start time</label>
-                  <input className="input" type="time" />
+                  <input className="input" type="time" value={d.time} onChange={(e) => set("time", e.target.value)} />
                 </div>
               </div>
               <div className="field">
@@ -750,13 +795,13 @@ export function HostEventScreen() {
               </div>
               <div className="flex g14 wrap">
                 <label className="evt-check">
-                  <input type="checkbox" />{" "}
+                  <input type="checkbox" checked={d.prayer} onChange={(e) => set("prayer", e.target.checked)} />{" "}
                   <span>
                     <Icon name="mosque" size={15} /> Prayer space available
                   </span>
                 </label>
                 <label className="evt-check">
-                  <input type="checkbox" />{" "}
+                  <input type="checkbox" checked={d.catering} onChange={(e) => set("catering", e.target.checked)} />{" "}
                   <span>
                     <Icon name="utensils" size={15} /> Halal catering
                   </span>
@@ -793,7 +838,7 @@ export function HostEventScreen() {
                   </div>
                   <div className="field">
                     <label>Ticket name</label>
-                    <input className="input" placeholder="e.g. Standard" />
+                    <input className="input" placeholder="e.g. Standard" value={d.ticketName} onChange={(e) => set("ticketName", e.target.value)} />
                   </div>
                 </div>
               )}
@@ -810,15 +855,14 @@ export function HostEventScreen() {
               <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>
                 A bright cover photo helps your event stand out.
               </p>
-              <div className="photo-grid">
-                <button className="upload-zone" style={{ aspectRatio: "1" }} onClick={() => set("photos", d.photos + 1)}>
-                  <Icon name="camera" size={24} />
-                  <span style={{ fontSize: ".78rem", fontWeight: 700, marginTop: 6 }}>Add photo</span>
-                </button>
-                {Array.from({ length: d.photos }).map((_, i) => (
-                  <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />
-                ))}
-              </div>
+              <FileUpload label="Add photos" hint="JPEG, PNG or WebP, up to 5MB each" accept="image/jpeg,image/png,image/webp" multiple onChange={(p) => set("photoPaths", p)} />
+              {d.photoPaths.length > 0 && (
+                <div className="photo-grid" style={{ marginTop: 12 }}>
+                  {d.photoPaths.map((_, i) => (
+                    <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {step === 4 && (
@@ -852,12 +896,13 @@ export function HostEventScreen() {
           )}
         </div>
 
+        {error && <span className="field-error" role="alert" style={{ marginTop: 10 }}><Icon name="warning" size={13} /> {error}</span>}
         <div className="wizard-foot">
           <button className="btn btn-ghost" onClick={prev}>
             {step === 0 ? "Cancel" : "Back"}
           </button>
-          <button className="btn btn-primary" onClick={next}>
-            {step === steps.length - 1 ? "Submit for review" : "Continue"}
+          <button className="btn btn-primary" disabled={submitting} onClick={next}>
+            {step === steps.length - 1 ? (submitting ? "Submitting…" : "Submit for review") : "Continue"}
             <Icon name="arrow" size={17} />
           </button>
         </div>

@@ -7,6 +7,8 @@ import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
+import { useSubmission } from "../use-submit";
+import { FileUpload } from "../file-upload";
 import { Badge, Icon, ImagePh, MobileHeader } from "../ui";
 import { AddressAutocomplete, type AddrPick } from "../biz/address-autocomplete";
 import { MapView } from "../map/map-view";
@@ -165,6 +167,9 @@ interface ListingForm {
   name: string;
   desc: string;
   cat: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
   address: string;
   region: string;
   town: string;
@@ -173,7 +178,8 @@ interface ListingForm {
   lng?: number;
   halal: string;
   certNo: string;
-  photos: number;
+  photoPaths: string[];
+  proofPaths: string[];
   franchise: boolean;
   outlets: ListingOutlet[];
 }
@@ -181,7 +187,9 @@ const emptyOutlet = (): ListingOutlet => ({ name: "", address: "", region: "", t
 export function AddListingScreen() {
   const { navigate } = useApp();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<ListingForm>({ name: "", desc: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, franchise: false, outlets: [emptyOutlet()] });
+  const [touched, setTouched] = useState(false);
+  const { submitting, error, submit: post } = useSubmission();
+  const [data, setData] = useState<ListingForm>({ name: "", desc: "", cat: "", email: "", phone: "", whatsapp: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photoPaths: [], proofPaths: [], franchise: false, outlets: [emptyOutlet()] });
   const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => setData((d) => ({ ...d, [k]: v }));
   const setOutlet = (i: number, patch: Partial<ListingOutlet>) => setData((d) => { const o = d.outlets.slice(); o[i] = { ...o[i], ...patch }; return { ...d, outlets: o }; });
   const addOutlet = () => setData((d) => ({ ...d, outlets: [...d.outlets, emptyOutlet()] }));
@@ -208,7 +216,40 @@ export function AddListingScreen() {
     .filter(({ o }) => o.lat != null && o.lng != null)
     .map(({ o, i }) => ({ id: `o${i}`, name: o.name || `Outlet ${i + 1}`, coords: { lat: o.lat as number, lng: o.lng as number }, kind: "listing" as const, active: i === 0 }));
   const steps = ["Details", "Location", "Category", "Halal status", "Photos", "Review"];
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : navigate("success", { type: "listing" }));
+
+  const nameErr = !data.name.trim() ? "Please enter the business name" : "";
+  const emailErr = !data.email.trim()
+    ? "Add a contact email so we can review your listing"
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())
+      ? "Please enter a valid email"
+      : "";
+
+  const submit = async () => {
+    if (nameErr || emailErr) {
+      setTouched(true);
+      setStep(0);
+      return;
+    }
+    const { photoPaths, proofPaths, email, phone, ...rest } = data;
+    const ok = await post({
+      type: "listing",
+      name: data.name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      payload: { ...rest, name: data.name.trim() },
+      filePaths: [...photoPaths, ...proofPaths],
+    });
+    if (ok) navigate("success", { type: "listing" });
+  };
+
+  const next = () => {
+    if (step === 0) {
+      setTouched(true);
+      if (nameErr || emailErr) return;
+    }
+    if (step < steps.length - 1) setStep(step + 1);
+    else void submit();
+  };
   const prev = () => (step > 0 ? setStep(step - 1) : navigate("for-business"));
 
   return (
@@ -234,11 +275,22 @@ export function AddListingScreen() {
         <div className="card wizard-body">
           {step === 0 && (
             <div className="stack g16">
-              <div className="field"><label>Business name</label><input className="input" placeholder="e.g. Warung Bumbu Rempah" value={data.name} onChange={(e) => set("name", e.target.value)} /></div>
+              <div className="field">
+                <label htmlFor="al-name">Business name</label>
+                <input id="al-name" className="input" placeholder="e.g. Warung Bumbu Rempah" value={data.name} onChange={(e) => set("name", e.target.value)}
+                  aria-required="true" aria-invalid={touched && !!nameErr} aria-describedby={touched && nameErr ? "al-name-err" : undefined} />
+                {touched && nameErr && <span id="al-name-err" className="field-error"><Icon name="warning" size={13} /> {nameErr}</span>}
+              </div>
               <div className="field"><label>Short description</label><textarea className="textarea" placeholder="What makes your place special?" value={data.desc} onChange={(e) => set("desc", e.target.value)} /></div>
+              <div className="field">
+                <label htmlFor="al-email">Contact email</label>
+                <input id="al-email" type="email" className="input" placeholder="you@email.com" value={data.email} onChange={(e) => set("email", e.target.value)}
+                  aria-required="true" aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "al-email-err" : undefined} />
+                {touched && emailErr && <span id="al-email-err" className="field-error"><Icon name="warning" size={13} /> {emailErr}</span>}
+              </div>
               <div className="grid2">
-                <div className="field"><label>Phone</label><input className="input" placeholder="+65 …" /></div>
-                <div className="field"><label>WhatsApp</label><input className="input" placeholder="+65 …" /></div>
+                <div className="field"><label htmlFor="al-phone">Phone</label><input id="al-phone" className="input" placeholder="+65 …" value={data.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+                <div className="field"><label htmlFor="al-wa">WhatsApp</label><input id="al-wa" className="input" placeholder="+65 …" value={data.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /></div>
               </div>
             </div>
           )}
@@ -353,7 +405,7 @@ export function AddListingScreen() {
                 </div>
               )}
               {isFood && (data.halal === "muis" || data.halal === "owned") ? (
-                <div className="upload-zone"><Icon name="upload" size={26} /><div style={{ fontWeight: 700, marginTop: 8 }}>Upload proof</div><p className="faint" style={{ fontSize: ".82rem" }}>{data.halal === "muis" ? "MUIS cert / business registration (PDF, JPG)" : "Business registration (PDF, JPG)"}</p><button className="btn btn-soft btn-sm mt8">Choose file</button></div>
+                <FileUpload label="Upload proof" hint={data.halal === "muis" ? "MUIS cert / business registration (PDF, JPG)" : "Business registration (PDF, JPG)"} onChange={(p) => set("proofPaths", p)} />
               ) : null}
               {!isFood && (
                 <p className="faint" style={{ fontSize: ".82rem" }}>No documents needed — non-food businesses are listed as Muslim-owned or Muslim-friendly without certification.</p>
@@ -364,17 +416,19 @@ export function AddListingScreen() {
             <div>
               <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Add photos</label>
               <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>Cover photo, interior, and a few signature dishes work best.</p>
-              <div className="photo-grid">
-                <button className="upload-zone" style={{ aspectRatio: "1" }} onClick={() => set("photos", data.photos + 1)}><Icon name="camera" size={24} /><span style={{ fontSize: ".78rem", fontWeight: 700, marginTop: 6 }}>Add photo</span></button>
-                {Array.from({ length: data.photos }).map((_, i) => <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />)}
-              </div>
+              <FileUpload label="Add photos" hint="JPEG, PNG or WebP, up to 5MB each" accept="image/jpeg,image/png,image/webp" multiple onChange={(p) => set("photoPaths", p)} />
+              {data.photoPaths.length > 0 && (
+                <div className="photo-grid" style={{ marginTop: 12 }}>
+                  {data.photoPaths.map((_, i) => <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />)}
+                </div>
+              )}
             </div>
           )}
           {step === 5 && (
             <div className="stack g14">
               <h3 style={{ fontSize: "1.2rem" }}>Review &amp; submit</h3>
               <div className="review-summary-box">
-                {([["Name", data.name || "—"], ["Locations", data.franchise ? `${data.outlets.length} outlets (franchise)` : ([data.town, data.region].filter(Boolean).join(", ") || "—")], ["Category", HHData.categories.find((c) => c.id === data.cat)?.label || "—"], ["Halal status", data.halal || "—"], ["Photos", data.photos]] as [string, string | number][]).map(([k, v]) => (
+                {([["Name", data.name || "—"], ["Locations", data.franchise ? `${data.outlets.length} outlets (franchise)` : ([data.town, data.region].filter(Boolean).join(", ") || "—")], ["Category", HHData.categories.find((c) => c.id === data.cat)?.label || "—"], ["Halal status", data.halal || "—"], ["Photos", data.photoPaths.length]] as [string, string | number][]).map(([k, v]) => (
                   <div key={k} className="rsb-row"><span className="faint">{k}</span><span style={{ fontWeight: 600 }}>{v}</span></div>
                 ))}
               </div>
@@ -383,9 +437,10 @@ export function AddListingScreen() {
           )}
         </div>
 
+        {error && <span className="field-error" role="alert" style={{ marginTop: 10 }}><Icon name="warning" size={13} /> {error}</span>}
         <div className="wizard-foot">
           <button className="btn btn-ghost" onClick={prev}>{step === 0 ? "Cancel" : "Back"}</button>
-          <button className="btn btn-primary" onClick={next}>{step === steps.length - 1 ? "Submit for review" : "Continue"}<Icon name="arrow" size={17} /></button>
+          <button className="btn btn-primary" disabled={submitting} onClick={next}>{step === steps.length - 1 ? (submitting ? "Submitting…" : "Submit for review") : "Continue"}<Icon name="arrow" size={17} /></button>
         </div>
       </div>
     </div>
