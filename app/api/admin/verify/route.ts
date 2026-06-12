@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { halalScore } from "@/lib/halal-score";
 import { normalizeCertNo } from "@/lib/muis";
 import { simulatedOr503 } from "@/lib/api";
@@ -66,12 +67,19 @@ export async function POST(req: Request) {
   const { tier, score } = tierAndScore(action, certNo, expiringSoon);
 
   // No Supabase configured — accept gracefully in dev, fail honestly in prod.
-  const db = await getSupabaseServer();
-  if (!db) {
+  if (!supabaseConfigured) {
     return simulatedOr503({ tier, score });
   }
 
-  // RLS enforces that only an authenticated admin can update businesses.
+  // Explicit admin check — RLS alone never granted admins update access.
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    const status = auth.reason === "unauthenticated" ? 401 : auth.reason === "forbidden" ? 403 : 503;
+    return NextResponse.json({ ok: false, error: auth.reason }, { status });
+  }
+  const db = getSupabaseAdmin();
+  if (!db) return simulatedOr503({ tier, score });
+
   const patch =
     action === "revoke"
       ? { muis_cert_no: null, muis_scheme: null, muis_expiry: null, halal_tier: tier, halal_score: score, last_verified_at: new Date().toISOString() }
@@ -80,7 +88,7 @@ export async function POST(req: Request) {
   try {
     const { error } = await db.from("businesses").update(patch).eq("id", businessId);
     if (error) {
-      return NextResponse.json({ ok: false, error: "Not authorised or update failed" }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "Update failed" }, { status: 502 });
     }
   } catch {
     return NextResponse.json({ ok: false, error: "Update failed" }, { status: 502 });
@@ -89,6 +97,7 @@ export async function POST(req: Request) {
   // Best-effort audit trail (don't fail the response if the table differs).
   try {
     await db.from("audit_log").insert({
+      actor: auth.userId,
       action: action === "revoke" ? "Revoked halal verification" : `Granted ${action === "muis" ? "MUIS Certified" : "Admin Verified"}`,
       business_id: businessId,
       detail: action === "muis" ? `cert ${certNo}${expiry ? ` · exp ${expiry}` : ""}` : null,

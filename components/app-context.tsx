@@ -10,16 +10,13 @@ import {
   useState,
 } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { myTickets as defaultTickets } from "@/lib/data";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
 import type { Collection, Lang, Prefs, Ticket, Tweaks, UserState } from "@/lib/types";
 
-const DEFAULT_COLLECTIONS: Collection[] = [
-  { id: "family-weekend", name: "Family weekend", ids: [] },
-  { id: "iftar-2026", name: "Iftar 2026", ids: [] },
-];
+const DEFAULT_COLLECTIONS: Collection[] = [];
 
 export const DEFAULT_TWEAKS: Tweaks = {
   hero: "split",
@@ -49,6 +46,7 @@ interface AppContextValue {
   back: () => void;
   state: AppState;
   setUser: (u: UserState) => void;
+  signOut: () => void;
   toggleSave: (id: string) => void;
   toggleWish: (id: string) => void;
   toast: (msg: string) => void;
@@ -95,13 +93,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const routeParams = useParams();
   const search = useSearchParams();
 
-  const [saved, setSaved] = useState<string[]>(["l2", "l10"]);
-  const [wishlist, setWishlist] = useState<string[]>(["l4"]);
-  const [recent, setRecent] = useState<string[]>(["l1", "l7"]);
-  const [user, setUserState] = useState<UserState>({ loggedIn: false, role: "user", name: "Aisyah" });
+  const [saved, setSaved] = useState<string[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [user, setUserState] = useState<UserState>({ loggedIn: false, role: "user", name: "" });
   const [prefs, setPrefs] = useState<Prefs>({ onboarded: false, homeArea: "", certifiedOnly: false });
-  const [savedEvents, setSavedEvents] = useState<string[]>(["e1"]);
-  const [tickets, setTickets] = useState<Ticket[]>(defaultTickets);
+  const [savedEvents, setSavedEvents] = useState<string[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS);
   const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
   const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);
@@ -123,6 +121,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (ls.collections) setCollections(ls.collections);
     if (ls.flags) setFlags({ ...DEFAULT_FLAGS, ...ls.flags });
     setHydrated(true);
+  }, []);
+
+  // Real auth session (when Supabase is configured) overrides any locally
+  // persisted demo user. Role comes from the user's own profiles row (RLS).
+  useEffect(() => {
+    const supa = getSupabaseBrowser();
+    if (!supa) return;
+    let cancelled = false;
+    const apply = async (id: string | null, fallbackName: string) => {
+      if (!id) {
+        if (!cancelled) setUserState({ loggedIn: false, role: "user", name: "" });
+        return;
+      }
+      const { data: profile } = await supa.from("profiles").select("role, name").eq("id", id).maybeSingle();
+      if (cancelled) return;
+      setUserState({
+        loggedIn: true,
+        role: profile?.role === "owner" ? "owner" : "user",
+        name: profile?.name || fallbackName,
+      });
+    };
+    supa.auth.getUser().then(({ data }) => {
+      void apply(data.user?.id ?? null, data.user?.email?.split("@")[0] ?? "");
+    });
+    const { data: sub } = supa.auth.onAuthStateChange((_event, session) => {
+      void apply(session?.user?.id ?? null, session?.user?.email?.split("@")[0] ?? "");
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   // persist
@@ -159,6 +188,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const back = useCallback(() => router.back(), [router]);
 
   const setUser = useCallback((u: UserState) => setUserState(u), []);
+
+  const signOut = useCallback(() => {
+    const supa = getSupabaseBrowser();
+    if (supa) void supa.auth.signOut();
+    setUserState({ loggedIn: false, role: "user", name: "" });
+  }, []);
 
   const toggleSave = useCallback(
     (id: string) =>
@@ -301,6 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       back,
       state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, collections },
       setUser,
+      signOut,
       toggleSave,
       toggleWish,
       toast,
@@ -322,7 +358,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       screen, params, navigate, back, saved, wishlist, recent, user, tweaks, prefs,
-      savedEvents, tickets, collections, setUser, toggleSave, toggleWish, toast, setTweak, setPref,
+      savedEvents, tickets, collections, setUser, signOut, toggleSave, toggleWish, toast, setTweak, setPref,
       toggleCertifiedOnly, toggleEventSave, bookEvent, toastMsg,
       createCollection, toggleInCollection, lang, setLang, t, ramadan, toggleRamadan,
       flags, setFlag,

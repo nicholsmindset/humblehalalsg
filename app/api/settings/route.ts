@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 
 /* Admin-only monetization-flag writes (persisted to platform_settings).
    Until Supabase is wired, flags live client-side (localStorage) for demos;
@@ -7,14 +8,15 @@ import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 const ALLOWED = ["paid_tickets_enabled", "paid_ads_enabled", "paid_plans_enabled"];
 
 export async function POST(req: Request) {
-  const supa = await getSupabaseServer();
+  const auth = await requireAdmin();
+  if (!auth.ok) {
+    const status =
+      auth.reason === "unauthenticated" ? 401 : auth.reason === "forbidden" ? 403 : 200;
+    if (status !== 200) return NextResponse.json({ ok: false, reason: auth.reason }, { status });
+    return NextResponse.json({ ok: false, reason: auth.reason });
+  }
   const admin = getSupabaseAdmin();
-  if (!supa || !admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
-
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
-  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (profile?.role !== "admin") return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
+  if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const patch: Record<string, boolean> = {};

@@ -8,6 +8,8 @@ import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useSubmission } from "../use-submit";
 import { FileUpload } from "../file-upload";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { pathToScreen } from "@/lib/routes";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard } from "./events";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
@@ -20,12 +22,14 @@ import { VERIFY_FAQ } from "@/lib/faq";
    LOGIN / REGISTER
 ============================================================= */
 export function LoginScreen() {
-  const { navigate, setUser, toast } = useApp();
+  const { navigate, params, setUser, toast } = useApp();
   const [mode, setMode] = useState("login");
   const [role, setRole] = useState<"user" | "owner">("user");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [touched, setTouched] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [authErr, setAuthErr] = useState("");
 
   const emailErr = !email
     ? "Enter your email"
@@ -35,18 +39,66 @@ export function LoginScreen() {
   const pwErr = !pw ? "Enter your password" : pw.length < 6 ? "At least 6 characters" : "";
   const valid = !emailErr && !pwErr;
 
-  const finish = () => {
-    const first = email.split("@")[0];
-    setUser({ loggedIn: true, role, name: first ? first[0].toUpperCase() + first.slice(1) : "Aisyah" });
-    toast(mode === "login" ? "Welcome back" : "Account created");
-    navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
+  // Where to go after auth: honour ?next=/path, else role dashboard.
+  const goAfterAuth = (r: "user" | "owner") => {
+    const next = typeof params.next === "string" ? pathToScreen(params.next) : "";
+    navigate(next || (r === "owner" ? "owner-dashboard" : "user-dashboard"));
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
+    setAuthErr("");
     if (!valid) return;
-    finish();
+
+    const supa = getSupabaseBrowser();
+    if (!supa) {
+      // Demo mode (Supabase not configured): local-only session.
+      const first = email.split("@")[0];
+      setUser({ loggedIn: true, role, name: first ? first[0].toUpperCase() + first.slice(1) : "Guest" });
+      toast("Demo mode — accounts aren't saved yet");
+      goAfterAuth(role);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        const { error } = await supa.auth.signInWithPassword({ email, password: pw });
+        if (error) {
+          setAuthErr(error.message);
+          return;
+        }
+        const { data: { user } } = await supa.auth.getUser();
+        const { data: profile } = user
+          ? await supa.from("profiles").select("role").eq("id", user.id).maybeSingle()
+          : { data: null };
+        toast("Welcome back");
+        goAfterAuth(profile?.role === "owner" ? "owner" : "user");
+      } else {
+        const first = email.split("@")[0];
+        const name = first ? first[0].toUpperCase() + first.slice(1) : "";
+        const { data, error } = await supa.auth.signUp({
+          email,
+          password: pw,
+          options: { data: { role, name } },
+        });
+        if (error) {
+          setAuthErr(error.message);
+          return;
+        }
+        if (!data.session) {
+          toast("Check your inbox to confirm your account");
+          return;
+        }
+        toast("Account created");
+        goAfterAuth(role);
+      }
+    } catch {
+      setAuthErr("Could not reach the sign-in service — please try again");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -69,10 +121,7 @@ export function LoginScreen() {
           <h1 style={{fontSize:'1.6rem', marginTop:18}}>{mode==='login'?'Welcome back':'Create your account'}</h1>
           <p className="muted" style={{marginTop:4}}>{mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.'}</p>
 
-          <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={finish}><Icon name="google" size={20}/> Continue with Google</button>
-          <div className="auth-or"><span>or</span></div>
-
-          <form onSubmit={submit} className="stack g14" noValidate>
+          <form onSubmit={submit} className="stack g14" style={{marginTop:18}} noValidate>
             <div className="field">
               <label htmlFor="login-email">Email</label>
               <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}
@@ -97,7 +146,8 @@ export function LoginScreen() {
                 </div>
               </div>
             )}
-            <button className="btn btn-primary btn-block btn-lg" type="submit">{mode==='login'?'Log in':'Create account'}</button>
+            {authErr && <span className="field-error" role="alert"><Icon name="warning" size={13}/> {authErr}</span>}
+            <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={busy}>{busy ? "One moment…" : mode==='login'?'Log in':'Create account'}</button>
           </form>
           <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our Terms &amp; Privacy Policy.</p>
         </div>
@@ -110,7 +160,7 @@ export function LoginScreen() {
    USER DASHBOARD
 ============================================================= */
 export function UserDashboardScreen() {
-  const { navigate, state, setUser, createCollection, toggleInCollection } = useApp();
+  const { navigate, state, signOut, createCollection, toggleInCollection } = useApp();
   const [tab, setTab] = useState("saved");
   const get = (ids: string[]) => ids.map(id => HHData.listings.find(l=>l.id===id)).filter(Boolean) as typeof HHData.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
@@ -132,7 +182,7 @@ export function UserDashboardScreen() {
           </div>
           {!state.user.loggedIn
             ? <button className="btn btn-gold" onClick={()=>navigate('login')}>Log in</button>
-            : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={()=>{setUser({loggedIn:false,role:'user',name:'Aisyah'}); navigate('home');}}><Icon name="logout" size={17}/> Log out</button>}
+            : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={()=>{signOut(); navigate('home');}}><Icon name="logout" size={17}/> Log out</button>}
         </div>
       </div>
 
