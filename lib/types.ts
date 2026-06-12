@@ -1,0 +1,224 @@
+/* Humble Halal — shared domain types */
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+export type BadgeKey =
+  | "muis"
+  | "admin"
+  | "owned"
+  | "friendly"
+  | "nopork"
+  | "pending"
+  | "family"
+  | "prayer";
+
+export interface Category {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+export interface Area {
+  id: string;
+  name: string;
+  count: number;
+  tone: string;
+  image?: string;
+  coords?: LatLng;
+}
+
+export interface VerifyInfo {
+  certNo: string | null;
+  verified: string | null;
+  expires: string | null;
+  confirms: number;
+  renewed: boolean;
+  expiringSoon?: boolean;
+}
+
+export interface PrayerInfo {
+  has: boolean;
+  gender?: string;
+  wudhu?: boolean;
+  capacity?: string;
+  note?: string;
+}
+
+export interface Outlet {
+  id: string;
+  name: string;
+  area: string;
+  address: string;
+  hours: string;
+  open: boolean;
+  distance: string;
+  certNo: string;
+  flagship?: boolean;
+}
+
+export interface Listing {
+  id: string;
+  slug?: string;
+  name: string;
+  cat: string;
+  catId: string;
+  cuisine: string;
+  area: string;
+  price: string;
+  rating: number;
+  reviews: number;
+  badges: BadgeKey[];
+  blurb: string;
+  img: string;
+  tone: string;
+  open: boolean;
+  distance: string;
+  prayer: boolean;
+  delivery: boolean;
+  featured: boolean;
+  hours: string;
+  phone: string;
+  wa: string;
+  ig: string;
+  web: string;
+  address: string;
+  tags: string[];
+  // enrichment (added at module load)
+  image?: string;
+  certified?: boolean;
+  certBody?: string | null;
+  verify?: VerifyInfo;
+  prayerInfo?: PrayerInfo;
+  statusChanged?: boolean;
+  franchise?: boolean;
+  outlets?: Outlet[] | null;
+  outletCount?: number;
+  coords?: LatLng;
+  distanceKm?: number;
+}
+
+export interface Review {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  date: string;
+  text: string;
+  helpful: number;
+}
+
+export interface BadgeMetaEntry {
+  key: BadgeKey;
+  cls: string;
+  label: string;
+  icon: string;
+  tier: string;
+}
+
+export interface Analytics {
+  views: number;
+  calls: number;
+  whatsapp: number;
+  directions: number;
+  website: number;
+  saves: number;
+  spark: number[];
+  reviewTrend: number[];
+}
+
+export interface PrayerTimes {
+  date: string;
+  hijri: string;
+  times: { name: string; time: string }[];
+  nextIndex: number;
+}
+
+export interface Mosque {
+  id: string;
+  name: string;
+  area: string;
+  region: "Central" | "East" | "North-East" | "North" | "West";
+  dist?: string;
+  coords: LatLng;
+}
+
+export interface EventTier {
+  name: string;
+  price: number;
+  perks: string;
+}
+
+export interface EventItem {
+  id: string;
+  slug?: string;
+  title: string;
+  catId: string;
+  cat: string;
+  img: string;
+  tone: string;
+  free: boolean;
+  priceFrom: number;
+  tiers?: EventTier[];
+  dateLabel: string;
+  timeLabel: string;
+  dateISO: string;
+  multiDay?: string;
+  venue: string;
+  area: string;
+  capacity: number;
+  taken: number;
+  rsvp?: boolean;
+  organiserId: string | null;
+  organiser: string;
+  organiserBiz: boolean;
+  blurb: string;
+  tags: string[];
+  prayerNearby: boolean;
+  halalCatering: boolean;
+  featured: boolean;
+  attendees: number;
+  soldOut?: boolean;
+}
+
+export interface Ticket {
+  eventId: string;
+  tier: string;
+  qty: number;
+  ref: string;
+  status: string;
+}
+
+export interface Tweaks {
+  hero: string;
+  heading: string;
+  badge: string;
+  card: string;
+  accent: string;
+  radius: number;
+}
+
+export interface UserState {
+  loggedIn: boolean;
+  role: "user" | "owner";
+  name: string;
+}
+
+export type Lang = "en" | "ms";
+
+export interface Prefs {
+  onboarded: boolean;
+  homeArea: string;
+  certifiedOnly: boolean;
+  prayerHidden?: boolean;
+  lang?: Lang;
+  ramadan?: boolean;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  ids: string[];
+}
