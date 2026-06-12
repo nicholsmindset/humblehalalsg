@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/config";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
@@ -125,32 +125,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Real auth session (when Supabase is configured) overrides any locally
   // persisted demo user. Role comes from the user's own profiles row (RLS).
+  // The Supabase client is lazy-loaded so its ~280KB doesn't sit in the
+  // critical first-load bundle of every page.
   useEffect(() => {
-    const supa = getSupabaseBrowser();
-    if (!supa) return;
+    if (!supabaseConfigured) return;
     let cancelled = false;
-    const apply = async (id: string | null, fallbackName: string) => {
-      if (!id) {
-        if (!cancelled) setUserState({ loggedIn: false, role: "user", name: "" });
-        return;
-      }
-      const { data: profile } = await supa.from("profiles").select("role, name").eq("id", id).maybeSingle();
-      if (cancelled) return;
-      setUserState({
-        loggedIn: true,
-        role: profile?.role === "owner" ? "owner" : "user",
-        name: profile?.name || fallbackName,
+    let unsub: (() => void) | undefined;
+    void (async () => {
+      const { getSupabaseBrowser } = await import("@/lib/supabase/client");
+      const supa = getSupabaseBrowser();
+      if (!supa || cancelled) return;
+      const apply = async (id: string | null, fallbackName: string) => {
+        if (!id) {
+          if (!cancelled) setUserState({ loggedIn: false, role: "user", name: "" });
+          return;
+        }
+        const { data: profile } = await supa.from("profiles").select("role, name").eq("id", id).maybeSingle();
+        if (cancelled) return;
+        setUserState({
+          loggedIn: true,
+          role: profile?.role === "owner" ? "owner" : "user",
+          name: profile?.name || fallbackName,
+        });
+      };
+      supa.auth.getUser().then(({ data }) => {
+        void apply(data.user?.id ?? null, data.user?.email?.split("@")[0] ?? "");
       });
-    };
-    supa.auth.getUser().then(({ data }) => {
-      void apply(data.user?.id ?? null, data.user?.email?.split("@")[0] ?? "");
-    });
-    const { data: sub } = supa.auth.onAuthStateChange((_event, session) => {
-      void apply(session?.user?.id ?? null, session?.user?.email?.split("@")[0] ?? "");
-    });
+      const { data: sub } = supa.auth.onAuthStateChange((_event, session) => {
+        void apply(session?.user?.id ?? null, session?.user?.email?.split("@")[0] ?? "");
+      });
+      unsub = () => sub.subscription.unsubscribe();
+    })();
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
+      unsub?.();
     };
   }, []);
 
@@ -190,8 +198,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setUser = useCallback((u: UserState) => setUserState(u), []);
 
   const signOut = useCallback(() => {
-    const supa = getSupabaseBrowser();
-    if (supa) void supa.auth.signOut();
+    if (supabaseConfigured) {
+      void import("@/lib/supabase/client").then(({ getSupabaseBrowser }) =>
+        getSupabaseBrowser()?.auth.signOut(),
+      );
+    }
     setUserState({ loggedIn: false, role: "user", name: "" });
   }, []);
 

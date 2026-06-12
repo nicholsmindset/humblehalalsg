@@ -8,7 +8,13 @@ import { BottomNav, Footer, MobileBar, Onboarding, PrayerStrip, TopNav } from ".
 import { HHTweaks } from "./tweaks-panel";
 import { Toast } from "./ui";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  seoCategoryLinks,
+}: {
+  children: React.ReactNode;
+  seoCategoryLinks?: { slug: string; label: string }[];
+}) {
   const pathname = usePathname();
   const { state, toastMsg } = useApp();
   const [prayerOpen, setPrayerOpen] = useState(false);
@@ -34,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       {!isChromeless && <BottomNav />}
-      {!isChromeless && !isMapFull && <Footer />}
+      {!isChromeless && !isMapFull && <Footer seoCategoryLinks={seoCategoryLinks} />}
       <Toast msg={toastMsg} />
       {!state.prefs.onboarded && <Onboarding />}
       <HHTweaks />

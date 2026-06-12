@@ -1,50 +1,21 @@
-/* Humble Halal — mock data (ported from data.jsx) */
+/* Humble Halal — mock data (ported from data.jsx).
+   Small shared lookups (categories, areas, badgeMeta, prayer strip) live in
+   ./data-lite so the always-loaded chrome doesn't pull this whole module. */
 import type {
   Analytics,
-  Area,
   BadgeKey,
-  BadgeMetaEntry,
-  Category,
   Listing,
   Mosque,
   Outlet,
   PrayerInfo,
-  PrayerTimes,
   Review,
   VerifyInfo,
 } from "./types";
 import { eventCats, events, myTickets, spotsLeft } from "./events-data";
+import { categories, areas, SG_CENTER, badgeMeta, prayerTimes } from "./data-lite";
 import { slugify } from "./slug";
 
-export const categories: Category[] = [
-  { id: "restaurants", label: "Restaurants", icon: "utensils" },
-  { id: "cafes", label: "Cafés", icon: "coffee" },
-  { id: "muslim-owned", label: "Muslim-Owned", icon: "store" },
-  { id: "groceries", label: "Groceries", icon: "basket" },
-  { id: "beauty", label: "Beauty", icon: "sparkles" },
-  { id: "health", label: "Health & Medical", icon: "shield" },
-  { id: "fashion", label: "Modest Fashion", icon: "store" },
-  { id: "services", label: "Home Services", icon: "wrench" },
-  { id: "automotive", label: "Automotive", icon: "wrench" },
-  { id: "weddings", label: "Weddings", icon: "heart" },
-  { id: "education", label: "Education", icon: "family" },
-  { id: "professional", label: "Professional", icon: "building" },
-  { id: "travel", label: "Travel & Umrah", icon: "globe" },
-  { id: "mosques", label: "Mosques Nearby", icon: "mosque" },
-  { id: "family", label: "Family Friendly", icon: "family" },
-];
-
-export const areas: Area[] = [
-  { id: "tampines", name: "Tampines", count: 86, tone: "emerald", coords: { lat: 1.3530, lng: 103.9450 } },
-  { id: "bugis", name: "Bugis", count: 124, tone: "gold", coords: { lat: 1.3009, lng: 103.8559 } },
-  { id: "bedok", name: "Bedok", count: 73, tone: "emerald", coords: { lat: 1.3240, lng: 103.9300 } },
-  { id: "geylang", name: "Geylang Serai", count: 152, tone: "gold", coords: { lat: 1.3176, lng: 103.8980 } },
-  { id: "jurong", name: "Jurong", count: 64, tone: "emerald", coords: { lat: 1.3329, lng: 103.7436 } },
-  { id: "paya-lebar", name: "Paya Lebar", count: 91, tone: "gold", coords: { lat: 1.3177, lng: 103.8920 } },
-];
-
-// Singapore's geographic centre — default map view.
-export const SG_CENTER = { lat: 1.3521, lng: 103.8198 };
+export { categories, areas, SG_CENTER, badgeMeta, prayerTimes };
 
 // badge keys: muis, admin, owned, friendly, nopork, pending
 export const listings: Listing[] = [
@@ -175,17 +146,6 @@ export const reviews: Review[] = [
   { id: "r2", name: "Faizal M.", avatar: "FM", rating: 5, date: "1 month ago", text: "Came with the whole family on a Sunday. Quick service even when busy, and the kids menu was a nice touch.", helpful: 11 },
   { id: "r3", name: "Nadia K.", avatar: "NK", rating: 4, date: "1 month ago", text: "Lovely flavours, portions are generous. Only wish parking was easier on weekends.", helpful: 6 },
 ];
-
-export const badgeMeta: Record<BadgeKey, BadgeMetaEntry> = {
-  muis: { key: "muis", cls: "badge--muis", label: "MUIS Certified", icon: "shield-check", tier: "certified" },
-  admin: { key: "admin", cls: "badge--admin", label: "Admin Verified", icon: "badge-check", tier: "certified" },
-  owned: { key: "owned", cls: "badge--owned", label: "Muslim-Owned", icon: "crescent", tier: "verified" },
-  friendly: { key: "friendly", cls: "badge--friendly", label: "Halal-Friendly", icon: "info", tier: "declared" },
-  nopork: { key: "nopork", cls: "badge--nopork", label: "No Pork No Lard", icon: "info", tier: "declared" },
-  pending: { key: "pending", cls: "badge--pending", label: "Pending Verification", icon: "clock", tier: "pending" },
-  family: { key: "family", cls: "badge--owned", label: "Family Friendly", icon: "family", tier: "feature" },
-  prayer: { key: "prayer", cls: "badge--owned", label: "Prayer Space", icon: "mosque", tier: "feature" },
-};
 
 // Owner dashboard analytics (last 30 days)
 export const analytics: Analytics = {
@@ -425,14 +385,6 @@ listings.forEach((l) => {
 });
 
 // ---- Prayer times (today, mock SG) + nearby mosques per area ----
-export const prayerTimes: PrayerTimes = {
-  date: "Today", hijri: "28 Dhul-Qi’dah 1447",
-  times: [
-    { name: "Subuh", time: "5:42" }, { name: "Syuruk", time: "7:05" }, { name: "Zohor", time: "1:08" },
-    { name: "Asar", time: "4:32" }, { name: "Maghrib", time: "7:11" }, { name: "Isyak", time: "8:25" },
-  ],
-  nextIndex: 3, // Asar is next
-};
 // ~60 of Singapore's ~72 MUIS mosques, grouped by region. Coordinates are
 // approximate (for map pin placement); the directory links open Google Maps by
 // mosque name so directions resolve accurately regardless of coord precision.

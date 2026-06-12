@@ -10,7 +10,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { badgeMeta, HHData } from "@/lib/data";
+import { badgeMeta, categories, areas } from "@/lib/data-lite";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { scoreListing, scoreTone } from "@/lib/halal-score";
 import { screenToPath } from "@/lib/routes";
@@ -404,30 +404,44 @@ export function SearchBar({
   const [hi, setHi] = useState(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
 
+  // Listings are lazy-loaded on first keystroke so this always-mounted
+  // component doesn't pull the full dataset into the shared bundle.
+  const [pool, setPool] = useState<Listing[] | null>(null);
+  useEffect(() => {
+    if (!suggest || pool || value.trim().length < 1) return;
+    let cancelled = false;
+    import("@/lib/data").then((m) => {
+      if (!cancelled) setPool(m.listings);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [suggest, value, pool]);
+
   const suggestions = useMemo<Suggestion[]>(() => {
     if (!suggest || value.trim().length < 1) return [];
     const s = value.toLowerCase();
     const out: Suggestion[] = [];
-    HHData.categories
+    categories
       .filter((c) => c.label.toLowerCase().includes(s))
       .slice(0, 2)
       .forEach((c) =>
         out.push({ key: `c-${c.id}`, label: c.label, sub: "Category", icon: c.icon, go: () => navigate("explore", { cat: c.id }) }),
       );
-    HHData.areas
+    areas
       .filter((a) => a.name.toLowerCase().includes(s))
       .slice(0, 2)
       .forEach((a) =>
         out.push({ key: `a-${a.id}`, label: `Halal in ${a.name}`, sub: "Area", icon: "pin", go: () => navigate("seo", { slug: `halal-food-in-${a.id}` }) }),
       );
-    HHData.listings
+    (pool ?? [])
       .filter((l) => (l.name + l.cuisine).toLowerCase().includes(s))
       .slice(0, 5)
       .forEach((l) =>
         out.push({ key: `l-${l.id}`, label: l.name, sub: `${l.cuisine} · ${l.area}`, icon: "store", go: () => navigate("detail", { id: l.id }) }),
       );
     return out.slice(0, 7);
-  }, [suggest, value, navigate]);
+  }, [suggest, value, navigate, pool]);
 
   const showList = suggest && open && suggestions.length > 0;
 

@@ -3,9 +3,8 @@
 /* Humble Halal — app chrome (ported from app.jsx): TopNav, BottomNav, Footer,
    PrayerStrip, Onboarding, CertifiedToggle. */
 import { useCallback, useRef, useState } from "react";
-import { HHData } from "@/lib/data";
+import { areas, prayerTimes, prayerMosque } from "@/lib/data-lite";
 import { SITE } from "@/lib/seo";
-import { allSeoPages } from "@/lib/seo-pages";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
@@ -39,9 +38,9 @@ export function PrayerStrip({
   setOpen: (v: boolean) => void;
 }) {
   const { state, navigate, ramadan, toggleRamadan } = useApp();
-  const pt = HHData.prayerTimes;
+  const pt = prayerTimes;
   const next = pt.times[pt.nextIndex];
-  const mosque = HHData.mosques[0];
+  const mosque = prayerMosque;
   if (state.prefs && state.prefs.prayerHidden) return null;
   return (
     <>
@@ -197,7 +196,7 @@ export function Onboarding() {
               We’ll surface halal spots and mosques near you first.
             </p>
             <div className="onboard-areas">
-              {HHData.areas.map((a) => (
+              {areas.map((a) => (
                 <button
                   key={a.id}
                   className={`onboard-chip ${area === a.id ? "on" : ""}`}
@@ -518,7 +517,10 @@ function LangToggle() {
   );
 }
 
-export function Footer() {
+/** Category SEO links are computed server-side (app/layout.tsx) and passed
+    down so the footer doesn't pull the full listings dataset into the
+    client bundle. */
+export function Footer({ seoCategoryLinks = [] }: { seoCategoryLinks?: { slug: string; label: string }[] }) {
   const { navigate } = useApp();
   const cols: [string, [string, string][]][] = [
     [
@@ -602,16 +604,11 @@ export function Footer() {
         <span className="hh-footer-title">Browse by category</span>
         <div className="hh-footer-catlinks">
           <a onClick={() => navigate("seo", { slug: "halal-food-in-tampines" })}>Halal directory</a>
-          {allSeoPages()
-            .filter((p) => p.catId && !p.areaId)
-            .map((p) => {
-              const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
-              return (
-                <a key={p.slug} onClick={() => navigate("seo", { slug: p.slug })}>
-                  Halal {label}
-                </a>
-              );
-            })}
+          {seoCategoryLinks.map((p) => (
+            <a key={p.slug} onClick={() => navigate("seo", { slug: p.slug })}>
+              Halal {p.label}
+            </a>
+          ))}
         </div>
       </div>
       <div className="hh-wrap hh-footer-base">

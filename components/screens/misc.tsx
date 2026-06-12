@@ -8,7 +8,7 @@ import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useSubmission } from "../use-submit";
 import { FileUpload } from "../file-upload";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/config";
 import { pathToScreen } from "@/lib/routes";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard } from "./events";
@@ -51,8 +51,7 @@ export function LoginScreen() {
     setAuthErr("");
     if (!valid) return;
 
-    const supa = getSupabaseBrowser();
-    if (!supa) {
+    if (!supabaseConfigured) {
       // Demo mode (Supabase not configured): local-only session.
       const first = email.split("@")[0];
       setUser({ loggedIn: true, role, name: first ? first[0].toUpperCase() + first.slice(1) : "Guest" });
@@ -63,6 +62,10 @@ export function LoginScreen() {
 
     setBusy(true);
     try {
+      // Lazy-loaded so the Supabase client stays out of the shared bundle.
+      const { getSupabaseBrowser } = await import("@/lib/supabase/client");
+      const supa = getSupabaseBrowser();
+      if (!supa) throw new Error("not_configured");
       if (mode === "login") {
         const { error } = await supa.auth.signInWithPassword({ email, password: pw });
         if (error) {

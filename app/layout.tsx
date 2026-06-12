@@ -14,6 +14,8 @@ import "../styles/events.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { SITE } from "@/lib/seo";
+import { allSeoPages } from "@/lib/seo-pages";
+import { categories } from "@/lib/data-lite";
 import {
   JsonLd,
   organizationJsonLd,
@@ -104,12 +106,21 @@ const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader]
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Computed server-side so the footer's crawlable category links don't drag
+  // the full listings dataset into the client bundle.
+  const seoCategoryLinks = allSeoPages()
+    .filter((p) => p.catId && !p.areaId)
+    .map((p) => ({
+      slug: p.slug,
+      label: categories.find((c) => c.id === p.catId)?.label || p.catId!,
+    }));
+
   return (
     <html lang="en" className={fontVars}>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <AppProviders>
-          <AppShell>{children}</AppShell>
+          <AppShell seoCategoryLinks={seoCategoryLinks}>{children}</AppShell>
         </AppProviders>
       </body>
     </html>

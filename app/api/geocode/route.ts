@@ -49,7 +49,11 @@ export async function GET(req: Request) {
           lng: Number(r.LONGITUDE),
         };
       });
-    return NextResponse.json({ results });
+    // Same query → same Singapore address for a long time; let CDNs cache it.
+    return NextResponse.json(
+      { results },
+      { headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" } },
+    );
   } catch {
     return NextResponse.json({ results: [] });
   }
