@@ -557,7 +557,6 @@ export function Footer() {
         ["User dashboard", "user-dashboard"],
         ["Owner dashboard", "owner-dashboard"],
         ["Admin console", "admin"],
-        ["404 page", "404"],
       ],
     ],
   ];

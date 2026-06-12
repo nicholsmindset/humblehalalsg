@@ -8,7 +8,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) return NextResponse.json({ ok: true, skipped: "not_configured" });
+  // 503 (not 200) so Stripe keeps retrying instead of marking the event delivered.
+  if (!stripe || !secret) {
+    return NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 });
+  }
 
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
@@ -23,7 +26,12 @@ export async function POST(req: Request) {
   const supa = getSupabaseAdmin();
   if (supa) {
     const { error } = await supa.from("webhook_events").insert({ stripe_event_id: event.id });
-    if (error) return NextResponse.json({ ok: true, duplicate: true }); // already processed
+    if (error) {
+      // Unique violation = already processed. Anything else (e.g. DB outage)
+      // must 500 so Stripe retries rather than silently dropping the event.
+      if (error.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
+      return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    }
   }
 
   try {

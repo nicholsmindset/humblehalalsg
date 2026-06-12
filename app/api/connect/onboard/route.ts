@@ -19,29 +19,33 @@ export async function POST() {
   const { data: biz } = await admin.from("businesses").select("id").eq("owner_id", user.id).maybeSingle();
   if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
 
-  let { data: acct } = await admin
+  const { data: acct } = await admin
     .from("stripe_accounts")
     .select("stripe_account_id")
     .eq("business_id", biz.id)
     .maybeSingle();
 
   let accountId = acct?.stripe_account_id as string | undefined;
-  if (!accountId) {
-    const created = await stripe.accounts.create({
-      type: "express",
-      country: "SG",
-      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      business_type: "company",
-    });
-    accountId = created.id;
-    await admin.from("stripe_accounts").upsert({ business_id: biz.id, stripe_account_id: accountId });
-  }
+  try {
+    if (!accountId) {
+      const created = await stripe.accounts.create({
+        type: "express",
+        country: "SG",
+        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+        business_type: "company",
+      });
+      accountId = created.id;
+      await admin.from("stripe_accounts").upsert({ business_id: biz.id, stripe_account_id: accountId });
+    }
 
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    type: "account_onboarding",
-    refresh_url: `${SITE.url}/owner?payouts=refresh`,
-    return_url: `${SITE.url}/owner?payouts=done`,
-  });
-  return NextResponse.json({ ok: true, url: link.url });
+    const link = await stripe.accountLinks.create({
+      account: accountId,
+      type: "account_onboarding",
+      refresh_url: `${SITE.url}/owner?payouts=refresh`,
+      return_url: `${SITE.url}/owner?payouts=done`,
+    });
+    return NextResponse.json({ ok: true, url: link.url });
+  } catch {
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

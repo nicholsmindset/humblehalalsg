@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { simulatedOr503 } from "@/lib/api";
 
 /* MailerLite email capture.
    Set MAILERLITE_API_KEY (and optional MAILERLITE_GROUP_ID) in env.
@@ -24,9 +25,9 @@ export async function POST(req: Request) {
   const apiKey = process.env.MAILERLITE_API_KEY;
   const groupId = process.env.MAILERLITE_GROUP_ID;
 
-  // No key configured (e.g. local/dev) — accept gracefully without persisting.
+  // No key configured — accept gracefully in dev, fail honestly in prod.
   if (!apiKey) {
-    return NextResponse.json({ ok: true, simulated: true });
+    return simulatedOr503();
   }
 
   try {

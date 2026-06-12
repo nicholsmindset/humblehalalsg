@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { simulatedOr503 } from "@/lib/api";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -59,10 +60,10 @@ export async function POST(req: Request) {
     status: "new",
   };
 
-  // Persist to Supabase if configured; otherwise simulate so the UI works in dev.
+  // Persist to Supabase if configured; otherwise simulate in dev, 503 in prod.
   const db = getSupabaseAdmin();
   if (!db) {
-    return NextResponse.json({ ok: true, simulated: true });
+    return simulatedOr503();
   }
 
   try {

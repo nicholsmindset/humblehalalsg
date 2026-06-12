@@ -22,12 +22,16 @@ export async function POST(req: Request) {
   const price = plan ? PRICE_ENV[plan]?.[yearly ? "yearly" : "monthly"] : undefined;
   if (!price) return NextResponse.json({ ok: false, reason: "price_not_configured" });
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price, quantity: 1 }],
-    metadata: { plan: plan! },
-    success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/pricing`,
-  });
-  return NextResponse.json({ ok: true, url: session.url });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price, quantity: 1 }],
+      metadata: { plan: plan! },
+      success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/pricing`,
+    });
+    return NextResponse.json({ ok: true, url: session.url });
+  } catch {
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

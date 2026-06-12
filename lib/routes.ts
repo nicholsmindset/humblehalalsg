@@ -6,7 +6,7 @@ export type ScreenName =
   | "home" | "explore" | "map" | "detail"
   | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
-  | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
+  | "mosques" | "verify" | "disclaimer" | "seo" | "success"
   | "events" | "event-detail" | "checkout" | "host-event";
 
 export type Params = Record<string, unknown>;
@@ -31,7 +31,6 @@ const BASE_PATH: Record<string, string> = {
   mosques: "/mosques",
   verify: "/verify",
   disclaimer: "/disclaimer",
-  "404": "/404",
   success: "/success",
   events: "/events",
   checkout: "/checkout",

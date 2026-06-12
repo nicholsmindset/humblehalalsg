@@ -47,34 +47,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "business_not_onboarded" });
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        quantity: qty,
-        price_data: {
-          currency: CURRENCY,
-          unit_amount: faceCents,
-          product_data: { name: `${ev.title} — ${tier?.name ?? "Ticket"}` },
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          quantity: qty,
+          price_data: {
+            currency: CURRENCY,
+            unit_amount: faceCents,
+            product_data: { name: `${ev.title} — ${tier?.name ?? "Ticket"}` },
+          },
         },
-      },
-      {
-        quantity: 1,
-        price_data: {
-          currency: CURRENCY,
-          unit_amount: order.feeCents,
-          product_data: { name: "Booking fee" },
+        {
+          quantity: 1,
+          price_data: {
+            currency: CURRENCY,
+            unit_amount: order.feeCents,
+            product_data: { name: "Booking fee" },
+          },
         },
+      ],
+      payment_intent_data: {
+        application_fee_amount: order.feeCents, // Humble Halal's commission
+        transfer_data: { destination: acct.stripe_account_id }, // rest → the business
       },
-    ],
-    payment_intent_data: {
-      application_fee_amount: order.feeCents, // Humble Halal's commission
-      transfer_data: { destination: acct.stripe_account_id }, // rest → the business
-    },
-    metadata: { eventId: ev.id, tier: tier?.name ?? "Standard", qty: String(qty), buyer: body.name ?? "" },
-    success_url: `${SITE.url}/success?type=payment-event&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/events/${ev.slug}`,
-  });
-
-  return NextResponse.json({ ok: true, url: session.url });
+      metadata: { eventId: ev.id, tier: tier?.name ?? "Standard", qty: String(qty), buyer: body.name ?? "" },
+      success_url: `${SITE.url}/success?type=payment-event&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/events/${ev.slug}`,
+    });
+    return NextResponse.json({ ok: true, url: session.url });
+  } catch {
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

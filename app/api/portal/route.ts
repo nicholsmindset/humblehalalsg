@@ -22,9 +22,13 @@ export async function POST() {
     .maybeSingle();
   if (!biz?.stripe_customer_id) return NextResponse.json({ ok: false, reason: "no_customer" });
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: biz.stripe_customer_id,
-    return_url: `${SITE.url}/owner`,
-  });
-  return NextResponse.json({ ok: true, url: session.url });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: biz.stripe_customer_id,
+      return_url: `${SITE.url}/owner`,
+    });
+    return NextResponse.json({ ok: true, url: session.url });
+  } catch {
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
+import { simulatedOr503 } from "@/lib/api";
 
 /* Free RSVP — the launch path. DB-backed when Supabase is configured; otherwise
    returns simulated:true so the client keeps using the local mock ticket. */
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   }
 
   const supa = getSupabaseAdmin();
-  if (!supa) return NextResponse.json({ ok: true, simulated: true });
+  if (!supa) return simulatedOr503();
 
   const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
   const ref = "HH-RSVP-" + Math.floor(1000 + Math.random() * 9000);

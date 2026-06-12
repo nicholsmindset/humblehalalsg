@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { halalScore } from "@/lib/halal-score";
 import { normalizeCertNo } from "@/lib/muis";
+import { simulatedOr503 } from "@/lib/api";
 
 /* Admin halal-verification intake.
 
@@ -64,10 +65,10 @@ export async function POST(req: Request) {
   })();
   const { tier, score } = tierAndScore(action, certNo, expiringSoon);
 
-  // No Supabase configured (dev) — accept gracefully without persisting.
+  // No Supabase configured — accept gracefully in dev, fail honestly in prod.
   const db = await getSupabaseServer();
   if (!db) {
-    return NextResponse.json({ ok: true, simulated: true, tier, score });
+    return simulatedOr503({ tier, score });
   }
 
   // RLS enforces that only an authenticated admin can update businesses.

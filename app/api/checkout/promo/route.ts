@@ -25,14 +25,18 @@ export async function POST(req: Request) {
   const item = product ? AD_PRODUCTS[product] : undefined;
   if (!item) return NextResponse.json({ ok: false, reason: "unknown_product" }, { status: 404 });
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      { quantity: 1, price_data: { currency: CURRENCY, unit_amount: item.cents, product_data: { name: item.name } } },
-    ],
-    metadata: { product: product! },
-    success_url: `${SITE.url}/advertise?purchase=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/advertise`,
-  });
-  return NextResponse.json({ ok: true, url: session.url });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        { quantity: 1, price_data: { currency: CURRENCY, unit_amount: item.cents, product_data: { name: item.name } } },
+      ],
+      metadata: { product: product! },
+      success_url: `${SITE.url}/advertise?purchase=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/advertise`,
+    });
+    return NextResponse.json({ ok: true, url: session.url });
+  } catch {
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }
