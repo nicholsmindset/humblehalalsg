@@ -368,3 +368,25 @@ body[data-accent="vibrant"] .listing-feat { border-color:var(--gold); }
 body[data-accent="vibrant"] .badge--muis { box-shadow:0 2px 10px rgba(15,92,74,.4); }
 body[data-accent="vibrant"] .badge--admin { box-shadow:0 2px 10px rgba(214,168,79,.5); }
 body[data-accent="vibrant"] .tag { background:var(--gold-50); color:var(--gold-700); }
+
+/* ── About / Contact / FAQ pages ─────────────────────────────────────────── */
+.about-block h2 { font-size:1.4rem; margin-bottom:8px; }
+.about-block p { max-width:760px; color:var(--ink-soft); line-height:1.7; margin:0; }
+.about-block a { color:var(--emerald); }
+
+.contact-grid { display:grid; grid-template-columns:1.4fr 1fr; gap:22px; align-items:start; }
+@media (max-width:820px){ .contact-grid { grid-template-columns:1fr; } }
+.contact-grid .field label { font-weight:700; font-size:.8rem; color:var(--ink-soft); margin-bottom:5px; display:block; }
+.contact-grid input, .contact-grid select, .contact-grid textarea { width:100%; box-sizing:border-box; border:1px solid var(--line-strong); border-radius:var(--r-sm); padding:11px 12px; font-size:.92rem; background:var(--cream); color:var(--ink); font-family:inherit; }
+.contact-grid input:focus, .contact-grid select:focus, .contact-grid textarea:focus { outline:none; border-color:var(--emerald); box-shadow:0 0 0 3px var(--emerald-50); }
+.contact-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:13px; }
+.contact-list li { display:flex; gap:10px; align-items:flex-start; }
+.contact-list li svg { color:var(--emerald); margin-top:3px; flex:none; }
+.contact-list strong { display:block; font-size:.84rem; }
+.contact-list a { color:var(--emerald); font-size:.9rem; text-decoration:none; }
+.contact-list a:hover { text-decoration:underline; }
+.contact-quick { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; }
+.contact-quick a { color:var(--emerald); font-weight:600; font-size:.9rem; text-decoration:none; }
+.contact-quick a:hover { text-decoration:underline; }
+.contact-done { text-align:center; padding:18px 0; }
+.contact-done .empty-ico { margin:0 auto; }

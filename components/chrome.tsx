@@ -559,6 +559,15 @@ export function Footer() {
       ],
     ],
     [
+      "Company",
+      [
+        ["About us", "about"],
+        ["Contact us", "contact"],
+        ["FAQ", "faq"],
+        ["Blog & guides", "blog"],
+      ],
+    ],
+    [
       "Demo views",
       [
         ["User dashboard", "user-dashboard"],
