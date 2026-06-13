@@ -406,6 +406,13 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
                 ))}
               </div>
               <p className="flt-count">{filtered.length} of {items.length} flights</p>
+              {to && (
+                <Link href="/travel" className="hotel-cta">
+                  <span className="hcta-ico"><Icon name="bed" size={20} /></span>
+                  <span className="hcta-text"><strong>Complete your trip</strong> — find a Muslim-friendly hotel in {to.city || to.iata} with prayer rooms and halal dining nearby.</span>
+                  <span className="hcta-go">Find a stay <Icon name="arrow" size={15} /></span>
+                </Link>
+              )}
               <div className="flt-list">{filtered.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
               {filtered.length === 0 && <Empty icon="plane" title="No flights match your filters" body="Try widening the stops, time or duration filters." />}
               {(nearby.from.length > 0 || nearby.to.length > 0) && (
@@ -711,6 +718,18 @@ export function FlightConfirmationScreen({ reference, status, from, to, date }: 
         <div className="flex g10 center" style={{ justifyContent: "center" }}>
           <Link className="btn btn-primary" href="/travel/trips">View my trips</Link>
           <Link className="btn btn-soft" href="/travel/flights">Back to flights</Link>
+        </div>
+
+        <Link href="/travel" className="hotel-cta" style={{ marginTop: 26, textAlign: "left" }}>
+          <span className="hcta-ico"><Icon name="bed" size={20} /></span>
+          <span className="hcta-text"><strong>Now find your stay</strong> — book a Muslim-friendly hotel{to ? ` in ${to}` : ""} with prayer rooms and halal dining nearby.</span>
+          <span className="hcta-go">Find a stay <Icon name="arrow" size={15} /></span>
+        </Link>
+
+        <div className="travel-dua">
+          <p className="travel-dua-ar" lang="ar" dir="rtl">سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ</p>
+          <p className="travel-dua-tr">Subḥāna-lladhī sakhkhara lanā hādhā wa mā kunnā lahu muqrinīn</p>
+          <p className="travel-dua-en">“Glory to Him who has subjected this to us, and we could never have done it by ourselves.” — the du‘ā for travel. Safe travels, and consider a Sadaqah for a blessed journey.</p>
         </div>
       </div>
     </div>

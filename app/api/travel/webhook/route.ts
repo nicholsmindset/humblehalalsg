@@ -30,13 +30,15 @@ export async function POST(req: Request) {
 
   const bookingId = String(event.bookingId || "");
   const status = String(event.status || "").toLowerCase();
-  const mapped = status.includes("cancel") ? "cancelled" : status.includes("refund") ? "refunded" : null;
+  const mapped = status.includes("cancel") ? "cancelled"
+    : status.includes("refund") ? "refunded"
+    : status.includes("ticket") ? "ticketed"
+    : status.includes("confirm") ? "confirmed"
+    : null;
   if (bookingId && mapped) {
-    try {
-      await db.from("hotel_bookings").update({ status: mapped }).eq("liteapi_booking_id", bookingId);
-    } catch {
-      /* best-effort */
-    }
+    // sync both verticals — the same LiteAPI booking id may live in either table
+    try { await db.from("hotel_bookings").update({ status: mapped }).eq("liteapi_booking_id", bookingId); } catch { /* best-effort */ }
+    try { await db.from("flight_bookings").update({ status: mapped, updated_at: new Date().toISOString() }).eq("liteapi_booking_id", bookingId); } catch { /* best-effort */ }
   }
   return NextResponse.json({ ok: true });
 }
