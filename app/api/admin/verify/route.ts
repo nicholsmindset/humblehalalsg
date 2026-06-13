@@ -85,15 +85,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Update failed" }, { status: 502 });
   }
 
-  // Best-effort audit trail (don't fail the response if the table differs).
+  // Best-effort audit trail (columns: actor, action, target, meta — see 0004).
   try {
     await db.from("audit_log").insert({
       action: action === "revoke" ? "Revoked halal verification" : `Granted ${action === "muis" ? "MUIS Certified" : "Admin Verified"}`,
-      business_id: businessId,
-      detail: action === "muis" ? `cert ${certNo}${expiry ? ` · exp ${expiry}` : ""}` : null,
+      target: businessId,
+      meta: action === "muis" ? { cert: certNo, expiry: expiry || null, scheme: String(body.scheme || "").trim() || null } : {},
     });
   } catch {
     /* audit is best-effort */
+  }
+
+  // Cert lifecycle for the freshness/recheck crons.
+  try {
+    await db.from("verification_log").insert({
+      business_id: businessId,
+      event: action === "revoke" ? "flagged" : "reverified",
+      detail: action === "muis" ? `cert ${certNo}${expiry ? ` · exp ${expiry}` : ""}` : action,
+    });
+  } catch {
+    /* best-effort */
   }
 
   return NextResponse.json({ ok: true, tier, score });

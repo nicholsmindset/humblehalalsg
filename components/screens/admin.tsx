@@ -1,13 +1,54 @@
 "use client";
 
 /* Humble Halal — Admin Dashboard (ported from screens-admin.jsx) */
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { Sparkline } from "./business";
+
+/* ── Live moderation-queue wiring ───────────────────────────────────────────
+   Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
+   configured or the caller isn't an admin (dev/demo), the fetch returns null
+   and the section keeps its mock rows so the console stays explorable. */
+type QueueRow = Record<string, unknown> & { id: string };
+
+async function queueGet(type: string): Promise<QueueRow[] | null> {
+  try {
+    const r = await fetch(`/api/admin/queue?type=${type}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? (d.items as QueueRow[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function queueAct(type: string, id: string, action: string): Promise<boolean> {
+  try {
+    const r = await fetch("/api/admin/queue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, id, action }),
+    });
+    const d = await r.json().catch(() => ({ ok: false }));
+    return !!d.ok;
+  } catch {
+    return false;
+  }
+}
+
+function timeAgo(iso?: unknown): string {
+  const t = typeof iso === "string" ? Date.parse(iso) : NaN;
+  if (!Number.isFinite(t)) return "—";
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
 
 export function AdminScreen() {
   const { navigate, toast } = useApp();
@@ -158,9 +199,25 @@ export function AdminOverview({ setSection }: { setSection: (s: string) => void 
   );
 }
 
+interface ApprovalRow { id: string; name: string; cat: string; area: string; badges: BadgeKey[]; tone?: string; image?: string; status: string; submitted: string }
 export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  const [rows, setRows] = useState(HHData.listings.slice(0,7).map((l,i)=>({ ...l, status: i<2?'claim':'new', submitted: `${i+1}d ago` })));
-  const act = (id: string, action: string) => { setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Listing approved':'Listing rejected'); };
+  const mock: ApprovalRow[] = HHData.listings.slice(0,7).map((l,i)=>({ id: l.id, name: l.name, cat: l.cat, area: l.area, badges: l.badges, tone: l.tone, image: l.image, status: i<2?'claim':'new', submitted: `${i+1}d ago` }));
+  const [rows, setRows] = useState<ApprovalRow[]>(mock);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    queueGet("listings").then((items) => {
+      if (!items) return;
+      setLive(true);
+      setRows(items.map((s) => {
+        const raw = (s.raw && typeof s.raw === "object" ? s.raw : {}) as Record<string, unknown>;
+        return { id: s.id, name: String(s.name ?? "—"), cat: String(s.category_suggested ?? raw.cat ?? "—"), area: String(raw.area ?? "—"), badges: ["pending"], tone: "gold", status: "new", submitted: timeAgo(s.created_at) } as ApprovalRow;
+      }));
+    });
+  }, []);
+  const act = async (id: string, action: string) => {
+    if (live && !(await queueAct("listings", id, action === "approve" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Listing published':'Listing rejected');
+  };
   return (
     <div className="card" style={{overflow:'hidden'}}>
       <div className="admin-tablehead"><div className="flex g8 center"><span className="tag">{rows.length} pending</span></div>
@@ -318,14 +375,30 @@ export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
 }
 
 interface ReportRow { id: string; biz: string; reason: string; by: string; time: string; sev: string }
+const REPORT_LABEL: Record<string, string> = { halal: "Wrong halal status", closed: "Permanently closed", hours: "Wrong opening hours", address: "Wrong address", owner: "Ownership dispute", menu: "Menu issue", other: "Other" };
 export function AdminReports({ toast }: { toast: (msg: string) => void }) {
-  const [rows,setRows]=useState<ReportRow[]>([
+  const mock: ReportRow[] = [
     {id:'rp1', biz:'Tok Tok Mee Pok House', reason:'Wrong halal status', by:'Nadia K.', time:'2h ago', sev:'high'},
     {id:'rp2', biz:'Kopi & Kueh Corner', reason:'Permanently closed', by:'Faizal M.', time:'5h ago', sev:'high'},
     {id:'rp3', biz:'Qahwa & Co.', reason:'Wrong opening hours', by:'Imran S.', time:'1d ago', sev:'low'},
     {id:'rp4', biz:'Barakah Mart', reason:'Wrong address', by:'Sara L.', time:'2d ago', sev:'low'},
-  ]);
-  const resolve=(id: string)=>{ setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved'); };
+  ];
+  const [rows,setRows]=useState<ReportRow[]>(mock);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    queueGet("reports").then((items) => {
+      if (!items) return;
+      setLive(true);
+      setRows(items.map((r) => {
+        const code = String(r.reason ?? "other");
+        return { id: r.id, biz: String(r.business_ref ?? r.business_id ?? "—"), reason: `${REPORT_LABEL[code] ?? code}${r.details ? ` — ${String(r.details).slice(0, 80)}` : ""}`, by: "community", time: timeAgo(r.created_at), sev: code === "halal" || code === "closed" ? "high" : "low" };
+      }));
+    });
+  }, []);
+  const resolve=async (id: string)=>{
+    if (live && !(await queueAct("reports", id, "resolve"))) { toast("Action failed"); return; }
+    setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
+  };
   return (
     <div className="stack g12">
       {rows.map(r=>(
@@ -341,9 +414,22 @@ export function AdminReports({ toast }: { toast: (msg: string) => void }) {
   );
 }
 
+interface ReviewRow { id: string; avatar: string; name: string; biz: string; rating: number; text: string; flagged: boolean }
 export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
-  const [rows,setRows]=useState(HHData.reviews.map((r,i)=>({...r, biz:HHData.listings[i].name, flagged:i===0})));
-  const act=(id: string,a: string)=>{ setRows(r=>r.filter(x=>x.id!==id)); toast(a==='keep'?'Review kept':'Review removed'); };
+  const mock: ReviewRow[] = HHData.reviews.map((r,i)=>({ id: r.id, avatar: r.avatar, name: r.name, biz: HHData.listings[i].name, rating: r.rating, text: r.text, flagged: i===0 }));
+  const [rows,setRows]=useState<ReviewRow[]>(mock);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    queueGet("reviews").then((items) => {
+      if (!items) return;
+      setLive(true);
+      setRows(items.map((r) => ({ id: r.id, avatar: "★", name: "Reviewer", biz: String(r.business_id ?? "—").slice(0, 8), rating: Number(r.rating) || 0, text: String(r.text ?? ""), flagged: r.status === "flagged" })));
+    });
+  }, []);
+  const act=async (id: string,a: string)=>{
+    if (live && !(await queueAct("reviews", id, a === "keep" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    setRows(r=>r.filter(x=>x.id!==id)); toast(a==='keep'?'Review approved':'Review removed');
+  };
   return (
     <div className="stack g12">
       {rows.map(r=>(
@@ -431,7 +517,20 @@ export function AdminPayments() {
 }
 
 export function AdminAudit() {
-  const logs: [string, string, string, string][]=[['Approved listing','Madinah Spice Kitchen','admin@hh.sg','2 min ago'],['Granted MUIS Certified','Warung Bumbu Rempah','admin@hh.sg','18 min ago'],['Resolved report','Tok Tok Mee Pok','mod@hh.sg','1h ago'],['Removed review','Kopi & Kueh','mod@hh.sg','3h ago'],['Suspended user','imran@email.com','admin@hh.sg','5h ago'],['Featured listing','Qahwa & Co.','admin@hh.sg','1d ago']];
+  const mock: [string, string, string, string][]=[['Approved listing','Madinah Spice Kitchen','admin@hh.sg','2 min ago'],['Granted MUIS Certified','Warung Bumbu Rempah','admin@hh.sg','18 min ago'],['Resolved report','Tok Tok Mee Pok','mod@hh.sg','1h ago'],['Removed review','Kopi & Kueh','mod@hh.sg','3h ago'],['Suspended user','imran@email.com','admin@hh.sg','5h ago'],['Featured listing','Qahwa & Co.','admin@hh.sg','1d ago']];
+  const [logs, setLogs] = useState<[string, string, string, string][]>(mock);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/audit");
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.ok && Array.isArray(d.items)) {
+          setLogs(d.items.map((l: Record<string, unknown>) => [String(l.action ?? "—"), String(l.target ?? "").slice(0, 12) || "—", "admin", timeAgo(l.created_at)] as [string, string, string, string]));
+        }
+      } catch { /* keep mock */ }
+    })();
+  }, []);
   return (
     <div className="card" style={{padding:20}}>
       <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Audit log</h3>
