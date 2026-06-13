@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TravelCityScreen } from "@/components/screens/travel";
 import { allTravelHubs, getTravelHub, travelHubFaq, relatedHubs } from "@/lib/travel-hubs";
-import { cityHotels } from "@/lib/travel-data";
+import { cityHotels, cityPriceTip } from "@/lib/travel-data";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, faqJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
 
@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ city: string 
   const hub = getTravelHub(city);
   if (!hub) notFound();
 
-  const hotels = await cityHotels(hub);
+  const [hotels, priceTip] = await Promise.all([cityHotels(hub), cityPriceTip(hub.countryCode, hub.cityName)]);
   const faq = travelHubFaq(hub);
 
   const itemList = {
@@ -54,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ city: string 
           ...hotels.slice(0, 3).map((h) => hotelJsonLd(h)),
         ]}
       />
-      <TravelCityScreen hub={hub} hotels={hotels} faq={faq} related={relatedHubs(hub.slug)} />
+      <TravelCityScreen hub={hub} hotels={hotels} faq={faq} related={relatedHubs(hub.slug)} priceTip={priceTip} />
     </>
   );
 }

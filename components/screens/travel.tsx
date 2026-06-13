@@ -132,12 +132,19 @@ function matchesFilters(h: Hotel, active: string[]): boolean {
   });
 }
 
-function FilterBar({ active, setActive }: { active: string[]; setActive: (a: string[]) => void }) {
+/** Which halal filters have at least one matching hotel in this list. We only
+ *  show filters we have data for, so a filter can never blank the whole page. */
+function availableFilters(hotels: Hotel[]): typeof HOTEL_FILTERS {
+  return HOTEL_FILTERS.filter((f) => hotels.some((h) => h.flags[f.key] || (f.alt ? h.flags[f.alt] : false)));
+}
+
+function FilterBar({ active, setActive, options }: { active: string[]; setActive: (a: string[]) => void; options: typeof HOTEL_FILTERS }) {
+  if (options.length === 0) return null;
   const toggle = (k: string) => setActive(active.includes(k) ? active.filter((x) => x !== k) : [...active, k]);
   return (
     <div className="filter-bar">
       <span className="filter-label"><Icon name="crescent" size={13} /> Halal filters</span>
-      {HOTEL_FILTERS.map((f) => (
+      {options.map((f) => (
         <button key={f.key} type="button" className={`filter-chip ${active.includes(f.key) ? "on" : ""}`} onClick={() => toggle(f.key)}>{f.label}</button>
       ))}
       {active.length > 0 && <button type="button" className="filter-clear" onClick={() => setActive([])}>Clear</button>}
@@ -251,7 +258,7 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
         {note ? <p className="muted" style={{ marginBottom: 14 }}>{note}</p> : null}
         {results && results.length > 0 && (
           <>
-            <FilterBar active={filters} setActive={setFilters} />
+            <FilterBar active={filters} setActive={setFilters} options={availableFilters(results)} />
             <div className="flex between center" style={{ margin: "14px 0" }}>
               <h2 style={{ fontSize: "1.35rem" }}>{shown!.length} hotel{shown!.length !== 1 ? "s" : ""}</h2>
               <span className="muted" style={{ fontSize: ".86rem" }}>Most Muslim-friendly first</span>
@@ -279,7 +286,14 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
 
 /* ── city hub ────────────────────────────────────────────────────────────── */
 
-export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub; hotels: Hotel[]; faq: QA[]; related: TravelHub[] }) {
+interface CityPrice { city: string; avgUsd: number; minUsd: number; maxUsd: number; cheapestDay?: string }
+function niceDate(iso?: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const mo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][(m || 1) - 1];
+  return `${d} ${mo}`;
+}
+export function TravelCityScreen({ hub, hotels, faq, related, priceTip }: { hub: TravelHub; hotels: Hotel[]; faq: QA[]; related: TravelHub[]; priceTip?: CityPrice | null }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [open, setOpen] = useState<number | null>(0);
   const [filters, setFilters] = useState<string[]>([]);
@@ -297,7 +311,13 @@ export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub
       </section>
 
       <div className="hh-wrap hh-section">
-        {hotels.length > 0 && <FilterBar active={filters} setActive={setFilters} />}
+        {priceTip && (
+          <div className="price-tip">
+            <span className="pt-ico"><Icon name="trend" size={16} /></span>
+            <span className="pt-text">{hub.name} averages <strong>USD {priceTip.avgUsd}/night</strong> over the next month (USD {priceTip.minUsd}–{priceTip.maxUsd}).{priceTip.cheapestDay ? <> Cheapest around <strong>{niceDate(priceTip.cheapestDay)}</strong>.</> : null}</span>
+          </div>
+        )}
+        {hotels.length > 0 && <FilterBar active={filters} setActive={setFilters} options={availableFilters(hotels)} />}
         <div className="flex between center" style={{ margin: "14px 0 16px", gap: 10, flexWrap: "wrap" }}>
           <h2 style={{ fontSize: "1.3rem" }}>{hotels.length ? `${shown.length} Muslim-friendly hotel${shown.length !== 1 ? "s" : ""} in ${hub.name}` : `Hotels in ${hub.name}`}</h2>
           {points.length > 0 && (
@@ -346,7 +366,40 @@ export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub
 interface NearPlace { name: string; lat: number; lng: number; distanceM: number; cuisine?: string }
 function dist(m: number) { return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`; }
 
-const HOTEL_TABS: [string, string][] = [["overview", "Overview"], ["amenities", "Facilities"], ["rooms", "Rooms"], ["reviews", "Reviews"], ["location", "Location"]];
+const HOTEL_TABS: [string, string][] = [["overview", "Overview"], ["amenities", "Facilities"], ["rooms", "Rooms"], ["reviews", "Reviews"], ["ask", "Ask AI"], ["location", "Location"]];
+
+function AskHotel({ hotelId }: { hotelId: string }) {
+  const [q, setQ] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const suggestions = ["Is there a prayer room?", "Is halal food available nearby?", "Is alcohol served?", "What time is check-in?", "Is there free parking?"];
+  const ask = async (question: string) => {
+    const text = question.trim();
+    if (text.length < 3) return;
+    setLoading(true);
+    setAnswer(null);
+    try {
+      const r = await fetch(`/api/travel/ask?hotelId=${encodeURIComponent(hotelId)}&q=${encodeURIComponent(text)}`);
+      const d = await r.json();
+      setAnswer(d.ok && d.answer ? d.answer : "I don't have that information for this hotel — please check with the hotel directly.");
+    } catch {
+      setAnswer("Couldn't get an answer right now.");
+    }
+    setLoading(false);
+  };
+  return (
+    <div className="ask-ai">
+      <h2 style={{ fontSize: "1.2rem" }}>Ask about this hotel <span className="aa-beta">AI · Beta</span></h2>
+      <p className="muted" style={{ fontSize: ".86rem", marginTop: 4 }}>Instant answers from the hotel's own information — ask about prayer rooms, halal food, alcohol policy and more.</p>
+      <div className="aa-suggest">{suggestions.map((s) => <button key={s} type="button" className="aa-chip" onClick={() => { setQ(s); ask(s); }}>{s}</button>)}</div>
+      <form className="aa-form" onSubmit={(e) => { e.preventDefault(); ask(q); }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything about this hotel…" />
+        <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Asking…" : "Ask"}</button>
+      </form>
+      {answer && <div className="aa-answer">{answer}</div>}
+    </div>
+  );
+}
 function HotelTabs() {
   return (
     <nav className="hotel-tabs">
@@ -396,16 +449,39 @@ function SentimentBlock({ sentiment }: { sentiment: HotelSentiment }) {
   );
 }
 
+function Lightbox({ photos, index, setIndex, title, onClose }: { photos: string[]; index: number; setIndex: (n: number) => void; title: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setIndex((index - 1 + photos.length) % photos.length);
+      if (e.key === "ArrowRight") setIndex((index + 1) % photos.length);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, photos.length, onClose, setIndex]);
+  return (
+    <div className="lightbox" onClick={onClose} role="dialog" aria-modal="true">
+      <button type="button" className="lb-close" onClick={onClose} aria-label="Close">✕</button>
+      {photos.length > 1 && <button type="button" className="lb-nav prev" onClick={(e) => { e.stopPropagation(); setIndex((index - 1 + photos.length) % photos.length); }} aria-label="Previous">‹</button>}
+      <img src={photos[index]} alt={title} onClick={(e) => e.stopPropagation()} />
+      {photos.length > 1 && <button type="button" className="lb-nav next" onClick={(e) => { e.stopPropagation(); setIndex((index + 1) % photos.length); }} aria-label="Next">›</button>}
+      <span className="lb-count">{index + 1} / {photos.length}</span>
+    </div>
+  );
+}
+
 function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hotel: Hotel; bookingEnabled: boolean }) {
   const [pi, setPi] = useState(0);
+  const [zoom, setZoom] = useState(false);
   const photos = group.photos.length ? group.photos : hotel.image ? [hotel.image] : [];
   const href = (offerId: string) => `/travel/booking?offerId=${encodeURIComponent(offerId)}&hotelId=${encodeURIComponent(hotel.id)}&hotel=${encodeURIComponent(hotel.name)}&city=${encodeURIComponent(hotel.city || "")}`;
   return (
     <div className="room-card">
+      {zoom && photos.length > 0 && <Lightbox photos={photos} index={pi % photos.length} setIndex={setPi} title={group.name} onClose={() => setZoom(false)} />}
       <div className="room-media">
         {photos.length > 0 ? (
           <div className="room-photo">
-            <img src={photos[pi % photos.length]} alt={group.name} loading="lazy" />
+            <img src={photos[pi % photos.length]} alt={group.name} loading="lazy" onClick={() => setZoom(true)} style={{ cursor: "zoom-in" }} />
             {photos.length > 1 && (
               <>
                 <button type="button" className="rm-nav prev" onClick={() => setPi((p) => (p - 1 + photos.length) % photos.length)} aria-label="Previous photo">‹</button>
@@ -545,6 +621,10 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
                 </div>
               </section>
             )}
+
+            <section id="ask" style={{ marginBottom: 26, scrollMarginTop: 70 }}>
+              <AskHotel hotelId={hotel.id} />
+            </section>
 
             {(mosques.length > 0 || halalFood.length > 0) && (
               <section style={{ marginBottom: 26 }}>

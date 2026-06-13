@@ -327,8 +327,20 @@ export function groupRooms(h: LiteApiRatesHotel, rooms: LiteApiRoom[] = []): Roo
     g.options.push(opt);
   }
 
+  // Collapse to ONE option per board type (cheapest; refundable wins ties) — like
+  // zzzello/Booking.com — so a room shows "Room only / Breakfast", not 10 near-
+  // identical price rows.
   const arr = [...groups.values()];
-  for (const g of arr) g.options.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+  for (const g of arr) {
+    const byBoard = new Map<string, RoomRateOption>();
+    for (const o of g.options) {
+      const ex = byBoard.get(o.board);
+      const cheaper = (o.price ?? Infinity) < (ex?.price ?? Infinity);
+      const tieRefundable = ex && o.price === ex.price && o.refundable && !ex.refundable;
+      if (!ex || cheaper || tieRefundable) byBoard.set(o.board, o);
+    }
+    g.options = [...byBoard.values()].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+  }
   arr.sort((a, b) => (a.options[0]?.price ?? Infinity) - (b.options[0]?.price ?? Infinity));
   return arr;
 }

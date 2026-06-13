@@ -134,4 +134,28 @@ export async function getBooking(bookingId: string): Promise<BookResult | null> 
   return r.data ?? null;
 }
 
+/** Cancel a hotel booking — LiteAPI enforces the cancellation policy. */
+export async function cancelBooking(bookingId: string): Promise<{ status?: string; refund?: unknown } | null> {
+  const r = await request<{ data?: { status?: string; refund?: unknown } }>(`/bookings/${encodeURIComponent(bookingId)}`, { method: "PUT" });
+  return r.data ?? null;
+}
+
+/* ── AI + pricing ───────────────────────────────────────────────────────── */
+
+/** "Ask AI about this hotel" — natural-language Q&A over the hotel's own info. */
+export async function askHotel(hotelId: string, query: string, allowWebSearch = false): Promise<{ answer: string; citations: string[]; searchUsed: boolean } | null> {
+  const r = await request<{ data?: { answer?: string; citations?: string[]; search_used?: boolean } }>(
+    `/data/hotel/ask${qs({ hotelId, query, allowWebSearch: allowWebSearch ? "true" : "false" })}`,
+  );
+  const d = r.data;
+  if (!d) return null;
+  return { answer: String(d.answer || ""), citations: Array.isArray(d.citations) ? d.citations.map(String) : [], searchUsed: !!d.search_used };
+}
+
+/** Average nightly price per day across a city (for price-saver tips). */
+export async function cityPriceIndex(countryCode: string, cityName: string, fromDate?: string, toDate?: string): Promise<{ day: string; avgPriceUsd: number }[]> {
+  const r = await request<{ prices?: { day: string; avgPriceUsd: number }[] }>(`/prices/city${qs({ countryCode, cityName, fromDate, toDate })}`);
+  return Array.isArray(r.prices) ? r.prices : [];
+}
+
 export { LiteApiError };

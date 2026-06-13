@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, book } from "@/lib/liteapi";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
 
 /* Step 3 of booking — confirm the booking with LiteAPI (merchant of record via
    its Payment SDK; method TRANSACTION_ID), then record the outcome + commission
@@ -40,6 +40,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Booking failed" }, { status: 502 });
   }
 
+  // Link the booking to the signed-in traveller (for My Trips), if any.
+  let userId: string | null = null;
+  try {
+    const server = await getSupabaseServer();
+    if (server) userId = (await server.auth.getUser()).data.user?.id ?? null;
+  } catch {
+    /* anonymous booking is fine */
+  }
+
   // Persist outcome + commission (best-effort; never fail the booking on a DB hiccup).
   const db = getSupabaseAdmin();
   if (db) {
@@ -49,6 +58,7 @@ export async function POST(req: Request) {
       const { data: bk } = await db
         .from("hotel_bookings")
         .insert({
+          user_id: userId,
           liteapi_booking_id: result.bookingId ?? null,
           hotel_confirmation_code: result.hotelConfirmationCode ?? null,
           liteapi_hotel_id: body.liteapiHotelId ?? null,

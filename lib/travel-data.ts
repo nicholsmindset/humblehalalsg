@@ -1,5 +1,5 @@
 import "server-only";
-import { getHotel, getHotelReviews, getHotelsByCity, searchRates } from "./liteapi";
+import { cityPriceIndex, getHotel, getHotelReviews, getHotelsByCity, searchRates } from "./liteapi";
 import { getSupabaseAdmin } from "./supabase/server";
 import {
   groupRooms,
@@ -32,6 +32,32 @@ async function overlayFor(ids: string[]): Promise<Map<string, OverlayRow>> {
     /* overlay best-effort */
   }
   return m;
+}
+
+export interface CityPriceTip {
+  city: string;
+  avgUsd: number;
+  minUsd: number;
+  maxUsd: number;
+  cheapestDay?: string;
+}
+
+/** City price trend for "price-saver" nudges (cached at the page level). */
+export async function cityPriceTip(countryCode: string, cityName: string): Promise<CityPriceTip | null> {
+  try {
+    const today = new Date();
+    const from = today.toISOString().slice(0, 10);
+    const to = new Date(today.getTime() + 30 * 864e5).toISOString().slice(0, 10);
+    const prices = await cityPriceIndex(countryCode.toUpperCase(), cityName, from, to);
+    const valid = prices.filter((p) => p.avgPriceUsd > 0);
+    if (!valid.length) return null;
+    const vals = valid.map((p) => p.avgPriceUsd);
+    const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    const cheapest = [...valid].sort((a, b) => a.avgPriceUsd - b.avgPriceUsd)[0];
+    return { city: cityName, avgUsd: avg, minUsd: Math.min(...vals), maxUsd: Math.max(...vals), cheapestDay: cheapest?.day };
+  } catch {
+    return null;
+  }
 }
 
 export async function cityHotels(c: TravelCity, limit = 18): Promise<Hotel[]> {
