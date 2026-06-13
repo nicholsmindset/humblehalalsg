@@ -151,9 +151,19 @@ export async function hotelDetail(
   const offers = hit ? offersFromRatesHotel(hit) : [];
   const roomGroups = hit ? groupRooms(hit, content.rooms || []) : [];
 
+  // Build the gallery: hotel images, and when those are sparse, fold in unique
+  // room photos so a thin hotel still has a rich gallery (rooms always show their
+  // own full photo set in the Rooms tab + lightbox).
+  let gallery = images;
+  if (gallery.length < 6) {
+    const seen = new Set(gallery);
+    for (const rg of roomGroups) for (const p of rg.photos) if (!seen.has(p)) { gallery.push(p); seen.add(p); }
+  }
+  if (!gallery.length && hotel.image) gallery = [hotel.image];
+
   return {
     hotel,
-    images: images.length ? images : hotel.image ? [hotel.image] : [],
+    images: gallery,
     offers,
     roomGroups,
     reviews,

@@ -281,7 +281,45 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
         <p className="muted" style={{ marginBottom: 18 }}>Curated halal-travel guides with Muslim-friendly hotels in each city.</p>
         <div className="dest-grid">{cities.map((c) => <DestinationCard key={c.slug} c={c} />)}</div>
 
-        <p className="travel-disclaimer" style={{ marginTop: 28 }}>
+        <section className="flt-land-benefits" style={{ marginTop: 44 }}>
+          <h2 style={{ fontSize: "1.5rem" }}>Why book your halal travel with Humble Halal</h2>
+          <p className="muted" style={{ maxWidth: 640, margin: "6px 0 18px" }}>The comfort of a mainstream hotel search, with the Muslim-first details that matter — and a team that checks, not just an algorithm.</p>
+          <div className="flt-benefit-grid">
+            {[
+              ["mosque", "Prayer rooms & qibla on every stay", "See prayer-room availability, today's prayer times and the qibla direction for each hotel — with the nearest mosque and halal dining mapped close by."],
+              ["badge-check", "Checked by people, not just an algorithm", "Muslim-friendly facilities come from each hotel's own information; where you see a Verified badge, our team has reviewed it. We're a discovery platform, never a blanket certifier."],
+              ["crescent", "Filter for what you need", "Narrow stays by prayer room, halal food nearby, alcohol-free, women-only facilities and near-a-mosque — so you book with confidence."],
+              ["plane", "Plan flights & hotel together", "Pair your stay with flights for Umrah, Hajj or Muslim travel in one place, and keep your whole trip organised."],
+            ].map(([ic, h, b]) => (
+              <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: "1.5rem", marginBottom: 14 }}>How it works</h2>
+          <ol className="flt-how-steps">
+            <li><span className="fhs-n">1</span><div><strong>Search a destination &amp; dates</strong><p className="muted">Any city worldwide — from Umrah hotels by the Haramain to family trips across Asia.</p></div></li>
+            <li><span className="fhs-n">2</span><div><strong>Filter by your halal needs</strong><p className="muted">Prayer room, halal food nearby, alcohol-free, women-only — and check prayer times, qibla and what's near.</p></div></li>
+            <li><span className="fhs-n">3</span><div><strong>Book with confidence</strong><p className="muted">Pay securely through our travel partner, with free cancellation where the rate allows.</p></div></li>
+          </ol>
+        </section>
+
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: "1.5rem", marginBottom: 14 }}>Halal hotel booking — your questions</h2>
+          <div className="flt-faq">
+            {[
+              ["What makes a hotel “Muslim-friendly”?", "We surface facts that matter to Muslim travellers — prayer rooms, halal dining on-site or nearby, alcohol-free options, women-only facilities and proximity to a mosque — drawn from each hotel's own information, plus prayer times and qibla for the location. Always confirm specific requirements (kitchen, dining, facilities) with the hotel."],
+              ["Are these hotels halal-certified?", "No — Humble Halal is a discovery platform, not a certifier. We never assert a hotel is “halal”. Where you see a Verified badge, our team has reviewed the hotel's information; everything else is the hotel's own declaration, which you should confirm directly."],
+              ["Can I filter for prayer rooms or alcohol-free stays?", "Yes. After you search, filter by prayer room, halal food (on-site or nearby), alcohol-free, women-only facilities and near-a-mosque to find a stay that fits your needs."],
+              ["Can I book flights and a hotel together?", "Yes. Search flights for your Umrah, Hajj or Muslim-travel journey and pair them with a Muslim-friendly stay, so your whole trip is planned in one place."],
+            ].map(([q, a]) => (
+              <details key={q} className="flt-faq-item"><summary>{q}<span className="faq-chevron" aria-hidden="true" /></summary><p>{a}</p></details>
+            ))}
+          </div>
+        </section>
+
+        <p className="travel-disclaimer" style={{ marginTop: 36 }}>
           Humble Halal is a discovery platform, not a certifier. Muslim-friendly facilities are derived from each hotel's own
           information and, where marked, verified by our team — always confirm specific halal requirements with the hotel.
         </p>
@@ -609,6 +647,12 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
               )}
               {flags.length > 0 && (
                 <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={13} /> {l}</span>)}</div>
+              )}
+
+              {flags.length > 0 && (
+                <p className="muslim-note">
+                  <Icon name="moon" size={14} /> For Muslim travellers, this stay highlights {flags.slice(0, 3).map((l) => l.toLowerCase()).join(", ")}{flags.length > 3 ? " and more" : ""}. Below you'll find today's prayer times, the qibla direction and the nearest mosques &amp; halal dining. Specifics — such as whether breakfast is halal, the prayer-room location and the alcohol policy — vary by property, so please confirm directly with the hotel before booking.
+                </p>
               )}
 
               {hotel.descriptionHtml ? (

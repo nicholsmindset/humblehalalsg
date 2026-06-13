@@ -278,9 +278,24 @@ function normName(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** All photos for a room, full-res first (hd_url), deduped. */
+function roomPhotos(m?: LiteApiRoom): string[] {
+  const urls = (m?.photos || []).map((p) => p?.hd_url || p?.url).filter(Boolean) as string[];
+  return [...new Set(urls)];
+}
+
 export function groupRooms(h: LiteApiRatesHotel, rooms: LiteApiRoom[] = []): RoomGroup[] {
   const meta = new Map<string, LiteApiRoom>();
   for (const r of rooms) if (r.roomName) meta.set(normName(String(r.roomName)), r);
+  // fuzzy fallback: match a rate room name to the closest metadata room by
+  // containment so a slightly-different name never drops the room's photos
+  const fuzzyMeta = (name: string): LiteApiRoom | undefined => {
+    const n = normName(name);
+    const exact = meta.get(n);
+    if (exact) return exact;
+    for (const [k, v] of meta) if (k.includes(n) || n.includes(k)) return v;
+    return undefined;
+  };
 
   const groups = new Map<string, RoomGroup>();
   for (const rt of h.roomTypes ?? []) {
@@ -307,8 +322,8 @@ export function groupRooms(h: LiteApiRatesHotel, rooms: LiteApiRoom[] = []): Roo
     };
     let g = groups.get(normName(name));
     if (!g) {
-      const m = meta.get(normName(name));
-      const photos = (m?.photos || []).map((p) => p?.url || p?.hd_url).filter(Boolean) as string[];
+      const m = fuzzyMeta(name);
+      const photos = roomPhotos(m);
       const amen = (m?.roomAmenities || [])
         .map((a) => (typeof a === "string" ? a : a?.name))
         .filter(Boolean) as string[];

@@ -260,6 +260,89 @@ function FilterRail({ all, f, setF, airlines }: { all: FlightItinerary[]; f: Fil
   );
 }
 
+/* ── pre-search landing content (benefits, routes, how-it-works, FAQ) ──────── */
+const SG_ORIGIN: Airport = { iata: "SIN", name: "Changi", city: "Singapore", country: "Singapore" };
+const POPULAR_ROUTES: (Airport & { tag?: string })[] = [
+  { iata: "JED", city: "Jeddah", name: "King Abdulaziz Intl", country: "Saudi Arabia", tag: "Umrah" },
+  { iata: "MED", city: "Madinah", name: "Prince Mohammad bin Abdulaziz", country: "Saudi Arabia", tag: "Umrah" },
+  { iata: "IST", city: "Istanbul", name: "Istanbul Airport", country: "Türkiye" },
+  { iata: "DXB", city: "Dubai", name: "Dubai Intl", country: "United Arab Emirates" },
+  { iata: "CAI", city: "Cairo", name: "Cairo Intl", country: "Egypt" },
+  { iata: "KUL", city: "Kuala Lumpur", name: "KLIA", country: "Malaysia" },
+  { iata: "CGK", city: "Jakarta", name: "Soekarno-Hatta", country: "Indonesia" },
+  { iata: "DOH", city: "Doha", name: "Hamad Intl", country: "Qatar" },
+];
+const FLT_BENEFITS: [string, string, string][] = [
+  ["moon", "Muslim meals, flagged", "See at a glance which airlines serve a Muslim meal (MOML) on request, and which cabins are alcohol-free — before you book."],
+  ["mosque", "Prayer-aware layovers", "We highlight connecting airports with a prayer room and tell you whether your layover is long enough to pray, plus the qibla at your destination."],
+  ["crescent", "Built for Umrah & Hajj", "Jeddah and Madinah presets, Hijri dates and Ramadan / Hajj-season awareness — travel planning that understands your pilgrimage."],
+  ["bed", "One trip, planned together", "Pair your flight with a Muslim-friendly hotel — prayer rooms, halal dining nearby and alcohol-free stays — in one place."],
+  ["clock", "Hundreds of airlines, real fares", "Compare live prices across hundreds of airlines and find the cheapest day to fly with our flexible-date calendar."],
+  ["shield-check", "Book with confidence", "Transparent pricing, fare-drop alerts and secure payment handled by our trusted travel partner."],
+];
+const FLT_FAQS: [string, string][] = [
+  ["Do you show which airlines serve a Muslim meal?", "Yes. Results flag carriers that offer a Muslim meal (MOML) on request, and note alcohol-free cabins where applicable. Always request the meal with the airline and confirm before you fly."],
+  ["Can I see prayer facilities for my layover?", "Yes. For connecting airports with a documented prayer room or musalla, we show the facility and whether your layover is long enough to pray comfortably, plus the qibla direction at your destination."],
+  ["Is this built for Umrah and Hajj travel?", "Absolutely. Use the Jeddah and Madinah presets, see the Hijri date and Ramadan/Hajj-season flags, and pair your flight with a Muslim-friendly hotel near the Haramain."],
+  ["Can I book flights and a hotel together?", "You can search flights and a Muslim-friendly stay — with prayer rooms, halal dining nearby and alcohol-free options — in one place, so your whole trip is planned together."],
+  ["When am I charged, and who handles payment?", "Payment is handled securely by our travel partner, and you're never charged without a confirmed booking. Baggage, times and fare rules are shown before you pay."],
+];
+
+function FlightsLanding({ onRoute }: { onRoute: (origin: Airport, dest: Airport) => void }) {
+  return (
+    <div className="flt-landing">
+      <section className="flt-land-benefits">
+        <h2>Why Muslim travellers fly with Humble Halal</h2>
+        <p className="muted">The comfort of a mainstream flight search, with the details a Muslim traveller actually needs — all in one place.</p>
+        <div className="flt-benefit-grid">
+          {FLT_BENEFITS.map(([ic, h, b]) => (
+            <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
+          ))}
+        </div>
+      </section>
+
+      <section className="flt-land-routes">
+        <h2>Popular halal-travel routes</h2>
+        <p className="muted">From Singapore — tap a route to search live fares.</p>
+        <div className="flt-route-chips">
+          {POPULAR_ROUTES.map((d) => (
+            <button key={d.iata} type="button" className="flt-route-chip" onClick={() => onRoute(SG_ORIGIN, { iata: d.iata, name: d.name, city: d.city, country: d.country })}>
+              <span className="frc-route">Singapore <Icon name="arrow" size={13} /> {d.city}</span>
+              {d.tag ? <span className="frc-tag">{d.tag}</span> : null}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="flt-land-how">
+        <h2>How it works</h2>
+        <ol className="flt-how-steps">
+          <li><span className="fhs-n">1</span><div><strong>Search your route</strong><p className="muted">One-way or round-trip, any cabin, with Umrah & Hajj presets.</p></div></li>
+          <li><span className="fhs-n">2</span><div><strong>Compare with Muslim-first insights</strong><p className="muted">Muslim-meal flags, prayer-room layovers, qibla, baggage and the cheapest day to fly.</p></div></li>
+          <li><span className="fhs-n">3</span><div><strong>Book &amp; travel with confidence</strong><p className="muted">Secure partner payment, fare alerts, and a Muslim-friendly hotel to match.</p></div></li>
+        </ol>
+      </section>
+
+      <Link href="/travel" className="hotel-cta flt-land-cta">
+        <span className="hcta-ico"><Icon name="bed" size={20} /></span>
+        <span className="hcta-text"><strong>Plan the whole trip</strong> — add a Muslim-friendly hotel with prayer rooms, halal dining nearby and alcohol-free stays, from Umrah hotels by the Haramain to family trips across Asia.</span>
+        <span className="hcta-go">Browse stays <Icon name="arrow" size={15} /></span>
+      </Link>
+
+      <section className="flt-land-faq">
+        <h2>Halal flight booking — your questions</h2>
+        <div className="flt-faq">
+          {FLT_FAQS.map(([q, a]) => (
+            <details key={q} className="flt-faq-item"><summary>{q}<span className="faq-chevron" aria-hidden="true" /></summary><p>{a}</p></details>
+          ))}
+        </div>
+      </section>
+
+      <p className="travel-disclaimer">Flights are provided via our travel partner. Confirm baggage allowance, times and fare rules before booking.</p>
+    </div>
+  );
+}
+
 /* ── search + results ─────────────────────────────────────────────────────── */
 export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
   const today = new Date();
@@ -420,14 +503,10 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
             </div>
           </div>
         ) : !items ? (
-          <div className="flight-info">
-            {[["clock", "Real-time prices", "We scan hundreds of airlines to show the lowest fares."], ["globe", "Flights everywhere", "Search routes worldwide — from city hops to long-haul Umrah journeys."], ["shield-check", "Plan the whole trip", "Pair your flights with a Muslim-friendly hotel in one place."]].map(([ic, h, b]) => (
-              <div key={h} className="flight-info-card"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
-            ))}
-          </div>
+          <FlightsLanding onRoute={(o, d) => { setFrom(o); setTo(d); runSearch(date, o, d); }} />
         ) : null}
 
-        <p className="travel-disclaimer" style={{ marginTop: 24 }}>Flights are provided via our travel partner. Confirm baggage allowance, times and fare rules before booking.</p>
+        {items ? <p className="travel-disclaimer" style={{ marginTop: 24 }}>Flights are provided via our travel partner. Confirm baggage allowance, times and fare rules before booking.</p> : null}
       </div>
     </div>
   );
