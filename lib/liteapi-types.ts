@@ -119,6 +119,27 @@ export interface FlightSearchBody {
   currency: string;
 }
 
+export interface FlightContactInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  phoneCountryCode?: string;
+}
+
+export interface FlightPassengerInput {
+  firstName: string;
+  lastName: string;
+  birthday: string; // YYYY-MM-DD
+  passengerType: number; // 0 adult, 1 child, 2 infant
+  documentType: string; // "passport"
+  documentNumber: string;
+  documentIssueCountry: string;
+  documentExpiry: string; // YYYY-MM-DD
+  gender?: string; // M | F
+  nationality?: string;
+}
+
 export interface PrebookResult {
   prebookId?: string;
   transactionId?: string;

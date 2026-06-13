@@ -131,10 +131,9 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
     <div className="pillbar" style={{ marginTop: 16, justifyContent: variant === "classic" ? "center" : "flex-start" }}>
       <button className="chip" onClick={() => navigate("map")}><Icon name="near" size={16} /> {t("chip.nearMe")}</button>
       <button className="chip" onClick={() => navigate("explore", { open: true })}>{t("chip.openNow")}</button>
-      <button className="chip" onClick={() => navigate("explore", { prayer: true })}>{t("chip.prayer")}</button>
-      <button className="chip" onClick={() => navigate("explore", { cat: "restaurants" })}>Restaurants</button>
-      <button className="chip" onClick={() => navigate("events")}><Icon name="calendar" size={15} /> {t("nav.events")}</button>
-      <button className="chip" onClick={() => navigate("explore", { family: true })}>{t("chip.family")}</button>
+      <button className="chip" onClick={() => navigate("explore", { prayer: true })}><Icon name="mosque" size={15} /> {t("chip.prayer")}</button>
+      <button className="chip" onClick={() => navigate("travel")}><Icon name="globe" size={15} /> Halal-friendly hotels</button>
+      <button className="chip" onClick={() => navigate("mosques")}><Icon name="crescent" size={15} /> Mosques</button>
     </div>
   );
 
@@ -155,6 +154,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
   }
 
   if (variant === "split") {
+    const placeCount = HHData.listings.length;
     return (
       <section className="hero hero--split">
         <div className="hh-wrap hero-split-grid">
@@ -162,13 +162,19 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
             <span className="eyebrow">{t("hero.eyebrow")}</span>
             <h1 className="hero-h1">{t("hero.h1")}</h1>
             <p className="hero-sub">{t("hero.sub")}</p>
-            <div style={{ marginTop: 18 }}><SearchBar value={q} onChange={setQ} onSubmit={doSearch} suggest placeholder={t("hero.search")} /></div>
+            <div className="hero-search"><SearchBar value={q} onChange={setQ} onSubmit={doSearch} suggest placeholder={t("hero.search")} /></div>
+            <p className="hero-trust">
+              <Icon name="shield-check" size={15} />
+              <span><b>MUIS-certified</b> · team-verified · community-trusted</span>
+              <span className="hero-trust-stat">{placeCount}+ places</span>
+            </p>
             {quickChips}
           </div>
-          <div className="hero-collage">
-            <ImagePh label="nasi padang" tone="gold" src={HHData.collage[0]} style={{ gridArea: "a" }} icon="utensils" priority sizes="(max-width: 768px) 60vw, 360px" />
-            <ImagePh label="kopi café" tone="emerald" src={HHData.collage[1]} style={{ gridArea: "b" }} icon="coffee" sizes="(max-width: 768px) 40vw, 220px" />
-            <ImagePh label="SG shophouse" tone="cream" src={HHData.collage[2]} style={{ gridArea: "c" }} icon="building" />
+          <div className="hero-collage" aria-hidden="true">
+            <ImagePh label="nasi padang" tone="gold" src={HHData.collage[0]} style={{ gridArea: "a" }} icon="utensils" sizes="(max-width: 520px) 50vw, (max-width: 880px) 60vw, 300px" />
+            <ImagePh label="kopi café" tone="emerald" src={HHData.collage[1]} style={{ gridArea: "b" }} icon="coffee" sizes="(max-width: 520px) 50vw, 220px" />
+            <ImagePh label="halal travel" tone="cream" src={HHData.collage[2]} style={{ gridArea: "c" }} icon="globe" sizes="220px" />
+            <span className="hero-collage-stat"><b>{placeCount}+</b> verified</span>
           </div>
         </div>
       </section>

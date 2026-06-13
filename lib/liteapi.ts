@@ -5,6 +5,8 @@ import type {
   LiteApiPlace,
   LiteApiAirport,
   FlightSearchBody,
+  FlightContactInput,
+  FlightPassengerInput,
   RatesSearchBody,
   PrebookResult,
   BookResult,
@@ -176,6 +178,69 @@ export async function searchFlights(body: FlightSearchBody): Promise<unknown[]> 
     body: JSON.stringify(body),
   });
   return Array.isArray(r.data) ? r.data : [];
+}
+
+/** Re-price/validate a flight offer before booking. Surfaces `changes` (price moves). */
+export async function verifyFlight(offerId: string): Promise<{ total?: number; currency?: string; changes?: unknown } | null> {
+  const r = await request<{ data?: { journey?: { pricing?: { display?: { total?: number; currency?: string } } }; changes?: unknown }[] }>(`/flights/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ offerId }),
+  });
+  const item = r.data?.[0];
+  if (!item) return null;
+  const d = item.journey?.pricing?.display;
+  return { total: d?.total, currency: d?.currency, changes: item.changes };
+}
+
+/** Flight prebook → opens the Stripe payment intent. Returns prebookId + handles. */
+export async function prebookFlight(offerId: string, contact: FlightContactInput, passengers: FlightPassengerInput[]): Promise<Record<string, unknown> | null> {
+  const r = await request<{ data?: Record<string, unknown>[] }>(`/flights/prebooks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ offerId, usePaymentSdk: true, contact, passengers }),
+  });
+  return r.data?.[0] ?? null;
+}
+
+export interface FlightBookOutcome {
+  booking: { bookingId?: string; bookingRef?: string; status?: string; paymentStatus?: string; pnr?: string } | null;
+  httpStatus: number;
+  errorCode?: number;
+  errorMessage?: string;
+}
+
+/** Complete a flight booking. Does NOT throw — returns the error code so the
+ *  route can apply the payment-captured-safe policy (idempotent retry on
+ *  55004/55029/45035, never surface a payment error after capture). */
+export async function bookFlight(prebookId: string, transactionId: string): Promise<FlightBookOutcome> {
+  const key = apiKey();
+  if (!key) return { booking: null, httpStatus: 0 };
+  let res: Response;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    res = await fetch(`${BASE}/flights/bookings`, {
+      method: "POST",
+      headers: { "X-API-Key": key, "Content-Type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ prebookId, payment: { method: "TRANSACTION_ID", transactionId } }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+  } catch {
+    return { booking: null, httpStatus: 0 };
+  }
+  const body = (await res.json().catch(() => ({}))) as { data?: { booking?: Record<string, unknown> }[]; error?: { code?: number; description?: string; message?: string } };
+  if (res.ok) {
+    const b = (body.data?.[0]?.booking || {}) as Record<string, unknown>;
+    const order = (b.order as Record<string, unknown> | undefined)?.reference as Record<string, unknown> | undefined;
+    const provider = order?.provider as Record<string, unknown> | undefined;
+    return {
+      booking: { bookingId: b.bookingId as string, bookingRef: b.bookingRef as string, status: b.status as string, paymentStatus: b.paymentStatus as string, pnr: provider?.pnr as string },
+      httpStatus: res.status,
+    };
+  }
+  return { booking: null, httpStatus: res.status, errorCode: body.error?.code, errorMessage: body.error?.description || body.error?.message };
 }
 
 export { LiteApiError };

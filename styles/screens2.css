@@ -98,7 +98,16 @@
 /* =========================== AUTH =========================== */
 .auth-screen { display:grid; grid-template-columns: 1fr 1fr; min-height:100vh; }
 @media (max-width:860px){ .auth-screen { grid-template-columns:1fr; } .auth-aside { display:none; } }
-.auth-aside { background: linear-gradient(160deg, var(--emerald), var(--emerald-700)); padding:40px; display:flex; flex-direction:column; }
+.auth-aside { background: linear-gradient(160deg, var(--emerald), var(--emerald-700)); padding:40px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; }
+.auth-hadith { margin:0; padding:8% 0; max-width:440px; position:relative; }
+.auth-hadith-mark { font-family:var(--serif); color:var(--gold); font-size:5.5rem; line-height:.4; display:block; height:.5em; opacity:.9; }
+.auth-hadith blockquote { font-family:var(--serif); font-style:italic; color:#fff; font-size:2rem; line-height:1.32; font-weight:500; margin:6px 0 0; letter-spacing:-.01em; text-wrap:balance; }
+.auth-hadith figcaption { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:22px; color:#CFE0DA; font-size:.95rem; font-weight:600; }
+.auth-hadith-rule { width:34px; height:2px; border-radius:2px; background:var(--gold); display:inline-block; }
+.auth-hadith-saw { color:var(--gold); font-size:1.05rem; }
+.auth-hadith figcaption small { flex-basis:100%; color:rgba(207,224,218,.7); font-weight:500; font-size:.82rem; margin-top:2px; margin-left:42px; }
+.auth-aside-foot { flex-shrink:0; }
+@media (max-height:760px){ .auth-hadith blockquote { font-size:1.6rem; } .auth-hadith { padding:5% 0; } }
 .auth-form { display:flex; align-items:center; justify-content:center; padding:40px 24px; position:relative; }
 .auth-back { position:absolute; top:20px; left:20px; }
 .auth-card { width:100%; max-width:400px; }

@@ -80,7 +80,12 @@ export function LoginScreen() {
     <div className="auth-screen">
       <div className="auth-aside hh-pattern">
         <Logo light onClick={()=>navigate('home')} />
-        <div style={{marginTop:'auto'}}>
+        <figure className="auth-hadith">
+          <span className="auth-hadith-mark" aria-hidden="true">&ldquo;</span>
+          <blockquote>The truthful, trustworthy merchant will be with the Prophets, the truthful, and the martyrs.</blockquote>
+          <figcaption><span className="auth-hadith-rule" aria-hidden="true" />Prophet Muhammad <span className="auth-hadith-saw" aria-label="peace be upon him">ﷺ</span><small>Jāmiʿ at-Tirmidhī 1209</small></figcaption>
+        </figure>
+        <div className="auth-aside-foot">
           <h2 style={{color:'#fff', fontSize:'1.9rem', maxWidth:360}}>Singapore’s most trusted halal directory</h2>
           <p style={{color:'#CFE0DA', marginTop:12, maxWidth:340}}>Save your favourite places, follow Muslim-owned businesses, and discover with confidence.</p>
           <div className="flex g8 wrap" style={{marginTop:18}}><Badge type="muis" lg/><Badge type="owned" lg/><Badge type="admin" lg/></div>
