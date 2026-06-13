@@ -86,12 +86,21 @@ export interface RatesSearchBody {
   occupancies: { adults: number; children?: number[] }[];
   countryCode?: string;
   cityName?: string;
+  placeId?: string;
   hotelIds?: string[];
   latitude?: number;
   longitude?: number;
   radius?: number;
   limit?: number;
   timeout?: number;
+}
+
+/** A place suggestion from /data/places. */
+export interface LiteApiPlace {
+  placeId: string;
+  displayName?: string;
+  formattedAddress?: string;
+  types?: string[];
 }
 
 export interface PrebookResult {

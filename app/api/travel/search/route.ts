@@ -27,8 +27,9 @@ export async function POST(req: Request) {
   }
   const cityName = String(body.cityName || "").trim();
   const countryCode = String(body.countryCode || "").trim();
+  const placeId = String(body.placeId || "").trim();
   const hotelIds = Array.isArray(body.hotelIds) ? (body.hotelIds as string[]).slice(0, 200) : undefined;
-  if (!cityName && !countryCode && !(hotelIds && hotelIds.length)) {
+  if (!cityName && !countryCode && !placeId && !(hotelIds && hotelIds.length)) {
     return NextResponse.json({ ok: false, error: "Tell us where to search" }, { status: 422 });
   }
 
@@ -40,8 +41,8 @@ export async function POST(req: Request) {
     occupancies: Array.isArray(body.occupancies) && body.occupancies.length
       ? (body.occupancies as { adults: number; children?: number[] }[])
       : [{ adults: 2 }],
-    ...(cityName ? { cityName } : {}),
-    ...(countryCode ? { countryCode } : {}),
+    ...(placeId ? { placeId } : cityName ? { cityName } : {}),
+    ...(!placeId && countryCode ? { countryCode } : {}),
     ...(hotelIds ? { hotelIds } : {}),
     limit: Math.min(50, Math.max(1, Number(body.limit) || 30)),
   };

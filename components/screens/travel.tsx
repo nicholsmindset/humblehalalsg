@@ -13,6 +13,7 @@ import {
   countryLabel,
   ratingWord,
   type Hotel,
+  type HotelFlags,
   type HotelReview,
   type HotelSentiment,
   type RateOffer,
@@ -113,41 +114,114 @@ function Crumbs({ trail }: { trail: { label: string; href?: string }[] }) {
   );
 }
 
+/* ── halal filters + destination autocomplete + occupancy ─────────────────── */
+
+const HOTEL_FILTERS: { key: keyof HotelFlags; label: string; alt?: keyof HotelFlags }[] = [
+  { key: "has_prayer_room", label: "Prayer room" },
+  { key: "halal_food_onsite", label: "Halal food", alt: "halal_food_nearby" },
+  { key: "alcohol_free", label: "Alcohol-free" },
+  { key: "women_only_facilities", label: "Women-only" },
+  { key: "near_mosque", label: "Near mosque" },
+];
+
+function matchesFilters(h: Hotel, active: string[]): boolean {
+  return active.every((k) => {
+    const f = HOTEL_FILTERS.find((x) => x.key === k);
+    if (!f) return true;
+    return h.flags[f.key] || (f.alt ? h.flags[f.alt] : false);
+  });
+}
+
+function FilterBar({ active, setActive }: { active: string[]; setActive: (a: string[]) => void }) {
+  const toggle = (k: string) => setActive(active.includes(k) ? active.filter((x) => x !== k) : [...active, k]);
+  return (
+    <div className="filter-bar">
+      <span className="filter-label"><Icon name="crescent" size={13} /> Halal filters</span>
+      {HOTEL_FILTERS.map((f) => (
+        <button key={f.key} type="button" className={`filter-chip ${active.includes(f.key) ? "on" : ""}`} onClick={() => toggle(f.key)}>{f.label}</button>
+      ))}
+      {active.length > 0 && <button type="button" className="filter-clear" onClick={() => setActive([])}>Clear</button>}
+    </div>
+  );
+}
+
+interface Dest { label: string; placeId?: string; cityName?: string; countryCode?: string; currency?: string }
+
+function PlaceAutocomplete({ cities, value, onPick }: { cities: TravelHub[]; value: Dest | null; onPick: (d: Dest) => void }) {
+  const [q, setQ] = useState(value?.label || "");
+  const [open, setOpen] = useState(false);
+  const [places, setPlaces] = useState<{ placeId: string; name: string; address: string }[]>([]);
+  useEffect(() => {
+    if (q.trim().length < 2) { setPlaces([]); return; }
+    const t = setTimeout(async () => {
+      try { const r = await fetch(`/api/travel/places?q=${encodeURIComponent(q)}`); const d = await r.json(); if (d.ok) setPlaces(d.places || []); } catch { /* ignore */ }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  const curated = cities.filter((c) => `${c.name} ${c.country}`.toLowerCase().includes(q.toLowerCase())).slice(0, 4);
+  return (
+    <div className="ac">
+      <input value={q} placeholder="City, landmark…" onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
+      {open && q.trim().length >= 2 && (curated.length > 0 || places.length > 0) && (
+        <div className="ac-list">
+          {curated.map((c) => (
+            <button key={c.slug} type="button" className="ac-item" onMouseDown={(e) => e.preventDefault()} onClick={() => { onPick({ label: `${c.name}, ${c.country}`, cityName: c.cityName, countryCode: c.countryCode, currency: c.currency }); setQ(`${c.name}, ${c.country}`); setOpen(false); }}>
+              <Icon name="crescent" size={13} /> <span>{c.name}<small> · {c.country}{c.umrah ? " · Umrah" : ""}</small></span>
+            </button>
+          ))}
+          {places.map((p) => (
+            <button key={p.placeId} type="button" className="ac-item" onMouseDown={(e) => e.preventDefault()} onClick={() => { onPick({ label: p.name, placeId: p.placeId }); setQ(p.name); setOpen(false); }}>
+              <Icon name="pin" size={13} /> <span>{p.name}<small> · {p.address}</small></span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── landing + search ────────────────────────────────────────────────────── */
 
 export function TravelScreen({ cities }: { cities: TravelHub[] }) {
   const today = new Date();
-  const [city, setCity] = useState(cities[0]?.slug || "");
+  const first = cities[0];
+  const [dest, setDest] = useState<Dest | null>(first ? { label: `${first.name}, ${first.country}`, cityName: first.cityName, countryCode: first.countryCode, currency: first.currency } : null);
   const [checkin, setCheckin] = useState(fmtDate(new Date(today.getTime() + 30 * 864e5)));
   const [checkout, setCheckout] = useState(fmtDate(new Date(today.getTime() + 32 * 864e5)));
+  const [rooms, setRooms] = useState(1);
   const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Hotel[] | null>(null);
   const [note, setNote] = useState("");
+  const [filters, setFilters] = useState<string[]>([]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const c = cities.find((x) => x.slug === city);
-    if (!c) return;
+    if (!dest) return;
     setLoading(true);
     setNote("");
+    const childAges = children > 0 ? Array(children).fill(8) : undefined;
+    const occ = Array.from({ length: rooms }, () => (childAges ? { adults, children: childAges } : { adults }));
     try {
       const res = await fetch("/api/travel/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cityName: c.cityName, countryCode: c.countryCode, checkin, checkout, currency: c.currency, guestNationality: "SG", occupancies: [{ adults }], limit: 24 }),
+        body: JSON.stringify({ placeId: dest.placeId, cityName: dest.cityName, countryCode: dest.countryCode, checkin, checkout, currency: dest.currency || "USD", guestNationality: "SG", occupancies: occ, limit: 30 }),
       });
       const data = await res.json();
       if (data.ok) {
         setResults(data.hotels as Hotel[]);
         if (data.simulated) setNote("Live rates aren't connected yet — browse destinations below.");
-        else if (!data.hotels.length) setNote("No hotels found for those dates. Try another city or dates.");
+        else if (!data.hotels.length) setNote("No hotels found for those dates. Try another destination or dates.");
       } else setNote(data.error || "Couldn't search right now.");
     } catch {
       setNote("Couldn't search right now.");
     }
     setLoading(false);
   };
+
+  const shown = results ? results.filter((h) => matchesFilters(h, filters)) : null;
 
   return (
     <div className="screen-in hh-page">
@@ -157,17 +231,16 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
           <span className="eyebrow" style={{ color: "#cfe0da" }}>Halal travel</span>
           <h1>Muslim-friendly hotels, worldwide</h1>
           <p className="sub">Prayer rooms, halal dining nearby and alcohol-free stays — from Umrah hotels by the Haramain to family trips across Asia.</p>
-          <form className="travel-search" onSubmit={submit}>
-            <div className="field">
-              <label htmlFor="t-city">Destination</label>
-              <select id="t-city" value={city} onChange={(e) => setCity(e.target.value)}>
-                {cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}, {c.country}</option>)}
-              </select>
-            </div>
+          <form className="travel-search v2" onSubmit={submit}>
+            <div className="field"><label>Destination</label><PlaceAutocomplete cities={cities} value={dest} onPick={setDest} /></div>
             <div className="field"><label htmlFor="t-in">Check-in</label><input id="t-in" type="date" value={checkin} onChange={(e) => setCheckin(e.target.value)} /></div>
             <div className="field"><label htmlFor="t-out">Check-out</label><input id="t-out" type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} /></div>
-            <div className="field"><label htmlFor="t-adults">Guests</label>
-              <select id="t-adults" value={adults} onChange={(e) => setAdults(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} adult{n > 1 ? "s" : ""}</option>)}</select>
+            <div className="field occ"><label>Rooms &amp; guests</label>
+              <div className="occ-row">
+                <select aria-label="Rooms" value={rooms} onChange={(e) => setRooms(Number(e.target.value))}>{[1, 2, 3].map((n) => <option key={n} value={n}>{n} room{n > 1 ? "s" : ""}</option>)}</select>
+                <select aria-label="Adults" value={adults} onChange={(e) => setAdults(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} adult{n > 1 ? "s" : ""}</option>)}</select>
+                <select aria-label="Children" value={children} onChange={(e) => setChildren(Number(e.target.value))}>{[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n} child{n !== 1 ? "ren" : ""}</option>)}</select>
+              </div>
             </div>
             <div className="field field-go"><label aria-hidden>&nbsp;</label><button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Searching…" : "Search hotels"}</button></div>
           </form>
@@ -178,11 +251,16 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
         {note ? <p className="muted" style={{ marginBottom: 14 }}>{note}</p> : null}
         {results && results.length > 0 && (
           <>
-            <div className="flex between center" style={{ marginBottom: 14 }}>
-              <h2 style={{ fontSize: "1.35rem" }}>{results.length} hotels</h2>
+            <FilterBar active={filters} setActive={setFilters} />
+            <div className="flex between center" style={{ margin: "14px 0" }}>
+              <h2 style={{ fontSize: "1.35rem" }}>{shown!.length} hotel{shown!.length !== 1 ? "s" : ""}</h2>
               <span className="muted" style={{ fontSize: ".86rem" }}>Most Muslim-friendly first</span>
             </div>
-            <div className="hotel-grid" style={{ marginBottom: 40 }}>{results.map((h) => <HotelCard key={h.id} hotel={h} />)}</div>
+            {shown!.length > 0 ? (
+              <div className="hotel-grid" style={{ marginBottom: 40 }}>{shown!.map((h) => <HotelCard key={h.id} hotel={h} />)}</div>
+            ) : (
+              <p className="muted" style={{ marginBottom: 40 }}>No hotels match those halal filters. Try removing one.</p>
+            )}
           </>
         )}
 
@@ -204,7 +282,9 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
 export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub; hotels: Hotel[]; faq: QA[]; related: TravelHub[] }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [open, setOpen] = useState<number | null>(0);
-  const points = hotels.filter((h) => h.coords).map((h) => ({ id: h.id, name: h.name, coords: h.coords! }));
+  const [filters, setFilters] = useState<string[]>([]);
+  const shown = hotels.filter((h) => matchesFilters(h, filters));
+  const points = shown.filter((h) => h.coords).map((h) => ({ id: h.id, name: h.name, coords: h.coords! }));
 
   return (
     <div className="screen-in hh-page">
@@ -217,8 +297,9 @@ export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub
       </section>
 
       <div className="hh-wrap hh-section">
-        <div className="flex between center" style={{ marginBottom: 16, gap: 10, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: "1.3rem" }}>{hotels.length ? `${hotels.length} Muslim-friendly hotels in ${hub.name}` : `Hotels in ${hub.name}`}</h2>
+        {hotels.length > 0 && <FilterBar active={filters} setActive={setFilters} />}
+        <div className="flex between center" style={{ margin: "14px 0 16px", gap: 10, flexWrap: "wrap" }}>
+          <h2 style={{ fontSize: "1.3rem" }}>{hotels.length ? `${shown.length} Muslim-friendly hotel${shown.length !== 1 ? "s" : ""} in ${hub.name}` : `Hotels in ${hub.name}`}</h2>
           {points.length > 0 && (
             <div className="flex g6">
               <button className={`chip ${view === "list" ? "active" : ""}`} onClick={() => setView("list")}>List</button>
@@ -229,10 +310,12 @@ export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub
 
         {hotels.length === 0 ? (
           <Empty icon="bed" title="Live hotels loading" body="Hotel availability for this city will appear here. Use the search on the Travel home to check live rates." />
+        ) : shown.length === 0 ? (
+          <p className="muted">No hotels match those halal filters. Try removing one.</p>
         ) : view === "map" && points.length ? (
           <div className="travel-map"><MapView center={hub.coords} zoom={12} points={points} /></div>
         ) : (
-          <div className="hotel-grid">{hotels.map((h) => <HotelCard key={h.id} hotel={h} />)}</div>
+          <div className="hotel-grid">{shown.map((h) => <HotelCard key={h.id} hotel={h} />)}</div>
         )}
 
         {faq.length > 0 && (

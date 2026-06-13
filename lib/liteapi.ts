@@ -2,6 +2,7 @@ import "server-only";
 import type {
   LiteApiHotelContent,
   LiteApiRatesHotel,
+  LiteApiPlace,
   RatesSearchBody,
   PrebookResult,
   BookResult,
@@ -89,6 +90,13 @@ export async function getHotelReviews(hotelId: string, limit = 50): Promise<unkn
 
 export async function getCountries(): Promise<{ code: string; name: string }[]> {
   const r = await request<{ data?: { code: string; name: string }[] }>(`/data/countries`);
+  return Array.isArray(r.data) ? r.data : [];
+}
+
+/** Global destination autocomplete (cities, landmarks, areas). */
+export async function searchPlaces(textQuery: string): Promise<LiteApiPlace[]> {
+  if (!textQuery.trim()) return [];
+  const r = await request<{ data?: LiteApiPlace[] }>(`/data/places${qs({ textQuery })}`);
   return Array.isArray(r.data) ? r.data : [];
 }
 

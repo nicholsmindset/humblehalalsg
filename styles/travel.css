@@ -48,6 +48,29 @@
 }
 .travel-search .btn { width: 100%; }
 @media (max-width: 880px) { .travel-search { grid-template-columns: 1fr 1fr; } .travel-search .field-go { grid-column: 1 / -1; } }
+.travel-search.v2 { grid-template-columns: 1.5fr 1fr 1fr 1.3fr auto; }
+@media (max-width: 880px) { .travel-search.v2 { grid-template-columns: 1fr 1fr; } }
+
+/* destination autocomplete */
+.ac { position: relative; }
+.ac > input { width: 100%; box-sizing: border-box; border: 1px solid var(--line-strong, #d8d0bf); border-radius: var(--r-sm, 10px); padding: 11px; font-size: .92rem; background: var(--cream, #faf7ef); color: var(--ink, #1f2933); }
+.ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40; background: #fff; border: 1px solid var(--line, #e7e1d4); border-radius: var(--r-md, 14px); box-shadow: var(--sh-md, 0 10px 26px rgba(0,0,0,.14)); overflow: hidden; max-height: 300px; overflow-y: auto; }
+.ac-item { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; padding: 10px 13px; background: none; border: none; cursor: pointer; font-size: .9rem; color: var(--ink, #1f2933); }
+.ac-item:hover { background: var(--emerald-50, #e8f1ee); }
+.ac-item svg { color: var(--emerald, #0f5c4a); flex: none; }
+.ac-item small { color: var(--ink-soft, #5a6470); font-weight: 500; }
+
+/* occupancy */
+.occ-row { display: flex; gap: 6px; }
+.occ-row select { flex: 1; min-width: 0; border: 1px solid var(--line-strong, #d8d0bf); border-radius: var(--r-sm, 10px); padding: 11px 6px; font-size: .84rem; background: var(--cream, #faf7ef); }
+
+/* halal filter bar */
+.filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filter-label { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 800; color: var(--emerald, #0f5c4a); margin-right: 2px; }
+.filter-chip { font-size: .82rem; font-weight: 700; padding: 7px 13px; border-radius: var(--r-pill, 999px); border: 1px solid var(--line-strong, #d8d0bf); background: var(--white, #fff); color: var(--ink-soft, #5a6470); cursor: pointer; transition: all .12s ease; }
+.filter-chip:hover { border-color: var(--emerald, #0f5c4a); }
+.filter-chip.on { background: var(--emerald, #0f5c4a); border-color: var(--emerald, #0f5c4a); color: #fff; }
+.filter-clear { font-size: .8rem; font-weight: 700; color: var(--ink-soft, #5a6470); background: none; border: none; cursor: pointer; text-decoration: underline; }
 
 /* ── hotel cards (rating + stars overlaid on photo) ──────────────────────── */
 .hotel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
