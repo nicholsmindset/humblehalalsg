@@ -390,3 +390,5 @@ body[data-accent="vibrant"] .tag { background:var(--gold-50); color:var(--gold-7
 .contact-quick a:hover { text-decoration:underline; }
 .contact-done { text-align:center; padding:18px 0; }
 .contact-done .empty-ico { margin:0 auto; }
+
+.legal-caveat { background:var(--gold-50,#fbf5e7); border:1px solid var(--gold-100,#f6ecd5); border-radius:var(--r-md,14px); padding:13px 16px; font-size:.86rem; color:var(--ink-soft,#5a6470); line-height:1.55; margin-bottom:22px; }

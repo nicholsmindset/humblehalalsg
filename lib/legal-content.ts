@@ -12,13 +12,15 @@ export interface LegalDoc {
   title: string;
   updated: string; // human-readable
   intro: string;
+  caveat?: string;
   sections: LegalSection[];
 }
 
 const OPERATOR = "ONN GROUP LLP";
 const ADDRESS = "60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051";
 const PRIVACY_EMAIL = "privacy@humblehalal.com";
-const UPDATED = "11 June 2026";
+const UPDATED = "13 June 2026";
+const CAVEAT = "This is a plain-language summary written in good faith and tailored to how the platform actually works. It is not legal advice — please have it reviewed by a qualified lawyer before relying on it.";
 
 export const legalDocs: Record<string, LegalDoc> = {
   privacy: {
@@ -26,6 +28,7 @@ export const legalDocs: Record<string, LegalDoc> = {
     title: "Privacy Policy",
     updated: UPDATED,
     intro: `Humble Halal is operated by ${OPERATOR} (“we”, “us”). This policy explains what personal data we collect, why, and your rights under Singapore's Personal Data Protection Act (PDPA).`,
+    caveat: CAVEAT,
     sections: [
       {
         h2: "What we collect",
@@ -48,16 +51,30 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
+        h2: "Travel bookings",
+        body: [
+          "When you book a hotel or flight, the booking and payment are handled by our travel partner LiteAPI (Nuitée), which acts as the merchant of record. The traveller and contact details you enter (name, email, phone, and for flights the passenger/document details required by the airline) are passed to LiteAPI and on to the relevant hotel or airline to fulfil and confirm your booking.",
+        ],
+      },
+      {
         h2: "Who we share it with",
         body: [
-          "We use trusted service providers (data intermediaries) only to the extent needed to operate the service:",
+          "We use trusted service providers (data intermediaries) only to the extent needed to operate the service. Each receives only the data required for its purpose:",
         ],
         bullets: [
-          "MailerLite — newsletter delivery.",
-          "Stripe — payment processing (only if you make a paid transaction).",
+          "MailerLite — newsletter delivery (email address).",
+          "Resend — transactional email such as booking, contact and alert emails (email address + message content).",
+          "Stripe — payment processing for our own paid plans, advertising and event tickets (only if you make such a transaction).",
+          "LiteAPI (Nuitée) — hotel and flight search, booking and payment as merchant of record (traveller, contact and passenger details).",
           "Supabase — database and storage (when account features are enabled).",
           "Vercel — website hosting.",
           "OneMap (Singapore Land Authority) — address lookup; OpenStreetMap — map tiles.",
+        ],
+      },
+      {
+        h2: "International transfers",
+        body: [
+          "Some of these providers process data outside Singapore (for example in the EU, UK or US). Where personal data is transferred overseas, we take reasonable steps so the recipient provides a standard of protection comparable to the PDPA, including through the provider's own contractual data-protection terms.",
         ],
       },
       {
@@ -76,9 +93,21 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Retention & security",
+        h2: "How long we keep it (retention)",
         body: [
-          "We keep personal data only as long as needed for the purposes above or as required by law, then delete or anonymise it. We apply reasonable security measures, but no system is perfectly secure.",
+          "We keep personal data only as long as needed for the purposes above or as required by law, then delete or anonymise it. As a guide:",
+        ],
+        bullets: [
+          "Newsletter subscribers — until you unsubscribe, then removed at the next clean-up.",
+          "Quote requests, business suggestions, claims and contact messages — up to about 12 months after they are resolved.",
+          "Reviews — kept while published; on account deletion we remove or anonymise them.",
+          "Booking records — kept as needed to support your trip and to meet tax/accounting obligations.",
+        ],
+      },
+      {
+        h2: "Security & data breaches",
+        body: [
+          "We apply reasonable technical and organisational security measures, but no system is perfectly secure. If a notifiable data breach occurs, we will assess it and notify the PDPC and affected individuals as required under the PDPA — in any case no later than 30 days after we determine the breach is notifiable.",
         ],
       },
       {
@@ -96,11 +125,31 @@ export const legalDocs: Record<string, LegalDoc> = {
     title: "PDPA Notice",
     updated: UPDATED,
     intro: `This notice summarises how ${OPERATOR} complies with Singapore's Personal Data Protection Act (PDPA) when you use Humble Halal. It complements our full Privacy Policy.`,
+    caveat: CAVEAT,
     sections: [
       {
-        h2: "Consent & purpose",
+        h2: "Consent & purpose limitation",
         body: [
-          "We collect, use and disclose personal data only for purposes you would reasonably expect — running the directory, sending content you requested, and processing your submissions — and we seek your consent where required.",
+          "We collect, use and disclose personal data only for the limited purposes you would reasonably expect, and we seek your consent where required. Those purposes are:",
+        ],
+        bullets: [
+          "Running the directory and your saved places.",
+          "Sending content and emails you asked for (newsletter, booking and contact emails, fare alerts).",
+          "Processing business submissions, claims, quote requests and contact messages.",
+          "Fulfilling hotel and flight bookings via our travel partner.",
+          "Moderating reviews and keeping the platform safe and accurate.",
+        ],
+      },
+      {
+        h2: "Accuracy",
+        body: [
+          "We make reasonable efforts to keep the personal data we use accurate and complete, and you can ask us to correct it at any time (see below).",
+        ],
+      },
+      {
+        h2: "Access & correction",
+        body: [
+          `To request a copy of the personal data we hold about you, or to correct it, email ${PRIVACY_EMAIL} with enough detail for us to locate your records. We will respond as soon as practicable, and in any case within 30 days; if we cannot, we will tell you when we can.`,
         ],
       },
       {
@@ -124,7 +173,13 @@ export const legalDocs: Record<string, LegalDoc> = {
       {
         h2: "Data breaches",
         body: [
-          "If a notifiable data breach occurs, we will assess and notify the PDPC and affected individuals as required under the PDPA's Data Breach Notification obligation.",
+          "If a notifiable data breach occurs, we will assess and notify the PDPC and affected individuals as required under the PDPA's Data Breach Notification obligation, no later than 30 days after determining it is notifiable.",
+        ],
+      },
+      {
+        h2: "Complaints",
+        body: [
+          `If you're not satisfied with how we've handled your personal data, please contact us first at ${PRIVACY_EMAIL} so we can put it right. You also have the right to lodge a complaint with the Personal Data Protection Commission (PDPC) at pdpc.gov.sg.`,
         ],
       },
     ],
@@ -135,6 +190,7 @@ export const legalDocs: Record<string, LegalDoc> = {
     title: "Terms of Service",
     updated: UPDATED,
     intro: `These terms govern your use of Humble Halal, operated by ${OPERATOR}. By using the site you agree to them.`,
+    caveat: CAVEAT,
     sections: [
       {
         h2: "What Humble Halal is",
@@ -163,9 +219,30 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Payments",
+        h2: "Payments & refunds (our paid plans)",
         body: [
-          "Paid plans, advertising and event tickets (where enabled) are processed by Stripe. Fees, billing cycles and refund terms are shown at the point of purchase.",
+          "Paid business plans, advertising and event tickets (where enabled) are processed by Stripe. Fees and billing cycles are shown at the point of purchase. Subscriptions renew until cancelled; you can cancel at any time and your plan runs to the end of the paid period. Where we offer a money-back guarantee, its terms are shown at checkout. To request a refund or cancel, contact us at hello@humblehalal.com.",
+        ],
+      },
+      {
+        h2: "Hotel & flight bookings (travel)",
+        bullets: [
+          "Hotel and flight bookings are provided through our travel partner LiteAPI (Nuitée), which acts as the merchant of record and processes payment — Humble Halal is not the seller of the travel product.",
+          "Prices, availability, baggage, times and fare rules can change until a booking is confirmed; the details shown at booking apply.",
+          "Cancellations, changes and refunds follow the specific hotel's or airline's policy shown before you pay. You can manage and cancel eligible bookings in My Trips; refunds (where due) are handled by the travel partner under that policy.",
+          "Always confirm Muslim-friendly facilities, meal arrangements and any specific halal requirements directly with the hotel or airline — see our Halal Disclaimer.",
+        ],
+      },
+      {
+        h2: "Service providers",
+        body: [
+          "We rely on third-party providers to operate the service, including Stripe (our paid plans), LiteAPI/Nuitée (travel bookings & payment), Resend and MailerLite (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
+        ],
+      },
+      {
+        h2: "Suspension & termination",
+        body: [
+          "We may suspend or remove listings, reviews or accounts that breach these terms, are fraudulent or unlawful, infringe others' rights, or harm the platform or its users. Where practical we'll give notice; serious cases may be actioned immediately.",
         ],
       },
       {
@@ -175,9 +252,9 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Governing law & contact",
+        h2: "Governing law & disputes",
         body: [
-          `These terms are governed by the laws of Singapore. Questions: ${PRIVACY_EMAIL}, ${OPERATOR}, ${ADDRESS}.`,
+          `These terms are governed by the laws of Singapore and you submit to the non-exclusive jurisdiction of the Singapore courts. We'd much rather resolve things informally first — please contact us at ${PRIVACY_EMAIL} or hello@humblehalal.com, ${OPERATOR}, ${ADDRESS}, and we'll work with you in good faith.`,
         ],
       },
     ],

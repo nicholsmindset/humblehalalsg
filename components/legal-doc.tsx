@@ -18,6 +18,9 @@ export function LegalDocView({ doc }: { doc: LegalDoc }) {
           </div>
         </section>
         <div className="hh-wrap hh-section legal-doc" style={{ maxWidth: 800 }}>
+          {doc.caveat && (
+            <p className="legal-caveat">{doc.caveat}</p>
+          )}
           {doc.sections.map((s) => (
             <section key={s.h2} className="legal-section">
               <h2>{s.h2}</h2>
