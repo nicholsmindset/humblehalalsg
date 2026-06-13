@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import { getServerFlags } from "@/lib/flags";
+import { amendBooking, liteapiConfigured } from "@/lib/liteapi";
+import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+
+/* Amend the lead guest name on the signed-in traveller's own hotel booking.
+   Verifies ownership before calling LiteAPI. Gated by PAID_HOTELS_ENABLED. */
+export async function POST(req: Request) {
+  if (!getServerFlags().paidHotels) return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
+
+  const body = (await req.json().catch(() => ({}))) as { id?: string; firstName?: string; lastName?: string };
+  const id = String(body.id || "").trim();
+  const firstName = String(body.firstName || "").trim();
+  const lastName = String(body.lastName || "").trim();
+  if (!id || !firstName || !lastName) return NextResponse.json({ ok: false, error: "Enter the corrected name" }, { status: 422 });
+
+  const server = await getSupabaseServer();
+  const admin = getSupabaseAdmin();
+  if (!server || !admin) return NextResponse.json({ ok: false, reason: "not_configured" });
+
+  const { data: { user } } = await server.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Please log in" }, { status: 401 });
+
+  const { data: bk } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
+  if (!bk || bk.user_id !== user.id) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
+
+  if (!liteapiConfigured() || !bk.liteapi_booking_id) {
+    await admin.from("hotel_bookings").update({ guest_name: `${firstName} ${lastName}` }).eq("id", id);
+    return NextResponse.json({ ok: true, simulated: true });
+  }
+
+  try {
+    await amendBooking(String(bk.liteapi_booking_id), { firstName, lastName });
+    await admin.from("hotel_bookings").update({ guest_name: `${firstName} ${lastName}` }).eq("id", id);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ ok: false, error: "Could not update the name on this booking." }, { status: 502 });
+  }
+}

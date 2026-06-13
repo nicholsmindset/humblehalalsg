@@ -437,6 +437,33 @@ function QiblaCard({ qibla }: { qibla: number }) {
   );
 }
 
+interface WxDay { date: string; tempMin?: number; tempMax?: number; precipitation?: number }
+function WeatherCard({ coords }: { coords: { lat: number; lng: number } }) {
+  const [days, setDays] = useState<WxDay[] | null>(null);
+  useEffect(() => {
+    let on = true;
+    fetch(`/api/travel/weather?lat=${coords.lat}&lng=${coords.lng}`).then((r) => r.json()).then((d) => { if (on && d.ok && Array.isArray(d.days)) setDays(d.days); }).catch(() => {});
+    return () => { on = false; };
+  }, [coords.lat, coords.lng]);
+  if (!days || days.length === 0) return null;
+  return (
+    <div className="muslim-card weather-card">
+      <h3 className="muslim-card-h"><Icon name="sun" size={15} /> Weather forecast</h3>
+      <div className="weather-row">
+        {days.slice(0, 6).map((d) => (
+          <div key={d.date} className="weather-cell">
+            <span className="wd">{new Date(d.date + "T00:00:00").toLocaleDateString("en", { weekday: "short" })}</span>
+            <span className="wt">{d.tempMax != null ? `${Math.round(d.tempMax)}°` : "—"}</span>
+            <span className="wl">{d.tempMin != null ? `${Math.round(d.tempMin)}°` : ""}</span>
+            {d.precipitation ? <span className="wp">{Math.round(d.precipitation)}mm</span> : <span className="wp dry">·</span>}
+          </div>
+        ))}
+      </div>
+      <p className="muslim-card-f">Forecast to help plan your trip · °C</p>
+    </div>
+  );
+}
+
 function SentimentBlock({ sentiment }: { sentiment: HotelSentiment }) {
   return (
     <div className="sentiment">
@@ -569,10 +596,11 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
 
               {hotel.guestRating ? <div className="rating-block"><RatingBadge score={hotel.guestRating} count={hotel.reviewCount} size="lg" /></div> : null}
 
-              {(prayer || qibla != null) && (
+              {(prayer || qibla != null || hotel.coords) && (
                 <div className="muslim-cards">
                   {prayer && <PrayerCard prayer={prayer} />}
                   {qibla != null && <QiblaCard qibla={qibla} />}
+                  {hotel.coords && <WeatherCard coords={hotel.coords} />}
                 </div>
               )}
 
@@ -889,6 +917,19 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
     }
     setBusy(null);
   };
+  const amend = async (id: string) => {
+    const name = typeof window !== "undefined" ? window.prompt("Correct the lead guest name (First Last) exactly as on their ID:") : "";
+    if (!name || !name.trim().includes(" ")) { if (name != null) setErr("Enter the full name as First Last."); return; }
+    const [firstName, ...rest] = name.trim().split(/\s+/);
+    setBusy(id); setErr("");
+    try {
+      const r = await fetch("/api/travel/amend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, firstName, lastName: rest.join(" ") }) });
+      const d = await r.json();
+      if (!d.ok) setErr(d.error || "Could not update the name.");
+      else setErr("");
+    } catch { setErr("Could not update the name."); }
+    setBusy(null);
+  };
 
   return (
     <div className="screen-in hh-page">
@@ -915,7 +956,12 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
                   </div>
                   <div className="trip-side">
                     {b.retail_total != null ? <div className="trip-total">{b.currency || ""} {Math.round(Number(b.retail_total))}</div> : null}
-                    {b.status === "confirmed" && <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => cancel(b.id)}>{busy === b.id ? "Cancelling…" : "Cancel"}</button>}
+                    {b.status === "confirmed" && (
+                      <div className="trip-actions">
+                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => amend(b.id)}>Edit name</button>
+                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => cancel(b.id)}>{busy === b.id ? "Working…" : "Cancel"}</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

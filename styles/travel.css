@@ -501,3 +501,16 @@
 .flt-nearby-label { font-size:.84rem; font-weight:700; color:var(--ink-soft); }
 .flt-nearby-chip { font-size:.8rem; font-weight:700; padding:6px 12px; border-radius:var(--r-pill); border:1px solid var(--line-strong); background:var(--white); color:var(--emerald); cursor:pointer; }
 .flt-nearby-chip:hover { border-color:var(--emerald); background:var(--emerald-50); }
+
+/* ── Wave 4 — destination weather card (hotel detail) ────────────────────── */
+.weather-card { grid-column: 1 / -1; background: var(--gold-50, #fbf5e7); border-color: var(--gold-100, #f6ecd5); }
+.weather-card .muslim-card-h { color: var(--gold-700, #b98b36); }
+.weather-row { display: flex; gap: 8px; overflow-x: auto; }
+.weather-cell { flex: 1 0 auto; min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; background: var(--white, #fff); border: 1px solid var(--gold-100, #f6ecd5); border-radius: var(--r-sm, 10px); }
+.weather-cell .wd { font-size: .72rem; font-weight: 700; color: var(--ink-soft, #5a6470); }
+.weather-cell .wt { font-size: 1.05rem; font-weight: 800; color: var(--ink, #1f2933); }
+.weather-cell .wl { font-size: .76rem; color: var(--ink-faint, #6c7682); }
+.weather-cell .wp { font-size: .68rem; color: var(--emerald, #0f5c4a); font-weight: 700; }
+.weather-cell .wp.dry { color: var(--ink-faint, #b3aa98); }
+
+.trip-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }

@@ -144,6 +144,16 @@ export async function cancelBooking(bookingId: string): Promise<{ status?: strin
   return r.data ?? null;
 }
 
+/** Amend the lead guest's name/email on a hotel booking. LiteAPI /bookings/{id}/amend. */
+export async function amendBooking(bookingId: string, fields: { firstName?: string; lastName?: string; email?: string }): Promise<{ status?: string } | null> {
+  const r = await request<{ data?: { status?: string } }>(`/bookings/${encodeURIComponent(bookingId)}/amend`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  });
+  return r.data ?? null;
+}
+
 /* ── AI + pricing ───────────────────────────────────────────────────────── */
 
 /** "Ask AI about this hotel" — natural-language Q&A over the hotel's own info. */
@@ -160,6 +170,35 @@ export async function askHotel(hotelId: string, query: string, allowWebSearch = 
 export async function cityPriceIndex(countryCode: string, cityName: string, fromDate?: string, toDate?: string): Promise<{ day: string; avgPriceUsd: number }[]> {
   const r = await request<{ prices?: { day: string; avgPriceUsd: number }[] }>(`/prices/city${qs({ countryCode, cityName, fromDate, toDate })}`);
   return Array.isArray(r.prices) ? r.prices : [];
+}
+
+export interface DailyWeather { date: string; tempMin?: number; tempMax?: number; humidity?: number; precipitation?: number; units: string }
+
+/** Daily weather forecast for a location (trip planning). LiteAPI /data/weather. */
+export async function getWeather(lat: number, lng: number, startDate: string, endDate: string): Promise<DailyWeather[]> {
+  const r = await request<{ weatherData?: { dailyWeather?: Record<string, unknown> }[] }>(`/data/weather${qs({ latitude: lat, longitude: lng, startDate, endDate })}`);
+  const list = Array.isArray(r.weatherData) ? r.weatherData : [];
+  return list.map((w) => {
+    const d = (w.dailyWeather || {}) as Record<string, unknown>;
+    const t = (d.temperature || {}) as Record<string, unknown>;
+    const h = (d.humidity || {}) as Record<string, unknown>;
+    const p = (d.precipitation || {}) as Record<string, unknown>;
+    const n = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : undefined);
+    return { date: String(d.date || ""), tempMin: n(t.min), tempMax: n(t.max), humidity: n(h.afternoon), precipitation: n(p.total), units: String(d.units || "metric") };
+  }).filter((x) => x.date);
+}
+
+/** Cheapest available rate per hotel (for "from $X" labels). LiteAPI /hotels/min-rates. */
+export async function minRates(hotelIds: string[], checkin: string, checkout: string, guestNationality: string, currency = "USD", adults = 2): Promise<Record<string, { price: number; offerId?: string }>> {
+  if (!hotelIds.length) return {};
+  const r = await request<{ data?: { hotelId: string; price: number; offerId?: string }[] }>(`/hotels/min-rates`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hotelIds: hotelIds.slice(0, 200), checkin, checkout, occupancies: [{ adults }], guestNationality, currency }),
+  });
+  const out: Record<string, { price: number; offerId?: string }> = {};
+  for (const x of r.data || []) if (x.hotelId && Number.isFinite(Number(x.price))) out[x.hotelId] = { price: Number(x.price), offerId: x.offerId };
+  return out;
 }
 
 /* ── flights ────────────────────────────────────────────────────────────── */

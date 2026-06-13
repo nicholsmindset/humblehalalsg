@@ -22,6 +22,7 @@ import { useApp } from "./app-context";
 const ICONS: Record<string, string> = {
   search: "M11 19a8 8 0 100-16 8 8 0 000 16zm10 2l-4.3-4.3",
   plane: "M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z",
+  sun: "M12 17a5 5 0 100-10 5 5 0 000 10zM12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4",
   briefcase: "M3 8h18v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm5 0V6a2 2 0 012-2h4a2 2 0 012 2v2",
   moon: "M16.5 16.5A7 7 0 119.5 4 5.6 5.6 0 0016.5 16.5z",
   home: "M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10",
