@@ -14,8 +14,12 @@ import {
   ratingWord,
   type Hotel,
   type HotelReview,
+  type HotelSentiment,
   type RateOffer,
+  type RoomGroup,
 } from "@/lib/halal-hotels";
+import { compassLabel } from "@/lib/qibla";
+import type { PrayerTimesResult } from "@/lib/prayer";
 import type { TravelHub } from "@/lib/travel-hubs";
 import type { QA } from "@/lib/faq";
 
@@ -258,12 +262,116 @@ export function TravelCityScreen({ hub, hotels, faq, related }: { hub: TravelHub
 
 interface NearPlace { name: string; lat: number; lng: number; distanceM: number; cuisine?: string }
 function dist(m: number) { return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`; }
-export function TravelHotelScreen({ hotel, images, offers, reviews, mosques, halalFood, bookingEnabled }: { hotel: Hotel; images: string[]; offers: RateOffer[]; reviews: HotelReview[]; mosques: NearPlace[]; halalFood: NearPlace[]; bookingEnabled: boolean }) {
+
+const HOTEL_TABS: [string, string][] = [["overview", "Overview"], ["amenities", "Facilities"], ["rooms", "Rooms"], ["reviews", "Reviews"], ["location", "Location"]];
+function HotelTabs() {
+  return (
+    <nav className="hotel-tabs">
+      <div className="hh-wrap inner">{HOTEL_TABS.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</div>
+    </nav>
+  );
+}
+
+function PrayerCard({ prayer }: { prayer: PrayerTimesResult }) {
+  const rows: [string, string][] = [["Fajr", prayer.fajr], ["Dhuhr", prayer.dhuhr], ["Asr", prayer.asr], ["Maghrib", prayer.maghrib], ["Isha", prayer.isha]];
+  return (
+    <div className="muslim-card">
+      <h3 className="muslim-card-h"><Icon name="clock" size={15} /> Prayer times today</h3>
+      <div className="prayer-row">{rows.map(([n, t]) => <div key={n} className="prayer-cell"><span className="pn">{n}</span><span className="pt">{t}</span></div>)}</div>
+      <p className="muslim-card-f">Iftar at Maghrib {prayer.maghrib} · Suhoor ends Fajr {prayer.fajr}{prayer.timezone ? ` · ${prayer.timezone}` : ""}</p>
+    </div>
+  );
+}
+
+function QiblaCard({ qibla }: { qibla: number }) {
+  return (
+    <div className="muslim-card qibla-card">
+      <h3 className="muslim-card-h"><Icon name="crescent" size={15} /> Qibla direction</h3>
+      <div className="qibla-body">
+        <div className="qibla-dial"><span className="qibla-arrow" style={{ transform: `rotate(${qibla}deg)` }} /></div>
+        <div><div className="qibla-deg">{Math.round(qibla)}°</div><div className="muted" style={{ fontSize: ".82rem" }}>{compassLabel(qibla)} — toward the Kaaba</div></div>
+      </div>
+    </div>
+  );
+}
+
+function SentimentBlock({ sentiment }: { sentiment: HotelSentiment }) {
+  return (
+    <div className="sentiment">
+      {sentiment.pros.length > 0 && (
+        <div className="sent-likes">
+          <span className="sent-likes-h">What guests liked</span>
+          <div className="halal-flags" style={{ marginTop: 8 }}>{sentiment.pros.slice(0, 8).map((p) => <span key={p} className="halal-flag"><Icon name="check" size={11} /> {p}</span>)}</div>
+        </div>
+      )}
+      {sentiment.categories.length > 0 && (
+        <div className="sent-cats">{sentiment.categories.slice(0, 8).map((c) => (
+          <div key={c.name} className="sent-cat"><span className="sc-name">{c.name}</span><span className="sc-bar"><span className="sc-fill" style={{ width: `${Math.min(100, c.rating * 10)}%` }} /></span><span className="sc-val">{c.rating.toFixed(1)}</span></div>
+        ))}</div>
+      )}
+    </div>
+  );
+}
+
+function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hotel: Hotel; bookingEnabled: boolean }) {
+  const [pi, setPi] = useState(0);
+  const photos = group.photos.length ? group.photos : hotel.image ? [hotel.image] : [];
+  const href = (offerId: string) => `/travel/booking?offerId=${encodeURIComponent(offerId)}&hotelId=${encodeURIComponent(hotel.id)}&hotel=${encodeURIComponent(hotel.name)}&city=${encodeURIComponent(hotel.city || "")}`;
+  return (
+    <div className="room-card">
+      <div className="room-media">
+        {photos.length > 0 ? (
+          <div className="room-photo">
+            <img src={photos[pi % photos.length]} alt={group.name} loading="lazy" />
+            {photos.length > 1 && (
+              <>
+                <button type="button" className="rm-nav prev" onClick={() => setPi((p) => (p - 1 + photos.length) % photos.length)} aria-label="Previous photo">‹</button>
+                <button type="button" className="rm-nav next" onClick={() => setPi((p) => (p + 1) % photos.length)} aria-label="Next photo">›</button>
+                <span className="rm-count">{(pi % photos.length) + 1}/{photos.length}</span>
+              </>
+            )}
+          </div>
+        ) : <div className="room-photo empty" aria-hidden />}
+        <div className="room-meta">
+          <div className="room-name">{group.name}</div>
+          <div className="room-facts">
+            {group.sizeSqm ? <span>{group.sizeSqm} {group.sizeUnit || "m²"}</span> : null}
+            {group.sleeps ? <span><Icon name="user" size={13} /> Sleeps {group.sleeps}</span> : null}
+          </div>
+          {group.amenities.length > 0 && <div className="room-amen">{group.amenities.slice(0, 4).map((a) => <span key={a}>{a}</span>)}</div>}
+        </div>
+      </div>
+      <div className="room-options">
+        {group.options.map((o) => (
+          <div key={o.offerId} className="room-opt">
+            <div className="ro-board">
+              <span className="ro-board-name">{o.board}</span>
+              <span className={o.refundable ? "tag-good" : "muted"} style={{ fontSize: ".8rem" }}>{o.refundable ? "Free cancellation" : "Non-refundable"}</span>
+            </div>
+            <div className="ro-price">
+              {o.discountPct ? <span className="ro-off">{o.discountPct}% OFF</span> : null}
+              <span className="ro-amount">{o.currency || ""} {o.price != null ? Math.round(o.price) : "—"}</span>
+              {o.original ? <span className="ro-was">{o.currency || ""} {Math.round(o.original)}</span> : null}
+            </div>
+            {bookingEnabled ? <Link className="btn btn-primary btn-sm" href={href(o.offerId)}>Reserve</Link> : <Link className="btn btn-soft btn-sm" href="/quotes?category=travel">Enquire</Link>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, mosques, halalFood, prayer, sentiment, qibla, bookingEnabled }: { hotel: Hotel; images: string[]; offers: RateOffer[]; roomGroups: RoomGroup[]; reviews: HotelReview[]; mosques: NearPlace[]; halalFood: NearPlace[]; prayer: PrayerTimesResult | null; sentiment: HotelSentiment | null; qibla: number | null; bookingEnabled: boolean }) {
   const flags = activeFlagLabels(hotel.flags);
   const gallery = images.slice(0, 5);
-  const cheapest = offers.filter((o) => o.price != null).sort((a, b) => (a.price! - b.price!))[0];
-  const ctaHref = (o: RateOffer) =>
-    `/travel/booking?offerId=${encodeURIComponent(o.offerId)}&hotelId=${encodeURIComponent(hotel.id)}&hotel=${encodeURIComponent(hotel.name)}&city=${encodeURIComponent(hotel.city || "")}`;
+  const allOptionPrices = roomGroups.flatMap((g) => g.options).filter((o) => o.price != null);
+  const cheapestOpt = allOptionPrices.sort((a, b) => a.price! - b.price!)[0];
+  const cheapestFlat = offers.filter((o) => o.price != null).sort((a, b) => a.price! - b.price!)[0];
+  const cheapest = cheapestOpt
+    ? { price: cheapestOpt.price!, currency: cheapestOpt.currency }
+    : cheapestFlat
+      ? { price: cheapestFlat.price!, currency: cheapestFlat.currency }
+      : null;
 
   return (
     <div className="screen-in hh-page">
@@ -277,79 +385,68 @@ export function TravelHotelScreen({ hotel, images, offers, reviews, mosques, hal
       />
       <div className="hh-wrap hh-section">
         {gallery.length > 0 && (
-          <div className="travel-gallery" style={{ marginBottom: 18 }}>
+          <div className="travel-gallery" style={{ marginBottom: 14 }}>
             {gallery.map((src, i) => <img key={i} src={src} alt={`${hotel.name} ${i + 1}`} loading={i === 0 ? "eager" : "lazy"} />)}
           </div>
         )}
-
+      </div>
+      <HotelTabs />
+      <div className="hh-wrap hh-section">
         <div className="hotel-detail-grid">
           <div>
-            <div className="flex g10 center wrap" style={{ marginBottom: 4 }}>
-              <Stars n={hotel.stars} />
-              <HalalChip hotel={hotel} />
-            </div>
-            <h1 style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)" }}>{hotel.name}</h1>
-            <div className="loc" style={{ margin: "6px 0 14px" }}><Icon name="pin" size={14} /> {hotel.address || hotel.city}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}</div>
-
-            {hotel.guestRating ? (
-              <div className="rating-block">
-                <RatingBadge score={hotel.guestRating} count={hotel.reviewCount} size="lg" />
+            <div id="overview" style={{ scrollMarginTop: 70 }}>
+              <div className="flex g10 center wrap" style={{ marginBottom: 4 }}>
+                <Stars n={hotel.stars} />
+                <HalalChip hotel={hotel} />
               </div>
-            ) : null}
+              <h1 style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)" }}>{hotel.name}</h1>
+              <div className="loc" style={{ margin: "6px 0 14px" }}><Icon name="pin" size={14} /> {hotel.address || hotel.city}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}</div>
 
-            {!hotel.verified && flags.length > 0 && (
-              <p className="halal-unverified" style={{ marginTop: 14 }}>Muslim-friendly facilities below are derived from the hotel's own information and not yet verified by our team.</p>
-            )}
-            {flags.length > 0 && (
-              <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={13} /> {l}</span>)}</div>
-            )}
+              {hotel.guestRating ? <div className="rating-block"><RatingBadge score={hotel.guestRating} count={hotel.reviewCount} size="lg" /></div> : null}
 
-            {hotel.descriptionHtml ? (
-              <div className="hotel-desc" dangerouslySetInnerHTML={{ __html: hotel.descriptionHtml }} />
-            ) : hotel.description ? (
-              <p className="hotel-desc">{hotel.description}</p>
-            ) : null}
+              {(prayer || qibla != null) && (
+                <div className="muslim-cards">
+                  {prayer && <PrayerCard prayer={prayer} />}
+                  {qibla != null && <QiblaCard qibla={qibla} />}
+                </div>
+              )}
+
+              {!hotel.verified && flags.length > 0 && (
+                <p className="halal-unverified" style={{ marginTop: 14 }}>Muslim-friendly facilities below are derived from the hotel's own information and not yet verified by our team.</p>
+              )}
+              {flags.length > 0 && (
+                <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={13} /> {l}</span>)}</div>
+              )}
+
+              {hotel.descriptionHtml ? (
+                <div className="hotel-desc" dangerouslySetInnerHTML={{ __html: hotel.descriptionHtml }} />
+              ) : hotel.description ? (
+                <p className="hotel-desc">{hotel.description}</p>
+              ) : null}
+            </div>
 
             {hotel.amenities && hotel.amenities.length > 0 && (
-              <section style={{ marginBottom: 26 }}>
+              <section id="amenities" style={{ marginBottom: 26, scrollMarginTop: 70 }}>
                 <h2 style={{ fontSize: "1.2rem", marginBottom: 12 }}>Amenities</h2>
                 <div className="amenity-grid">{hotel.amenities.map((a) => <span key={a} className="amenity"><Icon name="check" size={14} /> {a}</span>)}</div>
               </section>
             )}
 
-            <section id="rooms" style={{ marginBottom: 26 }}>
+            <section id="rooms" style={{ marginBottom: 26, scrollMarginTop: 70 }}>
               <h2 style={{ fontSize: "1.2rem", marginBottom: 12 }}>Choose your room</h2>
-              {offers.length === 0 ? (
-                <p className="muted">Live rates aren't available for the selected dates. Try the search on the Travel home.</p>
+              {roomGroups.length > 0 ? (
+                <div className="room-cards">{roomGroups.map((g) => <RoomGroupCard key={g.name} group={g} hotel={hotel} bookingEnabled={bookingEnabled} />)}</div>
               ) : (
-                <div className="rooms-list">
-                  {offers.slice(0, 12).map((o) => (
-                    <div key={o.offerId} className="room-row">
-                      <div className="room-info">
-                        <div className="room-name">{o.name}</div>
-                        <div className="room-tags">
-                          {o.refundable ? <span className="tag-good"><Icon name="check" size={12} /> Free cancellation</span> : <span className="muted" style={{ fontSize: ".82rem" }}>Non-refundable</span>}
-                        </div>
-                      </div>
-                      <div className="room-cta">
-                        {o.price != null ? <div className="room-price">{o.currency || ""} {Math.round(o.price)}<small>total</small></div> : null}
-                        {bookingEnabled ? (
-                          <Link className="btn btn-primary btn-sm" href={ctaHref(o)}>Reserve</Link>
-                        ) : (
-                          <Link className="btn btn-soft btn-sm" href="/quotes?category=travel">Enquire</Link>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="muted">Live rates aren't available for the selected dates. Try the search on the Travel home.</p>
               )}
-              {!bookingEnabled && <p className="muted" style={{ fontSize: ".84rem", marginTop: 10 }}>Online booking is opening soon — enquire and we'll help you book.</p>}
+              {!bookingEnabled && roomGroups.length > 0 && <p className="muted" style={{ fontSize: ".84rem", marginTop: 10 }}>Online booking is opening soon — enquire and we'll help you book.</p>}
             </section>
 
-            {reviews.length > 0 && (
-              <section style={{ marginBottom: 26 }}>
+            {(reviews.length > 0 || sentiment) && (
+              <section id="reviews" style={{ marginBottom: 26, scrollMarginTop: 70 }}>
                 <h2 style={{ fontSize: "1.2rem", marginBottom: 12 }}>Guest reviews</h2>
-                <div className="reviews-grid">
+                {sentiment && <SentimentBlock sentiment={sentiment} />}
+                <div className="reviews-grid" style={{ marginTop: sentiment ? 18 : 0 }}>
                   {reviews.slice(0, 6).map((r, i) => (
                     <div key={i} className="review-card">
                       <div className="review-top">
@@ -402,7 +499,7 @@ export function TravelHotelScreen({ hotel, images, offers, reviews, mosques, hal
             )}
 
             {hotel.coords && (
-              <section style={{ marginBottom: 12 }}>
+              <section id="location" style={{ marginBottom: 12, scrollMarginTop: 70 }}>
                 <h2 style={{ fontSize: "1.2rem", marginBottom: 10 }}>Location</h2>
                 <div className="travel-map sm">
                   <MapView

@@ -5,6 +5,7 @@ import { hotelDetail } from "@/lib/travel-data";
 import { getServerFlags } from "@/lib/flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
+import { qiblaBearing } from "@/lib/qibla";
 
 function defaultDates() {
   const t = Date.now();
@@ -57,7 +58,19 @@ export default async function Page({
           ]),
         ]}
       />
-      <TravelHotelScreen hotel={d.hotel} images={d.images} offers={d.offers} reviews={d.reviews} mosques={d.mosques} halalFood={d.halalFood} bookingEnabled={bookingEnabled} />
+      <TravelHotelScreen
+        hotel={d.hotel}
+        images={d.images}
+        offers={d.offers}
+        roomGroups={d.roomGroups}
+        reviews={d.reviews}
+        mosques={d.mosques}
+        halalFood={d.halalFood}
+        prayer={d.prayer}
+        sentiment={d.sentiment}
+        qibla={d.hotel.coords ? qiblaBearing(d.hotel.coords.lat, d.hotel.coords.lng) : null}
+        bookingEnabled={bookingEnabled}
+      />
     </>
   );
 }

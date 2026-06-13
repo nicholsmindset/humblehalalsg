@@ -2,14 +2,19 @@ import "server-only";
 import { getHotel, getHotelReviews, getHotelsByCity, searchRates } from "./liteapi";
 import { getSupabaseAdmin } from "./supabase/server";
 import {
+  groupRooms,
   hotelFromContent,
   offersFromRatesHotel,
   type Hotel,
   type HotelReview,
+  type HotelSentiment,
   type OverlayRow,
   type RateOffer,
+  type RoomGroup,
 } from "./halal-hotels";
 import { nearbyPlaces, type NearbyPlace } from "./mosques-nearby";
+import { getPrayerTimes, type PrayerTimesResult } from "./prayer";
+import type { LiteApiHotelContent, LiteApiRatesHotel } from "./liteapi-types";
 import type { TravelCity } from "./travel-locations";
 
 /* Server-side travel data: LiteAPI content/rates merged with our Supabase
@@ -46,9 +51,28 @@ export interface HotelDetail {
   hotel: Hotel;
   images: string[];
   offers: RateOffer[];
+  roomGroups: RoomGroup[];
   reviews: HotelReview[];
   mosques: NearbyPlace[];
   halalFood: NearbyPlace[];
+  prayer: PrayerTimesResult | null;
+  sentiment: HotelSentiment | null;
+}
+
+function parseSentiment(content: LiteApiHotelContent): HotelSentiment | null {
+  const sa = (content.sentiment_analysis || content.sentimentAnalysis) as
+    | { pros?: unknown; cons?: unknown; categories?: unknown }
+    | undefined;
+  if (!sa) return null;
+  const strArr = (v: unknown) => (Array.isArray(v) ? v.map(String) : []);
+  const cats = Array.isArray(sa.categories)
+    ? (sa.categories as Record<string, unknown>[])
+        .map((c) => ({ name: String(c.name || ""), rating: Number(c.rating) || 0, description: c.description ? String(c.description) : undefined }))
+        .filter((c) => c.name && c.rating)
+    : [];
+  const pros = strArr(sa.pros);
+  if (!cats.length && !pros.length) return null;
+  return { pros, cons: strArr(sa.cons), categories: cats };
 }
 
 function normalizeReviews(raw: unknown[]): HotelReview[] {
@@ -85,41 +109,31 @@ export async function hotelDetail(
   const ov = await overlayFor([id]);
   const hotel = hotelFromContent(content, ov.get(id));
   const images = ((content.hotelImages || []).map((im) => im?.url).filter(Boolean) as string[]);
+  const sentiment = parseSentiment(content);
 
-  let offers: RateOffer[] = [];
-  if (dates) {
-    try {
-      const hits = await searchRates({
-        checkin: dates.checkin,
-        checkout: dates.checkout,
-        currency: dates.currency,
-        guestNationality: "SG",
-        occupancies: [{ adults: 2 }],
-        hotelIds: [id],
-        limit: 1,
-      });
-      const hit = hits.find((h) => h.id === id) || hits[0];
-      if (hit) offers = offersFromRatesHotel(hit);
-    } catch {
-      /* rates best-effort */
-    }
-  }
+  // Fire the independent network calls in parallel — keeps the page fast.
+  const ratesP: Promise<LiteApiRatesHotel | null> = dates
+    ? searchRates({ checkin: dates.checkin, checkout: dates.checkout, currency: dates.currency, guestNationality: "SG", occupancies: [{ adults: 2 }], hotelIds: [id], limit: 1 })
+        .then((hits) => hits.find((h) => h.id === id) || hits[0] || null)
+        .catch(() => null)
+    : Promise.resolve(null);
+  const reviewsP = getHotelReviews(id, 18).then(normalizeReviews).catch(() => [] as HotelReview[]);
+  const placesP = hotel.coords ? nearbyPlaces(hotel.coords.lat, hotel.coords.lng) : Promise.resolve({ mosques: [], halalFood: [] });
+  const prayerP = hotel.coords ? getPrayerTimes(hotel.coords.lat, hotel.coords.lng, hotel.country) : Promise.resolve(null);
 
-  let reviews: HotelReview[] = [];
-  try {
-    reviews = normalizeReviews(await getHotelReviews(id, 12));
-  } catch {
-    /* reviews best-effort */
-  }
-
-  const places = hotel.coords ? await nearbyPlaces(hotel.coords.lat, hotel.coords.lng) : { mosques: [], halalFood: [] };
+  const [hit, reviews, places, prayer] = await Promise.all([ratesP, reviewsP, placesP, prayerP]);
+  const offers = hit ? offersFromRatesHotel(hit) : [];
+  const roomGroups = hit ? groupRooms(hit, content.rooms || []) : [];
 
   return {
     hotel,
     images: images.length ? images : hotel.image ? [hotel.image] : [],
     offers,
+    roomGroups,
     reviews,
     mosques: places.mosques,
     halalFood: places.halalFood,
+    prayer,
+    sentiment,
   };
 }

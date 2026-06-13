@@ -10,6 +10,22 @@ export interface LiteApiFacility {
   name?: string;
 }
 
+/** A room from /data/hotel `rooms[]` (metadata: photos, size, occupancy, amenities). */
+export interface LiteApiRoom {
+  id?: string | number;
+  roomName?: string;
+  description?: string;
+  roomSizeSquare?: number;
+  roomSizeUnit?: string;
+  maxAdults?: number;
+  maxChildren?: number;
+  maxOccupancy?: number;
+  bedTypes?: unknown;
+  roomAmenities?: (string | { name?: string })[];
+  photos?: { url?: string; hd_url?: string }[];
+  [k: string]: unknown;
+}
+
 /** Static hotel content (/data/hotel, items of /data/hotels). */
 export interface LiteApiHotelContent {
   id: string;
@@ -31,6 +47,8 @@ export interface LiteApiHotelContent {
   hotelFacilities?: string[];
   facilities?: LiteApiFacility[];
   checkinCheckoutTimes?: { checkin?: string; checkout?: string };
+  rooms?: LiteApiRoom[];
+  sentiment_analysis?: { pros?: string[]; cons?: string[]; categories?: { name?: string; rating?: number; description?: string }[] };
   [k: string]: unknown;
 }
 

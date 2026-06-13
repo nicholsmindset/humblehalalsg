@@ -4,7 +4,7 @@
    PROVISIONAL score. This is `verified_by: 'auto'` = "unverified" until an
    admin/ustaz confirms. We never assert "halal certified" automatically and we
    never scrape/mirror any register (golden rule, see lib/muis.ts + AGENTS.md). */
-import type { LiteApiHotelContent, LiteApiRatesHotel } from "./liteapi-types";
+import type { LiteApiHotelContent, LiteApiRatesHotel, LiteApiRoom } from "./liteapi-types";
 
 export interface HotelFlags {
   has_prayer_room: boolean;
@@ -102,6 +102,18 @@ export interface Hotel {
   verified: boolean; // human-verified overlay
   verifiedBy: VerifiedBy;
   priceFrom?: { amount: number; currency: string };
+}
+
+/** AI sentiment summary from /data/hotel `sentiment_analysis`. */
+export interface SentimentCategory {
+  name: string;
+  rating: number; // 0–10
+  description?: string;
+}
+export interface HotelSentiment {
+  pros: string[];
+  cons: string[];
+  categories: SentimentCategory[];
 }
 
 /** A normalized guest review (from /data/reviews). */
@@ -235,6 +247,90 @@ export function offersFromRatesHotel(h: LiteApiRatesHotel): RateOffer[] {
     }
   }
   return [...byName.values()].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+}
+
+/* ── Grouped rooms (Booking.com/zzzello style: room → photos + size/sleeps +
+   board options with discount %). Joins /hotels/rates roomTypes with /data/hotel
+   rooms[] metadata by room name. ─────────────────────────────────────────── */
+
+export interface RoomRateOption {
+  offerId: string;
+  board: string; // "Breakfast Included", "Room only"…
+  refundable: boolean;
+  price?: number; // you pay (retailRate.total)
+  original?: number; // strikethrough (suggestedSellingPrice) when higher
+  discountPct?: number;
+  currency?: string;
+}
+
+export interface RoomGroup {
+  name: string;
+  photos: string[];
+  sizeSqm?: number;
+  sizeUnit?: string;
+  sleeps?: number;
+  amenities: string[];
+  description?: string;
+  options: RoomRateOption[];
+}
+
+function normName(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function groupRooms(h: LiteApiRatesHotel, rooms: LiteApiRoom[] = []): RoomGroup[] {
+  const meta = new Map<string, LiteApiRoom>();
+  for (const r of rooms) if (r.roomName) meta.set(normName(String(r.roomName)), r);
+
+  const groups = new Map<string, RoomGroup>();
+  for (const rt of h.roomTypes ?? []) {
+    const rates = rt.rates ?? [];
+    const offerId = String(rt.offerId || rates[0]?.offerId || "");
+    if (!offerId) continue;
+    const r0 = (rates[0] || {}) as Record<string, unknown>;
+    const name = String(r0.name || (rt as { name?: string }).name || "Room");
+    const rr = (r0.retailRate || {}) as { total?: { amount?: number; currency?: string }[]; suggestedSellingPrice?: { amount?: number }[] };
+    const total = rr.total?.[0];
+    const price = total?.amount != null ? Number(total.amount) : undefined;
+    const ssp = rr.suggestedSellingPrice?.[0]?.amount;
+    const original = ssp != null && price != null && Number(ssp) > price ? Number(ssp) : undefined;
+    const discountPct = original && price ? Math.round(((original - price) / original) * 100) : undefined;
+    const cp = (r0.cancellationPolicies || {}) as { refundableTag?: string };
+    const opt: RoomRateOption = {
+      offerId,
+      board: String(r0.boardName || "Room only"),
+      refundable: cp.refundableTag === "RFN",
+      price,
+      original: discountPct && discountPct > 0 ? original : undefined,
+      discountPct: discountPct && discountPct > 0 ? discountPct : undefined,
+      currency: total?.currency ? String(total.currency) : undefined,
+    };
+    let g = groups.get(normName(name));
+    if (!g) {
+      const m = meta.get(normName(name));
+      const photos = (m?.photos || []).map((p) => p?.url || p?.hd_url).filter(Boolean) as string[];
+      const amen = (m?.roomAmenities || [])
+        .map((a) => (typeof a === "string" ? a : a?.name))
+        .filter(Boolean) as string[];
+      g = {
+        name,
+        photos,
+        sizeSqm: m?.roomSizeSquare ? Number(m.roomSizeSquare) : undefined,
+        sizeUnit: m?.roomSizeUnit ? String(m.roomSizeUnit) : undefined,
+        sleeps: m?.maxOccupancy ? Number(m.maxOccupancy) : m?.maxAdults ? Number(m.maxAdults) : undefined,
+        amenities: dedupe(amen).slice(0, 8),
+        description: m?.description ? stripHtml(String(m.description)) : undefined,
+        options: [],
+      };
+      groups.set(normName(name), g);
+    }
+    g.options.push(opt);
+  }
+
+  const arr = [...groups.values()];
+  for (const g of arr) g.options.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+  arr.sort((a, b) => (a.options[0]?.price ?? Infinity) - (b.options[0]?.price ?? Infinity));
+  return arr;
 }
 
 /** Human-readable labels for active flags (UI badges). */
