@@ -461,3 +461,21 @@
 .why-book ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; }
 .why-book li { display:flex; align-items:flex-start; gap:9px; font-size:.86rem; color:var(--ink-soft); }
 .why-book li svg { color:var(--emerald); flex:none; margin-top:1px; }
+
+/* ── flights Wave 2 — Muslim-first moat (HH tokens only) ─────────────────── */
+.flt-umrah { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+.flt-umrah-label { display:inline-flex; align-items:center; gap:5px; color:var(--gold); font-weight:700; font-size:.82rem; }
+.flt-umrah button { border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.10); color:#fff; font-weight:700; font-size:.8rem; padding:5px 12px; border-radius:var(--r-pill); cursor:pointer; }
+.flt-umrah button:hover { background:rgba(255,255,255,.2); }
+.flt-hijri { color:#cfe0da; font-size:.8rem; margin-left:2px; }
+.flt-season { color:var(--gold); font-style:normal; font-weight:700; }
+
+.flt-muslim { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+.flt-mtag { display:inline-flex; align-items:center; gap:5px; font-size:.74rem; font-weight:700; padding:4px 9px; border-radius:var(--r-pill); background:var(--emerald-50); color:var(--emerald); }
+.flt-mtag.tight { background:var(--gold-50); color:var(--gold-700); }
+.flt-mtag svg { flex:none; }
+
+.flt-faith { margin-top:14px; padding:12px 14px; background:var(--emerald-50); border-radius:var(--r-md); }
+.flt-faith h5 { display:flex; align-items:center; gap:6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.03em; color:var(--emerald); margin-bottom:8px; }
+.flt-faith p { font-size:.84rem; color:var(--ink-soft); margin:4px 0; line-height:1.45; }
+.flt-faith-foot { font-size:.74rem !important; color:var(--ink-faint) !important; margin-top:8px !important; }

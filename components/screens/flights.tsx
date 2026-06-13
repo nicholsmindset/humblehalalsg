@@ -11,6 +11,22 @@ import { Icon, Empty } from "../ui";
 import { fmtDuration, fmtTime, sortItineraries, type FlightItinerary, type FlightLeg } from "@/lib/flights";
 import { searchLocalAirports } from "@/lib/airports";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
+import { airportAmenity, PRAYER_LAYOVER_MIN, type AirportAmenity } from "@/lib/airport-amenities";
+import { airlineMeal } from "@/lib/airline-meals";
+import { qiblaBearing, compassLabel } from "@/lib/qibla";
+import { formatHijri, hijriSeason } from "@/lib/hijri";
+
+/* layover stops within a leg (connection airports + how long the wait is) */
+function legLayovers(leg: FlightLeg): { iata: string; durationMin: number; amenity?: AirportAmenity }[] {
+  const out: { iata: string; durationMin: number; amenity?: AirportAmenity }[] = [];
+  for (let i = 0; i < leg.segments.length - 1; i++) {
+    const a = leg.segments[i];
+    const b = leg.segments[i + 1];
+    const wait = a.arriveISO && b.departISO ? Math.max(0, Math.round((Date.parse(b.departISO) - Date.parse(a.arriveISO)) / 60000)) : 0;
+    out.push({ iata: a.to, durationMin: wait, amenity: airportAmenity(a.to) });
+  }
+  return out;
+}
 
 interface Airport { iata: string; name: string; city: string; country: string }
 
@@ -19,6 +35,10 @@ function AirportInput({ label, value, onPick, placeholder }: { label: string; va
   const [q, setQ] = useState(value ? `${value.city} (${value.iata})` : "");
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<Airport[]>([]);
+
+  // reflect an externally-set airport (Umrah preset / programmatic) in the box,
+  // but not the bare 3-letter auto-pick (city === "") so typing isn't disturbed
+  useEffect(() => { if (value && value.city) { setQ(`${value.city} (${value.iata})`); setOpen(false); } }, [value?.iata, value?.city]);
 
   useEffect(() => {
     const term = q.trim();
@@ -101,6 +121,9 @@ function ItineraryCard({ it, bookingEnabled, adults }: { it: FlightItinerary; bo
   const out = it.legs[0];
   const ret = it.legs[1];
   const lead = out.segments[0];
+  const meal = airlineMeal(lead.carrierCode);
+  const prayerLayovers = it.legs.flatMap(legLayovers).filter((l) => l.amenity?.prayerRoom);
+  const dest = airportAmenity(out.segments[out.segments.length - 1].to);
   const bookHref = (() => {
     const last = out.segments[out.segments.length - 1];
     const p = new URLSearchParams({ offerId: it.offerId, from: lead.from, to: last.to, date: lead.departISO.slice(0, 10), price: String(it.price ?? ""), currency: it.currency ?? "USD", adults: String(adults) });
@@ -134,6 +157,15 @@ function ItineraryCard({ it, bookingEnabled, adults }: { it: FlightItinerary; bo
         <button type="button" className="flt-details-toggle" onClick={() => setOpen((o) => !o)}>{open ? "Hide details" : "Flight details"} <Icon name="chevron" size={12} /></button>
       </div>
 
+      {(meal || prayerLayovers.length > 0) && (
+        <div className="flt-muslim">
+          {meal && <span className="flt-mtag"><Icon name="check" size={12} /> {meal.alcoholFree ? "Alcohol-free cabin" : "Muslim meal on request"}</span>}
+          {prayerLayovers.slice(0, 2).map((l, i) => (
+            <span key={i} className={`flt-mtag ${l.durationMin >= PRAYER_LAYOVER_MIN ? "" : "tight"}`}><Icon name="mosque" size={12} /> Prayer room at {l.iata}{l.durationMin ? ` · ${fmtDuration(l.durationMin)} layover` : ""}</span>
+          ))}
+        </div>
+      )}
+
       {open && (
         <div className="flt-details">
           {it.legs.map((leg, li) => (
@@ -150,6 +182,17 @@ function ItineraryCard({ it, bookingEnabled, adults }: { it: FlightItinerary; bo
           ))}
           {it.termsSummary.length > 0 && (
             <div className="flt-terms">{it.termsSummary.map((t, i) => <span key={i} className={`flt-term ${t.level}`}>{t.message}</span>)}</div>
+          )}
+          {(prayerLayovers.length > 0 || dest || meal) && (
+            <div className="flt-faith">
+              <h5><Icon name="moon" size={13} /> Muslim traveller notes</h5>
+              {meal && <p>{meal.name}: {meal.note || "Muslim meal (MOML) available when requested in advance"}. Request the meal with the airline and confirm.</p>}
+              {prayerLayovers.map((l, i) => (
+                <p key={i}>Layover at {l.iata}{l.amenity?.city ? ` (${l.amenity.city})` : ""}: {l.amenity?.musalla || "prayer room available"}. {l.durationMin >= PRAYER_LAYOVER_MIN ? `${fmtDuration(l.durationMin)} — enough time to pray.` : `${fmtDuration(l.durationMin)} — tight connection.`}</p>
+              ))}
+              {dest && <p>Qibla at {dest.city}: {Math.round(qiblaBearing(dest.lat, dest.lng))}° ({compassLabel(qiblaBearing(dest.lat, dest.lng))}) from north.</p>}
+              <p className="flt-faith-foot">Prayer facilities and meal options are factual references — please confirm with the airport and airline.</p>
+            </div>
           )}
         </div>
       )}
@@ -276,6 +319,12 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
           <div className="flt-triptype" role="tablist" aria-label="Trip type">
             <button role="tab" aria-selected={tripType === "one"} className={tripType === "one" ? "on" : ""} onClick={() => setTripType("one")}>One-way</button>
             <button role="tab" aria-selected={tripType === "round"} className={tripType === "round" ? "on" : ""} onClick={() => setTripType("round")}>Round-trip</button>
+          </div>
+          <div className="flt-umrah">
+            <span className="flt-umrah-label"><Icon name="moon" size={13} /> Umrah &amp; Hajj</span>
+            <button type="button" onClick={() => setTo({ iata: "JED", city: "Jeddah", name: "King Abdulaziz Intl", country: "Saudi Arabia" })}>Jeddah (JED)</button>
+            <button type="button" onClick={() => setTo({ iata: "MED", city: "Madinah", name: "Prince Mohammad bin Abdulaziz", country: "Saudi Arabia" })}>Madinah (MED)</button>
+            <span className="flt-hijri">{formatHijri(date)}{hijriSeason(date) ? <em className="flt-season"> · {hijriSeason(date)!.label}</em> : null}</span>
           </div>
           <form className={`travel-search flight-search ${tripType === "round" ? "rt" : ""}`} onSubmit={submit}>
             <AirportInput label="From" value={from} onPick={setFrom} placeholder="City or code (e.g. SIN)" />
