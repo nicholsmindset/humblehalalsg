@@ -7,7 +7,7 @@
    Select CTA degrades to enquiry. */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Icon, Empty } from "../ui";
+import { Icon, Empty, RewardsNote, PromoCode } from "../ui";
 import { fmtDuration, fmtTime, sortItineraries, type FlightItinerary, type FlightLeg } from "@/lib/flights";
 import { searchLocalAirports, nearbyAirports } from "@/lib/airports";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
@@ -681,6 +681,8 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
               <div className="sum-row faint"><span>Taxes &amp; fees</span><span>Included</span></div>
               {priceNote && <p className="faint" style={{ fontSize: ".78rem", margin: "6px 0 0" }}>{priceNote}</p>}
               <div className="sum-row total"><span>Total</span><span>{total != null ? `${cur} ${Math.round(total)}` : "—"}</span></div>
+              <PromoCode amount={total} currency={cur} />
+              <RewardsNote amount={total} currency={cur} />
             </div>
             <div className="card flt-rail-card why-book">
               <h2>Why book with us</h2>

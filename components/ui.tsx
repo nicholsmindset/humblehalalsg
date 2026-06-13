@@ -625,6 +625,59 @@ export function Empty({
   );
 }
 
+/* Humble Halal Rewards — shows estimated cashback on a travel purchase using the
+   live LiteAPI loyalty rate. Renders nothing unless loyalty is enabled. */
+export function RewardsNote({ amount, currency }: { amount: number | null; currency: string }) {
+  const [rate, setRate] = useState<number | null>(null);
+  useEffect(() => {
+    let on = true;
+    fetch("/api/travel/loyalty").then((r) => r.json()).then((d) => { if (on && d.ok && d.enabled) setRate(Number(d.cashbackRate) || 0); }).catch(() => {});
+    return () => { on = false; };
+  }, []);
+  if (!rate || !amount) return null;
+  const back = Math.max(1, Math.round(amount * rate));
+  return (
+    <div className="rewards-note">
+      <Icon name="starf" size={15} />
+      <span>Earn ~{currency} {back} cashback with <strong>Humble Halal Rewards</strong> on this booking.</span>
+    </div>
+  );
+}
+
+/* Promo / voucher code field. Validates against the LiteAPI voucher system; when
+   vouchers aren't enabled it shows a friendly note and emits nothing. onApply gives
+   the validated code + computed discount back to the checkout. */
+export function PromoCode({ amount, currency, onApply }: { amount: number | null; currency: string; onApply?: (code: string, discount: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const apply = async () => {
+    if (!code.trim()) return;
+    setBusy(true); setMsg("");
+    try {
+      const r = await fetch(`/api/travel/voucher?code=${encodeURIComponent(code.trim())}`);
+      const d = await r.json();
+      if (d.valid) {
+        const disc = d.discountType === "percentage" && amount ? Math.round((amount * Number(d.discountValue)) / 100) : Math.round(Number(d.discountValue) || 0);
+        setMsg(`Applied — ${d.discountType === "percentage" ? `${d.discountValue}% off` : `${currency} ${disc} off`}.`);
+        onApply?.(d.code, disc);
+      } else setMsg(d.message || "That code isn't valid.");
+    } catch { setMsg("Couldn't check that code."); }
+    setBusy(false);
+  };
+  if (!open) return <button type="button" className="promo-toggle" onClick={() => setOpen(true)}>Have a promo code?</button>;
+  return (
+    <div className="promo-box">
+      <div className="promo-row">
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Promo code" />
+        <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={apply}>{busy ? "…" : "Apply"}</button>
+      </div>
+      {msg && <p className="promo-msg">{msg}</p>}
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------
    DIALOG A11Y HOOK — focus trap, Esc-to-close, focus restore
 --------------------------------------------------------------- */

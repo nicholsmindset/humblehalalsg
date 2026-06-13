@@ -172,6 +172,23 @@ export async function cityPriceIndex(countryCode: string, cityName: string, from
   return Array.isArray(r.prices) ? r.prices : [];
 }
 
+/** Loyalty programme settings (cashback rate) — "Humble Halal Rewards". */
+export async function getLoyalty(): Promise<{ cashbackRate: number; currency: string; status: string } | null> {
+  const r = await request<{ data?: { cashbackRate?: number; cashbackCurrency?: string; status?: string }[] }>(`/loyalties/`);
+  const d = Array.isArray(r.data) ? r.data[0] : undefined;
+  if (!d) return null;
+  return { cashbackRate: Number(d.cashbackRate) || 0, currency: String(d.cashbackCurrency || "USD"), status: String(d.status || "") };
+}
+
+/** Validate a discount voucher/promo code. Returns null when vouchers aren't
+ *  enabled on the account (graceful). */
+export async function getVoucher(code: string): Promise<{ code: string; discountType: string; discountValue: number; currency?: string; active: boolean } | null> {
+  const r = await request<{ data?: { voucherCode?: string; discountType?: string; discountValue?: number; currency?: string; status?: string } }>(`/vouchers/${encodeURIComponent(code)}`);
+  const d = r.data;
+  if (!d || !d.voucherCode) return null;
+  return { code: String(d.voucherCode), discountType: String(d.discountType || "fixed"), discountValue: Number(d.discountValue) || 0, currency: d.currency ? String(d.currency) : undefined, active: String(d.status || "") === "active" };
+}
+
 export interface DailyWeather { date: string; tempMin?: number; tempMax?: number; humidity?: number; precipitation?: number; units: string }
 
 /** Daily weather forecast for a location (trip planning). LiteAPI /data/weather. */

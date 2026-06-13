@@ -6,7 +6,7 @@
    PAID_HOTELS_ENABLED; when off, the Book CTA degrades to lead capture. */
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Icon, Empty } from "../ui";
+import { Icon, Empty, RewardsNote, PromoCode } from "../ui";
 import { MapView } from "../map/map-view";
 import {
   activeFlagLabels,
@@ -849,6 +849,8 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
               <div className="sum-row"><span>Room total</span><span>{pb.currency} {Math.round(pb.price ?? total ?? 0)}</span></div>
               {pb.commission != null && <div className="sum-row faint"><span>Incl. our service</span><span>{pb.currency} {Math.round(pb.commission)}</span></div>}
               <div className="sum-row total"><span>Total</span><span>{pb.currency} {Math.round(total ?? 0)}</span></div>
+              <PromoCode amount={total} currency={pb.currency} />
+              <RewardsNote amount={total} currency={pb.currency} />
               <p className="muted" style={{ fontSize: ".78rem", marginTop: 12 }}>Booking handled securely by LiteAPI. Free cancellation where the rate allows.</p>
             </aside>
           </div>
