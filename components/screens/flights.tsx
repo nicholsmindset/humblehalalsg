@@ -9,8 +9,9 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon, Empty } from "../ui";
 import { fmtDuration, fmtTime, sortItineraries, type FlightItinerary, type FlightLeg } from "@/lib/flights";
-import { searchLocalAirports } from "@/lib/airports";
+import { searchLocalAirports, nearbyAirports } from "@/lib/airports";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
+import { estimateCO2 } from "@/lib/carbon";
 import { airportAmenity, PRAYER_LAYOVER_MIN, type AirportAmenity } from "@/lib/airport-amenities";
 import { airlineMeal } from "@/lib/airline-meals";
 import { qiblaBearing, compassLabel } from "@/lib/qibla";
@@ -150,6 +151,7 @@ function ItineraryCard({ it, bookingEnabled, adults }: { it: FlightItinerary; bo
           {it.refundable && <span className="flt-tag ok"><Icon name="check" size={12} /> Refundable</span>}
           {it.baggage?.checkedIncluded && <span className="flt-tag"><Icon name="briefcase" size={12} /> Bag incl.</span>}
           {it.baggage && !it.baggage.checkedIncluded && it.baggage.carryOn && <span className="flt-tag faint"><Icon name="briefcase" size={12} /> Cabin only</span>}
+          <span className="flt-tag faint" title="Estimated CO₂ per passenger">~{estimateCO2(it)} kg CO₂</span>
         </div>
         {bookingEnabled && it.offerId
           ? <Link className="btn btn-primary btn-sm" href={bookHref}>Select</Link>
@@ -274,27 +276,52 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
   const [note, setNote] = useState("");
   const [sort, setSort] = useState<"best" | "cheapest" | "fastest">("best");
   const [f, setF] = useState<Filters>(noFilters(3000));
+  const [calendar, setCalendar] = useState<{ date: string; price: number | null }[] | null>(null);
+  const [searched, setSearched] = useState<{ origin: string; destination: string; date: string } | null>(null);
+  const [track, setTrack] = useState<{ open: boolean; email: string; msg: string }>({ open: false, email: "", msg: "" });
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!from || !to) { setNote("Pick origin and destination airports."); return; }
-    setLoading(true); setNote("");
+  const runSearch = async (searchDate: string, originOv?: Airport, destOv?: Airport) => {
+    const o = originOv || from;
+    const dst = destOv || to;
+    if (!o || !dst) { setNote("Pick origin and destination airports."); return; }
+    setLoading(true); setNote(""); setCalendar(null); setTrack({ open: false, email: "", msg: "" });
     try {
       const r = await fetch("/api/travel/flights/search", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ origin: from.iata, destination: to.iata, date, returnDate: tripType === "round" ? returnDate : "", tripType, adults, cabin, currency: "SGD" }),
+        body: JSON.stringify({ origin: o.iata, destination: dst.iata, date: searchDate, returnDate: tripType === "round" ? returnDate : "", tripType, adults, cabin, currency: "SGD" }),
       });
       const d = await r.json();
       if (d.ok) {
         const list: FlightItinerary[] = d.itineraries || [];
         setItems(list);
+        setSearched({ origin: o.iata, destination: dst.iata, date: searchDate });
         setF(noFilters(Math.max(...list.map((x) => x.durationMin), 3000)));
         if (d.simulated) setNote("Live flights aren't connected yet — this is a preview of the experience.");
         else if (!list.length) setNote("No flights found. Try other dates or airports.");
+        // flexible-date price calendar (one-way window; non-blocking)
+        fetch("/api/travel/flights/calendar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ origin: o.iata, destination: dst.iata, date: searchDate, currency: "SGD" }) })
+          .then((c) => c.json()).then((c) => { if (c.ok) setCalendar(c.days); }).catch(() => {});
       } else setNote(d.error || "Couldn't search flights right now.");
     } catch { setNote("Couldn't search flights right now."); }
     setLoading(false);
   };
+
+  const submit = (e: FormEvent) => { e.preventDefault(); runSearch(date); };
+
+  const pickDay = (d: string) => { setDate(d); runSearch(d); };
+
+  const setAlert = async () => {
+    if (!searched) return;
+    const cheapest = items && items.length ? Math.round(Math.min(...items.map((x) => x.price ?? Infinity))) : null;
+    try {
+      const r = await fetch("/api/travel/flights/watch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...searched, email: track.email, price: cheapest, currency: "SGD" }) });
+      const d = await r.json();
+      setTrack((t) => ({ ...t, msg: d.ok ? "Done — we'll email you if the price drops." : d.error || "Could not save your alert." }));
+    } catch { setTrack((t) => ({ ...t, msg: "Could not save your alert." })); }
+  };
+
+  const nearby = searched ? { from: nearbyAirports(searched.origin), to: nearbyAirports(searched.destination) } : { from: [], to: [] };
+  const cheapestDay = calendar ? calendar.reduce((m, d) => (d.price != null && (m == null || d.price < m) ? d.price : m), null as number | null) : null;
 
   const airlines = useMemo(() => [...new Set((items || []).flatMap((x) => x.carriers))].sort(), [items]);
   const filtered = useMemo(() => (items ? sortItineraries(applyFilters(items, f), sort) : []), [items, f, sort]);
@@ -345,6 +372,31 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
           <div className="flt-layout">
             <FilterRail all={items} f={f} setF={setF} airlines={airlines} />
             <div>
+              {calendar && calendar.length > 1 && (
+                <div className="flt-cal" role="group" aria-label="Flexible dates">
+                  {calendar.map((c) => (
+                    <button key={c.date} type="button" className={`flt-cal-day ${searched?.date === c.date ? "on" : ""} ${c.price != null && c.price === cheapestDay ? "cheap" : ""}`} onClick={() => pickDay(c.date)}>
+                      <span className="flt-cal-d">{new Date(c.date + "T00:00:00").toLocaleDateString("en", { weekday: "short", day: "numeric" })}</span>
+                      <span className="flt-cal-p">{c.price != null ? `SGD ${c.price}` : "—"}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searched && (
+                <div className="flt-track">
+                  {!track.open ? (
+                    <button type="button" className="flt-track-btn" onClick={() => setTrack((t) => ({ ...t, open: true }))}><Icon name="clock" size={14} /> Track this price</button>
+                  ) : track.msg ? (
+                    <span className="flt-track-msg"><Icon name="check" size={14} /> {track.msg}</span>
+                  ) : (
+                    <div className="flt-track-form">
+                      <input type="email" placeholder="you@email.com" value={track.email} onChange={(e) => setTrack((t) => ({ ...t, email: e.target.value }))} />
+                      <button type="button" className="btn btn-primary btn-sm" onClick={setAlert}>Set alert</button>
+                      <span className="faint">We'll email you if {searched.origin}→{searched.destination} drops.</span>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flt-sort-tabs">
                 {(["best", "cheapest", "fastest"] as const).map((m) => (
                   <button key={m} className={sort === m ? "on" : ""} onClick={() => setSort(m)}>
@@ -356,6 +408,13 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
               <p className="flt-count">{filtered.length} of {items.length} flights</p>
               <div className="flt-list">{filtered.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
               {filtered.length === 0 && <Empty icon="plane" title="No flights match your filters" body="Try widening the stops, time or duration filters." />}
+              {(nearby.from.length > 0 || nearby.to.length > 0) && (
+                <div className="flt-nearby">
+                  <span className="flt-nearby-label">Nearby airports — try a cheaper option:</span>
+                  {nearby.from.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`f${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setFrom(ap); runSearch(date, ap); }}>From {a.city} ({a.iata})</button>; })}
+                  {nearby.to.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`t${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setTo(ap); runSearch(date, undefined, ap); }}>To {a.city} ({a.iata})</button>; })}
+                </div>
+              )}
             </div>
           </div>
         ) : !items ? (

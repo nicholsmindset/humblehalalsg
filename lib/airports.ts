@@ -176,7 +176,32 @@ const RAW: [string, string, string, string][] = [
 
 export const AIRPORTS: AirportRec[] = RAW.map(([iata, city, name, country]) => ({ iata, city, name, country }));
 
+const BY_IATA = new Map(AIRPORTS.map((a) => [a.iata, a]));
+
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+// extra metro neighbours that aren't same-"city" in the dataset (≈ <120 km apart)
+const METRO_EXTRA: Record<string, string[]> = {
+  SIN: ["JHB"], JHB: ["SIN"],
+  KUL: ["SZB"], // KL Subang (if present)
+};
+
+/** Nearby/alternate airports for the same metro area (same city + manual pairs). */
+export function nearbyAirports(iata: string): AirportRec[] {
+  const code = (iata || "").toUpperCase();
+  const self = BY_IATA.get(code);
+  if (!self) return [];
+  const seen = new Set([code]);
+  const out: AirportRec[] = [];
+  for (const a of AIRPORTS) {
+    if (!seen.has(a.iata) && a.city === self.city) { out.push(a); seen.add(a.iata); }
+  }
+  for (const c of METRO_EXTRA[code] || []) {
+    const a = BY_IATA.get(c);
+    if (a && !seen.has(a.iata)) { out.push(a); seen.add(a.iata); }
+  }
+  return out;
+}
 
 /** Search the bundled dataset. Ranks exact IATA, then city/name prefix, then contains. */
 export function searchLocalAirports(q: string, limit = 7): AirportRec[] {
