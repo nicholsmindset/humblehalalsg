@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { liteapiConfigured, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries } from "@/lib/flights";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Flexible-date price calendar — cheapest fare per day across a ±3-day window
    around the chosen date, so travellers can shift dates to save. Probes a few
@@ -16,6 +17,7 @@ function shift(iso: string, days: number): string {
 }
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-calendar", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const origin = String(body.origin || "").trim().toUpperCase();
   const destination = String(body.destination || "").trim().toUpperCase();

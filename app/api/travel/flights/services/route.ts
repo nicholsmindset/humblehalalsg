@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, attachFlightServices } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 2 of flight booking — attach seats/bags to a prebook. LiteAPI returns a
    NEW payment intent (transactionId) reflecting the updated total; the client
    must use the latest. Gated + graceful. */
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-services", 24, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 

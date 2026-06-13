@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Create a fare alert — watch a route+date, get emailed when the price drops.
    Requires a signed-in user and ALWAYS uses the session email (never an arbitrary
@@ -8,6 +9,7 @@ import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "fare-watch", 15, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const origin = String(body.origin || "").trim().toUpperCase();
   const destination = String(body.destination || "").trim().toUpperCase();

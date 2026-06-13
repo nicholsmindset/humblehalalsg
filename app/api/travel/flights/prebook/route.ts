@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, prebookFlight } from "@/lib/liteapi";
 import type { FlightContactInput, FlightPassengerInput } from "@/lib/liteapi-types";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 2 of flight booking — create the prebook (opens the Stripe payment
    intent) with contact + passenger details. Returns the SDK handles
@@ -9,6 +10,7 @@ import type { FlightContactInput, FlightPassengerInput } from "@/lib/liteapi-typ
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-prebook", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 

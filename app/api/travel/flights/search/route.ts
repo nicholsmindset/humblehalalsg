@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { liteapiConfigured, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries } from "@/lib/flights";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Flight search → LiteAPI /flights/rates, normalized to rich itinerary cards.
    Supports one-way and round-trip (legs[] with directions) + cabin class.
@@ -9,6 +10,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CABINS = ["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"];
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-search", 40, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const origin = String(body.origin || "").trim().toUpperCase();
   const destination = String(body.destination || "").trim().toUpperCase();

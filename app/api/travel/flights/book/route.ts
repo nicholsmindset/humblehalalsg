@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, bookFlight } from "@/lib/liteapi";
 import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 3 of flight booking — confirm with LiteAPI AFTER the card is charged.
    CRITICAL invariant: once payment is captured (Stripe SDK), a failed booking is
@@ -10,6 +11,7 @@ import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
 const CONFIRMED = new Set(["CONFIRMED", "TICKETED"]);
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-book", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 

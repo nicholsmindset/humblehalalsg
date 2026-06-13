@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { askHotel, liteapiConfigured } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* "Ask AI about this hotel" — LiteAPI answers natural-language questions from the
    hotel's own published information (Beta). Factual Q&A, not a halal assertion.
    Graceful without a key. */
 export async function GET(req: Request) {
+  const rl = await rateLimit(req, "hotel-ask", 20, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const sp = new URL(req.url).searchParams;
   const hotelId = (sp.get("hotelId") || "").trim();
   const q = (sp.get("q") || "").trim().slice(0, 200);

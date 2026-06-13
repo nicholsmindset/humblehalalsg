@@ -1,0 +1,57 @@
+import "server-only";
+
+/* Lightweight per-IP rate limiter. Uses Upstash Redis (REST, no SDK dependency)
+   when UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set — durable and
+   shared across serverless instances. Falls back to a best-effort in-memory
+   fixed-window when Redis isn't configured (per-instance; protects against the
+   common case without any infra). Fails OPEN on limiter errors so a limiter
+   outage never blocks legitimate bookings. */
+
+function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("x-real-ip") || "unknown";
+}
+
+const REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+// in-memory fallback: key -> { count, resetAt }
+const mem = new Map<string, { count: number; resetAt: number }>();
+function memHit(key: string, limit: number, windowSec: number): boolean {
+  const now = Date.now();
+  const e = mem.get(key);
+  if (!e || e.resetAt <= now) { mem.set(key, { count: 1, resetAt: now + windowSec * 1000 }); return true; }
+  e.count += 1;
+  if (mem.size > 5000) for (const [k, v] of mem) if (v.resetAt <= now) mem.delete(k); // opportunistic prune
+  return e.count <= limit;
+}
+
+async function redisHit(key: string, limit: number, windowSec: number): Promise<boolean> {
+  try {
+    const inc = await fetch(`${REST_URL}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
+    const n = Number((await inc.json())?.result || 0);
+    if (n === 1) await fetch(`${REST_URL}/expire/${encodeURIComponent(key)}/${windowSec}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
+    return n <= limit;
+  } catch {
+    return true; // fail open
+  }
+}
+
+export interface RateResult { ok: boolean; retryAfter: number }
+
+/** Returns { ok:false, retryAfter } when the caller has exceeded `limit` hits in
+ *  the rolling `windowSec` for the named bucket. */
+export async function rateLimit(req: Request, bucket: string, limit: number, windowSec: number): Promise<RateResult> {
+  const key = `rl:${bucket}:${clientIp(req)}`;
+  const ok = REST_URL && REST_TOKEN ? await redisHit(key, limit, windowSec) : memHit(key, limit, windowSec);
+  return { ok, retryAfter: ok ? 0 : windowSec };
+}
+
+/** Standard 429 response. */
+export function tooMany(retryAfter: number): Response {
+  return new Response(JSON.stringify({ ok: false, error: "Too many requests — please slow down and try again." }), {
+    status: 429,
+    headers: { "Content-Type": "application/json", "Retry-After": String(retryAfter) },
+  });
+}
