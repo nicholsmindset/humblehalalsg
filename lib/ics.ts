@@ -41,7 +41,7 @@ export function buildIcs(ev: EventItem): string {
     "PRODID:-//Humble Halal//Events//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${ev.id}@humblehalal.sg`,
+    `UID:${ev.id}@humblehalal.com`,
     `DTSTART:${stamp(ev.dateISO, start)}`,
     `DTEND:${stamp(ev.dateISO, end)}`,
     `SUMMARY:${esc(ev.title)}`,

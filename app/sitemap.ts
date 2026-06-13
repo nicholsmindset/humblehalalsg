@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
-import { listings, events } from "@/lib/data";
+import { events } from "@/lib/data";
+import { getDirectory } from "@/lib/directory";
 import { allSeoPages } from "@/lib/seo-pages";
+import { allBrands } from "@/lib/halal-status";
+import { allPosts } from "@/lib/blog";
 import { SITE } from "@/lib/seo";
 
 const PUBLIC_STATIC = [
@@ -9,6 +12,8 @@ const PUBLIC_STATIC = [
   "/map",
   "/mosques",
   "/halal",
+  "/is-halal",
+  "/blog",
   "/events",
   "/for-business",
   "/advertise",
@@ -17,11 +22,17 @@ const PUBLIC_STATIC = [
   "/verify",
   "/disclaimer",
   "/suggest",
+  "/terms",
+  "/privacy",
+  "/pdpa",
+  "/cookies",
+  "/accessibility",
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE.url;
   const now = new Date();
+  const listings = await getDirectory();
 
   const staticEntries: MetadataRoute.Sitemap = PUBLIC_STATIC.map((path) => ({
     url: `${base}${path === "/" ? "" : path}`,
@@ -53,5 +64,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...listingEntries, ...eventEntries, ...seoEntries];
+  const brandEntries: MetadataRoute.Sitemap = allBrands().map((b) => ({
+    url: `${base}/is-halal/${b.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
+
+  const blogEntries: MetadataRoute.Sitemap = allPosts().map((p) => ({
+    url: `${base}/blog/${p.slug}`,
+    lastModified: new Date(p.dateModified || p.datePublished),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticEntries, ...listingEntries, ...eventEntries, ...seoEntries, ...brandEntries, ...blogEntries];
 }

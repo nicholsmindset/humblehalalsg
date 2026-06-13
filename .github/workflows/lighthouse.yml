@@ -1,0 +1,22 @@
+name: Lighthouse
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Run Lighthouse CI
+        run: |
+          npm i -g @lhci/cli@0.14.x
+          BASE="${{ vars.SITE_URL || 'https://humblehalal.com' }}"
+          lhci autorun \
+            --collect.url="$BASE/" \
+            --collect.url="$BASE/explore" \
+            --collect.url="$BASE/blog/what-is-halal-singapore" \
+            || echo "LHCI reported budget warnings (non-blocking)"

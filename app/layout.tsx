@@ -13,6 +13,9 @@ import "../styles/moat.css";
 import "../styles/events.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
+import { CookieConsent } from "@/components/cookie-consent";
+import { DirectoryProvider } from "@/components/directory-context";
+import { getDirectory } from "@/lib/directory";
 import { SITE } from "@/lib/seo";
 import {
   JsonLd,
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "/",
-    languages: { "en-SG": "/", "ms-SG": "/", "x-default": "/" },
+    languages: { "en-SG": "/", "x-default": "/" },
   },
   openGraph: {
     type: "website",
@@ -102,16 +105,22 @@ const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader]
   .map((f) => f.variable)
   .join(" ");
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Directory snapshot — Supabase when configured, else the mock seed (keeps
+  // static rendering when there are no keys, so no regression).
+  const directory = await getDirectory();
   return (
     <html lang="en" className={fontVars}>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <AppProviders>
-          <AppShell>{children}</AppShell>
+          <DirectoryProvider listings={directory}>
+            <AppShell>{children}</AppShell>
+          </DirectoryProvider>
         </AppProviders>
+        <CookieConsent />
       </body>
     </html>
   );

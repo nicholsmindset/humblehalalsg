@@ -527,7 +527,9 @@ export function Footer() {
         ["Explore", "explore"],
         ["Events", "events"],
         ["Map view", "map"],
+        ["Saved places", "saved"],
         ["Mosques in Singapore", "mosques"],
+        ["Blog & guides", "blog"],
         ["Request a quote", "request-quote"],
         ["Halal in Tampines", "seo"],
       ],
@@ -546,6 +548,7 @@ export function Footer() {
       "Trust & safety",
       [
         ["How we verify", "verify"],
+        ["Is it halal? checker", "is-halal"],
         ["Halal disclaimer", "disclaimer"],
         ["Report an issue", "report"],
         ["Suggest a place", "suggest"],
@@ -615,6 +618,14 @@ export function Footer() {
             })}
         </div>
       </div>
+      <nav className="hh-wrap hh-footer-legal" aria-label="Legal">
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/pdpa">PDPA</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/accessibility">Accessibility</a>
+        <a href="/disclaimer">Halal disclaimer</a>
+      </nav>
       <div className="hh-wrap hh-footer-base">
         <span>© 2026 Humble Halal. Built for the Singapore Muslim community.</span>
         <div className="flex g12 center">

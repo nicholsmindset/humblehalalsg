@@ -151,6 +151,66 @@ export function eventJsonLd(e: EventItem) {
   };
 }
 
+export function articleJsonLd(a: {
+  headline: string;
+  description: string;
+  path: string;
+  datePublished?: string;
+  dateModified?: string;
+  image?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: a.headline,
+    description: a.description,
+    url: `${SITE.url}${a.path}`,
+    mainEntityOfPage: `${SITE.url}${a.path}`,
+    ...(a.image ? { image: a.image } : {}),
+    ...(a.datePublished ? { datePublished: a.datePublished } : {}),
+    ...(a.dateModified || a.datePublished
+      ? { dateModified: a.dateModified || a.datePublished }
+      : {}),
+    author: { "@type": "Organization", name: SITE.name, url: SITE.url },
+    publisher: {
+      "@type": "Organization",
+      name: SITE.name,
+      logo: { "@type": "ImageObject", url: `${SITE.url}/icon.svg` },
+    },
+  };
+}
+
+export function blogPostingJsonLd(p: {
+  headline: string;
+  description: string;
+  path: string;
+  datePublished: string;
+  dateModified?: string;
+  author: string;
+  wordCount?: number;
+  section?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: p.headline,
+    description: p.description,
+    url: `${SITE.url}${p.path}`,
+    mainEntityOfPage: `${SITE.url}${p.path}`,
+    datePublished: p.datePublished,
+    dateModified: p.dateModified || p.datePublished,
+    author: { "@type": "Organization", name: p.author, url: SITE.url },
+    publisher: {
+      "@type": "Organization",
+      name: SITE.name,
+      logo: { "@type": "ImageObject", url: `${SITE.url}/icon.svg` },
+    },
+    ...(p.wordCount ? { wordCount: p.wordCount } : {}),
+    ...(p.section ? { articleSection: p.section } : {}),
+    inLanguage: "en-SG",
+  };
+}
+
 export function faqJsonLd(items: { q: string; a: string }[]) {
   return {
     "@context": "https://schema.org",

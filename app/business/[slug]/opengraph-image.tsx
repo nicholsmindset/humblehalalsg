@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getListing } from "@/lib/data";
+import { getListingBySlug } from "@/lib/directory";
 import { SITE } from "@/lib/seo";
 
 export const size = { width: 1200, height: 630 };
@@ -8,7 +8,7 @@ export const alt = "Business on Humble Halal";
 
 export default async function OgImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const l = getListing(slug);
+  const l = await getListingBySlug(slug);
   const name = l?.name ?? SITE.name;
   const meta = l ? `${l.cuisine} · ${l.area}` : SITE.tagline;
   const rating = l ? `★ ${l.rating} (${l.reviews})` : "";

@@ -42,3 +42,13 @@ next-env.d.ts
 
 # generated staging data (open-data seeds)
 /data/staging/
+
+# automation job outputs (local Claude jobs + CI scratch)
+/reports/
+/logs/
+/lychee/
+sitemap-prev.txt
+sitemap-diff.md
+.lighthouseci/
+/test-results/
+/playwright-report/

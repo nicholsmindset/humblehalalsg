@@ -4,9 +4,12 @@
    (ported from screens-consumer.jsx). */
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HHData, SG_CENTER, getListing } from "@/lib/data";
+import { HHData, SG_CENTER } from "@/lib/data";
+import { useDirectory } from "../directory-context";
 import type { BadgeKey, LatLng, Listing } from "@/lib/types";
-import { haversineKm, formatKm, mapsSearchUrl } from "@/lib/geo";
+import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
+import { telHref, waHref, webHref, igHref } from "@/lib/contact";
+import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone } from "@/lib/halal-score";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
@@ -25,9 +28,10 @@ import { Breadcrumbs } from "../breadcrumbs";
 ============================================================= */
 export function HomeScreen() {
   const { navigate, state } = useApp();
+  const dir = useDirectory();
   const [q, setQ] = useState("");
   const tw = state.tweaks;
-  const featured = HHData.listings.filter((l) => l.featured && (!state.prefs || !state.prefs.certifiedOnly || l.certified)).slice(0, 6);
+  const featured = dir.listings.filter((l) => l.featured && (!state.prefs || !state.prefs.certifiedOnly || l.certified)).slice(0, 6);
 
   const doSearch = (val: string) => navigate("explore", { q: val });
 
@@ -51,6 +55,14 @@ export function HomeScreen() {
         <SectionHead title="Featured this week" action="See all" onAction={() => navigate("explore", { sort: "featured" })} />
         <div className="grid-cards">
           {featured.map((l) => <ListingCard key={l.id} item={l} />)}
+        </div>
+      </section>
+
+      {/* NEW ON HUMBLE HALAL */}
+      <section className="hh-wrap hh-section" style={{ paddingTop: 0 }}>
+        <SectionHead title="New on Humble Halal" action="See newest" onAction={() => navigate("explore", { sort: "newest" })} />
+        <div className="grid-cards">
+          {dir.listings.slice(-9).reverse().slice(0, 6).map((l) => <ListingCard key={l.id} item={l} />)}
         </div>
       </section>
 
@@ -232,6 +244,7 @@ interface ExploreFilters {
 }
 export function ExploreScreen() {
   const { navigate, params, state } = useApp();
+  const dir = useDirectory();
   const router = useRouter();
   const [q, setQ] = useState((params.q as string) || "");
   const [showFilters, setShowFilters] = useState(false);
@@ -243,6 +256,22 @@ export function ExploreScreen() {
   });
 
   const setF = <K extends keyof ExploreFilters>(k: K, v: ExploreFilters[K]) => setFilters((f) => ({ ...f, [k]: v }));
+  // After mount, "Open now" uses real SG-time computation (avoids SSR mismatch).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const [visible, setVisible] = useState(12); // pagination: how many cards shown
+  const [userLoc, setUserLoc] = useState<LatLng | null>(null);
+  // Real geolocation for the "Nearest" sort on the list view.
+  useEffect(() => {
+    if (sort === "nearest" && !userLoc && typeof navigator !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {},
+        { enableHighAccuracy: true, timeout: 8000 },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort]);
 
   // Keep the URL in sync so searches/filters are shareable, bookmarkable and crawlable.
   useEffect(() => {
@@ -260,7 +289,7 @@ export function ExploreScreen() {
   }, [q, sort, filters, router]);
 
   const results = useMemo(() => {
-    let r = HHData.listings.slice();
+    let r = dir.listings.slice();
     if (state.prefs && state.prefs.certifiedOnly) r = r.filter((l) => l.certified);
     if (q) { const s = q.toLowerCase(); r = r.filter((l) => (l.name + l.cuisine + l.area + l.blurb).toLowerCase().includes(s)); }
     if (filters.cat) r = r.filter((l) => l.catId === filters.cat);
@@ -272,15 +301,19 @@ export function ExploreScreen() {
     if (filters.prayer) r = r.filter((l) => l.prayer);
     if (filters.family) r = r.filter((l) => l.badges.includes("family"));
     if (filters.delivery) r = r.filter((l) => l.delivery);
-    if (filters.open) r = r.filter((l) => l.open);
+    if (filters.open) r = r.filter((l) => (mounted ? isOpenNow(l.hoursWeek) : l.open));
     if (sort === "rating") r.sort((a, b) => b.rating - a.rating);
     if (sort === "newest") r.reverse();
-    if (sort === "nearest") r.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+    if (sort === "nearest") {
+      if (userLoc) r.sort((a, b) => (a.coords ? haversineKm(userLoc, a.coords) : 99) - (b.coords ? haversineKm(userLoc, b.coords) : 99));
+      else r.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+    }
     if (sort === "featured") r.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     return r;
-  }, [q, filters, sort, state.prefs]);
+  }, [q, filters, sort, state.prefs, mounted, userLoc, dir.listings]);
 
   const activeFilterCount = Object.values(filters).filter((v) => v && v !== "").length;
+  useEffect(() => setVisible(12), [q, filters, sort]); // reset paging on filter change
 
   return (
     <div className="screen-in hh-page">
@@ -331,9 +364,18 @@ export function ExploreScreen() {
               body="Try removing a filter or searching a different area. You can also suggest a place we’re missing."
               action="Suggest a business" onAction={() => navigate("suggest")} />
           ) : (
-            <div className="grid-cards">
-              {results.map((l) => <ListingCard key={l.id} item={l} />)}
-            </div>
+            <>
+              <div className="grid-cards">
+                {results.slice(0, visible).map((l) => <ListingCard key={l.id} item={l} />)}
+              </div>
+              {results.length > visible && (
+                <div className="flex center" style={{ justifyContent: "center", marginTop: 22 }}>
+                  <button className="btn btn-outline" onClick={() => setVisible((v) => v + 12)}>
+                    Load more ({results.length - visible} more)
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -429,12 +471,15 @@ export function MapPreview({ results, navigate }: {
 ============================================================= */
 export function MapScreen() {
   const { navigate, toast, state, params } = useApp();
+  const dir = useDirectory();
   const wantMosques = params.show === "mosques";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
   const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques });
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false);
+  useEffect(() => setMapMounted(true), []);
   const tog = (k: keyof typeof chips) => setChips((c) => ({ ...c, [k]: !c[k] }));
   const nextPrayer = HHData.prayerTimes.times[HHData.prayerTimes.nextIndex];
 
@@ -465,9 +510,9 @@ export function MapScreen() {
   }, []);
 
   const list = useMemo(() => {
-    let r = HHData.listings.filter((l) => l.coords);
+    let r = dir.listings.filter((l) => l.coords);
     if (state.prefs?.certifiedOnly) r = r.filter((l) => l.certified);
-    if (chips.open) r = r.filter((l) => l.open);
+    if (chips.open) r = r.filter((l) => (mapMounted ? isOpenNow(l.hoursWeek) : l.open));
     if (chips.prayer) r = r.filter((l) => l.prayer);
     if (chips.family) r = r.filter((l) => l.badges.includes("family"));
     if (userLoc) {
@@ -476,7 +521,7 @@ export function MapScreen() {
         .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
     }
     return r;
-  }, [chips, userLoc, state.prefs?.certifiedOnly]);
+  }, [chips, userLoc, state.prefs?.certifiedOnly, mapMounted, dir.listings]);
 
   const mosqueList = useMemo(() => {
     let m = HHData.mosques.map((mq) => ({ ...mq, distanceKm: userLoc ? haversineKm(userLoc, mq.coords) : undefined }));
@@ -598,12 +643,39 @@ export function MapScreen() {
 ============================================================= */
 export function DetailScreen() {
   const { navigate, params, state, toggleSave, toast } = useApp();
-  const item = getListing(String(params.slug || params.id || "")) || HHData.listings[0];
+  const dir = useDirectory();
+  const item = dir.get(String(params.slug || params.id || "")) || dir.listings[0];
   const saved = state.saved.includes(item.id);
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);
   const outlet = item.franchise && item.outlets ? item.outlets[outletIdx] : null;
   const tabs = item.franchise ? ["overview", "locations", "menu", "reviews", "info"] : ["overview", "menu", "reviews", "info"];
+
+  // Live "open now" — computed client-side (SG time) after mount to avoid SSR
+  // hydration mismatch; refreshes each minute.
+  const [live, setLive] = useState<{ open: boolean; label: string } | null>(null);
+  useEffect(() => {
+    const update = () => setLive(openStatus(item.hoursWeek));
+    update();
+    const t = setInterval(update, 60000);
+    return () => clearInterval(t);
+  }, [item.hoursWeek]);
+  const openNow = live ? live.open : item.open;
+  const hoursLabel = live ? live.label : item.hours;
+
+  // Photo lightbox
+  const galleryImgs = [item.image, ...HHData.gallery].filter(Boolean) as string[];
+  const [lb, setLb] = useState<number | null>(null);
+  useEffect(() => {
+    if (lb === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLb(null);
+      else if (e.key === "ArrowLeft") setLb((i) => (i === null ? 0 : (i + galleryImgs.length - 1) % galleryImgs.length));
+      else if (e.key === "ArrowRight") setLb((i) => (i === null ? 0 : (i + 1) % galleryImgs.length));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lb, galleryImgs.length]);
 
   // High-ticket service verticals get a "Request a quote" lead CTA (preselects the vertical).
   const QUOTE_VERTICAL: Record<string, string> = {
@@ -616,13 +688,16 @@ export function DetailScreen() {
   };
   const quoteVertical = QUOTE_VERTICAL[item.catId];
 
+  const dirHref = item.coords
+    ? directionsUrl(item.coords)
+    : mapsSearchUrl(`${item.name} ${item.area} Singapore`);
   const contacts = [
-    item.phone && { icon: "phone", label: "Call", val: item.phone },
-    item.wa && { icon: "whatsapp", label: "WhatsApp", val: item.wa },
-    { icon: "directions", label: "Directions", val: "Open in Maps" },
-    item.web && { icon: "globe", label: "Website", val: item.web },
-    item.ig && { icon: "instagram", label: "Instagram", val: item.ig },
-  ].filter(Boolean) as { icon: string; label: string; val: string }[];
+    item.phone && { icon: "phone", label: "Call", href: telHref(item.phone), external: false },
+    item.wa && { icon: "whatsapp", label: "WhatsApp", href: waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`), external: true },
+    { icon: "directions", label: "Directions", href: dirHref, external: true },
+    item.web && { icon: "globe", label: "Website", href: webHref(item.web), external: true },
+    item.ig && { icon: "instagram", label: "Instagram", href: igHref(item.ig), external: true },
+  ].filter(Boolean) as { icon: string; label: string; href: string; external: boolean }[];
 
   return (
     <div className="screen-in detail-screen hh-page">
@@ -635,9 +710,11 @@ export function DetailScreen() {
         <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" />
         <div className="detail-gallery">
           {["interior", "dish detail", "storefront"].map((g, gi) => (
-            <ImagePh key={g} label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
+            <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
+              <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
+            </button>
           ))}
-          <button className="gallery-more">+8</button>
+          <button className="gallery-more" onClick={() => setLb(0)} aria-label="View all photos">+{Math.max(1, galleryImgs.length - 3)}</button>
         </div>
       </div>
 
@@ -684,8 +761,8 @@ export function DetailScreen() {
           <div className="flex g14 center wrap" style={{ marginTop: 12 }}>
             <Rating value={item.rating} count={item.reviews} />
             <span className="faint">·</span>
-            <span className={item.open ? "status-open" : "status-closed"} style={{ fontSize: ".88rem" }}>
-              <span className={`status-dot ${item.open ? "open" : "closed"}`}></span>{item.hours}</span>
+            <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: ".88rem" }}>
+              <span className={`status-dot ${openNow ? "open" : "closed"}`}></span>{hoursLabel}</span>
           </div>
 
           {/* badge row */}
@@ -697,12 +774,18 @@ export function DetailScreen() {
           {/* Verification provenance + community confirmation */}
           <VerificationCard item={item} navigate={navigate} toast={toast} />
 
-          {/* contact buttons */}
+          {/* contact buttons — real intents (tel:, wa.me, maps, web, ig) */}
           <div className="contact-grid">
             {contacts.map((c) => (
-              <button key={c.label} className="contact-btn" onClick={() => toast(`${c.label}: ${c.val}`)}>
+              <a
+                key={c.label}
+                className="contact-btn"
+                href={c.href}
+                {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                aria-label={`${c.label} ${item.name}`}
+              >
                 <Icon name={c.icon} size={20} /><span>{c.label}</span>
-              </button>
+              </a>
             ))}
           </div>
 
@@ -741,7 +824,7 @@ export function DetailScreen() {
 
           {/* internal linking: related places + landing pages */}
           {(() => {
-            const related = HHData.listings
+            const related = dir.listings
               .filter((l) => l.id !== item.id && (l.area === item.area || l.catId === item.catId))
               .slice(0, 3);
             const areaSlug = item.area.toLowerCase().split(" ")[0];
@@ -802,16 +885,17 @@ export function DetailScreen() {
                 <span className="muted" style={{ fontSize: ".84rem" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
               </div>
               <ImagePh label={`${outlet.area} map`} tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
-              <button className="btn btn-primary btn-block mt12" onClick={() => toast(`Directions to ${outlet.name}…`)}><Icon name="directions" size={18} /> Directions to this outlet</button>
+              <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Directions to this outlet</a>
             </div>
           ) : (
           <div className="card" style={{ padding: 18 }}>
             <div className="flex between center"><h3 style={{ fontSize: "1.05rem" }}>Hours &amp; location</h3>
-              <span className={item.open ? "status-open" : "status-closed"} style={{ fontSize: ".82rem" }}>{item.open ? "Open now" : "Closed"}</span></div>
+              <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: ".82rem" }}>{openNow ? "Open now" : "Closed"}</span></div>
             <div className="hours-list">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
-                <div key={d} className={`hours-row ${i === new Date().getDay() - 1 ? "today" : ""}`}>
-                  <span>{d}</span><span className="muted">{i === 6 ? "Closed" : "9:00 AM – 9:30 PM"}</span>
+              {(item.hoursWeek || []).map((r, i) => (
+                <div key={i} className={`hours-row ${live && i === sgTodayIdx() ? "today" : ""}`}>
+                  <span>{DAY_LABELS[i]}</span>
+                  <span className="muted">{r ? `${fmt12(r.open)} – ${fmt12(r.close)}` : "Closed"}</span>
                 </div>
               ))}
             </div>
@@ -821,17 +905,66 @@ export function DetailScreen() {
               <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}</span>
             </div>
             <ImagePh label="map location" tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
-            <button className="btn btn-primary btn-block mt12" onClick={() => toast("Opening directions…")}><Icon name="directions" size={18} /> Get directions</button>
+            <a className="btn btn-primary btn-block mt12" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Get directions</a>
           </div>
           )}
         </aside>
       </div>
 
-      {/* sticky mobile contact bar */}
+      {/* sticky mobile contact bar — real intents */}
       <div className="detail-stickybar">
-        {item.phone && <button className="btn btn-outline btn-sm" onClick={() => toast(`Call: ${item.phone}`)}><Icon name="phone" size={17} /> Call</button>}
-        {item.wa && <button className="btn btn-soft btn-sm" onClick={() => toast(`WhatsApp: ${item.wa}`)}><Icon name="whatsapp" size={17} /> WhatsApp</button>}
-        <button className="btn btn-primary btn-sm" onClick={() => toast("Opening directions…")}><Icon name="directions" size={17} /> Directions</button>
+        {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)}><Icon name="phone" size={17} /> Call</a>}
+        {item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
+        <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+      </div>
+
+      {/* photo lightbox */}
+      {lb !== null && galleryImgs[lb] && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" onClick={() => setLb(null)}>
+          <button className="lightbox-close" onClick={() => setLb(null)} aria-label="Close"><Icon name="x" size={26} /></button>
+          {galleryImgs.length > 1 && (
+            <button className="lightbox-nav prev" aria-label="Previous photo" onClick={(e) => { e.stopPropagation(); setLb((i) => (i === null ? 0 : (i + galleryImgs.length - 1) % galleryImgs.length)); }}><Icon name="chevron" size={30} style={{ transform: "rotate(90deg)" }} /></button>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="lightbox-img" src={galleryImgs[lb]} alt={`${item.name} photo ${lb + 1}`} onClick={(e) => e.stopPropagation()} />
+          {galleryImgs.length > 1 && (
+            <button className="lightbox-nav next" aria-label="Next photo" onClick={(e) => { e.stopPropagation(); setLb((i) => (i === null ? 0 : (i + 1) % galleryImgs.length)); }}><Icon name="chevron" size={30} style={{ transform: "rotate(-90deg)" }} /></button>
+          )}
+          <div className="lightbox-count">{lb + 1} / {galleryImgs.length}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SavedScreen() {
+  const { navigate, state } = useApp();
+  const dir = useDirectory();
+  const saved = state.saved.map((id) => dir.get(id)).filter(Boolean) as Listing[];
+  const recent = (state.recent || []).map((id) => dir.get(id)).filter(Boolean).slice(0, 6) as Listing[];
+  return (
+    <div className="screen-in hh-page">
+      <section className="seo-hero hh-pattern">
+        <div className="hh-wrap">
+          <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)" }}>Your saved places</h1>
+          <p className="muted" style={{ marginTop: 8, fontSize: "1.05rem" }}>Tap the heart on any listing to keep it here — saved on this device.</p>
+        </div>
+      </section>
+      <div className="hh-wrap hh-section">
+        {saved.length ? (
+          <>
+            <p className="muted" style={{ fontWeight: 600, marginBottom: 14 }}><span style={{ color: "var(--ink)" }}>{saved.length}</span> saved place{saved.length !== 1 ? "s" : ""}</p>
+            <div className="grid-cards">{saved.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+          </>
+        ) : (
+          <Empty icon="heart" title="No saved places yet" body="Browse the directory and tap the heart to save places you love. They'll appear here." action="Explore halal places" onAction={() => navigate("explore")} />
+        )}
+        {recent.length > 0 && (
+          <div style={{ marginTop: 34 }}>
+            <SectionHead title="Recently viewed" />
+            <div className="grid-cards">{recent.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -911,7 +1044,12 @@ export function VerificationCard({ item, navigate, toast }: {
         </div>
       </div>
       <div className="verif-card-foot">
-        <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={() => { if (!confirmed) { setConfirmed(true); toast("Thanks — your confirmation helps the community"); } }}>
+        <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={() => {
+          if (confirmed) return;
+          setConfirmed(true);
+          toast("Thanks — your confirmation helps the community");
+          fetch("/api/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item.id }) }).catch(() => {});
+        }}>
           <Icon name="crescent" size={15} /> {confirmed ? "You confirmed" : "Confirm it’s halal"}
         </button>
         <span className="verif-confirm-count"><strong>{confirms}</strong> community confirmations</span>
@@ -997,7 +1135,18 @@ export function DetailOverview({ item }: { item: Listing }) {
       <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb} A neighbourhood favourite in {item.area}, known for warm service and consistent quality across {item.cuisine.toLowerCase()}.</p>
       <PrayerSpaceCard item={item} />
       <div className="amenity-row">
-        {item.tags.map((t) => <span key={t} className="tag"><Icon name="check" size={13} /> {t}</span>)}
+        {item.tags.map((t) => {
+          const s = t.toLowerCase();
+          const href = s.includes("prayer") ? "/explore?prayer=1"
+            : s.includes("family") ? "/explore?family=1"
+            : s.includes("delivery") ? "/explore?delivery=1"
+            : s.includes("certified") ? "/explore?halal=certified"
+            : s.includes("owned") ? "/explore?owned=1"
+            : null;
+          return href
+            ? <a key={t} className="tag tag-link" href={href}><Icon name="check" size={13} /> {t}</a>
+            : <span key={t} className="tag"><Icon name="check" size={13} /> {t}</span>;
+        })}
       </div>
       <h3 style={{ marginTop: 24, fontSize: "1.2rem" }}>Gallery</h3>
       <div className="gallery-grid mt12">
@@ -1035,13 +1184,75 @@ export function DetailMenu({ item }: { item: Listing }) {
 export function DetailReviews({ item }: { item: Listing }) {
   const { toast } = useApp();
   const dist = [70, 18, 8, 3, 1];
+  const [reviews, setReviews] = useState(() => HHData.reviews.map((r) => ({ ...r })));
+  const [sort, setSort] = useState<"recent" | "helpful" | "rating">("recent");
+  const [helped, setHelped] = useState<Record<string, boolean>>({});
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [name, setName] = useState("");
+  const [text, setText] = useState("");
+  const [hp, setHp] = useState(""); // honeypot
+  const [busy, setBusy] = useState(false);
+
+  const addedCount = reviews.filter((r) => r.id.startsWith("new-")).length;
+  const totalReviews = item.reviews + addedCount;
+
+  const sorted = useMemo(() => {
+    const r = reviews.slice();
+    if (sort === "helpful") r.sort((a, b) => b.helpful - a.helpful);
+    else if (sort === "rating") r.sort((a, b) => b.rating - a.rating);
+    return r; // "recent" keeps insertion order (new reviews are prepended)
+  }, [reviews, sort]);
+
+  const initials = (n: string) =>
+    n.trim().split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "G";
+
+  const submit = async () => {
+    if (rating < 1) return toast("Pick a star rating");
+    if (text.trim().length < 4) return toast("Add a few words to your review");
+    setBusy(true);
+    const optimistic = {
+      id: `new-${Date.now()}`,
+      name: name.trim() || "Guest",
+      avatar: initials(name || "Guest"),
+      rating,
+      date: "Just now",
+      text: text.trim(),
+      helpful: 0,
+    };
+    setReviews((rs) => [optimistic, ...rs]);
+    setShowForm(false);
+    const payload = { businessId: item.id, rating, name: optimistic.name, text: optimistic.text, website: hp };
+    setRating(0); setName(""); setText("");
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      toast(data.pending ? "Review submitted for moderation" : "Thanks — your review is posted");
+    } catch {
+      toast("Saved — we’ll post it once you’re back online");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const markHelpful = (id: string) => {
+    if (helped[id]) return;
+    setHelped((h) => ({ ...h, [id]: true }));
+    setReviews((rs) => rs.map((r) => (r.id === id ? { ...r, helpful: r.helpful + 1 } : r)));
+  };
+
   return (
     <div className="detail-pane">
       <div className="review-summary">
         <div className="rs-big">
           <div className="rs-num">{item.rating.toFixed(1)}</div>
           <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(item.rating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
-          <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{item.reviews} reviews</div>
+          <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{totalReviews} reviews</div>
         </div>
         <div className="rs-bars">
           {dist.map((p, i) => (
@@ -1049,9 +1260,46 @@ export function DetailReviews({ item }: { item: Listing }) {
           ))}
         </div>
       </div>
-      <button className="btn btn-outline mt16" onClick={() => toast("Review form coming soon")}><Icon name="edit" size={17} /> Write a review</button>
+
+      <div className="flex between center wrap g10 mt16">
+        <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}><Icon name="edit" size={17} /> Write a review</button>
+        <label className="flex g8 center faint" style={{ fontSize: ".84rem" }}>
+          Sort
+          <select className="select" style={{ width: "auto", padding: "7px 10px" }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+            <option value="recent">Most recent</option>
+            <option value="helpful">Most helpful</option>
+            <option value="rating">Highest rated</option>
+          </select>
+        </label>
+      </div>
+
+      {showForm && (
+        <div className="review-form card mt12" style={{ padding: 16 }}>
+          <div className="flex g8 center" style={{ marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: ".9rem" }}>Your rating</span>
+            <div className="star-pick" onMouseLeave={() => setHover(0)}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button key={i} type="button" aria-label={`${i} star${i > 1 ? "s" : ""}`} className="star-btn"
+                  onMouseEnter={() => setHover(i)} onClick={() => setRating(i)}>
+                  <Icon name="starf" size={26} style={{ color: i <= (hover || rating) ? "var(--gold)" : "var(--line-strong)" }} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <input className="input" placeholder="Your name (optional)" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 8 }} />
+          <textarea className="textarea" placeholder="What was your experience? Was it MUIS-certified, was there prayer space?" value={text} onChange={(e) => setText(e.target.value)} />
+          {/* honeypot (hidden from users) */}
+          <input tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} />
+          <div className="flex g8" style={{ marginTop: 10 }}>
+            <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? "Posting…" : "Post review"}</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+          </div>
+          <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Reviews are moderated. Be honest and respectful — confirm halal status on MUIS HalalSG.</p>
+        </div>
+      )}
+
       <div className="review-list mt16">
-        {HHData.reviews.map((r) => (
+        {sorted.map((r) => (
           <div key={r.id} className="review-card">
             <div className="flex g10 center">
               <span className="avatar">{r.avatar}</span>
@@ -1059,7 +1307,9 @@ export function DetailReviews({ item }: { item: Listing }) {
                 <div className="flex g6 center"><span className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={12} style={{ color: i <= r.rating ? "var(--gold)" : "var(--line-strong)" }} />)}</span><span className="faint" style={{ fontSize: ".78rem" }}>{r.date}</span></div></div>
             </div>
             <p className="muted" style={{ marginTop: 10, fontSize: ".92rem", lineHeight: 1.5 }}>{r.text}</p>
-            <button className="btn btn-ghost btn-sm" style={{ marginTop: 8, paddingLeft: 0 }}><Icon name="heart" size={15} /> Helpful ({r.helpful})</button>
+            <button className={`btn btn-ghost btn-sm ${helped[r.id] ? "voted" : ""}`} style={{ marginTop: 8, paddingLeft: 0 }} onClick={() => markHelpful(r.id)} disabled={helped[r.id]}>
+              <Icon name="heart" size={15} /> Helpful ({r.helpful})
+            </button>
           </div>
         ))}
       </div>

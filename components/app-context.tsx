@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -73,6 +74,26 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+/* Isolates useSearchParams() in its OWN Suspense boundary so it never de-opts
+   the whole app to client-side rendering. Query params reach the provider via
+   onChange (after mount) — route params (slug/id) come from useParams() and are
+   server-available, so page content renders to server HTML (critical for SEO +
+   non-JS AI crawlers). */
+function SearchParamsBridge({ onChange }: { onChange: (p: Params) => void }) {
+  const search = useSearchParams();
+  const key = search.toString();
+  useEffect(() => {
+    const o: Params = {};
+    search.forEach((v, k) => {
+      o[k] = v;
+    });
+    onChange(o);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return null;
+}
+
 export const useApp = () => {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within AppProvider");
@@ -93,7 +114,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const routeParams = useParams();
-  const search = useSearchParams();
+  const [query, setQuery] = useState<Params>({});
 
   const [saved, setSaved] = useState<string[]>(["l2", "l10"]);
   const [wishlist, setWishlist] = useState<string[]>(["l4"]);
@@ -123,6 +144,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (ls.collections) setCollections(ls.collections);
     if (ls.flags) setFlags({ ...DEFAULT_FLAGS, ...ls.flags });
     setHydrated(true);
+  }, []);
+
+  // Sync a real Supabase auth session → user state (graceful: no-op without keys).
+  useEffect(() => {
+    let active = true;
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const { getSupabaseBrowser, supabaseConfigured } = await import("@/lib/supabase/client");
+      if (!supabaseConfigured) return;
+      const sb = getSupabaseBrowser();
+      if (!sb) return;
+      const apply = async (u: { id: string; email?: string } | null) => {
+        if (!u) {
+          if (active) setUserState({ loggedIn: false, role: "user", name: "Aisyah" });
+          return;
+        }
+        let role: "user" | "owner" = "user";
+        try {
+          const { data } = await sb.from("profiles").select("role").eq("id", u.id).single();
+          if (data?.role === "owner" || data?.role === "admin") role = "owner";
+        } catch {
+          /* ignore */
+        }
+        const base = (u.email || "").split("@")[0] || "You";
+        if (active) setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
+      };
+      const { data } = await sb.auth.getUser();
+      apply(data.user as { id: string; email?: string } | null);
+      const { data: sub } = sb.auth.onAuthStateChange((_e, session) => apply((session?.user as { id: string; email?: string }) ?? null));
+      unsub = () => sub.subscription.unsubscribe();
+    })();
+    return () => {
+      active = false;
+      unsub?.();
+    };
   }, []);
 
   // persist
@@ -285,11 +341,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     Object.entries(routeParams || {}).forEach(([k, v]) => {
       merged[k] = Array.isArray(v) ? v[0] : v;
     });
-    search.forEach((v, k) => {
+    Object.entries(query).forEach(([k, v]) => {
       merged[k] = v;
     });
     return merged;
-  }, [routeParams, search]);
+  }, [routeParams, query]);
 
   const screen = pathToScreen(pathname);
 
@@ -329,5 +385,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      <Suspense fallback={null}>
+        <SearchParamsBridge onChange={setQuery} />
+      </Suspense>
+      {children}
+    </AppContext.Provider>
+  );
 }

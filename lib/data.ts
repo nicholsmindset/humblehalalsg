@@ -15,6 +15,7 @@ import type {
 } from "./types";
 import { eventCats, events, myTickets, spotsLeft } from "./events-data";
 import { slugify } from "./slug";
+import { deriveWeekHours } from "./hours";
 
 export const categories: Category[] = [
   { id: "restaurants", label: "Restaurants", icon: "utensils" },
@@ -334,8 +335,10 @@ MORE.forEach((sp, i) => {
   });
 });
 
-listings.forEach((l) => {
+listings.forEach((l, i) => {
   l.image = l.image || IMG(PIC[listingImg[l.id]] || "spread");
+  // structured weekly hours (category-shaped, deterministic) for real "open now"
+  l.hoursWeek = l.hoursWeek || deriveWeekHours(l.catId, i);
 });
 // gallery + collage + area imagery
 const galleryKeys = ["interior", "spread", "curry", "beauty", "latte", "butcher"];

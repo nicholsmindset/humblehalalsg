@@ -1,0 +1,30 @@
+name: Sitemap Diff
+on:
+  schedule:
+    - cron: "0 7 * * *" # daily 07:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      # Restore yesterday's snapshot (best-effort; first run has none).
+      - uses: actions/cache@v4
+        with:
+          path: sitemap-prev.txt
+          key: sitemap-${{ github.run_id }}
+          restore-keys: sitemap-
+      - id: diff
+        run: node scripts/sitemap-diff.mjs "${{ vars.SITE_URL || 'https://humblehalal.com' }}"
+      - name: Post diff as issue
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "🗺️ Sitemap changed — review new/removed URLs"
+          content-filepath: ./sitemap-diff.md
+          labels: automation, seo

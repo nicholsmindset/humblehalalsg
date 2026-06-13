@@ -1,0 +1,33 @@
+name: Claude — Content QA
+on:
+  pull_request:
+    paths:
+      - "lib/blog.ts"
+      - "lib/blog-drafts.ts"
+      - "app/blog/**"
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    if: ${{ vars.CLAUDE_JOBS_ENABLED == '1' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i -g @anthropic-ai/claude-code
+      - name: Review content diff
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- lib/blog.ts lib/blog-drafts.ts app/blog/ | head -c 60000)
+          REVIEW=$(claude -p "$(cat scripts/claude-jobs/prompts/content-qa.md)
+
+          --- PR DIFF ---
+          $DIFF" --allowedTools "Read" --max-turns 12)
+          printf '%s\n' "$REVIEW" > review.md
+          gh pr comment "$PR_NUMBER" --body-file review.md || echo "comment skipped"

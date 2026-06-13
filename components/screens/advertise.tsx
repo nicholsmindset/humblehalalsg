@@ -14,7 +14,7 @@ const STATS: [string, string][] = [
 
 const FORMATS: { icon: string; name: string; desc: string; price: string }[] = [
   { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map.", price: "from $89/mo" },
-  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.sg.", price: "from $450/mo" },
+  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: "from $450/mo" },
   { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: "from $300/mo" },
   { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: "from $250/send" },
   { icon: "calendar", name: "Event Promotion", desc: "Boost your bazaar, class or community event across the Events page and homepage strip.", price: "from $120/event" },
@@ -107,7 +107,7 @@ export function AdvertiseScreen() {
               <Newsletter source="advertise" />
             </div>
             <p className="faint" style={{ fontSize: ".82rem", marginTop: 12 }}>
-              Prefer to talk? Email <strong>partners@humblehalal.sg</strong>
+              Prefer to talk? Email <strong>partners@humblehalal.com</strong>
             </p>
           </div>
         </section>

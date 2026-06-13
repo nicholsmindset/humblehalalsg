@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- C5 SEO/GEO scan — monthly, 1st at 10:00 local. Edit REPO_PATH below. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.humblehalal.seo-scan</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>REPO_PATH/scripts/claude-jobs/run-job.sh</string>
+    <string>seo-scan</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Day</key><integer>1</integer><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>REPO_PATH/logs/launchd-seo-scan.out</string>
+  <key>StandardErrorPath</key><string>REPO_PATH/logs/launchd-seo-scan.err</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>

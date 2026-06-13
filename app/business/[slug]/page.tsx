@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { DetailScreen } from "@/components/screens/consumer";
-import { getListing, listings } from "@/lib/data";
+import { getDirectory, getListingBySlug } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import {
   JsonLd,
@@ -8,8 +8,8 @@ import {
   breadcrumbJsonLd,
 } from "@/components/seo/json-ld";
 
-export function generateStaticParams() {
-  return listings.map((l) => ({ slug: l.slug as string }));
+export async function generateStaticParams() {
+  return (await getDirectory()).map((l) => ({ slug: l.slug as string }));
 }
 
 export async function generateMetadata({
@@ -18,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const l = getListing(slug);
+  const l = await getListingBySlug(slug);
   if (!l) return pageMeta({ title: "Business", path: `/business/${slug}`, index: false });
   const certified = l.certified ? "MUIS / verified halal" : "halal-friendly";
   return pageMeta({
@@ -31,7 +31,7 @@ export async function generateMetadata({
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const l = getListing(slug);
+  const l = await getListingBySlug(slug);
   return (
     <>
       {l && (

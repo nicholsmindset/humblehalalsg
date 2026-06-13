@@ -6,11 +6,14 @@ import { useState } from "react";
 import { HHData } from "@/lib/data";
 import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
+import { useDirectory } from "../directory-context";
+import { getSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard } from "./events";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
+import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
 import { VERIFY_FAQ } from "@/lib/faq";
 
@@ -31,7 +34,6 @@ export function LoginScreen() {
       ? "Enter a valid email address"
       : "";
   const pwErr = !pw ? "Enter your password" : pw.length < 6 ? "At least 6 characters" : "";
-  const valid = !emailErr && !pwErr;
 
   const finish = () => {
     const first = email.split("@")[0];
@@ -40,10 +42,37 @@ export function LoginScreen() {
     navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (!valid) return;
+    if (emailErr) return;
+    // Real auth: passwordless magic link. Demo: keep the password flow.
+    if (supabaseConfigured) {
+      const sb = getSupabaseBrowser();
+      if (sb) {
+        const { error } = await sb.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
+        toast(error ? "Couldn’t send the link — try again" : "Check your email for a magic login link ✉️");
+        return;
+      }
+    }
+    if (pwErr) return;
+    finish();
+  };
+
+  const googleSignIn = async () => {
+    if (supabaseConfigured) {
+      const sb = getSupabaseBrowser();
+      if (sb) {
+        await sb.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}/auth/callback` },
+        });
+        return;
+      }
+    }
     finish();
   };
 
@@ -67,7 +96,7 @@ export function LoginScreen() {
           <h1 style={{fontSize:'1.6rem', marginTop:18}}>{mode==='login'?'Welcome back':'Create your account'}</h1>
           <p className="muted" style={{marginTop:4}}>{mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.'}</p>
 
-          <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={finish}><Icon name="google" size={20}/> Continue with Google</button>
+          <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={googleSignIn}><Icon name="google" size={20}/> Continue with Google</button>
           <div className="auth-or"><span>or</span></div>
 
           <form onSubmit={submit} className="stack g14" noValidate>
@@ -109,8 +138,9 @@ export function LoginScreen() {
 ============================================================= */
 export function UserDashboardScreen() {
   const { navigate, state, setUser, createCollection, toggleInCollection } = useApp();
+  const dir = useDirectory();
   const [tab, setTab] = useState("saved");
-  const get = (ids: string[]) => ids.map(id => HHData.listings.find(l=>l.id===id)).filter(Boolean) as typeof HHData.listings;
+  const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
   const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
@@ -185,14 +215,14 @@ export function UserDashboardScreen() {
             <div className="stack g14">
               {HHData.reviews.slice(0,2).map(r=>(
                 <div key={r.id} className="card" style={{padding:16}}>
-                  <div className="flex g10 center"><ImagePh label="place" tone="gold" src={HHData.listings[0].image} style={{width:48,height:48,borderRadius:10}}/><div><div style={{fontWeight:700}}>Warung Bumbu Rempah</div><span className="rs-stars">{[1,2,3,4,5].map(i=><Icon key={i} name="starf" size={12} style={{color:i<=r.rating?'var(--gold)':'var(--line-strong)'}}/>)}</span></div></div>
+                  <div className="flex g10 center"><ImagePh label="place" tone="gold" src={dir.listings[0]?.image} style={{width:48,height:48,borderRadius:10}}/><div><div style={{fontWeight:700}}>Warung Bumbu Rempah</div><span className="rs-stars">{[1,2,3,4,5].map(i=><Icon key={i} name="starf" size={12} style={{color:i<=r.rating?'var(--gold)':'var(--line-strong)'}}/>)}</span></div></div>
                   <p className="muted" style={{marginTop:10, fontSize:'.92rem'}}>{r.text}</p>
                 </div>
               ))}
               <div className="card" style={{padding:20}}>
                 <h3 style={{fontSize:'1.1rem'}}>Suggested for you</h3>
                 <p className="muted" style={{fontSize:'.88rem', marginTop:4}}>Based on your saved places in Tampines &amp; Bedok.</p>
-                <div className="grid-cards mt16">{HHData.listings.slice(2,5).map(l=><ListingCard key={l.id} item={l}/>)}</div>
+                <div className="grid-cards mt16">{dir.listings.slice(2,5).map(l=><ListingCard key={l.id} item={l}/>)}</div>
               </div>
             </div>
           )}
@@ -225,9 +255,12 @@ export function SuggestScreen() {
   const [name, setName] = useState("");
   const [touched, setTouched] = useState(false);
   const nameErr = !name.trim() ? "Please enter the business name" : "";
-  const submit = () => {
+  const submit = async () => {
     setTouched(true);
     if (nameErr) return;
+    try {
+      await fetch("/api/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "suggest", name }) });
+    } catch { /* graceful */ }
     navigate("success", { type: "suggest" });
   };
   return (
@@ -394,9 +427,10 @@ export function RequestQuoteScreen() {
 ============================================================= */
 export function ClaimScreen() {
   const { navigate, params } = useApp();
+  const dir = useDirectory();
   const [q, setQ] = useState("");
-  const [picked, setPicked] = useState(params.id ? HHData.listings.find(l=>l.id===params.id) || null : null);
-  const results = q ? HHData.listings.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())) : HHData.listings.slice(0,4);
+  const [picked, setPicked] = useState(params.id ? dir.get(String(params.id)) || null : null);
+  const results = q ? dir.listings.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())) : dir.listings.slice(0,4);
 
   return (
     <div className="screen-in hh-page">
@@ -429,7 +463,7 @@ export function ClaimScreen() {
               <div className="field"><label>Your role</label><select className="select"><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
               <div className="field"><label>Proof of ownership</label><div className="upload-zone"><Icon name="upload" size={24}/><div style={{fontWeight:700,marginTop:6}}>Upload document</div><p className="faint" style={{fontSize:'.8rem'}}>Business registration, utility bill, or MUIS cert</p><button className="btn btn-soft btn-sm mt8">Choose file</button></div></div>
               <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" /></div>
-              <button className="btn btn-primary btn-lg" onClick={()=>navigate('success',{type:'claim'})}>Submit claim</button>
+              <button className="btn btn-primary btn-lg" onClick={async ()=>{ try { await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name }) }); } catch { /* graceful */ } navigate('success',{type:'claim'}); }}>Submit claim</button>
             </div>
           </div>
         )}
@@ -442,9 +476,20 @@ export function ClaimScreen() {
    REPORT / CORRECTION
 ============================================================= */
 export function ReportScreen() {
-  const { navigate, params } = useApp();
+  const { navigate, params, toast } = useApp();
   const [reason, setReason] = useState("");
-  const item = params.id ? HHData.listings.find(l=>l.id===params.id) : null;
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const dir = useDirectory();
+  const item = params.id ? dir.get(String(params.id)) : null;
+  const submitReport = async () => {
+    setBusy(true);
+    try {
+      await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item?.id || "", reason, details }) });
+    } catch { /* graceful */ }
+    setBusy(false);
+    navigate("success", { type: "report" });
+  };
   const reasons = [
     ['halal','Wrong halal status','The certification or halal info is incorrect'],
     ['closed','Permanently closed','This place is no longer operating'],
@@ -470,8 +515,8 @@ export function ReportScreen() {
               </button>
             ))}
           </div>
-          <div className="field mt16"><label>Details <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Add any detail that helps us verify" /></div>
-          <button className="btn btn-primary btn-lg btn-block mt16" disabled={!reason} onClick={()=>navigate('success',{type:'report'})}>Submit report</button>
+          <div className="field mt16"><label>Details <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
+          <button className="btn btn-primary btn-lg btn-block mt16" disabled={!reason || busy} onClick={submitReport}>{busy ? "Submitting…" : "Submit report"}</button>
         </div>
       </div>
     </div>
@@ -573,6 +618,7 @@ export function DisclaimerScreen() {
 ============================================================= */
 export function SeoScreen() {
   const { navigate, params } = useApp();
+  const dir = useDirectory();
   const page = getSeoPage(String(params.slug || "")) || allSeoPages()[0];
   const areaName = page.areaName || "Singapore";
   const cat = page.catId ? HHData.categories.find((c) => c.id === page.catId) : null;
@@ -580,7 +626,7 @@ export function SeoScreen() {
   const isFood = !page.catId || page.catId === "restaurants" || page.catId === "cafes";
   const content = categoryContent(page.catId);
   const filtered = seoListings(page);
-  const results = (filtered.length ? filtered : HHData.listings).slice(0, isCategoryPage ? 9 : 6);
+  const results = (filtered.length ? filtered : dir.listings).slice(0, isCategoryPage ? 9 : 6);
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";
@@ -593,11 +639,20 @@ export function SeoScreen() {
     .filter((p) => p.catId && !p.areaId && p.slug !== page.slug)
     .slice(0, 10);
 
+  // Crawlable internal links: real <a href> + progressive-enhancement SPA nav.
+  const link = (screen: string, p?: Record<string, string>) => ({
+    href: screenToPath(screen, p),
+    onClick: (e: React.MouseEvent) => {
+      e.preventDefault();
+      navigate(screen, p);
+    },
+  });
+
   return (
     <div className="screen-in hh-page">
       <section className="seo-hero hh-pattern">
         <div className="hh-wrap">
-          <div className="flex g6 center faint" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}><span className="link-inline" onClick={() => navigate("home")}>Home</span><Icon name="chevron" size={13} /><span className="link-inline" onClick={() => navigate("explore")}>Explore</span><Icon name="chevron" size={13} /><span style={{ color: "var(--ink)" }}>{page.h1}</span></div>
+          <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}><a className="link-inline" {...link("home")}>Home</a><Icon name="chevron" size={13} /><a className="link-inline" {...link("explore")}>Explore</a><Icon name="chevron" size={13} /><span style={{ color: "var(--ink)" }}>{page.h1}</span></nav>
           <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 680 }}>{page.h1}</h1>
           <p className="muted" style={{ maxWidth: 640, marginTop: 10, fontSize: "1.05rem" }}>{page.intro}</p>
           <div className="pillbar" style={{ marginTop: 16 }}>
@@ -612,7 +667,7 @@ export function SeoScreen() {
 
       <div className="hh-wrap seo-body">
         <div>
-          <div className="flex between center" style={{ marginBottom: 16 }}><h2 style={{ fontSize: "1.4rem" }}>Top halal {noun} {placeLabel}</h2><span className="link" onClick={() => navigate("map")}>View on map <Icon name="map" size={15} /></span></div>
+          <div className="flex between center" style={{ marginBottom: 16 }}><h2 style={{ fontSize: "1.4rem" }}>Top halal {noun} {placeLabel}</h2><a className="link" {...link("map")}>View on map <Icon name="map" size={15} /></a></div>
           {results.length ? (
             <div className="grid-cards">{results.map((l) => <ListingCard key={l.id} item={l} />)}</div>
           ) : (
@@ -634,7 +689,7 @@ export function SeoScreen() {
               {isCategoryPage && areaLinks.length > 0 && (
                 <details className="faq-item" name="seo-content">
                   <summary>{cat?.label} by area in Singapore<span className="faq-chevron" aria-hidden="true" /></summary>
-                  <div className="seo-linkgrid">{areaLinks.map((p) => <button key={p.slug} className="related-link" onClick={() => navigate("seo", { slug: p.slug })}>{p.h1}<Icon name="arrow" size={15} /></button>)}</div>
+                  <div className="seo-linkgrid">{areaLinks.map((p) => <a key={p.slug} className="related-link" {...link("seo", { slug: p.slug })}>{p.h1}<Icon name="arrow" size={15} /></a>)}</div>
                 </details>
               )}
             </div>
@@ -647,12 +702,12 @@ export function SeoScreen() {
           {related.length > 0 && (
             <div className="card" style={{ padding: 18 }}>
               <h3 style={{ fontSize: "1.05rem" }}>Related searches</h3>
-              <div className="stack g8 mt12">{related.map((r) => (<button key={r.slug} className="related-link" onClick={() => navigate("seo", { slug: r.slug })}>{r.h1}<Icon name="arrow" size={16} /></button>))}</div>
+              <div className="stack g8 mt12">{related.map((r) => (<a key={r.slug} className="related-link" {...link("seo", { slug: r.slug })}>{r.h1}<Icon name="arrow" size={16} /></a>))}</div>
             </div>
           )}
           <div className="card" style={{ padding: 18, marginTop: related.length ? 16 : 0 }}>
             <h3 style={{ fontSize: "1.05rem" }}>Browse by category</h3>
-            <div className="stack g8 mt12">{otherCats.map((p) => (<button key={p.slug} className="related-link" onClick={() => navigate("seo", { slug: p.slug })}>{p.h1}<Icon name="arrow" size={16} /></button>))}</div>
+            <div className="stack g8 mt12">{otherCats.map((p) => (<a key={p.slug} className="related-link" {...link("seo", { slug: p.slug })}>{p.h1}<Icon name="arrow" size={16} /></a>))}</div>
           </div>
           {isFood && (
             <div className="card" style={{ padding: 18, marginTop: 16 }}>

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const SITE = {
   name: "Humble Halal",
   shortName: "Humble Halal",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://humblehalal.sg",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://humblehalal.com",
   tagline: "Singapore's trusted halal & Muslim-owned business directory",
   description:
     "Discover halal restaurants, cafés, Muslim-owned businesses, services and community-friendly places across Singapore. A discovery platform — not a certifier.",

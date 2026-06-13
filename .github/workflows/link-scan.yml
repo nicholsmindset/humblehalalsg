@@ -1,0 +1,32 @@
+name: Link Scan
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan internal + outbound business links
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Crawl the live site: internal routes + the outbound business/social links
+          # they point to. Dead links feed the human verification queue.
+          args: >-
+            --no-progress --max-concurrency 4 --timeout 20 --max-retries 1
+            --accept 200,206,429
+            "${{ vars.SITE_URL || 'https://humblehalal.com' }}/sitemap.xml"
+          output: ./lychee/out.md
+          fail: false
+      - name: Open / update dead-link issue
+        if: steps.lychee.outputs.exit_code != 0
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "🔗 Dead links found by weekly scan"
+          content-filepath: ./lychee/out.md
+          labels: automation, verification

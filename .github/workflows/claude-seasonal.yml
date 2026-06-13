@@ -1,0 +1,37 @@
+name: Claude — Seasonal Burst
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season slug (e.g. ramadan, hari-raya)"
+        required: true
+        default: ramadan
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  seasonal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm i -g @anthropic-ai/claude-code
+      - name: Draft seasonal guides
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SEASON: ${{ github.event.inputs.season }}
+        run: |
+          claude -p "$(cat scripts/claude-jobs/prompts/seasonal.md)" \
+            --allowedTools "Read" "Edit" "Write" "Bash(npm run typecheck)" \
+            --max-turns 50 || echo "claude run finished"
+      - run: npm run typecheck
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: claude/seasonal-${{ github.event.inputs.season }}
+          title: "🌙 Seasonal drafts (AI): ${{ github.event.inputs.season }} — review before publishing"
+          body: "Auto-drafted into `lib/blog-drafts.ts`. **Not published.** Move entries to `lib/blog.ts` to publish."
+          labels: automation, content, needs-human-review
+          add-paths: lib/blog-drafts.ts

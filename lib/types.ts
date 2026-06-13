@@ -98,6 +98,7 @@ export interface Listing {
   outletCount?: number;
   coords?: LatLng;
   distanceKm?: number;
+  hoursWeek?: import("./hours").WeekHours;
 }
 
 export interface Review {

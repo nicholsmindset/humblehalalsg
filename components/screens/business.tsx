@@ -7,6 +7,7 @@ import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
+import { useDirectory } from "../directory-context";
 import { Badge, Icon, ImagePh, MobileHeader } from "../ui";
 import { AddressAutocomplete, type AddrPick } from "../biz/address-autocomplete";
 import { MapView } from "../map/map-view";
@@ -208,7 +209,19 @@ export function AddListingScreen() {
     .filter(({ o }) => o.lat != null && o.lng != null)
     .map(({ o, i }) => ({ id: `o${i}`, name: o.name || `Outlet ${i + 1}`, coords: { lat: o.lat as number, lng: o.lng as number }, kind: "listing" as const, active: i === 0 }));
   const steps = ["Details", "Location", "Category", "Halal status", "Photos", "Review"];
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : navigate("success", { type: "listing" }));
+  const submitListing = async () => {
+    try {
+      await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "listing", ...data }),
+      });
+    } catch {
+      /* graceful — still confirm to the user */
+    }
+    navigate("success", { type: "listing" });
+  };
+  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submitListing());
   const prev = () => (step > 0 ? setStep(step - 1) : navigate("for-business"));
 
   return (
@@ -478,9 +491,10 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
 
 export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
+  const dir = useDirectory();
   const [tab, setTab] = useState("overview");
   const a = HHData.analytics;
-  const myListings = [HHData.listings[0], HHData.listings[6]];
+  const myListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
 
   const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["billing", "Billing", "settings"]];
 
@@ -504,6 +518,15 @@ export function OwnerDashboardScreen() {
 
         {tab === "overview" && (
           <div className="dash-pane">
+            {myListings.some((l) => l?.verify?.expiringSoon) && (
+              <div className="notice notice-warn" style={{ marginBottom: 16 }}>
+                <Icon name="info" size={18} />
+                <span>
+                  Your MUIS halal certificate is <strong>expiring soon</strong>. Renew with MUIS and re-verify on Humble Halal to keep your <strong>MUIS Certified</strong> badge and halal-confidence score.
+                  <button className="link-inline" style={{ marginLeft: 6 }} onClick={() => navigate("verify")}>Re-verify →</button>
+                </span>
+              </div>
+            )}
             <div className="verif-banner">
               <div className="flex g12 center"><div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)" }}><Icon name="shield-check" size={22} /></div>
                 <div><div style={{ fontWeight: 700 }}>Verification: Approved</div><p className="faint" style={{ fontSize: ".84rem" }}>MUIS Certified · last reviewed 12 May 2026</p></div></div>

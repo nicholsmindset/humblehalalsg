@@ -7,7 +7,7 @@ export type ScreenName =
   | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
-  | "events" | "event-detail" | "checkout" | "host-event";
+  | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved";
 
 export type Params = Record<string, unknown>;
 
@@ -29,6 +29,9 @@ const BASE_PATH: Record<string, string> = {
   report: "/report",
   "request-quote": "/quotes",
   mosques: "/mosques",
+  "is-halal": "/is-halal",
+  blog: "/blog",
+  saved: "/saved",
   verify: "/verify",
   disclaimer: "/disclaimer",
   "404": "/404",

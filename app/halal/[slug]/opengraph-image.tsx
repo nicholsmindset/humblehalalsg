@@ -33,7 +33,7 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           <div style={{ fontSize: 70, fontWeight: 700, color: "#0F5C4A", lineHeight: 1.05, maxWidth: 1000 }}>{h1}</div>
           <div style={{ fontSize: 30, color: "#586471", maxWidth: 920 }}>{intro}</div>
         </div>
-        <div style={{ fontSize: 26, color: "#0F5C4A", fontWeight: 700 }}>humblehalal.sg</div>
+        <div style={{ fontSize: 26, color: "#0F5C4A", fontWeight: 700 }}>{SITE.url.replace(/^https?:\/\//, "")}</div>
       </div>
     ),
     { ...size },

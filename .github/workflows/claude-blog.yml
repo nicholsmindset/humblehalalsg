@@ -1,0 +1,38 @@
+name: Claude — Blog Drafting
+on:
+  schedule:
+    - cron: "0 1 * * 1" # Mondays 01:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    # Skips cleanly until ANTHROPIC_API_KEY is added to repo secrets.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.CLAUDE_JOBS_ENABLED == '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm i -g @anthropic-ai/claude-code
+      - name: Draft this week's posts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p "$(cat scripts/claude-jobs/prompts/blog-draft.md)" \
+            --allowedTools "Read" "Edit" "Write" "Bash(npm run typecheck)" \
+            --max-turns 40 || echo "claude run finished"
+      - name: Typecheck draft
+        run: npm run typecheck
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: claude/blog-drafts
+          title: "✍️ Blog drafts (AI) — review before publishing"
+          body: |
+            Auto-drafted by the weekly C1 job into `lib/blog-drafts.ts`.
+            **Not published.** To publish, move an entry into `lib/blog.ts`.
+          labels: automation, content, needs-human-review
+          add-paths: lib/blog-drafts.ts

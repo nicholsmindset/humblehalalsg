@@ -1,0 +1,17 @@
+name: Schema Check
+on:
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1" # Mondays 05:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      # SITE_URL repo variable points at the deployed/preview site; falls back to canonical.
+      - run: node scripts/check-schema.mjs "${{ vars.SITE_URL || 'https://humblehalal.com' }}"
