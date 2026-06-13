@@ -112,6 +112,28 @@ export function HomeScreen() {
         </div>
       </section>
 
+      {/* Why Humble Halal — pillars + travel promo (pre-footer content) */}
+      <section className="hh-wrap hh-section home-why">
+        <h2 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Why Humble Halal</h2>
+        <p className="muted" style={{ maxWidth: 640, marginBottom: 20 }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
+        <div className="flt-benefit-grid">
+          {[
+            ["search", "A directory you can trust", "Find MUIS-certified, Muslim-owned and Muslim-friendly places with clear badges — so you always know what's verified and what's self-declared."],
+            ["plane", "Halal travel, worldwide", "Search Muslim-friendly hotels and flights for Umrah, Hajj and everyday travel — prayer rooms, halal dining nearby, alcohol-free stays, Muslim-meal flags and qibla."],
+            ["shield-check", "Transparency over hype", "We're a discovery platform, not a certifier. MUIS HalalSG stays the authority; we simply make the facts easy to find and confirm."],
+            ["heart", "Built with the community", "Your suggestions, reports and reviews keep it accurate — for the Singapore Muslim community, and Muslims travelling the world."],
+          ].map(([ic, h, b]) => (
+            <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
+          ))}
+        </div>
+
+        <button type="button" className="hotel-cta home-travel-cta" onClick={() => navigate("travel")} style={{ width: "100%", textAlign: "left", border: 0, cursor: "pointer", marginTop: 22 }}>
+          <span className="hcta-ico"><Icon name="plane" size={20} /></span>
+          <span className="hcta-text"><strong>Planning a trip?</strong> Search Muslim-friendly hotels and flights — from Umrah stays by the Haramain to family holidays across Asia — all in one place.</span>
+          <span className="hcta-go">Explore halal travel <Icon name="arrow" size={15} /></span>
+        </button>
+      </section>
+
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
       <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />
     </div>

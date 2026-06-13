@@ -5,11 +5,13 @@ import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
 
+/* Honest, defensible value props — not fabricated metrics. Current audience
+   figures are shared in the media kit once they can be reported accurately. */
 const STATS: [string, string][] = [
-  ["480K", "Monthly searches"],
-  ["12,400+", "Halal listings"],
-  ["68%", "Aged 18–44"],
-  ["3.4×", "Higher purchase intent"],
+  ["Halal-first", "Every visitor is here for halal & Muslim-friendly"],
+  ["High intent", "People actively choosing where to eat, shop & travel"],
+  ["Singapore", "Built for the local Muslim community"],
+  ["Brand-safe", "Curated, halal-context placements only"],
 ];
 
 const FORMATS: { icon: string; name: string; desc: string; price: string }[] = [
@@ -60,6 +62,7 @@ export function AdvertiseScreen() {
               </div>
             ))}
           </div>
+          <p className="muted tc" style={{ fontSize: ".82rem", marginTop: 12 }}>Current audience and performance figures are shared in our media kit. Advertising is subject to our content review and approval, and our standard advertising terms.</p>
         </section>
 
         {/* ad formats */}

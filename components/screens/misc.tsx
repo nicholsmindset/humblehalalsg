@@ -418,7 +418,7 @@ export function RequestQuoteScreen() {
               {submitting ? "Sending…" : "Get my quotes"}
             </button>
             <p className="faint tc" style={{ fontSize: ".82rem" }}>
-              By submitting you agree to be contacted by matched vendors. No spam — we only share with relevant providers.
+              By submitting you agree to be contacted by matched providers (typically within 1–2 business days). We only share your request with relevant Muslim-owned &amp; halal-friendly providers — no spam, and you’re never charged by Humble Halal. Vendors are independent; please do your own checks before engaging them.
             </p>
           </div>
         </div>
@@ -750,10 +750,10 @@ export function SuccessScreen() {
   const { navigate, params } = useApp();
   const map: Record<string, { t: string; d: string; cta: string; go: string }> = {
     listing: { t:'Listing submitted!', d:'Your business has been submitted for review. We’ll verify your details and let you know within 1–2 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
-    claim: { t:'Claim submitted!', d:'We’ve received your ownership claim. Our team will review your documents and email you shortly.', cta:'Go to dashboard', go:'owner-dashboard' },
-    suggest: { t:'Thank you!', d:'Your suggestion has been sent to our team. We’ll review and add it to help the community discover it.', cta:'Back home', go:'home' },
-    quote: { t:'Request sent! 🎉', d:'We’ve received your request and will match you with trusted halal vendors. Expect quotes by email or WhatsApp shortly — no obligation.', cta:'Browse the directory', go:'explore' },
-    report: { t:'Report received', d:'Thanks for helping us stay accurate. We’ll look into this and update the listing if needed.', cta:'Back home', go:'home' },
+    claim: { t:'Claim submitted!', d:'We’ve received your ownership claim. Our team will review your documents and email you within 3–5 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
+    suggest: { t:'Thank you!', d:'Your suggestion has been sent to our team. We usually review and add new places within a few business days to help the community discover them.', cta:'Back home', go:'home' },
+    quote: { t:'Request sent! 🎉', d:'We’ve received your request and will match you with relevant Muslim-owned & halal-friendly providers, who typically reach out within 1–2 business days. Quotes are no-obligation, and you’re never charged by Humble Halal.', cta:'Browse the directory', go:'explore' },
+    report: { t:'Report received', d:'Thanks for helping us stay accurate. We aim to review reports within 3 business days and update the listing if needed.', cta:'Back home', go:'home' },
     payment: { t:'Payment successful', d:'Your plan is now active. Enjoy your upgraded visibility on Humble Halal.', cta:'Go to dashboard', go:'owner-dashboard' },
     rsvp: { t:'You’re going! 🎉', d:'Your free RSVP is confirmed. Find your ticket and QR code under “My tickets” — see you there.', cta:'View my tickets', go:'user-dashboard' },
     'payment-event': { t:'Tickets confirmed! 🎟️', d:'Payment received and your tickets are booked. Your QR code is ready under “My tickets”.', cta:'View my tickets', go:'user-dashboard' },
