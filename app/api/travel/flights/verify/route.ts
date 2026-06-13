@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   try {
     const v = await verifyFlight(offerId);
     if (!v) return NextResponse.json({ ok: false, error: "Offer no longer available — please search again" }, { status: 409 });
-    return NextResponse.json({ ok: true, total: v.total ?? null, currency: v.currency ?? null, changed: !!v.changes });
+    return NextResponse.json({ ok: true, total: v.total ?? null, currency: v.currency ?? null, changed: !!v.changes, fare: v.fare ?? null, baggage: v.baggage ?? null, terms: v.terms ?? null });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not verify the fare" }, { status: 502 });
   }

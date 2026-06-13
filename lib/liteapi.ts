@@ -180,9 +180,10 @@ export async function searchFlights(body: FlightSearchBody): Promise<unknown[]> 
   return Array.isArray(r.data) ? r.data : [];
 }
 
-/** Re-price/validate a flight offer before booking. Surfaces `changes` (price moves). */
-export async function verifyFlight(offerId: string): Promise<{ total?: number; currency?: string; changes?: unknown } | null> {
-  const r = await request<{ data?: { journey?: { pricing?: { display?: { total?: number; currency?: string } } }; changes?: unknown }[] }>(`/flights/verify`, {
+/** Re-price/validate a flight offer before booking. Surfaces `changes` (price moves),
+ *  fare family, baggage policy and cancellation/change terms. */
+export async function verifyFlight(offerId: string): Promise<{ total?: number; currency?: string; changes?: unknown; fare?: unknown; baggage?: unknown; terms?: unknown } | null> {
+  const r = await request<{ data?: { journey?: { pricing?: { display?: { total?: number; currency?: string } }; fare?: unknown; baggage?: unknown; terms?: unknown }; changes?: unknown }[] }>(`/flights/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ offerId }),
@@ -190,15 +191,29 @@ export async function verifyFlight(offerId: string): Promise<{ total?: number; c
   const item = r.data?.[0];
   if (!item) return null;
   const d = item.journey?.pricing?.display;
-  return { total: d?.total, currency: d?.currency, changes: item.changes };
+  return { total: d?.total, currency: d?.currency, changes: item.changes, fare: item.journey?.fare, baggage: item.journey?.baggage, terms: item.journey?.terms };
 }
 
-/** Flight prebook → opens the Stripe payment intent. Returns prebookId + handles. */
+/** Flight prebook → opens the Stripe payment intent. Returns prebookId, payment
+ *  handles AND `servicesAttachable` (seats/bags available to add in step 2). */
 export async function prebookFlight(offerId: string, contact: FlightContactInput, passengers: FlightPassengerInput[]): Promise<Record<string, unknown> | null> {
   const r = await request<{ data?: Record<string, unknown>[] }>(`/flights/prebooks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ offerId, usePaymentSdk: true, contact, passengers }),
+  });
+  return r.data?.[0] ?? null;
+}
+
+/** Attach seats/bags to a prebook. Returns a NEW payment intent (transactionId)
+ *  reflecting the updated total — callers MUST use the latest transactionId. */
+export async function attachFlightServices(prebookId: string, selectedServices: unknown[], voucherCode?: string): Promise<Record<string, unknown> | null> {
+  const body: Record<string, unknown> = { selectedServices };
+  if (voucherCode) body.voucherCode = voucherCode;
+  const r = await request<{ data?: Record<string, unknown>[] }>(`/flights/prebooks/${encodeURIComponent(prebookId)}/services`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   return r.data?.[0] ?? null;
 }

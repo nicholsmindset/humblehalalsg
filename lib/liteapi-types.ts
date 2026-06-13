@@ -113,10 +113,21 @@ export interface LiteApiAirport {
 }
 
 export interface FlightSearchBody {
-  legs: { origin: string; destination: string; date: string }[];
+  legs: { origin: string; destination: string; date: string; direction?: string }[];
   adults: number;
   children?: number;
+  cabin?: string; // ECONOMY | PREMIUM_ECONOMY | BUSINESS | FIRST
   currency: string;
+  sort?: string;
+}
+
+/** Ancillary service (seat or bag) selection for /flights/prebooks/{id}/services. */
+export interface FlightServiceSelection {
+  type: string; // "seat" | "bag"
+  segmentKey?: string;
+  passengerRef?: string;
+  serviceId?: string;
+  seatNumber?: string;
 }
 
 export interface FlightContactInput {

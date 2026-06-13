@@ -36,6 +36,8 @@ export async function POST(req: Request) {
       price: r.price != null ? Number(r.price) : null,
       currency: r.currency ?? "USD",
       paymentTypes: r.paymentTypes ?? [],
+      servicesAttachable: r.servicesAttachable ?? r.services ?? null,
+      expiration: r.expiration ?? null,
     });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not start the booking" }, { status: 502 });

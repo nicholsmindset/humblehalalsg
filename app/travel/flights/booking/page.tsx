@@ -14,6 +14,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       date={String(sp.date || "")}
       price={String(sp.price || "")}
       currency={String(sp.currency || "USD")}
+      adults={Math.min(9, Math.max(1, Number(sp.adults) || 1))}
+      roundTrip={sp.rt === "1"}
+      returnDate={String(sp.rdate || "")}
       bookingEnabled={getServerFlags().paidFlights}
     />
   );
