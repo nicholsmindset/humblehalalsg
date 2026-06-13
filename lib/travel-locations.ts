@@ -18,12 +18,12 @@ export interface TravelCity {
 
 export const travelCities: TravelCity[] = [
   {
-    slug: "mecca", name: "Mecca", cityName: "Mecca", countryCode: "SA", country: "Saudi Arabia",
+    slug: "mecca", name: "Mecca", cityName: "Makkah", countryCode: "SA", country: "Saudi Arabia",
     coords: { lat: 21.4225, lng: 39.8262 }, currency: "SAR", umrah: true, landmark: "Masjid al-Haram",
     blurb: "Hotels near Masjid al-Haram for Umrah and Hajj — walking distance to the Holy Mosque, with prayer facilities and halal dining throughout.",
   },
   {
-    slug: "medina", name: "Medina", cityName: "Medina", countryCode: "SA", country: "Saudi Arabia",
+    slug: "medina", name: "Medina", cityName: "Madinah", countryCode: "SA", country: "Saudi Arabia",
     coords: { lat: 24.4709, lng: 39.6112 }, currency: "SAR", umrah: true, landmark: "Al-Masjid an-Nabawi",
     blurb: "Stay close to Al-Masjid an-Nabawi in Medina — Muslim-friendly hotels minutes from the Prophet's Mosque, ideal for Umrah and Ziyarah.",
   },

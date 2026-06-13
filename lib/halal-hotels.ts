@@ -95,11 +95,41 @@ export interface Hotel {
   guestRating?: number; // review score (0–10)
   reviewCount?: number;
   description?: string;
+  descriptionHtml?: string;
+  amenities?: string[];
   flags: HotelFlags;
   halalScore: number;
   verified: boolean; // human-verified overlay
   verifiedBy: VerifiedBy;
   priceFrom?: { amount: number; currency: string };
+}
+
+/** A normalized guest review (from /data/reviews). */
+export interface HotelReview {
+  name: string;
+  country?: string;
+  type?: string; // couple | family | solo …
+  date?: string;
+  score?: number; // 0–10
+  headline?: string;
+  pros?: string;
+  cons?: string;
+}
+
+/** Booking.com-style word for a 0–10 guest score. */
+export function ratingWord(score?: number): string {
+  if (score == null) return "";
+  if (score >= 9) return "Wonderful";
+  if (score >= 8) return "Very good";
+  if (score >= 7) return "Good";
+  if (score >= 6) return "Pleasant";
+  return "Review score";
+}
+
+/** Two-letter country → display (uppercase fallback). */
+export function countryLabel(code?: string): string {
+  if (!code) return "";
+  return code.length === 2 ? code.toUpperCase() : code;
 }
 
 function flagsFromOverlay(o: OverlayRow): HotelFlags {
@@ -140,6 +170,8 @@ export function hotelFromContent(c: LiteApiHotelContent, overlay?: OverlayRow): 
     guestRating: c.rating,
     reviewCount: c.reviewCount,
     description: desc,
+    descriptionHtml: sanitizeHtml(c.hotelDescription),
+    amenities: dedupe(facilities).slice(0, 18),
     flags,
     halalScore: overlay?.halal_score ?? hotelHalalScore(flags),
     verified: verifiedBy !== "auto",
@@ -180,24 +212,29 @@ export interface RateOffer {
   refundable: boolean;
 }
 
-/** Flatten a /hotels/rates hit's roomTypes→rates into UI offers. */
+/** Flatten a /hotels/rates hit's roomTypes→rates into UI offers, deduped to one
+ *  row per distinct room name (cheapest rate, refundable preferred on ties). */
 export function offersFromRatesHotel(h: LiteApiRatesHotel): RateOffer[] {
-  const out: RateOffer[] = [];
+  const byName = new Map<string, RateOffer>();
   for (const rt of h.roomTypes ?? []) {
     for (const r of rt.rates ?? []) {
       const t = r.retailRate?.total?.[0];
       const offerId = String(r.offerId || rt.offerId || "");
       if (!offerId) continue;
-      out.push({
+      const o: RateOffer = {
         offerId,
         name: String(r.name || "Room"),
         price: t?.amount != null ? Number(t.amount) : undefined,
         currency: t?.currency ? String(t.currency) : undefined,
         refundable: String(r.refundableTag || "") === "RFN",
-      });
+      };
+      const ex = byName.get(o.name);
+      const cheaper = (o.price ?? Infinity) < (ex?.price ?? Infinity);
+      const betterTie = ex && o.price === ex.price && o.refundable && !ex.refundable;
+      if (!ex || cheaper || betterTie) byName.set(o.name, o);
     }
   }
-  return out;
+  return [...byName.values()].sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
 }
 
 /** Human-readable labels for active flags (UI badges). */
@@ -218,4 +255,26 @@ export function activeFlagLabels(flags: HotelFlags): string[] {
 
 function stripHtml(s?: string): string {
   return (s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+const ALLOWED_TAGS = /^(p|br|strong|b|em|i|ul|ol|li|h3|h4)$/i;
+/** Whitelist sanitizer: keep basic structural tags (strip attrs), drop the rest.
+ *  Lets us render LiteAPI's formatted hotelDescription safely with headings/lists. */
+export function sanitizeHtml(html?: string): string {
+  if (!html) return "";
+  let s = html.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
+  s = s.replace(/<(\/?)([a-z0-9]+)[^>]*?>/gi, (_m, slash, tag) =>
+    ALLOWED_TAGS.test(tag) ? `<${slash}${tag.toLowerCase()}>` : " ",
+  );
+  return s.replace(/[ \t]+\n/g, "\n").trim();
+}
+
+function dedupe(arr: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const a of arr) {
+    const k = a.trim().toLowerCase();
+    if (a.trim() && !seen.has(k)) { seen.add(k); out.push(a.trim()); }
+  }
+  return out;
 }

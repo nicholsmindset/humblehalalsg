@@ -57,7 +57,7 @@ export default async function Page({
           ]),
         ]}
       />
-      <TravelHotelScreen hotel={d.hotel} images={d.images} offers={d.offers} bookingEnabled={bookingEnabled} />
+      <TravelHotelScreen hotel={d.hotel} images={d.images} offers={d.offers} reviews={d.reviews} mosques={d.mosques} halalFood={d.halalFood} bookingEnabled={bookingEnabled} />
     </>
   );
 }

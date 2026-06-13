@@ -1,13 +1,15 @@
 import "server-only";
-import { getHotel, getHotelsByCity, searchRates } from "./liteapi";
+import { getHotel, getHotelReviews, getHotelsByCity, searchRates } from "./liteapi";
 import { getSupabaseAdmin } from "./supabase/server";
 import {
   hotelFromContent,
   offersFromRatesHotel,
   type Hotel,
+  type HotelReview,
   type OverlayRow,
   type RateOffer,
 } from "./halal-hotels";
+import { nearbyPlaces, type NearbyPlace } from "./mosques-nearby";
 import type { TravelCity } from "./travel-locations";
 
 /* Server-side travel data: LiteAPI content/rates merged with our Supabase
@@ -44,6 +46,28 @@ export interface HotelDetail {
   hotel: Hotel;
   images: string[];
   offers: RateOffer[];
+  reviews: HotelReview[];
+  mosques: NearbyPlace[];
+  halalFood: NearbyPlace[];
+}
+
+function normalizeReviews(raw: unknown[]): HotelReview[] {
+  return raw
+    .map((r) => {
+      const o = (r || {}) as Record<string, unknown>;
+      const score = Number(o.averageScore);
+      return {
+        name: String(o.name || "Guest"),
+        country: o.country ? String(o.country) : undefined,
+        type: o.type ? String(o.type) : undefined,
+        date: o.date ? String(o.date) : undefined,
+        score: Number.isFinite(score) ? score : undefined,
+        headline: o.headline ? String(o.headline) : undefined,
+        pros: o.pros ? String(o.pros) : undefined,
+        cons: o.cons ? String(o.cons) : undefined,
+      } as HotelReview;
+    })
+    .filter((r) => r.headline || r.pros || r.cons);
 }
 
 export async function hotelDetail(
@@ -81,5 +105,21 @@ export async function hotelDetail(
     }
   }
 
-  return { hotel, images: images.length ? images : hotel.image ? [hotel.image] : [], offers };
+  let reviews: HotelReview[] = [];
+  try {
+    reviews = normalizeReviews(await getHotelReviews(id, 12));
+  } catch {
+    /* reviews best-effort */
+  }
+
+  const places = hotel.coords ? await nearbyPlaces(hotel.coords.lat, hotel.coords.lng) : { mosques: [], halalFood: [] };
+
+  return {
+    hotel,
+    images: images.length ? images : hotel.image ? [hotel.image] : [],
+    offers,
+    reviews,
+    mosques: places.mosques,
+    halalFood: places.halalFood,
+  };
 }

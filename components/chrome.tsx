@@ -276,6 +276,7 @@ export function TopNav() {
   const user = state.user;
   const links = [
     { id: "explore", label: t("nav.explore") },
+    { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "for-business", label: t("nav.forBusiness") },
     { id: "pricing", label: t("nav.pricing") },
@@ -525,6 +526,7 @@ export function Footer() {
       "Discover",
       [
         ["Explore", "explore"],
+        ["Halal travel & hotels", "travel"],
         ["Events", "events"],
         ["Map view", "map"],
         ["Saved places", "saved"],
