@@ -1,6 +1,7 @@
 /* Humble Halal — JSON-LD structured data (server component + builders). */
 import { SITE } from "@/lib/seo";
 import type { EventItem, Listing } from "@/lib/types";
+import type { Hotel } from "@/lib/halal-hotels";
 
 export function JsonLd({ data }: { data: object | object[] }) {
   return (
@@ -208,6 +209,40 @@ export function blogPostingJsonLd(p: {
     ...(p.wordCount ? { wordCount: p.wordCount } : {}),
     ...(p.section ? { articleSection: p.section } : {}),
     inLanguage: "en-SG",
+  };
+}
+
+export function hotelJsonLd(h: Hotel) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    name: h.name,
+    ...(h.description ? { description: h.description.slice(0, 300) } : {}),
+    ...(h.image ? { image: h.image } : {}),
+    url: `${SITE.url}/travel/hotel/${h.id}`,
+    ...(h.address || h.city
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            ...(h.address ? { streetAddress: h.address } : {}),
+            ...(h.city ? { addressLocality: h.city } : {}),
+            ...(h.country ? { addressCountry: h.country } : {}),
+          },
+        }
+      : {}),
+    ...(h.coords ? { geo: { "@type": "GeoCoordinates", latitude: h.coords.lat, longitude: h.coords.lng } } : {}),
+    ...(h.stars ? { starRating: { "@type": "Rating", ratingValue: h.stars, bestRating: 5 } } : {}),
+    ...(h.guestRating && h.reviewCount
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: h.guestRating,
+            reviewCount: h.reviewCount,
+            bestRating: 10,
+          },
+        }
+      : {}),
+    ...(h.priceFrom ? { priceRange: `${h.priceFrom.currency} ${Math.round(h.priceFrom.amount)}+` } : {}),
   };
 }
 

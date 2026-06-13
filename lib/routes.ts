@@ -7,7 +7,8 @@ export type ScreenName =
   | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
-  | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved";
+  | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
+  | "travel" | "travel-city" | "travel-hotel" | "travel-booking";
 
 export type Params = Record<string, unknown>;
 
@@ -30,6 +31,8 @@ const BASE_PATH: Record<string, string> = {
   "request-quote": "/quotes",
   mosques: "/mosques",
   "is-halal": "/is-halal",
+  travel: "/travel",
+  "travel-booking": "/travel/booking",
   blog: "/blog",
   saved: "/saved",
   verify: "/verify",
@@ -61,6 +64,10 @@ export function screenToPath(screen: string, params: Params = {}): string {
       return `/events/${slugForEvent(String(params.id ?? ""))}${qs(params, ["id"])}`;
     case "seo":
       return `/halal/${String(params.slug ?? DEFAULT_SEO_SLUG)}${qs(params, ["slug"])}`;
+    case "travel-city":
+      return `/travel/${String(params.city ?? "")}${qs(params, ["city"])}`;
+    case "travel-hotel":
+      return `/travel/hotel/${String(params.id ?? "")}${qs(params, ["id"])}`;
     default: {
       const base = BASE_PATH[screen] ?? "/";
       return `${base}${qs(params)}`;
@@ -75,6 +82,10 @@ export function pathToScreen(pathname: string): ScreenName {
   if (pathname.startsWith("/events/")) return "event-detail";
   if (pathname === "/events") return "events";
   if (pathname.startsWith("/halal")) return "seo";
+  if (pathname.startsWith("/travel/hotel")) return "travel-hotel";
+  if (pathname.startsWith("/travel/booking")) return "travel-booking";
+  if (pathname === "/travel") return "travel";
+  if (pathname.startsWith("/travel/")) return "travel-city";
   if (pathname.startsWith("/owner")) return "owner-dashboard";
   if (pathname.startsWith("/dashboard")) return "user-dashboard";
   const hit = Object.entries(BASE_PATH).find(

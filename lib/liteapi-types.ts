@@ -1,0 +1,90 @@
+/* Humble Halal — LiteAPI v3.0 response types.
+   Pragmatic, partial typings of the fields we actually read (LiteAPI returns a
+   lot more). All optional + index-signature-tolerant so a shape change degrades
+   gracefully rather than throwing. Field names match the live API:
+   /data/hotel(s) → camelCase content; /hotels/rates → snake_case search hits. */
+
+/** A facility entry from /data/hotel `facilities[]`. */
+export interface LiteApiFacility {
+  facilityId?: number;
+  name?: string;
+}
+
+/** Static hotel content (/data/hotel, items of /data/hotels). */
+export interface LiteApiHotelContent {
+  id: string;
+  name?: string;
+  hotelDescription?: string;
+  hotelImportantInformation?: string;
+  hotelImages?: { url?: string; caption?: string; defaultImage?: boolean; order?: number }[];
+  main_photo?: string;
+  thumbnail?: string;
+  country?: string;
+  countryCode?: string;
+  city?: string;
+  address?: string;
+  zip?: string;
+  starRating?: number;
+  rating?: number; // guest review score (0–10)
+  reviewCount?: number;
+  location?: { latitude?: number; longitude?: number };
+  hotelFacilities?: string[];
+  facilities?: LiteApiFacility[];
+  checkinCheckoutTimes?: { checkin?: string; checkout?: string };
+  [k: string]: unknown;
+}
+
+/** A single bookable offer/rate inside a /hotels/rates hotel. */
+export interface LiteApiOffer {
+  offerId: string;
+  name?: string;
+  refundableTag?: string; // "RFN" | "NRF"
+  retailRate?: { total?: { amount?: number; currency?: string }[]; [k: string]: unknown };
+  commission?: { amount?: number; currency?: string }[] | { amount?: number }[];
+  [k: string]: unknown;
+}
+
+/** A search hit from POST /hotels/rates `hotels[]`. */
+export interface LiteApiRatesHotel {
+  id: string;
+  name?: string;
+  main_photo?: string;
+  thumbnail?: string;
+  address?: string;
+  country_code?: string;
+  city_name?: string;
+  rating?: number; // guest score 0–10
+  stars?: number;
+  review_count?: number;
+  roomTypes?: { offerId?: string; rates?: LiteApiOffer[]; [k: string]: unknown }[];
+  [k: string]: unknown;
+}
+
+export interface RatesSearchBody {
+  checkin: string; // YYYY-MM-DD
+  checkout: string; // YYYY-MM-DD
+  currency: string; // ISO 4217
+  guestNationality: string; // ISO country
+  occupancies: { adults: number; children?: number[] }[];
+  countryCode?: string;
+  cityName?: string;
+  hotelIds?: string[];
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  limit?: number;
+  timeout?: number;
+}
+
+export interface PrebookResult {
+  prebookId?: string;
+  transactionId?: string;
+  [k: string]: unknown;
+}
+
+export interface BookResult {
+  bookingId?: string;
+  status?: string;
+  hotelConfirmationCode?: string;
+  [k: string]: unknown;
+}

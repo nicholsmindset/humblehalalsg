@@ -11,6 +11,7 @@ import "../styles/screens.css";
 import "../styles/screens2.css";
 import "../styles/moat.css";
 import "../styles/events.css";
+import "../styles/travel.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";

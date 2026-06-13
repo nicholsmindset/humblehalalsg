@@ -52,3 +52,7 @@ sitemap-diff.md
 .lighthouseci/
 /test-results/
 /playwright-report/
+
+# LiteAPI reference + local Claude settings (may contain keys)
+lite_api.postman_collection.json
+.claude/settings.json

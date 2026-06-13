@@ -4,6 +4,7 @@ import { getDirectory } from "@/lib/directory";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
+import { allTravelHubs } from "@/lib/travel-hubs";
 import { SITE } from "@/lib/seo";
 
 const PUBLIC_STATIC = [
@@ -13,6 +14,7 @@ const PUBLIC_STATIC = [
   "/mosques",
   "/halal",
   "/is-halal",
+  "/travel",
   "/blog",
   "/events",
   "/for-business",
@@ -78,5 +80,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...listingEntries, ...eventEntries, ...seoEntries, ...brandEntries, ...blogEntries];
+  const travelEntries: MetadataRoute.Sitemap = allTravelHubs().map((h) => ({
+    url: `${base}/travel/${h.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticEntries,
+    ...listingEntries,
+    ...eventEntries,
+    ...seoEntries,
+    ...brandEntries,
+    ...blogEntries,
+    ...travelEntries,
+  ];
 }
