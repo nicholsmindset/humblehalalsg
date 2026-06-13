@@ -103,6 +103,22 @@ export interface LiteApiPlace {
   types?: string[];
 }
 
+/** An airport from /data/flights/airports. */
+export interface LiteApiAirport {
+  iata: string;
+  name?: string;
+  city?: string;
+  country?: string;
+  hasAirlineService?: boolean;
+}
+
+export interface FlightSearchBody {
+  legs: { origin: string; destination: string; date: string }[];
+  adults: number;
+  children?: number;
+  currency: string;
+}
+
 export interface PrebookResult {
   prebookId?: string;
   transactionId?: string;

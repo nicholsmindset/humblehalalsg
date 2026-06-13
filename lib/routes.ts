@@ -8,7 +8,7 @@ export type ScreenName =
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
-  | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips";
+  | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips" | "travel-flights";
 
 export type Params = Record<string, unknown>;
 
@@ -34,6 +34,7 @@ const BASE_PATH: Record<string, string> = {
   travel: "/travel",
   "travel-booking": "/travel/booking",
   "travel-trips": "/travel/trips",
+  "travel-flights": "/travel/flights",
   blog: "/blog",
   saved: "/saved",
   verify: "/verify",
@@ -86,6 +87,7 @@ export function pathToScreen(pathname: string): ScreenName {
   if (pathname.startsWith("/travel/hotel")) return "travel-hotel";
   if (pathname.startsWith("/travel/booking")) return "travel-booking";
   if (pathname.startsWith("/travel/trips")) return "travel-trips";
+  if (pathname.startsWith("/travel/flights")) return "travel-flights";
   if (pathname === "/travel") return "travel";
   if (pathname.startsWith("/travel/")) return "travel-city";
   if (pathname.startsWith("/owner")) return "owner-dashboard";

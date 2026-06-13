@@ -3,6 +3,8 @@ import type {
   LiteApiHotelContent,
   LiteApiRatesHotel,
   LiteApiPlace,
+  LiteApiAirport,
+  FlightSearchBody,
   RatesSearchBody,
   PrebookResult,
   BookResult,
@@ -156,6 +158,24 @@ export async function askHotel(hotelId: string, query: string, allowWebSearch = 
 export async function cityPriceIndex(countryCode: string, cityName: string, fromDate?: string, toDate?: string): Promise<{ day: string; avgPriceUsd: number }[]> {
   const r = await request<{ prices?: { day: string; avgPriceUsd: number }[] }>(`/prices/city${qs({ countryCode, cityName, fromDate, toDate })}`);
   return Array.isArray(r.prices) ? r.prices : [];
+}
+
+/* ── flights ────────────────────────────────────────────────────────────── */
+
+export async function searchAirports(q: string): Promise<LiteApiAirport[]> {
+  if (q.trim().length < 2) return [];
+  const r = await request<{ airports?: LiteApiAirport[] }>(`/data/flights/airports/${qs({ q })}`);
+  return Array.isArray(r.airports) ? r.airports : [];
+}
+
+/** Flight search → raw journey groups (normalize with lib/flights). */
+export async function searchFlights(body: FlightSearchBody): Promise<unknown[]> {
+  const r = await request<{ data?: unknown[] }>(`/flights/rates`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return Array.isArray(r.data) ? r.data : [];
 }
 
 export { LiteApiError };

@@ -271,6 +271,12 @@ export function TravelScreen({ cities }: { cities: TravelHub[] }) {
           </>
         )}
 
+        <Link href="/travel/flights" className="flights-cta">
+          <span className="fcta-ico"><Icon name="plane" size={20} /></span>
+          <span className="fcta-text"><strong>Need flights too?</strong> Search hundreds of airlines for your Umrah or Muslim-travel journey.</span>
+          <span className="fcta-go">Search flights <Icon name="arrow" size={15} /></span>
+        </Link>
+
         <h2 style={{ fontSize: "1.35rem", marginBottom: 4 }}>Browse destinations</h2>
         <p className="muted" style={{ marginBottom: 18 }}>Curated halal-travel guides with Muslim-friendly hotels in each city.</p>
         <div className="dest-grid">{cities.map((c) => <DestinationCard key={c.slug} c={c} />)}</div>
