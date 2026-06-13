@@ -31,7 +31,6 @@ export function HomeScreen() {
   const dir = useDirectory();
   const [q, setQ] = useState("");
   const tw = state.tweaks;
-  const featured = dir.listings.filter((l) => l.featured && (!state.prefs || !state.prefs.certifiedOnly || l.certified)).slice(0, 6);
 
   const doSearch = (val: string) => navigate("explore", { q: val });
 
@@ -40,34 +39,26 @@ export function HomeScreen() {
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
 
-      {/* CATEGORIES */}
-      <section className="hh-wrap" style={{ marginTop: 30 }}>
+      {/* CATEGORIES — top 8 + view all */}
+      <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
+        <SectionHead title="Browse by category" action="View all" onAction={() => navigate("explore")} />
         <div className="cat-grid">
-          {HHData.categories.map((c) => (
+          {HHData.categories.slice(0, 8).map((c) => (
             <CategoryButton key={c.id} cat={c}
               onClick={() => c.id === "mosques" ? navigate("map") : navigate("explore", { cat: c.id })} />
           ))}
         </div>
       </section>
 
-      {/* FEATURED */}
-      <section className="hh-wrap hh-section">
-        <SectionHead title="Featured this week" action="See all" onAction={() => navigate("explore", { sort: "featured" })} />
-        <div className="grid-cards">
-          {featured.map((l) => <ListingCard key={l.id} item={l} />)}
+      {/* DISCOVER — one tabbed rail (replaces Featured + New) */}
+      <div className="home-band-white">
+        <div className="hh-wrap hh-section">
+          <DiscoverRail dir={dir} certifiedOnly={!!state.prefs?.certifiedOnly} navigate={navigate} />
         </div>
-      </section>
-
-      {/* NEW ON HUMBLE HALAL */}
-      <section className="hh-wrap hh-section" style={{ paddingTop: 0 }}>
-        <SectionHead title="New on Humble Halal" action="See newest" onAction={() => navigate("explore", { sort: "newest" })} />
-        <div className="grid-cards">
-          {dir.listings.slice(-9).reverse().slice(0, 6).map((l) => <ListingCard key={l.id} item={l} />)}
-        </div>
-      </section>
+      </div>
 
       {/* POPULAR AREAS */}
-      <section className="hh-wrap hh-section" style={{ paddingTop: 0 }}>
+      <section className="hh-wrap hh-section">
         <SectionHead title="Popular areas in Singapore" action="Browse all areas" onAction={() => navigate("explore")} />
         <div className="area-grid">
           {HHData.areas.map((a) => (
@@ -82,11 +73,50 @@ export function HomeScreen() {
         </div>
       </section>
 
-      {/* TRUST STRIP */}
-      <TrustStrip navigate={navigate} />
+      {/* HALAL TRAVEL BAND (emerald) */}
+      <section className="home-band-emerald hh-pattern">
+        <div className="hh-wrap home-travel-band">
+          <div className="htb-text">
+            <span className="eyebrow" style={{ color: "#cfe0da" }}>Halal travel</span>
+            <h2>Plan your whole trip — hotels &amp; flights</h2>
+            <p>Muslim-friendly stays and flights for Umrah, Hajj and everyday travel: prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers and qibla — all in one place.</p>
+          </div>
+          <div className="htb-cta">
+            <button className="btn btn-gold btn-lg" onClick={() => navigate("travel")}>Find a hotel</button>
+            <button className="btn btn-lg htb-ghost" onClick={() => navigate("travel-flights")}>Search flights</button>
+          </div>
+        </div>
+      </section>
+
+      {/* SLIM TRUST STRIP */}
+      <section className="hh-wrap home-trust-slim">
+        <div className="hts-row">
+          <span className="hts-label"><Icon name="shield-check" size={16} /> Know what each badge means:</span>
+          <span className="hts-badges"><Badge type="muis" /><Badge type="admin" /><Badge type="owned" /><Badge type="friendly" /></span>
+          <button className="hts-link" onClick={() => navigate("verify")}>How we verify <Icon name="chevron" size={13} /></button>
+        </div>
+      </section>
 
       {/* EVENTS STRIP */}
       <EventsStrip />
+
+      {/* WHY HUMBLE HALAL — value pillars (white band) */}
+      <div className="home-band-white">
+        <section className="hh-wrap hh-section home-why">
+          <h2 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Why Humble Halal</h2>
+          <p className="muted" style={{ maxWidth: 640, marginBottom: 20 }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
+          <div className="flt-benefit-grid">
+            {[
+              ["search", "A directory you can trust", "Find MUIS-certified, Muslim-owned and Muslim-friendly places with clear badges — so you always know what's verified and what's self-declared."],
+              ["plane", "Halal travel, worldwide", "Search Muslim-friendly hotels and flights for Umrah, Hajj and everyday travel — prayer rooms, halal dining nearby, alcohol-free stays, Muslim-meal flags and qibla."],
+              ["shield-check", "Transparency over hype", "We're a discovery platform, not a certifier. MUIS HalalSG stays the authority; we simply make the facts easy to find and confirm."],
+              ["heart", "Built with the community", "Your suggestions, reports and reviews keep it accurate — for the Singapore Muslim community, and Muslims travelling the world."],
+            ].map(([ic, h, b]) => (
+              <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
+            ))}
+          </div>
+        </section>
+      </div>
 
       {/* BUSINESS CTA */}
       <section className="hh-wrap" style={{ paddingBottom: 48 }}>
@@ -96,7 +126,7 @@ export function HomeScreen() {
               <span className="eyebrow" style={{ color: "var(--gold)" }}>For business owners</span>
               <h2 style={{ color: "#fff", fontSize: "1.9rem", marginTop: 10, maxWidth: 520 }}>List your business on Humble Halal</h2>
               <p style={{ color: "#DDEAE4", marginTop: 10, maxWidth: 480 }}>
-                Get discovered by Singapore’s Muslim community, earn trust with verified halal labels, and turn searches into visits.
+                Get discovered by Singapore’s Muslim community, earn trust with clear halal labels, and turn searches into visits.
               </p>
               <div className="flex g10 wrap" style={{ marginTop: 18 }}>
                 <button className="btn btn-gold btn-lg" onClick={() => navigate("add-listing")}>List your business</button>
@@ -104,7 +134,7 @@ export function HomeScreen() {
               </div>
             </div>
             <div className="biz-cta-stats">
-              {([["12,400+", "Listings"], ["480K", "Monthly searches"], ["96%", "Trust rating"]] as [string, string][]).map(([v, l]) => (
+              {([["Free", "to list & manage"], ["Verified", "trust badges"], ["Muslim", "community reach"]] as [string, string][]).map(([v, l]) => (
                 <div key={l} className="biz-stat"><div className="bv">{v}</div><div className="bl">{l}</div></div>
               ))}
             </div>
@@ -112,31 +142,32 @@ export function HomeScreen() {
         </div>
       </section>
 
-      {/* Why Humble Halal — pillars + travel promo (pre-footer content) */}
-      <section className="hh-wrap hh-section home-why">
-        <h2 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Why Humble Halal</h2>
-        <p className="muted" style={{ maxWidth: 640, marginBottom: 20 }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
-        <div className="flt-benefit-grid">
-          {[
-            ["search", "A directory you can trust", "Find MUIS-certified, Muslim-owned and Muslim-friendly places with clear badges — so you always know what's verified and what's self-declared."],
-            ["plane", "Halal travel, worldwide", "Search Muslim-friendly hotels and flights for Umrah, Hajj and everyday travel — prayer rooms, halal dining nearby, alcohol-free stays, Muslim-meal flags and qibla."],
-            ["shield-check", "Transparency over hype", "We're a discovery platform, not a certifier. MUIS HalalSG stays the authority; we simply make the facts easy to find and confirm."],
-            ["heart", "Built with the community", "Your suggestions, reports and reviews keep it accurate — for the Singapore Muslim community, and Muslims travelling the world."],
-          ].map(([ic, h, b]) => (
-            <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
-          ))}
-        </div>
-
-        <button type="button" className="hotel-cta home-travel-cta" onClick={() => navigate("travel")} style={{ width: "100%", textAlign: "left", border: 0, cursor: "pointer", marginTop: 22 }}>
-          <span className="hcta-ico"><Icon name="plane" size={20} /></span>
-          <span className="hcta-text"><strong>Planning a trip?</strong> Search Muslim-friendly hotels and flights — from Umrah stays by the Haramain to family holidays across Asia — all in one place.</span>
-          <span className="hcta-go">Explore halal travel <Icon name="arrow" size={15} /></span>
-        </button>
-      </section>
-
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
       <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />
     </div>
+  );
+}
+
+/* ---- Discover rail: one tabbed rail replacing the two near-identical rails ---- */
+function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof useDirectory>; certifiedOnly: boolean; navigate: (s: string, p?: Record<string, unknown>) => void }) {
+  const [tab, setTab] = useState<"featured" | "newest" | "top">("featured");
+  const featured = useMemo(() => dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)).slice(0, 8), [dir.listings, certifiedOnly]);
+  const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 8), [dir.listings, certifiedOnly]);
+  const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 8), [dir.listings, certifiedOnly]);
+  const items = tab === "newest" ? newest : tab === "top" ? top : featured;
+  const sort = tab === "newest" ? "newest" : tab === "top" ? "rating" : "featured";
+  const tabs: [typeof tab, string][] = [["featured", "Featured"], ["newest", "Newest"], ["top", "Top rated"]];
+  return (
+    <>
+      <div className="discover-head">
+        <h2>Discover halal places</h2>
+        <div className="discover-tabs" role="tablist">
+          {tabs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+        </div>
+        <button className="discover-all" onClick={() => navigate("explore", { sort })}>See all <Icon name="chevron" size={13} /></button>
+      </div>
+      <div className="grid-cards">{items.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+    </>
   );
 }
 
@@ -196,7 +227,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
             <ImagePh label="nasi padang" tone="gold" src={HHData.collage[0]} style={{ gridArea: "a" }} icon="utensils" sizes="(max-width: 520px) 50vw, (max-width: 880px) 60vw, 300px" />
             <ImagePh label="kopi café" tone="emerald" src={HHData.collage[1]} style={{ gridArea: "b" }} icon="coffee" sizes="(max-width: 520px) 50vw, 220px" />
             <ImagePh label="halal travel" tone="cream" src={HHData.collage[2]} style={{ gridArea: "c" }} icon="globe" sizes="220px" />
-            <span className="hero-collage-stat"><b>{placeCount}+</b> verified</span>
+            <span className="hero-collage-stat"><b>{placeCount}+</b> places</span>
           </div>
         </div>
       </section>

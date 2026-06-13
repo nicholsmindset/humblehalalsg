@@ -224,3 +224,34 @@
 .hours-row.today { font-weight:700; color:var(--emerald); }
 .hours-row.today .muted { color:var(--emerald); }
 .detail-footactions { display:flex; gap:12px; flex-wrap:wrap; margin-top:28px; padding-top:20px; border-top:1px solid var(--line); }
+
+/* ── homepage redesign — rhythm, discover rail, travel band, slim trust ──── */
+.home-band-white { background: var(--white, #fff); }
+.home-band-emerald { background: linear-gradient(150deg, var(--emerald-700, #0c4a3c), var(--emerald, #0f5c4a)); color: #fff; position: relative; overflow: hidden; }
+.home-cats { margin-top: 30px; }
+@media (max-width: 600px) { .home-cats .cat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.discover-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.discover-head h2 { font-size: 1.5rem; margin: 0; }
+.discover-tabs { display: inline-flex; gap: 4px; background: var(--cream-200, #f0ebdd); border-radius: var(--r-pill, 999px); padding: 4px; }
+.discover-tabs button { border: 0; background: none; padding: 7px 15px; border-radius: var(--r-pill, 999px); font-weight: 700; font-size: .86rem; color: var(--ink-soft, #5a6470); cursor: pointer; }
+.discover-tabs button.on { background: var(--white, #fff); color: var(--emerald, #0f5c4a); box-shadow: var(--sh-sm); }
+.discover-all { margin-left: auto; border: 0; background: none; color: var(--emerald, #0f5c4a); font-weight: 700; font-size: .88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+@media (max-width: 560px) { .discover-all { margin-left: 0; } }
+
+.home-travel-band .hh-wrap, .home-travel-band { position: relative; z-index: 1; }
+.home-travel-band { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 42px 0; flex-wrap: wrap; }
+.home-travel-band .htb-text { max-width: 640px; }
+.home-travel-band h2 { color: #fff; font-size: clamp(1.5rem, 3vw, 2rem); margin: 8px 0 0; }
+.home-travel-band p { color: #cfe0da; margin: 12px 0 0; line-height: 1.6; }
+.htb-cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.htb-ghost { background: rgba(255,255,255,.14); color: #fff; }
+.htb-ghost:hover { background: rgba(255,255,255,.24); }
+
+.home-trust-slim { padding: 18px 0; }
+.hts-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--white, #fff); border: 1px solid var(--line, #ece7db); border-radius: var(--r-lg, 20px); padding: 14px 18px; box-shadow: var(--sh-sm); }
+.hts-label { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: .88rem; color: var(--ink, #1f2933); }
+.hts-label svg { color: var(--emerald, #0f5c4a); }
+.hts-badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.hts-link { margin-left: auto; border: 0; background: none; color: var(--emerald, #0f5c4a); font-weight: 700; font-size: .86rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+@media (max-width: 600px) { .hts-link { margin-left: 0; } }
