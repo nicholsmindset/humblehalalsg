@@ -64,6 +64,7 @@ export function AdminScreen() {
     ["approvals", "Listing approvals", "doc"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
+    ["hotels", "Hotel verification", "bed"],
     ["reviews", "Review moderation", "star"],
     ["reports", "Reports & corrections", "flag"],
     ["users", "Users & owners", "user"],
@@ -106,6 +107,7 @@ export function AdminScreen() {
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <AdminVerification toast={toast} />}
+          {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} />}
           {section==='users' && <AdminUsers />}
@@ -369,6 +371,51 @@ export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
             })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+export function AdminHotelVerify({ toast }: { toast: (m: string) => void }) {
+  const [hotelId, setHotelId] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const [score, setScore] = useState("");
+  const [saving, setSaving] = useState(false);
+  const FLAGS: [string, string][] = [
+    ["has_prayer_room", "Prayer room"], ["halal_food_onsite", "Halal food on-site"], ["halal_food_nearby", "Halal food nearby"],
+    ["alcohol_free", "Alcohol-free"], ["women_only_facilities", "Women-only"], ["qibla_direction", "Qibla direction"], ["prayer_mat_available", "Prayer mats"],
+  ];
+  const toggle = (k: string) => setFlags((f) => ({ ...f, [k]: !f[k] }));
+  const save = async () => {
+    if (!hotelId.trim()) { toast("Enter a LiteAPI hotel ID"); return; }
+    setSaving(true);
+    try {
+      const r = await fetch("/api/admin/verify-hotel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ liteapi_hotel_id: hotelId.trim(), city, country, flags, halal_score: score ? Number(score) : undefined }) });
+      const d = await r.json();
+      toast(d.ok ? `Verified — score ${d.halal_score}` : d.error || "Save failed");
+    } catch { toast("Save failed"); }
+    setSaving(false);
+  };
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <div className="notice notice-warn" style={{ marginBottom: 16 }}>
+        <Icon name="info" size={18} />
+        <span>Mark a hotel&apos;s Muslim-friendly facilities (verified by you / an ustaz). This powers the &quot;Verified Muslim-friendly&quot; badge and the halal filters on /travel. Facilities only — not MUIS certification.</span>
+      </div>
+      <div className="card" style={{ padding: 20 }}>
+        <div className="field" style={{ marginBottom: 12 }}><label>LiteAPI hotel ID</label><input className="input" value={hotelId} onChange={(e) => setHotelId(e.target.value)} placeholder="e.g. lp52e1e" /></div>
+        <div className="flex g10" style={{ marginBottom: 12 }}>
+          <div className="field" style={{ flex: 1 }}><label>City</label><input className="input" value={city} onChange={(e) => setCity(e.target.value)} /></div>
+          <div className="field" style={{ flex: 1 }}><label>Country</label><input className="input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. AE" /></div>
+        </div>
+        <label style={{ fontWeight: 700, fontSize: ".85rem" }}>Facilities</label>
+        <div className="flex g8 wrap" style={{ margin: "8px 0 14px" }}>
+          {FLAGS.map(([k, l]) => <button key={k} type="button" className={`chip ${flags[k] ? "active" : ""}`} onClick={() => toggle(k)}>{l}</button>)}
+        </div>
+        <div className="field" style={{ marginBottom: 14 }}><label>Halal score (optional — auto-computed if blank)</label><input className="input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} style={{ maxWidth: 150 }} /></div>
+        <button className="btn btn-primary" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save verification"}</button>
       </div>
     </div>
   );

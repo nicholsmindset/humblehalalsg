@@ -527,6 +527,7 @@ export function Footer() {
       [
         ["Explore", "explore"],
         ["Halal travel & hotels", "travel"],
+        ["My trips", "travel-trips"],
         ["Events", "events"],
         ["Map view", "map"],
         ["Saved places", "saved"],

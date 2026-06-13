@@ -837,7 +837,85 @@ export function TravelConfirmationScreen({ reference, code, hotel, city }: { ref
             {code && <div className="sum-row"><span className="muted">Hotel confirmation</span><strong className="kbd-mono">{code}</strong></div>}
           </div>
         )}
-        <Link className="btn btn-primary" href="/travel">Back to travel</Link>
+        <div className="flex g10 center" style={{ justifyContent: "center" }}>
+          <Link className="btn btn-primary" href="/travel/trips">View my trips</Link>
+          <Link className="btn btn-soft" href="/travel">Back to travel</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── my trips (auth-gated) ───────────────────────────────────────────────── */
+
+export interface TripBooking {
+  id: string;
+  liteapi_booking_id?: string | null;
+  hotel_confirmation_code?: string | null;
+  liteapi_hotel_id?: string | null;
+  hotel_name?: string | null;
+  city?: string | null;
+  country?: string | null;
+  checkin?: string | null;
+  checkout?: string | null;
+  currency?: string | null;
+  retail_total?: number | null;
+  refundable_tag?: string | null;
+  status: string;
+  created_at?: string;
+}
+
+export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; bookings: TripBooking[] }) {
+  const [items, setItems] = useState(bookings);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+  const cancel = async (id: string) => {
+    if (!window.confirm("Cancel this booking? The hotel's cancellation policy applies.")) return;
+    setBusy(id);
+    setErr("");
+    try {
+      const r = await fetch("/api/travel/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      const d = await r.json();
+      if (d.ok) setItems((xs) => xs.map((b) => (b.id === id ? { ...b, status: d.status || "cancelled" } : b)));
+      else setErr(d.error || "Could not cancel.");
+    } catch {
+      setErr("Could not cancel.");
+    }
+    setBusy(null);
+  };
+
+  return (
+    <div className="screen-in hh-page">
+      <Crumbs trail={[{ label: "Home", href: "/" }, { label: "Travel", href: "/travel" }, { label: "My trips" }]} />
+      <div className="hh-wrap hh-section" style={{ maxWidth: 760 }}>
+        <h1 style={{ fontSize: "1.6rem", marginBottom: 14 }}>My trips</h1>
+        {!loggedIn ? (
+          <Empty icon="user" title="Log in to see your trips" body="Your hotel bookings appear here when you're signed in." />
+        ) : items.length === 0 ? (
+          <Empty icon="bed" title="No bookings yet" body="When you book a halal-friendly stay, it'll show up here." />
+        ) : (
+          <>
+            {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginBottom: 10 }}>{err}</p>}
+            <div className="trip-list">
+              {items.map((b) => (
+                <div key={b.id} className={`trip-card ${b.status !== "confirmed" ? "inactive" : ""}`}>
+                  <div className="trip-main">
+                    <div className="trip-hotel">{b.liteapi_hotel_id ? <Link href={`/travel/hotel/${b.liteapi_hotel_id}`}>{b.hotel_name || "Hotel"}</Link> : b.hotel_name || "Hotel"}</div>
+                    <div className="trip-meta">{[b.city, b.checkin && b.checkout ? `${b.checkin} → ${b.checkout}` : null].filter(Boolean).join(" · ")}</div>
+                    <div className="trip-tags">
+                      <span className={`trip-status ${b.status}`}>{b.status}</span>
+                      {b.hotel_confirmation_code ? <span className="kbd-mono trip-ref">{b.hotel_confirmation_code}</span> : null}
+                    </div>
+                  </div>
+                  <div className="trip-side">
+                    {b.retail_total != null ? <div className="trip-total">{b.currency || ""} {Math.round(Number(b.retail_total))}</div> : null}
+                    {b.status === "confirmed" && <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => cancel(b.id)}>{busy === b.id ? "Cancelling…" : "Cancel"}</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
