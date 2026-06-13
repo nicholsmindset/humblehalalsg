@@ -24,14 +24,12 @@ export async function POST(req: Request) {
   const { data: bk } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
   if (!bk || bk.user_id !== user.id) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
 
-  if (!liteapiConfigured() || !bk.liteapi_booking_id) {
-    await admin.from("hotel_bookings").update({ guest_name: `${firstName} ${lastName}` }).eq("id", id);
-    return NextResponse.json({ ok: true, simulated: true });
-  }
+  // LiteAPI is the source of truth for the guest name; we don't mirror it locally
+  // (hotel_bookings has no guest_name column).
+  if (!liteapiConfigured() || !bk.liteapi_booking_id) return NextResponse.json({ ok: true, simulated: true });
 
   try {
     await amendBooking(String(bk.liteapi_booking_id), { firstName, lastName });
-    await admin.from("hotel_bookings").update({ guest_name: `${firstName} ${lastName}` }).eq("id", id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not update the name on this booking." }, { status: 502 });

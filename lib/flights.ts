@@ -160,7 +160,9 @@ export function normalizeItineraries(data: unknown[]): FlightItinerary[] {
         carriers: [...new Set(segments.map((s) => s.carrierName).filter(Boolean))],
         legs,
         durationMin: totalMin,
-        stops: legs[0]?.stops ?? Math.max(0, segments.length - 1),
+        // total stops across all legs so a round-trip is only "non-stop" when
+        // both directions are non-stop (the filter relies on this)
+        stops: legs.reduce((a, l) => a + l.stops, 0),
       });
     }
   }

@@ -928,7 +928,7 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
       const r = await fetch("/api/travel/amend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, firstName, lastName: rest.join(" ") }) });
       const d = await r.json();
       if (!d.ok) setErr(d.error || "Could not update the name.");
-      else setErr("");
+      else { setErr(""); if (typeof window !== "undefined") window.alert("Name updated on this booking."); }
     } catch { setErr("Could not update the name."); }
     setBusy(null);
   };

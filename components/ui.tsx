@@ -639,7 +639,7 @@ export function RewardsNote({ amount, currency }: { amount: number | null; curre
   return (
     <div className="rewards-note">
       <Icon name="starf" size={15} />
-      <span>Earn ~{currency} {back} cashback with <strong>Humble Halal Rewards</strong> on this booking.</span>
+      <span>Earn approx. {currency} {back} cashback with <strong>Humble Halal Rewards</strong> on this booking, subject to Rewards terms.</span>
     </div>
   );
 }
@@ -659,9 +659,14 @@ export function PromoCode({ amount, currency, onApply }: { amount: number | null
       const r = await fetch(`/api/travel/voucher?code=${encodeURIComponent(code.trim())}`);
       const d = await r.json();
       if (d.valid) {
-        const disc = d.discountType === "percentage" && amount ? Math.round((amount * Number(d.discountValue)) / 100) : Math.round(Number(d.discountValue) || 0);
-        setMsg(`Applied — ${d.discountType === "percentage" ? `${d.discountValue}% off` : `${currency} ${disc} off`}.`);
-        onApply?.(d.code, disc);
+        if (d.discountType === "percentage") {
+          if (!amount) { setMsg(`Applied — ${d.discountValue}% off (shown at payment).`); onApply?.(d.code, 0); }
+          else { const disc = Math.round((amount * Number(d.discountValue)) / 100); setMsg(`Applied — ${d.discountValue}% off (${currency} ${disc}).`); onApply?.(d.code, disc); }
+        } else {
+          const disc = Math.round(Number(d.discountValue) || 0);
+          setMsg(`Applied — ${currency} ${disc} off.`);
+          onApply?.(d.code, disc);
+        }
       } else setMsg(d.message || "That code isn't valid.");
     } catch { setMsg("Couldn't check that code."); }
     setBusy(false);

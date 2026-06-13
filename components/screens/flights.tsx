@@ -312,12 +312,13 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
 
   const setAlert = async () => {
     if (!searched) return;
-    const cheapest = items && items.length ? Math.round(Math.min(...items.map((x) => x.price ?? Infinity))) : null;
+    const prices = (items || []).map((x) => x.price).filter((p): p is number => p != null);
+    const cheapest = prices.length ? Math.round(Math.min(...prices)) : null;
     try {
-      const r = await fetch("/api/travel/flights/watch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...searched, email: track.email, price: cheapest, currency: "SGD" }) });
+      const r = await fetch("/api/travel/flights/watch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...searched, price: cheapest, currency: "SGD" }) });
       const d = await r.json();
-      setTrack((t) => ({ ...t, msg: d.ok ? "Done — we'll email you if the price drops." : d.error || "Could not save your alert." }));
-    } catch { setTrack((t) => ({ ...t, msg: "Could not save your alert." })); }
+      setTrack({ open: true, email: "", msg: d.ok ? "Done — we'll email you if the price drops." : d.needLogin ? "Please log in to track this price." : d.error || "Could not save your alert." });
+    } catch { setTrack({ open: true, email: "", msg: "Could not save your alert." }); }
   };
 
   const nearby = searched ? { from: nearbyAirports(searched.origin), to: nearbyAirports(searched.destination) } : { from: [], to: [] };
@@ -384,16 +385,10 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
               )}
               {searched && (
                 <div className="flt-track">
-                  {!track.open ? (
-                    <button type="button" className="flt-track-btn" onClick={() => setTrack((t) => ({ ...t, open: true }))}><Icon name="clock" size={14} /> Track this price</button>
-                  ) : track.msg ? (
+                  {track.msg ? (
                     <span className="flt-track-msg"><Icon name="check" size={14} /> {track.msg}</span>
                   ) : (
-                    <div className="flt-track-form">
-                      <input type="email" placeholder="you@email.com" value={track.email} onChange={(e) => setTrack((t) => ({ ...t, email: e.target.value }))} />
-                      <button type="button" className="btn btn-primary btn-sm" onClick={setAlert}>Set alert</button>
-                      <span className="faint">We'll email you if {searched.origin}→{searched.destination} drops.</span>
-                    </div>
+                    <button type="button" className="flt-track-btn" onClick={setAlert}><Icon name="clock" size={14} /> Track this price — get emailed if {searched.origin}→{searched.destination} drops</button>
                   )}
                 </div>
               )}
@@ -445,7 +440,13 @@ const blankPax = (): Pax => ({ firstName: "", middleName: "", lastName: "", dobD
 interface Prebook { prebookId: string; transactionId: string | null; publishableKey: string | null; price: number | null; currency: string; expiration?: string | null; servicesAttachable?: unknown }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const isoDate = (d: string, m: string, y: string) => (d && m && y ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : "");
+function isoDate(d: string, m: string, y: string): string {
+  if (!d || !m || !y) return "";
+  const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  // reject impossible calendar dates (e.g. 31 Feb) before sending to the API
+  const dt = new Date(`${iso}T00:00:00Z`);
+  return dt.getUTCFullYear() === Number(y) && dt.getUTCMonth() + 1 === Number(m) && dt.getUTCDate() === Number(d) ? iso : "";
+}
 
 function DOBSelect({ label, d, m, y, set, yearsBack, future }: { label: string; d: string; m: string; y: string; set: (k: "d" | "m" | "y", v: string) => void; yearsBack: number; future?: boolean }) {
   const now = new Date().getFullYear();
@@ -529,7 +530,16 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
 
   const continueToSeats = async (e: FormEvent) => {
     e.preventDefault();
-    setErr(""); setBusy("verify"); setPriceNote("");
+    setErr(""); setPriceNote("");
+    // validate document dates + contact before holding a price (empty/invalid ISO
+    // must never reach the booking partner)
+    for (let i = 0; i < pax.length; i++) {
+      const p = pax[i];
+      if (!isoDate(p.dobD, p.dobM, p.dobY)) { setErr(`Enter a valid date of birth for traveller ${i + 1}.`); return; }
+      if (!isoDate(p.docExpD, p.docExpM, p.docExpY)) { setErr(`Enter a valid document expiry date for traveller ${i + 1}.`); return; }
+    }
+    if (!contact.phone.trim()) { setErr("Enter a contact phone number."); return; }
+    setBusy("verify");
     try {
       const v = await fetch("/api/travel/flights/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ offerId }) }).then((r) => r.json()).catch(() => null);
       if (v?.ok && v.changed && v.total != null) setPriceNote(`Fare updated to ${v.currency || cur} ${Math.round(v.total)} before we hold it.`);
@@ -545,7 +555,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
       const lead = pax[0];
       const r = await fetch("/api/travel/flights/prebook", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offerId, contact: { firstName: lead.firstName, lastName: lead.lastName, email: contact.email, phoneNumber: contact.phone || "00000000", phoneCountryCode: contact.phoneCc }, passengers }),
+        body: JSON.stringify({ offerId, contact: { firstName: lead.firstName, lastName: lead.lastName, email: contact.email, phoneNumber: contact.phone.trim(), phoneCountryCode: contact.phoneCc }, passengers }),
       });
       const d = await r.json();
       if (!d.ok) { setErr(d.error || d.reason || "Could not start booking."); setBusy(""); return; }
@@ -636,9 +646,9 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                     <div className="notice"><Icon name="check" size={16} /><span>Your fare includes the standard cabin {pb?.price != null ? "" : ""}baggage. No paid extras are available to add for this fare.</span></div>
                   </div>
                 ) : (
-                  <div className="card pax-card"><p className="muted">Select optional seats and baggage:</p>
-                    <div className="seat-bag-list">{services.map((s, i) => <label key={i} className="seat-bag"><input type="checkbox" /> <span>{String(s.description || s.label || s.type || "Extra")}{s.price != null ? ` · +${cur} ${Math.round(Number(s.price))}` : ""}</span></label>)}</div>
-                    <p className="faint" style={{ fontSize: ".78rem", marginTop: 10 }}>Selecting extras re-prices your trip securely before payment.</p>
+                  <div className="card pax-card"><p className="muted">Optional seats and baggage available on this fare:</p>
+                    <div className="seat-bag-list">{services.map((s, i) => <div key={i} className="seat-bag"><Icon name="briefcase" size={14} /> <span>{String(s.description || s.label || s.type || "Extra")}{s.price != null ? ` · +${cur} ${Math.round(Number(s.price))}` : ""}</span></div>)}</div>
+                    <p className="faint" style={{ fontSize: ".78rem", marginTop: 10 }}>You can add seats and extra bags directly with the airline after booking.</p>
                   </div>
                 )}
                 {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", margin: "8px 0" }}>{err}</p>}
