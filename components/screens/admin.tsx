@@ -72,6 +72,7 @@ export function AdminScreen() {
     ["featured", "Featured & ads", "trophy"],
     ["monetization", "Monetization", "settings"],
     ["payments", "Payments", "dollar"],
+    ["travel-rev", "Travel revenue", "plane"],
     ["audit", "Audit log", "list"],
   ];
 
@@ -115,6 +116,7 @@ export function AdminScreen() {
           {section==='featured' && <AdminFeatured toast={toast} />}
           {section==='monetization' && <AdminMonetization />}
           {section==='payments' && <AdminPayments />}
+          {section==='travel-rev' && <AdminTravelRevenue />}
           {section==='audit' && <AdminAudit />}
         </div>
       </div>
@@ -556,6 +558,35 @@ export function AdminPayments() {
           <tbody>{rows.map(([inv,biz,plan,amt,st,dt])=>(
             <tr key={inv} className="rowhover"><td className="kbd-mono" style={{fontWeight:600}}>{inv}</td><td style={{fontWeight:600}}>{biz}</td><td className="muted">{plan}</td><td style={{fontWeight:700}}>{amt}</td>
               <td><span className={`pill-tag ${st==='Failed'?'red':'green'}`}>{st}</span></td><td className="muted">{dt}</td></tr>
+          ))}</tbody>
+        </table></div>
+      </div>
+    </div>
+  );
+}
+
+interface RevData { totals: { count: number; confirmed: number; cancelled: number; refunded: number }; byCurrency: { currency: string; gross: number; commission: number }[]; recent: { hotel?: string; city?: string; checkin?: string; checkout?: string; currency?: string; total?: number | null; commission?: number | null; status: string }[] }
+export function AdminTravelRevenue() {
+  const [data, setData] = useState<RevData | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { (async () => { try { const r = await fetch("/api/admin/travel-revenue"); const d = await r.json(); if (d.ok) setData(d); } catch { /* ignore */ } setLoading(false); })(); }, []);
+  if (loading) return <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading…</span></div>;
+  if (!data || data.totals.count === 0) return <Empty icon="plane" title="No travel bookings yet" body="Hotel bookings (and their commissions) appear here once you have them. LiteAPI's dashboard holds the authoritative payout ledger." />;
+  return (
+    <div>
+      <div className="notice notice-warn" style={{ marginBottom: 16 }}><Icon name="info" size={18} /><span>Reconciliation view from our records. LiteAPI&apos;s dashboard remains the source of truth for actual payouts and refunds.</span></div>
+      <div className="admin-statgrid">
+        <div className="stat"><div className="v">{data.totals.confirmed}</div><div className="l">Confirmed</div></div>
+        <div className="stat"><div className="v">{data.totals.cancelled}</div><div className="l">Cancelled</div></div>
+        <div className="stat"><div className="v">{data.totals.refunded}</div><div className="l">Refunded</div></div>
+        {data.byCurrency.map((c) => <div key={c.currency} className="stat"><div className="v">{c.currency} {c.commission.toLocaleString()}</div><div className="l">Commission ({c.currency})</div></div>)}
+      </div>
+      <div className="card mt20" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Recent hotel bookings</h3></div>
+        <div className="tbl-scroll"><table className="tbl">
+          <thead><tr><th>Hotel</th><th>City</th><th>Dates</th><th>Total</th><th>Commission</th><th>Status</th></tr></thead>
+          <tbody>{data.recent.map((b, i) => (
+            <tr key={i} className="rowhover"><td style={{ fontWeight: 600 }}>{b.hotel || "—"}</td><td className="muted">{b.city || "—"}</td><td className="muted">{b.checkin && b.checkout ? `${b.checkin} → ${b.checkout}` : "—"}</td><td style={{ fontWeight: 700 }}>{b.total != null ? `${b.currency || ""} ${b.total}` : "—"}</td><td>{b.commission != null ? `${b.currency || ""} ${b.commission}` : "—"}</td><td><span className={`pill-tag ${b.status === "confirmed" ? "green" : "gray"}`}>{b.status}</span></td></tr>
           ))}</tbody>
         </table></div>
       </div>
