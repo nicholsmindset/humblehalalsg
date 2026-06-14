@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Free RSVP — the launch path. DB-backed when Supabase is configured; otherwise
    returns simulated:true so the client keeps using the local mock ticket. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  // Throttle anonymous RSVPs so the orders table can't be flooded (M6).
+  const rl = await rateLimit(req, "rsvp", 10, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as {
     eventId?: string;
     name?: string;

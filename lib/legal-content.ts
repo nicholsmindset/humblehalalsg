@@ -16,9 +16,13 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
+import { CONTACT_EMAILS } from "./contact";
+
 const OPERATOR = "ONN GROUP LLP";
 const ADDRESS = "60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051";
-const PRIVACY_EMAIL = "privacy@humblehalal.com";
+const PRIVACY_EMAIL = CONTACT_EMAILS.privacy;
+// "Last updated" shown on every legal page — bump this whenever any legal doc's
+// wording changes (it won't auto-update).
 const UPDATED = "13 June 2026";
 const CAVEAT = "This is a plain-language summary written in good faith and tailored to how the platform actually works. It is not legal advice — please have it reviewed by a qualified lawyer before relying on it.";
 

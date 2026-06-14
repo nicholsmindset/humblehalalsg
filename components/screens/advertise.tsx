@@ -4,6 +4,7 @@
 import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
+import { CONTACT_EMAILS } from "@/lib/contact";
 
 /* Honest, defensible value props — not fabricated metrics. Current audience
    figures are shared in the media kit once they can be reported accurately. */
@@ -41,9 +42,9 @@ export function AdvertiseScreen() {
             eat, shop and gather — across web, map, newsletter and AI search.
           </p>
           <div className="flex g10 wrap" style={{ marginTop: 18 }}>
-            <button className="btn btn-primary btn-lg" onClick={() => toast("Our team will email you the media kit")}>
+            <a className="btn btn-primary btn-lg" href={`mailto:${CONTACT_EMAILS.partners}?subject=Media%20kit%20request&body=Hi%20Humble%20Halal%2C%20please%20send%20me%20the%20advertising%20media%20kit.`}>
               Get the media kit <Icon name="arrow" size={17} />
-            </button>
+            </a>
             <button className="btn btn-outline btn-lg" onClick={() => navigate("pricing")}>
               See listing plans
             </button>
@@ -110,7 +111,7 @@ export function AdvertiseScreen() {
               <Newsletter source="advertise" />
             </div>
             <p className="faint" style={{ fontSize: ".82rem", marginTop: 12 }}>
-              Prefer to talk? Email <strong>partners@humblehalal.com</strong>
+              Prefer to talk? Email <strong>{CONTACT_EMAILS.partners}</strong>
             </p>
           </div>
         </section>

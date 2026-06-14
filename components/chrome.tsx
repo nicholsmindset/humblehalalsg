@@ -2,8 +2,9 @@
 
 /* Humble Halal — app chrome (ported from app.jsx): TopNav, BottomNav, Footer,
    PrayerStrip, Onboarding, CertifiedToggle. */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { useApp } from "./app-context";
@@ -31,6 +32,33 @@ export function CertifiedToggle({ compact }: { compact?: boolean }) {
 }
 
 /* ---------------- PRAYER TIMES + NEAREST MOSQUE STRIP ---------------- */
+type PrayerRow = { name: string; time: string; mins?: number };
+
+// Minutes-since-midnight for a row (uses the API's `mins`, else derives from the
+// SG ordering: Subuh/Syuruk are AM, the rest PM).
+function rowMins(t: PrayerRow, i: number): number {
+  if (typeof t.mins === "number") return t.mins;
+  const [h, m] = t.time.split(":").map(Number);
+  return ((h % 12) + (i >= 2 ? 12 : 0)) * 60 + (m || 0);
+}
+function sgNowMins(): number {
+  try {
+    const s = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Singapore", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+    const [h, m] = s.split(":").map(Number);
+    return h * 60 + m;
+  } catch {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+}
+// Next PRAYER for "now" (skip Syuruk/sunrise at index 1; wrap to Subuh after Isyak).
+function computeNextIndex(times: PrayerRow[]): number {
+  const now = sgNowMins();
+  const candidates = times.map((_, i) => i).filter((i) => i !== 1);
+  for (const i of candidates) if (rowMins(times[i], i) > now) return i;
+  return candidates[0] ?? 0;
+}
+
 export function PrayerStrip({
   open,
   setOpen,
@@ -39,9 +67,59 @@ export function PrayerStrip({
   setOpen: (v: boolean) => void;
 }) {
   const { state, navigate, ramadan, toggleRamadan } = useApp();
-  const pt = HHData.prayerTimes;
-  const next = pt.times[pt.nextIndex];
-  const mosque = HHData.mosques[0];
+  const fallback = HHData.prayerTimes;
+  const [pt, setPt] = useState<{ date: string; hijri: string; times: PrayerRow[] }>(fallback);
+  const [nextIndex, setNextIndex] = useState(fallback.nextIndex);
+
+  // Fetch today's real Singapore times (MUIS method) once on mount.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/prayer-times")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.ok && Array.isArray(d.times) && d.times.length) setPt({ date: d.date, hijri: d.hijri, times: d.times }); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // Recompute the next prayer from the current time (and refresh each minute).
+  useEffect(() => {
+    const update = () => setNextIndex(computeNextIndex(pt.times));
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, [pt]);
+
+  // Nearest mosque via geolocation (was hardcoded to mosques[0], so it always
+  // showed Masjid Sultan). Silent when location is already permitted; otherwise
+  // the button asks for it on click.
+  const [nearest, setNearest] = useState<{ name: string; area: string; km: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const findNearest = useCallback(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) { navigate("map", { show: "mosques" }); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        let best: { name: string; area: string; km: number } | null = null;
+        for (const m of HHData.mosques) {
+          if (!m.coords) continue;
+          const km = haversineKm(me, m.coords);
+          if (!best || km < best.km) best = { name: m.name, area: m.area, km };
+        }
+        setNearest(best);
+        setLocating(false);
+      },
+      () => { setLocating(false); navigate("map", { show: "mosques" }); },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  }, [navigate]);
+  useEffect(() => {
+    const nav = typeof navigator !== "undefined" ? navigator : undefined;
+    if (!nav?.permissions?.query) return;
+    nav.permissions.query({ name: "geolocation" as PermissionName }).then((p) => { if (p.state === "granted") findNearest(); }).catch(() => {});
+  }, [findNearest]);
+
+  const next = pt.times[nextIndex] ?? pt.times[0];
   if (state.prefs && state.prefs.prayerHidden) return null;
   return (
     <>
@@ -64,10 +142,20 @@ export function PrayerStrip({
           </span>
           <Icon name="chevdown" size={16} className={`prayer-caret ${open ? "up" : ""}`} />
         </button>
-        <button className="prayer-mosque" onClick={() => navigate("map", { show: "mosques" })}>
+        <button
+          className="prayer-mosque"
+          onClick={() => (nearest ? navigate("map", { show: "mosques" }) : findNearest())}
+          aria-label={nearest ? `Nearest mosque: ${nearest.name}, ${nearest.km.toFixed(1)} km away — open map` : "Find the nearest mosque"}
+        >
           <Icon name="pin" size={15} />{" "}
           <span>
-            <strong>{mosque.name}</strong> · {mosque.dist || mosque.area}
+            {locating ? (
+              <strong>Locating…</strong>
+            ) : nearest ? (
+              <><strong>{nearest.name}</strong> · {nearest.km.toFixed(1)} km</>
+            ) : (
+              <strong>Find masjid near you</strong>
+            )}
           </span>
         </button>
       </div>
@@ -75,7 +163,7 @@ export function PrayerStrip({
         <div className="hh-wrap prayer-expand">
           <div className="prayer-times">
             {pt.times.map((t, i) => (
-              <div key={t.name} className={`prayer-cell ${i === pt.nextIndex ? "now" : ""}`}>
+              <div key={t.name} className={`prayer-cell ${i === nextIndex ? "now" : ""}`}>
                 <span className="pc-name">{t.name}</span>
                 <span className="pc-time">{t.time}</span>
               </div>

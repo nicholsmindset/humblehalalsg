@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Review submission. Graceful-degradation: validates + accepts now (returns
    simulated), and is the single integration point to persist to Supabase
@@ -7,6 +8,8 @@ import { NextResponse } from "next/server";
 const TEXT_MAX = 1500;
 
 export async function POST(req: Request) {
+  // Throttle to stop bots flooding the moderation queue (security audit M6).
+  const rl = await rateLimit(req, "reviews", 8, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   let body: Record<string, unknown>;
   try {
     body = await req.json();

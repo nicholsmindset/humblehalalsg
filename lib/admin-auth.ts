@@ -26,10 +26,12 @@ export async function requireAdmin(): Promise<AdminGate> {
 }
 
 /** True only when the backend is live AND the caller is a verified admin.
- *  When Supabase isn't configured (dev/demo) we let the console through so the
- *  mock UI still works locally. */
+ *  When Supabase isn't configured we let the console through ONLY outside
+ *  production, so the mock UI still works in dev/demo. In production an
+ *  unconfigured backend denies access (security audit M1) — never expose the
+ *  admin console because of a missing/partial env. */
 export async function isAdminOrUnconfigured(): Promise<boolean> {
-  if (!supabaseConfigured) return true;
+  if (!supabaseConfigured) return process.env.NODE_ENV !== "production";
   const gate = await requireAdmin();
   return gate.ok;
 }

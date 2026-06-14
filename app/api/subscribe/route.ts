@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* MailerLite email capture.
    Set MAILERLITE_API_KEY (and optional MAILERLITE_GROUP_ID) in env.
@@ -7,6 +8,8 @@ import { NextResponse } from "next/server";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  // Throttle to stop list-poisoning / signing a victim up repeatedly (M6).
+  const rl = await rateLimit(req, "subscribe", 5, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   let email = "";
   let source = "newsletter";
   try {

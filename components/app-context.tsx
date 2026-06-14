@@ -118,7 +118,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [saved, setSaved] = useState<string[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [user, setUserState] = useState<UserState>({ loggedIn: false, role: "user", name: "Aisyah" });
+  const [user, setUserState] = useState<UserState>({ loggedIn: false, role: "user", name: "Guest" });
   const [prefs, setPrefs] = useState<Prefs>({ onboarded: false, homeArea: "", certifiedOnly: false });
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -156,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!sb) return;
       const apply = async (u: { id: string; email?: string } | null) => {
         if (!u) {
-          if (active) setUserState({ loggedIn: false, role: "user", name: "Aisyah" });
+          if (active) setUserState({ loggedIn: false, role: "user", name: "Guest" });
           return;
         }
         let role: "user" | "owner" = "user";

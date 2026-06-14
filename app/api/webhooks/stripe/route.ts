@@ -27,11 +27,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: 400 });
   }
 
-  // idempotency: process each event id once
+  // idempotency: process each event id once. ONLY a unique-violation (23505)
+  // means "already processed" → ack. Any other insert error is transient (DB
+  // hiccup) and must 500 so Stripe retries, otherwise a paid event could be
+  // dropped without fulfillment (security audit M4).
   const supa = getSupabaseAdmin();
   if (supa) {
     const { error } = await supa.from("webhook_events").insert({ stripe_event_id: event.id });
-    if (error) return NextResponse.json({ ok: true, duplicate: true }); // already processed
+    if (error) {
+      if (error.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
+      return NextResponse.json({ ok: false, error: "idempotency_store_unavailable" }, { status: 500 });
+    }
   }
 
   const FEATURED_PLANS = new Set(["featured", "premium"]);
@@ -90,7 +96,12 @@ export async function POST(req: Request) {
           if (ord?.id) {
             const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: dbEvent?.id ?? null, tier: m.tier || null, qr_ref: randomUUID() }));
             await supa.from("tickets").insert(tix);
-            if (dbEvent?.id) await supa.from("events").update({ taken: (dbEvent.taken || 0) + qty }).eq("id", dbEvent.id);
+            // Atomic increment (security audit M2) so concurrent settlements don't
+            // lose updates; fall back to read+write if the RPC isn't deployed yet.
+            if (dbEvent?.id) {
+              const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: dbEvent.id, p_qty: qty });
+              if (incErr) await supa.from("events").update({ taken: (dbEvent.taken || 0) + qty }).eq("id", dbEvent.id);
+            }
             if (buyerEmail) {
               try {
                 await sendEmail({

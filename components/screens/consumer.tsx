@@ -1214,8 +1214,8 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
             <div className="oc-foot">
               <span className="oc-cert"><Icon name="shield-check" size={13} /> MUIS · <span className="kbd-mono">{o.certNo}</span></span>
               <div className="flex g8">
-                <button className="btn btn-soft btn-sm" onClick={(e) => { e.stopPropagation(); toast(`Directions to ${o.name}…`); }}><Icon name="directions" size={15} /> Directions</button>
-                <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); toast(`Calling ${o.name}…`); }}><Icon name="phone" size={15} /></button>
+                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.name} ${o.address}`)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><Icon name="directions" size={15} /> Directions</a>
+                {item.phone && <a className="btn btn-ghost btn-sm" href={telHref(item.phone)} aria-label={`Call ${o.name}`} onClick={(e) => e.stopPropagation()}><Icon name="phone" size={15} /></a>}
               </div>
             </div>
           </div>

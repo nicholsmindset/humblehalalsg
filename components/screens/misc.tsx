@@ -144,13 +144,35 @@ export function LoginScreen() {
    USER DASHBOARD
 ============================================================= */
 export function UserDashboardScreen() {
-  const { navigate, state, setUser, createCollection, toggleInCollection } = useApp();
+  const { navigate, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
   const [tab, setTab] = useState("saved");
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
   const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
+
+  // Profile settings — real save to /api/user/update (display name) + client pref (home area).
+  const [pName, setPName] = useState(state.user.name);
+  const [pArea, setPArea] = useState(state.prefs?.homeArea || "");
+  const [pSaving, setPSaving] = useState(false);
+  const saveProfile = async () => {
+    setPSaving(true);
+    try {
+      const res = await fetch("/api/user/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: pName }) });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.ok) {
+        setUser({ ...state.user, name: (pName.trim() || state.user.name) });
+        setPref({ homeArea: pArea });
+        toast("Profile saved");
+      } else if (res.status === 401) {
+        toast("Please sign in to save your profile");
+      } else {
+        toast("Couldn’t save — please try again");
+      }
+    } catch { toast("Couldn’t save — please try again"); }
+    setPSaving(false);
+  };
   const newCollection = () => {
     const name = typeof window !== "undefined" ? window.prompt("Name your collection (e.g. Date night, Iftar 2026)") : "";
     if (name && name.trim()) createCollection(name.trim());
@@ -237,10 +259,10 @@ export function UserDashboardScreen() {
             <div className="card" style={{padding:22, maxWidth:540}}>
               <h3 style={{fontSize:'1.2rem'}}>Profile settings</h3>
               <div className="stack g14 mt16">
-                <div className="field"><label>Display name</label><input className="input" defaultValue={state.user.name} /></div>
-                <div className="field"><label>Email</label><input className="input" defaultValue="aisyah@email.com" /></div>
-                <div className="field"><label>Home area</label><select className="select" defaultValue="tampines">{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                <button className="btn btn-primary">Save changes</button>
+                <div className="field"><label htmlFor="set-name">Display name</label><input id="set-name" className="input" value={pName} onChange={(e)=>setPName(e.target.value)} /></div>
+                <div className="field"><label htmlFor="set-email">Email</label><input id="set-email" className="input" placeholder="Managed by your sign-in" disabled /></div>
+                <div className="field"><label htmlFor="set-area">Home area</label><select id="set-area" className="select" value={pArea} onChange={(e)=>setPArea(e.target.value)}><option value="">Select your area</option>{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                <button className="btn btn-primary" onClick={saveProfile} disabled={pSaving}>{pSaving ? "Saving…" : "Save changes"}</button>
               </div>
             </div>
           )}
