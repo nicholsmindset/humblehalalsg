@@ -7,7 +7,6 @@ import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
-import { Sparkline } from "./business";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -176,27 +175,20 @@ export function AdminMonetization() {
 }
 
 export function AdminOverview({ setSection }: { setSection: (s: string) => void }) {
-  const stats: [string, string, string, string][] = [
-    ['Total listings','12,418','+142','up'],['Pending approvals','7','3 new','up'],['Open claims','12','+2','up'],
-    ['Reported listings','4','-1','down'],['Total users','48,209','+1.2K','up'],['MUIS certified','3,841','+38','up'],
-  ];
   return (
     <div>
-      <div className="admin-statgrid">
-        {stats.map(([l,v,d,dir])=>(<div key={l} className="stat"><div className="v">{v}</div><div className="l">{l}</div><div className={`d ${dir}`}>{d}</div></div>))}
-      </div>
-      <div className="admin-twocol mt20">
-        <div className="card" style={{padding:20}}>
-          <div className="flex between center"><h3 style={{fontSize:'1.1rem'}}>New listings — last 30 days</h3><span className="tag"><Icon name="trend" size={13}/> +18%</span></div>
-          <Sparkline data={HHData.analytics.spark} />
+      <a href="/admin/analytics" className="card" style={{ padding: 20, display: "block", textDecoration: "none", color: "inherit" }}>
+        <div className="flex between center wrap g12">
+          <div><h3 style={{ fontSize: "1.1rem" }}>Live analytics</h3><p className="faint" style={{ fontSize: ".88rem", marginTop: 4 }}>Real-time traffic, leads and conversion from your first-party analytics.</p></div>
+          <span className="tag"><Icon name="chart" size={14} /> Open dashboard</span>
         </div>
-        <div className="card" style={{padding:20}}>
-          <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Needs your attention</h3>
-          <div className="stack g10">
-            {([['7 listings awaiting approval','approvals','doc'],['4 reports to review','reports','flag'],['12 ownership claims','approvals','building'],['3 verification requests','verification','shield-check']] as [string, string, string][]).map(([t,sec,icon])=>(
-              <button key={t} className="attn-row" onClick={()=>setSection(sec)}><span className="flex g10 center"><span className="attn-ico"><Icon name={icon} size={17}/></span>{t}</span><Icon name="chevron" size={17}/></button>
-            ))}
-          </div>
+      </a>
+      <div className="card mt20" style={{padding:20}}>
+        <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Needs your attention</h3>
+        <div className="stack g10">
+          {([['Listings awaiting approval','approvals','doc'],['Reports to review','reports','flag'],['Ownership claims','approvals','building'],['Verification requests','verification','shield-check']] as [string, string, string][]).map(([t,sec,icon])=>(
+            <button key={t} className="attn-row" onClick={()=>setSection(sec)}><span className="flex g10 center"><span className="attn-ico"><Icon name={icon} size={17}/></span>{t}</span><Icon name="chevron" size={17}/></button>
+          ))}
         </div>
       </div>
     </div>

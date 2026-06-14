@@ -2,7 +2,7 @@
 
 /* Humble Halal — Consumer screens: Home, Explore, Map, Detail
    (ported from screens-consumer.jsx). */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
 import { useDirectory } from "../directory-context";
@@ -13,6 +13,7 @@ import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hour
 import { scoreListing, scoreTone } from "@/lib/halal-score";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
+import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
@@ -374,6 +375,26 @@ export function ExploreScreen() {
   const activeFilterCount = Object.values(filters).filter((v) => v && v !== "").length;
   useEffect(() => setVisible(12), [q, filters, sort]); // reset paging on filter change
 
+  // Analytics: record the search query once the user stops typing (debounced).
+  useEffect(() => {
+    const term = q.trim();
+    if (!term) return;
+    const id = setTimeout(() => track.search(term), 700);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  // Analytics: record an impression once per listing per session as it surfaces
+  // in the visible result set.
+  const seenImpressions = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    results.slice(0, visible).forEach((l) => {
+      const slug = l.slug || l.id;
+      if (seenImpressions.current.has(slug)) return;
+      seenImpressions.current.add(slug);
+      track.impression(slug, l.catId);
+    });
+  }, [results, visible]);
+
   return (
     <div className="screen-in hh-page">
       <div className="explore-top">
@@ -708,7 +729,7 @@ export function DetailScreen() {
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);
   const outlet = item.franchise && item.outlets ? item.outlets[outletIdx] : null;
-  const tabs = item.franchise ? ["overview", "locations", "menu", "reviews", "info"] : ["overview", "menu", "reviews", "info"];
+  const tabs = item.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
 
   // Live "open now" — computed client-side (SG time) after mount to avoid SSR
   // hydration mismatch; refreshes each minute.
@@ -721,6 +742,13 @@ export function DetailScreen() {
   }, [item.hoursWeek]);
   const openNow = live ? live.open : item.open;
   const hoursLabel = live ? live.label : item.hours;
+
+  // Analytics: this listing's stable key + a record that it was viewed.
+  const slug = item.slug || item.id;
+  useEffect(() => {
+    track.listingView(slug, item.catId);
+  }, [slug, item.catId]);
+  const logLead = (type: LeadAction) => track.leadAction(type, slug, item.catId);
 
   // Photo lightbox
   const galleryImgs = [item.image, ...HHData.gallery].filter(Boolean) as string[];
@@ -751,17 +779,17 @@ export function DetailScreen() {
     ? directionsUrl(item.coords)
     : mapsSearchUrl(`${item.name} ${item.area} Singapore`);
   const contacts = [
-    item.phone && { icon: "phone", label: "Call", href: telHref(item.phone), external: false },
-    item.wa && { icon: "whatsapp", label: "WhatsApp", href: waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`), external: true },
-    { icon: "directions", label: "Directions", href: dirHref, external: true },
-    item.web && { icon: "globe", label: "Website", href: webHref(item.web), external: true },
+    item.phone && { icon: "phone", label: "Call", href: telHref(item.phone), external: false, action: "call" as LeadAction },
+    item.wa && { icon: "whatsapp", label: "WhatsApp", href: waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`), external: true, action: "whatsapp" as LeadAction },
+    { icon: "directions", label: "Directions", href: dirHref, external: true, action: "directions" as LeadAction },
+    item.web && { icon: "globe", label: "Website", href: webHref(item.web), external: true, action: "website" as LeadAction },
     item.ig && { icon: "instagram", label: "Instagram", href: igHref(item.ig), external: true },
-  ].filter(Boolean) as { icon: string; label: string; href: string; external: boolean }[];
+  ].filter(Boolean) as { icon: string; label: string; href: string; external: boolean; action?: LeadAction }[];
 
   return (
     <div className="screen-in detail-screen hh-page">
       <MobileHeader title="" onBack={() => navigate("explore")}
-        right={<button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => toggleSave(item.id)}>
+        right={<button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
           <Icon name="heart" size={22} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : "var(--ink-soft)" }} /></button>} />
 
       {/* cover */}
@@ -812,7 +840,7 @@ export function DetailScreen() {
               )}
             </div>
             <div className="flex g8 detail-headbtns">
-              <button className="btn btn-outline btn-sm" onClick={() => toggleSave(item.id)}>
+              <button className="btn btn-outline btn-sm" onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
                 <Icon name="heart" size={17} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : undefined }} /> {saved ? "Saved" : "Save"}</button>
             </div>
           </div>
@@ -842,6 +870,7 @@ export function DetailScreen() {
                 href={c.href}
                 {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 aria-label={`${c.label} ${item.name}`}
+                onClick={() => { if (c.action) logLead(c.action); }}
               >
                 <Icon name={c.icon} size={20} /><span>{c.label}</span>
               </a>
@@ -859,7 +888,6 @@ export function DetailScreen() {
 
           {tab === "overview" && <DetailOverview item={item} />}
           {tab === "locations" && <LocationsPanel item={item} outletIdx={outletIdx} setOutletIdx={setOutletIdx} toast={toast} />}
-          {tab === "menu" && <DetailMenu item={item} />}
           {tab === "reviews" && <DetailReviews item={item} />}
           {tab === "info" && <DetailInfo item={item} navigate={navigate} />}
 
@@ -875,7 +903,7 @@ export function DetailScreen() {
               <Icon name="share" size={17} /> Share
             </button>
             {quoteVertical && (
-              <button className="btn btn-gold" onClick={() => navigate("request-quote", { category: quoteVertical })}><Icon name="doc" size={17} /> Request a quote</button>
+              <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>
             <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.id })}><Icon name="building" size={17} /> Claim this business</button>
@@ -1211,29 +1239,6 @@ export function DetailOverview({ item }: { item: Listing }) {
       <div className="gallery-grid mt12">
         {["signature dish", "interior", "counter", "dessert", "team", "exterior"].map((g, gi) => (
           <ImagePh key={g} label={g} tone={gi % 2 ? "gold" : "cream"} src={HHData.gallery[gi]} ratio="1" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function DetailMenu({ item }: { item: Listing }) {
-  const menu = [
-    { name: "Beef Rendang Set", desc: "Slow-cooked 6 hours, with rice & sayur", price: "$9.80" },
-    { name: "Ayam Penyet", desc: "Smashed fried chicken, sambal & tempeh", price: "$8.50" },
-    { name: "Sambal Sotong", desc: "Squid in house sambal", price: "$10.50" },
-    { name: "Teh Tarik", desc: "Pulled milk tea", price: "$2.20" },
-  ];
-  return (
-    <div className="detail-pane">
-      <div className="flex between center"><h3 style={{ fontSize: "1.2rem" }}>Popular menu</h3><span className="faint" style={{ fontSize: ".82rem" }}>Prices indicative</span></div>
-      <div className="menu-list mt12">
-        {menu.map((m) => (
-          <div key={m.name} className="menu-item">
-            <ImagePh label={m.name.toLowerCase()} tone="gold" style={{ width: 72, height: 72, borderRadius: 12, flex: "none" }} />
-            <div className="f1"><div className="flex between"><span style={{ fontWeight: 700 }}>{m.name}</span><span style={{ fontWeight: 700, color: "var(--emerald)" }}>{m.price}</span></div>
-              <p className="muted" style={{ fontSize: ".86rem", marginTop: 4 }}>{m.desc}</p></div>
-          </div>
         ))}
       </div>
     </div>

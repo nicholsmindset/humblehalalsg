@@ -493,8 +493,21 @@ export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
   const dir = useDirectory();
   const [tab, setTab] = useState("overview");
-  const a = HHData.analytics;
   const myListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
+
+  // Open the Stripe Customer Portal so owners can self-serve manage their
+  // subscription (update card, change plan, cancel). Degrades gracefully when
+  // Stripe isn't configured or there's no subscription yet.
+  const manageBilling = async () => {
+    try {
+      const res = await fetch("/api/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.ok && data.url) { window.location.href = data.url; return; }
+      if (data.reason === "no_customer") { toast("No active subscription yet — choose a plan to get started"); return navigate("pricing"); }
+      if (data.reason === "unauthenticated") { toast("Please sign in to manage billing"); return navigate("login"); }
+      toast("Billing portal isn’t available yet — try again soon");
+    } catch { toast("Couldn’t open the billing portal — try again"); }
+  };
 
   const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["billing", "Billing", "settings"]];
 
@@ -532,14 +545,10 @@ export function OwnerDashboardScreen() {
                 <div><div style={{ fontWeight: 700 }}>Verification: Approved</div><p className="faint" style={{ fontSize: ".84rem" }}>MUIS Certified · last reviewed 12 May 2026</p></div></div>
               <button className="btn btn-outline btn-sm" onClick={() => navigate("verify")}>View details</button>
             </div>
-            <div className="stat-grid mt20">
-              {([["Profile views", a.views, "+18%", "up"], ["WhatsApp clicks", a.whatsapp, "+24%", "up"], ["Direction clicks", a.directions, "+9%", "up"], ["Calls", a.calls, "+5%", "up"], ["Website clicks", a.website, "-3%", "down"], ["Saves", a.saves, "+12%", "up"]] as [string, number, string, string][]).map(([l, v, d, dir]) => (
-                <div key={l} className="stat"><div className="v">{v.toLocaleString()}</div><div className="l">{l}</div><div className={`d ${dir}`}>{d} <span className="faint" style={{ fontWeight: 500 }}>vs last month</span></div></div>
-              ))}
-            </div>
-            <div className="card mt20" style={{ padding: 20 }}>
-              <div className="flex between center"><h3 style={{ fontSize: "1.15rem" }}>Profile views — last 30 days</h3><span className="tag"><Icon name="trend" size={13} /> Trending up</span></div>
-              <Sparkline data={a.spark} />
+            <div className="card mt20" style={{ padding: 28, textAlign: "center" }}>
+              <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="chart" size={24} /></div>
+              <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>Your listing insights will appear here</h3>
+              <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Once your listing is published and getting views, you’ll see profile views, WhatsApp clicks, calls and directions — updated daily.</p>
             </div>
           </div>
         )}
@@ -608,13 +617,8 @@ export function OwnerDashboardScreen() {
         {tab === "billing" && (
           <div className="dash-pane">
             <div className="card" style={{ padding: 22 }}>
-              <div className="flex between center wrap g12"><div><span className="eyebrow">Current plan</span><h3 style={{ fontSize: "1.4rem", marginTop: 6 }}>Verified · $19/mo</h3><p className="faint">Next billing 1 July 2026</p></div>
-                <button className="btn btn-gold" onClick={() => navigate("pricing")}>Upgrade to Featured</button></div>
-              <hr className="divider" style={{ margin: "18px 0" }} />
-              <h4 style={{ fontWeight: 700, marginBottom: 10 }}>Payment history</h4>
-              {[["1 Jun 2026", "Verified plan", "$39.00"], ["1 May 2026", "Verified plan", "$39.00"], ["1 Apr 2026", "Verified plan", "$39.00"]].map(([d, desc, amt]) => (
-                <div key={d} className="flex between" style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}><span className="muted">{d} · {desc}</span><span style={{ fontWeight: 700 }}>{amt}</span></div>
-              ))}
+              <div className="flex between center wrap g12"><div><span className="eyebrow">Billing &amp; subscription</span><h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>Manage your plan</h3><p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to view your current plan, update your card, download invoices, change plan or cancel.</p></div>
+                <div className="flex g8 wrap"><button className="btn btn-gold" onClick={manageBilling}><Icon name="settings" size={16} /> Manage subscription</button><button className="btn btn-soft" onClick={() => navigate("pricing")}>View plans</button></div></div>
             </div>
           </div>
         )}
