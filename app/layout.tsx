@@ -18,6 +18,8 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { AnalyticsPageView } from "@/components/analytics/page-view";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
+import { EventsProvider } from "@/components/events-context";
+import { getEvents } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import {
   JsonLd,
@@ -113,13 +115,16 @@ export default async function RootLayout({
   // Directory snapshot — Supabase when configured, else the mock seed (keeps
   // static rendering when there are no keys, so no regression).
   const directory = await getDirectory();
+  const events = await getEvents();
   return (
     <html lang="en" className={fontVars}>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <AppProviders>
           <DirectoryProvider listings={directory}>
-            <AppShell>{children}</AppShell>
+            <EventsProvider events={events}>
+              <AppShell>{children}</AppShell>
+            </EventsProvider>
           </DirectoryProvider>
         </AppProviders>
         <CookieConsent />
