@@ -6,6 +6,7 @@ import { HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
@@ -85,11 +86,7 @@ export function AdminScreen() {
         </div>
         <nav className="admin-nav">
           {nav.map(([id,label,icon])=>(
-            <button key={id} className={section===id?'on':''} onClick={()=>pick(id)}><Icon name={icon} size={18}/> {label}
-              {id==='approvals' && <span className="admin-count">7</span>}
-              {id==='events' && <span className="admin-count">3</span>}
-              {id==='reports' && <span className="admin-count">4</span>}
-            </button>
+            <button key={id} className={section===id?'on':''} onClick={()=>pick(id)}><Icon name={icon} size={18}/> {label}</button>
           ))}
         </nav>
         <button className="btn btn-ghost btn-sm" style={{margin:16}} onClick={()=>navigate('home')}><Icon name="logout" size={16}/> Exit admin</button>
@@ -485,21 +482,49 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
   );
 }
 
+type AdminUserRow = { id: string; email: string; name: string | null; role: string; created_at: string };
 export function AdminUsers() {
-  const users: [string, string, string, string, string][]=[['Aisyah Rahman','aisyah@email.com','User','48 saves','Active'],['Faizal Madon','faizal@email.com','User','12 reviews','Active'],['Warung Bumbu','owner@bumbu.sg','Owner','2 listings','Verified'],['Qahwa & Co.','hi@qahwa.co','Owner','1 listing','Verified'],['Imran Shah','imran@email.com','User','5 saves','Suspended']];
+  const [rows, setRows] = useState<AdminUserRow[] | null>(null);
+  const [q, setQ] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "owner">("all");
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const sb = getSupabaseBrowser();
+      if (!sb) { if (alive) setRows([]); return; }
+      const { data, error } = await sb.rpc("admin_list_users", { p_limit: 200 });
+      if (alive) setRows(!error && Array.isArray(data) ? (data as AdminUserRow[]) : []);
+    })();
+    return () => { alive = false; };
+  }, []);
+  const filtered = (rows || []).filter((u) =>
+    (roleFilter === "all" || u.role === roleFilter) &&
+    (!q || (u.name || "").toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase())));
   return (
     <div className="card" style={{overflow:'hidden'}}>
-      <div className="admin-tablehead"><div className="flex g8"><button className="chip active">All</button><button className="chip">Users</button><button className="chip">Owners</button></div>
-        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search users…" style={{fontSize:'.86rem'}}/></div></div>
-      <div className="tbl-scroll"><table className="tbl">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Activity</th><th>Status</th><th></th></tr></thead>
-        <tbody>{users.map(([n,e,r,a,s])=>(
-          <tr key={e} className="rowhover"><td><div className="flex g8 center"><span className="avatar" style={{width:32,height:32,fontSize:'.78rem'}}>{n[0]}</span><span style={{fontWeight:600}}>{n}</span></div></td>
-            <td className="muted">{e}</td><td><span className={`pill-tag ${r==='Owner'?'blue':'gray'}`}>{r}</span></td><td className="muted">{a}</td>
-            <td><span className={`pill-tag ${s==='Suspended'?'red':s==='Verified'?'green':'gray'}`}>{s}</span></td>
-            <td><button className="btn btn-ghost btn-sm"><Icon name="settings" size={16}/></button></td></tr>
-        ))}</tbody>
-      </table></div>
+      <div className="admin-tablehead"><div className="flex g8">
+        <button className={`chip ${roleFilter==="all"?"active":""}`} onClick={()=>setRoleFilter("all")}>All</button>
+        <button className={`chip ${roleFilter==="user"?"active":""}`} onClick={()=>setRoleFilter("user")}>Users</button>
+        <button className={`chip ${roleFilter==="owner"?"active":""}`} onClick={()=>setRoleFilter("owner")}>Owners</button>
+      </div>
+        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search users…" value={q} onChange={(e)=>setQ(e.target.value)} style={{fontSize:'.86rem'}}/></div></div>
+      {rows === null ? (
+        <div style={{ padding: 24, opacity: 0.5 }} aria-busy="true">Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: 24 }}><Empty icon="users" title="No users yet" body="Signed-up users appear here. (Requires migration 0018 + admin access.)" /></div>
+      ) : (
+        <div className="tbl-scroll"><table className="tbl">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+          <tbody>{filtered.map((u)=>(
+            <tr key={u.id} className="rowhover">
+              <td><div className="flex g8 center"><span className="avatar" style={{width:32,height:32,fontSize:'.78rem'}}>{(u.name||u.email||'?')[0].toUpperCase()}</span><span style={{fontWeight:600}}>{u.name||'—'}</span></div></td>
+              <td className="muted">{u.email}</td>
+              <td><span className={`pill-tag ${u.role==='owner'?'blue':u.role==='admin'?'green':'gray'}`}>{u.role}</span></td>
+              <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("en-SG",{day:"numeric",month:"short",year:"numeric"}) : "—"}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
     </div>
   );
 }
