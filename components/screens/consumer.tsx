@@ -537,7 +537,7 @@ export function MapPreview({ results, navigate }: {
           </button>
         ))}
         <div className="map-roads" />
-        <button className="btn btn-primary btn-sm map-this" onClick={() => {}}><Icon name="refresh" size={15} /> Search this area</button>
+        <button className="btn btn-primary btn-sm map-this" onClick={() => navigate("map")}><Icon name="refresh" size={15} /> Open full map</button>
       </div>
       <div className="map-cardrail">
         {results.map((l) => <div key={l.id} className="map-railcard"><ListingCard item={l} variant="row" /></div>)}
@@ -556,6 +556,7 @@ export function MapScreen() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
   const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques });
+  const [q, setQ] = useState("");
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
@@ -591,6 +592,7 @@ export function MapScreen() {
 
   const list = useMemo(() => {
     let r = dir.listings.filter((l) => l.coords);
+    if (q.trim()) { const s = q.trim().toLowerCase(); r = r.filter((l) => (l.name + " " + (l.cuisine || "") + " " + (l.area || "")).toLowerCase().includes(s)); }
     if (state.prefs?.certifiedOnly) r = r.filter((l) => l.certified);
     if (chips.open) r = r.filter((l) => (mapMounted ? isOpenNow(l.hoursWeek) : l.open));
     if (chips.prayer) r = r.filter((l) => l.prayer);
@@ -601,7 +603,7 @@ export function MapScreen() {
         .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
     }
     return r;
-  }, [chips, userLoc, state.prefs?.certifiedOnly, mapMounted, dir.listings]);
+  }, [chips, q, userLoc, state.prefs?.certifiedOnly, mapMounted, dir.listings]);
 
   const mosqueList = useMemo(() => {
     let m = HHData.mosques.map((mq) => ({ ...mq, distanceKm: userLoc ? haversineKm(userLoc, mq.coords) : undefined }));
@@ -652,7 +654,7 @@ export function MapScreen() {
         <div className="map-controls">
           <div className="searchbar" style={{ flex: 1, boxShadow: "var(--sh-md)" }}>
             <Icon name="search" className="lead" />
-            <input placeholder="Search this area" aria-label="Search this area" />
+            <input placeholder="Search this area" aria-label="Search this area" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           <button className="map-iconbtn" aria-label="View as list" onClick={() => navigate("explore")}>
             <Icon name="list" size={20} />

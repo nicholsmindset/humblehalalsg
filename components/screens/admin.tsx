@@ -537,21 +537,11 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
 }
 
 export function AdminPayments() {
-  const rows: [string, string, string, string, string, string][]=[['#INV-2841','Warung Bumbu','Verified','$39.00','Paid','1 Jun'],['#INV-2840','Qahwa & Co.','Featured','$99.00','Paid','1 Jun'],['#INV-2839','Madinah Spice','Premium','$189.00','Paid','31 May'],['#INV-2838','The Modest Thread','Verified','$39.00','Failed','30 May'],['#INV-2837','Rumah Tenun','Featured','$99.00','Paid','29 May']];
   return (
     <div>
-      <div className="admin-statgrid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))'}}>
-        {([['MRR','$48,210','+8%','up'],['This month','$12,840','+12%','up'],['Failed payments','3','-2','down'],['Active subscriptions','1,284','+34','up']] as [string, string, string, string][]).map(([l,v,d,dir])=>(<div key={l} className="stat"><div className="v">{v}</div><div className="l">{l}</div><div className={`d ${dir}`}>{d}</div></div>))}
-      </div>
-      <div className="card mt20" style={{overflow:'hidden'}}>
-        <div className="admin-tablehead"><h3 style={{fontSize:'1.05rem'}}>Recent transactions</h3></div>
-        <div className="tbl-scroll"><table className="tbl">
-          <thead><tr><th>Invoice</th><th>Business</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-          <tbody>{rows.map(([inv,biz,plan,amt,st,dt])=>(
-            <tr key={inv} className="rowhover"><td className="kbd-mono" style={{fontWeight:600}}>{inv}</td><td style={{fontWeight:600}}>{biz}</td><td className="muted">{plan}</td><td style={{fontWeight:700}}>{amt}</td>
-              <td><span className={`pill-tag ${st==='Failed'?'red':'green'}`}>{st}</span></td><td className="muted">{dt}</td></tr>
-          ))}</tbody>
-        </table></div>
+      <Empty icon="dollar" title="Subscription & payment data lives in Stripe" body="Humble Halal uses Stripe for plan subscriptions and event payouts. Your Stripe Dashboard holds the authoritative MRR, invoices, payouts and failed-payment ledger." />
+      <div className="flex center" style={{ marginTop: 16 }}>
+        <a className="btn btn-gold" href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer"><Icon name="settings" size={16} /> Open Stripe Dashboard</a>
       </div>
     </div>
   );
