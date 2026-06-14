@@ -19,7 +19,7 @@ export async function POST() {
   const { data: biz } = await admin.from("businesses").select("id").eq("owner_id", user.id).maybeSingle();
   if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
 
-  let { data: acct } = await admin
+  const { data: acct } = await admin
     .from("stripe_accounts")
     .select("stripe_account_id")
     .eq("business_id", biz.id)
