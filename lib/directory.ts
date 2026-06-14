@@ -78,15 +78,44 @@ export function rowToListing(r: Row): Listing {
   };
 }
 
-/** All published listings — from Supabase when configured, else the mock seed. */
+/** Real review ratings keyed by slug (from v_business_ratings, 0013). Empty
+ *  until businesses are seeded + reviews published. */
+async function ratingsBySlug(
+  sb: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+): Promise<Map<string, { rating: number; count: number }>> {
+  const out = new Map<string, { rating: number; count: number }>();
+  try {
+    const { data } = await sb.from("v_business_ratings").select("*");
+    for (const r of (data as Row[]) || []) {
+      const slug = str(r.listing_slug);
+      if (slug) out.set(slug, { rating: num(r.avg_rating), count: num(r.review_count) });
+    }
+  } catch {
+    /* view missing (pre-0013) → no overlay */
+  }
+  return out;
+}
+
+/** All published listings — from Supabase when configured, else the mock seed.
+ *  Real review ratings are overlaid by slug regardless of base source, so cards
+ *  show live numbers as soon as reviews exist (mock rating is the fallback). */
 export async function getDirectory(): Promise<Listing[]> {
   if (!supabaseConfigured) return mockListings;
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return mockListings;
     const { data, error } = await sb.from("businesses").select("*").eq("status", "published").limit(2000);
-    if (error || !data || data.length === 0) return mockListings;
-    return (data as Row[]).map(rowToListing);
+    const fromDb = !error && data && data.length > 0;
+    // Clone the mock array so the rating overlay never mutates shared module state.
+    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing) : mockListings.map((l) => ({ ...l }));
+    const ratings = await ratingsBySlug(sb);
+    if (ratings.size) {
+      for (const l of base) {
+        const r = ratings.get(l.slug || "");
+        if (r) { l.rating = r.rating; l.reviews = r.count; }
+      }
+    }
+    return base;
   } catch {
     return mockListings;
   }
