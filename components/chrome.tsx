@@ -276,6 +276,7 @@ export function TopNav() {
   const user = state.user;
   const links = [
     { id: "explore", label: t("nav.explore") },
+    { id: "ask", label: "Ask AI" },
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "for-business", label: t("nav.forBusiness") },
