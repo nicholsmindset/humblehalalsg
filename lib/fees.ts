@@ -1,29 +1,33 @@
 /* Humble Halal — ticketing fee model (single source of truth).
-   Buyer pays a booking fee ON TOP of face value (business keeps full price).
-   The booking fee == Stripe `application_fee_amount` (our commission).
+   Buyer pays a booking fee ON TOP of face value (the organiser keeps the full
+   face value). Our commission = 5% of the ticket subtotal + S$0.50 per ticket.
 
-   As merchant of record we pay Stripe's processing fee (~3.4% + S$0.50) out of
-   this commission, so the buyer fee is set above that to net a margin. */
+   Money flow (see app/api/checkout/ticket): we take a SEPARATE charge on the
+   platform for face + fee (funds held by Humble Halal), then a cron transfers
+   the face value (subtotal) to the organiser's Connect account 24h after the
+   event ends. We keep the booking fee as commission (out of which we pay
+   Stripe's processing fee). */
 
-export const FEE_PCT = 0.065; // 6.5%
-export const FEE_FIXED_CENTS = 79; // S$0.79
+export const FEE_PCT = 0.05; // 5% of subtotal
+export const FEE_PER_TICKET_CENTS = 50; // + S$0.50 per ticket
 export const CURRENCY = "sgd";
 
-/** Booking fee (our commission), in cents, for a given pre-fee subtotal in cents. */
-export function bookingFeeCents(subtotalCents: number): number {
+/** Booking fee (our commission) in cents for a subtotal + ticket quantity. */
+export function bookingFeeCents(subtotalCents: number, qty: number): number {
   if (subtotalCents <= 0) return 0;
-  return Math.round(subtotalCents * FEE_PCT) + FEE_FIXED_CENTS;
+  return Math.round(subtotalCents * FEE_PCT) + FEE_PER_TICKET_CENTS * Math.max(1, qty);
 }
 
 export interface OrderMath {
-  subtotalCents: number; // face × qty, goes to the business
-  feeCents: number; // booking fee, our commission
-  totalCents: number; // what the buyer pays
+  subtotalCents: number; // face × qty — transferred to the organiser after the event
+  feeCents: number; // booking fee — our commission, kept on the platform
+  totalCents: number; // what the buyer pays (subtotal + fee)
 }
 
 export function computeOrder(faceCents: number, qty: number): OrderMath {
-  const subtotalCents = Math.max(0, Math.round(faceCents) * Math.max(1, qty));
-  const feeCents = bookingFeeCents(subtotalCents);
+  const q = Math.max(1, qty);
+  const subtotalCents = Math.max(0, Math.round(faceCents) * q);
+  const feeCents = bookingFeeCents(subtotalCents, q);
   return { subtotalCents, feeCents, totalCents: subtotalCents + feeCents };
 }
 

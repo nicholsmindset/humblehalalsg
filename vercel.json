@@ -8,6 +8,7 @@
     { "path": "/api/cron/owner-alerts", "schedule": "0 8 * * *" },
     { "path": "/api/cron/index-health", "schedule": "0 6 * * *" },
     { "path": "/api/cron/flight-retry", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/fare-alerts", "schedule": "0 7 * * *" }
+    { "path": "/api/cron/fare-alerts", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/event-payouts", "schedule": "30 6 * * *" }
   ]
 }

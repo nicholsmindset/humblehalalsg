@@ -6,10 +6,16 @@ import { getEvent } from "@/lib/data";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
-/* Paid event ticket checkout (Stripe Connect destination charge).
+/* Paid event-ticket checkout — SEPARATE CHARGES + delayed transfer model.
+
+   The buyer pays face value + booking fee on the PLATFORM (no transfer_data), so
+   Humble Halal holds the funds. The webhook records the order; a cron
+   (api/cron/event-payouts) transfers the organiser's net (face value) to their
+   Connect account 24h after the event ends, and we keep the booking fee.
+
    Hard guards: only runs when PAID_TICKETS_ENABLED + Stripe configured + the
-   business has a Connect account with charges enabled. Otherwise returns a
-   non-fatal signal so the client can fall back to the free/mock flow. */
+   organiser has a Connect account that can RECEIVE PAYOUTS. Otherwise returns a
+   non-fatal signal so the client can fall back to the free/RSVP flow. */
 export async function POST(req: Request) {
   // 1) server-side kill-switch (never trust the client toggle)
   if (!getServerFlags().paidTickets) {
@@ -32,20 +38,34 @@ export async function POST(req: Request) {
   const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
   const tier = ev.tiers?.find((t) => t.name === body.tier) ?? ev.tiers?.[0];
   const faceCents = Math.round((tier ? tier.price : ev.priceFrom) * 100);
-  const order = computeOrder(faceCents, qty);
+  const order = computeOrder(faceCents, qty); // subtotal (→organiser), fee (→us), total (buyer pays)
 
-  // 2) resolve the seller's connected account (requires DB). Without it we can't
-  //    route funds to the business, so degrade gracefully.
+  // 2) resolve the organiser's connected account. For separate charges we don't
+  //    need charges_enabled, but we MUST be able to pay them out later, so we
+  //    require payouts_enabled before selling.
   const supa = getSupabaseAdmin();
   if (!supa) return NextResponse.json({ ok: false, reason: "db_not_configured" });
   const { data: acct } = await supa
     .from("stripe_accounts")
-    .select("stripe_account_id, charges_enabled")
+    .select("stripe_account_id, payouts_enabled")
     .eq("business_id", ev.organiserId)
     .maybeSingle();
-  if (!acct?.stripe_account_id || !acct.charges_enabled) {
+  if (!acct?.stripe_account_id || !acct.payouts_enabled) {
     return NextResponse.json({ ok: false, reason: "business_not_onboarded" });
   }
+
+  // Metadata the webhook uses to record the order + schedule the post-event payout.
+  const meta: Record<string, string> = {
+    kind: "ticket",
+    eventId: ev.id,
+    businessId: String(ev.organiserId),
+    tier: tier?.name ?? "Standard",
+    qty: String(qty),
+    subtotalCents: String(order.subtotalCents), // organiser's net (transferred after event)
+    feeCents: String(order.feeCents), // our commission (kept)
+    connectedAccount: acct.stripe_account_id,
+    buyer: body.name ?? "",
+  };
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -67,11 +87,10 @@ export async function POST(req: Request) {
         },
       },
     ],
-    payment_intent_data: {
-      application_fee_amount: order.feeCents, // Humble Halal's commission
-      transfer_data: { destination: acct.stripe_account_id }, // rest → the business
-    },
-    metadata: { eventId: ev.id, tier: tier?.name ?? "Standard", qty: String(qty), buyer: body.name ?? "" },
+    // NO transfer_data / application_fee → the full charge stays on the platform
+    // balance until the cron transfers the organiser's net after the event.
+    payment_intent_data: { metadata: meta },
+    metadata: meta,
     success_url: `${SITE.url}/success?type=payment-event&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/events/${ev.slug}`,
   });

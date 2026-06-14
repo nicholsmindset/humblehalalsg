@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email";
+
+const addDaysISO = (base: Date, days: number) => {
+  const d = new Date(base);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
 
 /* Stripe webhook — single signed endpoint, idempotent fulfillment.
    No-ops cleanly when keys/DB aren't configured. */
@@ -32,8 +40,7 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
-        // Subscription checkout (listing plans). Ticket checkout (mode=payment for
-        // events) is fulfilled in the Connect events flow — see PAID_TICKETS build.
+        // Subscription checkout (listing plans).
         if (s.mode === "subscription" && supa) {
           const businessId = s.metadata?.business_id || undefined;
           const plan = s.metadata?.plan || undefined;
@@ -43,6 +50,56 @@ export async function POST(req: Request) {
             await supa.from("businesses").update({ plan, featured: FEATURED_PLANS.has(plan), ...(customer ? { stripe_customer_id: customer } : {}) }).eq("id", businessId);
             if (subscription) {
               await supa.from("subscriptions").upsert({ business_id: businessId, stripe_subscription_id: subscription, plan, status: "active" }, { onConflict: "stripe_subscription_id" });
+            }
+          }
+        }
+        // Event-ticket checkout (separate charges). Record the order + tickets and
+        // schedule the organiser payout for 24h after the event (cron transfers it).
+        else if (s.mode === "payment" && s.metadata?.kind === "ticket" && supa) {
+          const m = s.metadata;
+          const qty = Math.max(1, parseInt(m.qty || "1", 10));
+          const subtotal = parseInt(m.subtotalCents || "0", 10);
+          const fee = parseInt(m.feeCents || "0", 10);
+          const total = s.amount_total ?? subtotal + fee;
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          const buyerEmail = s.customer_details?.email || null;
+          const connected = m.connectedAccount || null;
+
+          // Resolve the DB event (for the FK + payout date). Mock-only events have
+          // no row yet → store a null event_id and a +1d fallback payout date.
+          const { data: dbEvent } = await supa.from("events").select("id, date_iso, taken").eq("id", m.eventId || "").maybeSingle();
+          const payoutDue = dbEvent?.date_iso ? addDaysISO(new Date(dbEvent.date_iso), 1) : addDaysISO(new Date(), 1);
+
+          const { data: ord } = await supa.from("orders").insert({
+            event_id: dbEvent?.id ?? null,
+            business_id: m.businessId || null,
+            buyer_email: buyerEmail,
+            buyer_name: m.buyer || null,
+            amount_cents: total,
+            fee_cents: fee,
+            net_cents: subtotal,
+            currency: s.currency || "sgd",
+            qty,
+            stripe_payment_intent: pi,
+            status: "confirmed",
+            connected_account_id: connected,
+            payout_status: connected && subtotal > 0 ? "pending" : "none",
+            payout_due: payoutDue,
+          }).select("id").single();
+
+          if (ord?.id) {
+            const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: dbEvent?.id ?? null, tier: m.tier || null, qr_ref: randomUUID() }));
+            await supa.from("tickets").insert(tix);
+            if (dbEvent?.id) await supa.from("events").update({ taken: (dbEvent.taken || 0) + qty }).eq("id", dbEvent.id);
+            if (buyerEmail) {
+              try {
+                await sendEmail({
+                  to: buyerEmail,
+                  subject: `Your ticket${qty > 1 ? "s" : ""} — ${m.tier || "Event"}`,
+                  template: "ticket-confirmation",
+                  html: `<h2>You're going! 🎟️</h2><p>Your ${qty} ticket${qty > 1 ? "s are" : " is"} confirmed (${m.tier || "Standard"}). Show this email at the door — your reference is <strong>${String(ord.id).slice(0, 8).toUpperCase()}</strong>.</p>`,
+                });
+              } catch { /* email best-effort */ }
             }
           }
         }
