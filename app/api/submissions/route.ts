@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Unified submission intake for add-listing, suggest-a-business and claim flows.
    Graceful-degradation: validates + accepts now (so the UI shows a real
@@ -11,6 +12,7 @@ type Kind = (typeof KINDS)[number];
 const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "submissions", 8, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   let body: Record<string, unknown>;
   try {
     body = await req.json();

@@ -437,7 +437,7 @@ function AskHotel({ hotelId }: { hotelId: string }) {
       <p className="muted" style={{ fontSize: ".86rem", marginTop: 4 }}>Instant answers from the hotel's own information — ask about prayer rooms, halal food, alcohol policy and more.</p>
       <div className="aa-suggest">{suggestions.map((s) => <button key={s} type="button" className="aa-chip" onClick={() => { setQ(s); ask(s); }}>{s}</button>)}</div>
       <form className="aa-form" onSubmit={(e) => { e.preventDefault(); ask(q); }}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything about this hotel…" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything about this hotel…" aria-label="Ask a question about this hotel" />
         <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Asking…" : "Ask"}</button>
       </form>
       {answer && <div className="aa-answer">{answer}</div>}

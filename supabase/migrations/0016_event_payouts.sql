@@ -2,7 +2,7 @@
 -- We take a SEPARATE charge for the buyer on the platform (face + booking fee),
 -- hold the funds, and a cron transfers the organiser's net (face value) to their
 -- Connect account 24h after the event ends. These columns track that payout on
--- the existing orders table. Run after 0012. Idempotent.
+-- the existing orders table. Run after 0015. Idempotent (only ALTERs `orders`).
 
 alter table if exists public.orders
   add column if not exists connected_account_id text,            -- organiser's acct_… (destination)

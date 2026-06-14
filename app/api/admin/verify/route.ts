@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 import { halalScore } from "@/lib/halal-score";
 import { normalizeCertNo } from "@/lib/muis";
 
@@ -65,12 +66,21 @@ export async function POST(req: Request) {
   const { tier, score } = tierAndScore(action, certNo, expiringSoon);
 
   // No Supabase configured (dev) — accept gracefully without persisting.
-  const db = await getSupabaseServer();
-  if (!db) {
+  if (!supabaseConfigured) {
     return NextResponse.json({ ok: true, simulated: true, tier, score });
   }
 
-  // RLS enforces that only an authenticated admin can update businesses.
+  // Explicit admin gate — golden-rule-critical path (sets halal_tier/MUIS).
+  // Identity comes from cookies; role is checked with the service role. Never
+  // rely on RLS alone here (businesses has only an owner update policy).
+  const gate = await requireAdmin();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+
+  // Write with the service role (gate already confirmed admin) so the update
+  // isn't blocked by the owner-only RLS policy.
+  const db = getSupabaseAdmin();
+  if (!db) return NextResponse.json({ ok: false, error: "service_unavailable" }, { status: 503 });
+
   const patch =
     action === "revoke"
       ? { muis_cert_no: null, muis_scheme: null, muis_expiry: null, halal_tier: tier, halal_score: score, last_verified_at: new Date().toISOString() }
@@ -79,7 +89,7 @@ export async function POST(req: Request) {
   try {
     const { error } = await db.from("businesses").update(patch).eq("id", businessId);
     if (error) {
-      return NextResponse.json({ ok: false, error: "Not authorised or update failed" }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "Update failed" }, { status: 502 });
     }
   } catch {
     return NextResponse.json({ ok: false, error: "Update failed" }, { status: 502 });
@@ -88,6 +98,7 @@ export async function POST(req: Request) {
   // Best-effort audit trail (columns: actor, action, target, meta — see 0004).
   try {
     await db.from("audit_log").insert({
+      actor: gate.userId,
       action: action === "revoke" ? "Revoked halal verification" : `Granted ${action === "muis" ? "MUIS Certified" : "Admin Verified"}`,
       target: businessId,
       meta: action === "muis" ? { cert: certNo, expiry: expiry || null, scheme: String(body.scheme || "").trim() || null } : {},

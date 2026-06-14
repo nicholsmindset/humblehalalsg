@@ -23,6 +23,7 @@ export async function GET(req: Request) {
     .select("id, net_cents, currency, connected_account_id")
     .eq("payout_status", "pending")
     .eq("status", "confirmed")
+    .is("stripe_transfer_id", null) // belt-and-suspenders: never re-transfer a paid order
     .lte("payout_due", today)
     .limit(100);
 

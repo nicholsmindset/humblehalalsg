@@ -105,12 +105,18 @@ export function listingJsonLd(l: Listing) {
     ...(["restaurants", "cafes"].includes(l.catId)
       ? { servesCuisine: l.cuisine.split("·").map((s) => s.trim()) }
       : {}),
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: l.rating,
-      reviewCount: l.reviews,
-      bestRating: 5,
-    },
+    // Only emit aggregateRating when there are real reviews — Google requires
+    // reviewCount ≥ 1, and a 0-review rating would be fabricated (honesty rule).
+    ...(l.reviews > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: l.rating,
+            reviewCount: l.reviews,
+            bestRating: 5,
+          },
+        }
+      : {}),
     ...(l.certified && l.verify?.certNo
       ? {
           hasCredential: {
