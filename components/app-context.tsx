@@ -11,7 +11,6 @@ import {
   useState,
 } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { myTickets as defaultTickets } from "@/lib/data";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
@@ -116,13 +115,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const routeParams = useParams();
   const [query, setQuery] = useState<Params>({});
 
-  const [saved, setSaved] = useState<string[]>(["l2", "l10"]);
-  const [wishlist, setWishlist] = useState<string[]>(["l4"]);
-  const [recent, setRecent] = useState<string[]>(["l1", "l7"]);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
   const [user, setUserState] = useState<UserState>({ loggedIn: false, role: "user", name: "Aisyah" });
   const [prefs, setPrefs] = useState<Prefs>({ onboarded: false, homeArea: "", certifiedOnly: false });
-  const [savedEvents, setSavedEvents] = useState<string[]>(["e1"]);
-  const [tickets, setTickets] = useState<Ticket[]>(defaultTickets);
+  const [savedEvents, setSavedEvents] = useState<string[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS);
   const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
   const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);

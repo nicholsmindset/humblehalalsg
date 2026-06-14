@@ -35,7 +35,8 @@ export function pageMeta({
   image,
   index = true,
 }: PageMetaInput): Metadata {
-  const canonical = path;
+  // Absolute canonical/OG URL (robust even if metadataBase is ever absent).
+  const canonical = new URL(path, SITE.url).toString();
   const images = image ? [{ url: image }] : undefined;
   return {
     title,
