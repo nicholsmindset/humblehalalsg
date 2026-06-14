@@ -6,8 +6,9 @@ import { test, expect } from "@playwright/test";
 test("home renders key sections", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/Humble Halal/);
-  await expect(page.getByText("Featured this week")).toBeVisible();
-  await expect(page.getByText("New on Humble Halal")).toBeVisible();
+  // Unique h2 section headings (avoid footer text collisions under strict mode).
+  await expect(page.getByRole("heading", { name: "Discover halal places" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Why Humble Halal" })).toBeVisible();
 });
 
 test("business detail has real contact actions", async ({ page }) => {
@@ -19,7 +20,9 @@ test("business detail has real contact actions", async ({ page }) => {
 
 test("explore lists results", async ({ page }) => {
   await page.goto("/explore");
-  await expect(page.getByText(/\bplaces?\b/)).toBeVisible();
+  // The results count, e.g. "73 places" — digit-prefixed so it doesn't collide
+  // with footer links like "Saved places" / "Suggest a place".
+  await expect(page.getByText(/\d+\s+places?\b/).first()).toBeVisible();
 });
 
 test("is-halal brand page renders an answer", async ({ page }) => {
