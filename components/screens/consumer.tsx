@@ -1134,11 +1134,17 @@ export function VerificationCard({ item, navigate, toast }: {
         </div>
       </div>
       <div className="verif-card-foot">
-        <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={() => {
+        <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={async () => {
           if (confirmed) return;
-          setConfirmed(true);
-          toast("Thanks — your confirmation helps the community");
-          fetch("/api/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item.id }) }).catch(() => {});
+          setConfirmed(true); // optimistic
+          try {
+            const res = await fetch("/api/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item.id }) });
+            if (!res.ok) throw new Error("failed");
+            toast("Thanks — your confirmation helps the community");
+          } catch {
+            setConfirmed(false); // revert — don't claim success on failure
+            toast("Couldn’t record that — please try again");
+          }
         }}>
           <Icon name="crescent" size={15} /> {confirmed ? "You confirmed" : "Confirm it’s halal"}
         </button>

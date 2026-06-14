@@ -57,3 +57,6 @@ sitemap-diff.md
 lite_api.postman_collection.json
 .claude/settings.json
 .playwright-mcp/
+
+# Supabase CLI local artifacts
+supabase/.temp/

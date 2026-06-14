@@ -329,7 +329,7 @@ MORE.forEach((sp, i) => {
     ig: `@${slugify(sp.n).replace(/-/g, "").slice(0, 18)}`,
     web: idx % 2 === 0 ? `${slugify(sp.n).slice(0, 16)}.sg` : "",
     address: `Blk ${100 + idx} ${sp.a}, Singapore`,
-    tags: sp.t || [sp.cu.split("·").pop()!.trim()],
+    tags: sp.t || [(sp.cu.split("·").slice(-1)[0] || sp.cu).trim()],
     image: IMG(PIC[pic] || PIC.spread),
     coords: { lat: ap.lat + ((idx % 5) - 2) * 0.004, lng: ap.lng + (((idx * 3) % 5) - 2) * 0.004 },
   });
