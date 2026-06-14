@@ -3,7 +3,7 @@
 import { slugForListing, slugForEvent } from "./data";
 
 export type ScreenName =
-  | "home" | "explore" | "map" | "detail"
+  | "home" | "explore" | "map" | "detail" | "ask"
   | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
@@ -17,6 +17,7 @@ export type Params = Record<string, unknown>;
 const BASE_PATH: Record<string, string> = {
   home: "/",
   explore: "/explore",
+  ask: "/ask",
   map: "/map",
   "for-business": "/for-business",
   advertise: "/advertise",
