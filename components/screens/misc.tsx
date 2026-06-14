@@ -99,7 +99,7 @@ export function LoginScreen() {
             <button className={mode==='register'?'on':''} onClick={()=>setMode('register')}>Sign up</button>
           </div>
           <h1 style={{fontSize:'1.6rem', marginTop:18}}>{mode==='login'?'Welcome back':'Create your account'}</h1>
-          <p className="muted" style={{marginTop:4}}>{mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.'}</p>
+          <p className="muted" style={{marginTop:4}}>{supabaseConfigured ? "No password needed — continue with Google, or we’ll email you a secure sign-in link." : (mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.')}</p>
 
           <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={googleSignIn}><Icon name="google" size={20}/> Continue with Google</button>
           <div className="auth-or"><span>or</span></div>
@@ -111,14 +111,16 @@ export function LoginScreen() {
                 aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "login-email-err" : undefined} />
               {touched && emailErr && <span id="login-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
             </div>
-            <div className="field">
-              <label htmlFor="login-pw">Password</label>
-              <input id="login-pw" className="input" type="password" autoComplete={mode==='login'?'current-password':'new-password'} placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)}
-                aria-invalid={touched && !!pwErr} aria-describedby={touched && pwErr ? "login-pw-err" : undefined} />
-              {touched && pwErr && <span id="login-pw-err" className="field-error"><Icon name="warning" size={13}/> {pwErr}</span>}
-            </div>
+            {!supabaseConfigured && (
+              <div className="field">
+                <label htmlFor="login-pw">Password</label>
+                <input id="login-pw" className="input" type="password" autoComplete={mode==='login'?'current-password':'new-password'} placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)}
+                  aria-invalid={touched && !!pwErr} aria-describedby={touched && pwErr ? "login-pw-err" : undefined} />
+                {touched && pwErr && <span id="login-pw-err" className="field-error"><Icon name="warning" size={13}/> {pwErr}</span>}
+              </div>
+            )}
 
-            {mode==='register' && (
+            {mode==='register' && !supabaseConfigured && (
               <div>
                 <label style={{fontWeight:600, fontSize:'.88rem'}}>I’m joining as</label>
                 <div className="role-grid mt8">
@@ -129,7 +131,7 @@ export function LoginScreen() {
                 </div>
               </div>
             )}
-            <button className="btn btn-primary btn-block btn-lg" type="submit">{mode==='login'?'Log in':'Create account'}</button>
+            <button className="btn btn-primary btn-block btn-lg" type="submit">{supabaseConfigured ? 'Email me a sign-in link' : (mode==='login'?'Log in':'Create account')}</button>
           </form>
           <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our Terms &amp; Privacy Policy.</p>
         </div>
