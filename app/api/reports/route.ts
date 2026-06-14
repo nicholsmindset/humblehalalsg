@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Listing report (wrong halal status, closed, hours, etc.). Graceful-degradation:
    validates + accepts now; persistence point for a Supabase `reports` moderation
    queue once the backend is wired. */
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "reports", 10, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   let body: Record<string, unknown>;
   try {
     body = await req.json();

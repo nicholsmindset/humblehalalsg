@@ -31,4 +31,4 @@ create policy "fare_watches owner read" on public.fare_watches
 
 drop policy if exists "fare_watches owner insert" on public.fare_watches;
 create policy "fare_watches owner insert" on public.fare_watches
-  for insert with check (auth.uid() = user_id or user_id is null);
+  for insert with check (auth.uid() = user_id);

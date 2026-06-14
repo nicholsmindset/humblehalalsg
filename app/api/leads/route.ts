@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -22,6 +23,7 @@ type LeadBody = {
 };
 
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "leads", 5, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   let body: LeadBody = {};
   try {
     body = (await req.json()) as LeadBody;

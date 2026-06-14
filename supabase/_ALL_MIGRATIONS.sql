@@ -1,5 +1,5 @@
 -- ============================================================
--- Humble Halal — combined migrations (all)
+-- Humble Halal — combined migrations (all, sequential)
 -- Paste into Supabase → SQL Editor → Run. Idempotent; safe to re-run.
 -- ============================================================
 begin;
@@ -656,7 +656,7 @@ create policy "fare_watches owner read" on public.fare_watches
 
 drop policy if exists "fare_watches owner insert" on public.fare_watches;
 create policy "fare_watches owner insert" on public.fare_watches
-  for insert with check (auth.uid() = user_id or user_id is null);
+  for insert with check (auth.uid() = user_id);
 
 
 -- ─────────────────────────────────────────────────────────
@@ -1088,30 +1088,6 @@ grant execute on function public.vendor_scorecard_by_token(text,timestamptz,time
 
 
 -- ─────────────────────────────────────────────────────────
--- supabase/migrations/0013_event_payouts.sql
--- ─────────────────────────────────────────────────────────
--- Humble Halal — event-ticket payouts (separate charges + transfers).
--- We take a SEPARATE charge for the buyer on the platform (face + booking fee),
--- hold the funds, and a cron transfers the organiser's net (face value) to their
--- Connect account 24h after the event ends. These columns track that payout on
--- the existing orders table. Run after 0012. Idempotent.
-
-alter table if exists public.orders
-  add column if not exists connected_account_id text,            -- organiser's acct_… (destination)
-  add column if not exists net_cents int,                        -- organiser's share to transfer (subtotal)
-  add column if not exists payout_status text not null default 'none'
-    check (payout_status in ('none','pending','paid','skipped','failed')),
-  add column if not exists payout_due date,                      -- event end date + 1 day
-  add column if not exists stripe_transfer_id text,
-  add column if not exists buyer_name text,
-  add column if not exists qty int;
-
--- cron scans for due, unpaid payouts
-create index if not exists orders_payout_due_idx on public.orders (payout_status, payout_due)
-  where payout_status = 'pending';
-
-
--- ─────────────────────────────────────────────────────────
 -- supabase/migrations/0013_owner_analytics.sql
 -- ─────────────────────────────────────────────────────────
 -- Humble Halal — owner-scoped analytics + public ratings rollup.
@@ -1225,5 +1201,93 @@ grant execute on function public.owner_listing_analytics(timestamptz,timestamptz
 
 alter table if exists public.events
   add column if not exists display jsonb not null default '{}'::jsonb;
+
+
+-- ─────────────────────────────────────────────────────────
+-- supabase/migrations/0015_owner_reviews.sql
+-- ─────────────────────────────────────────────────────────
+-- Humble Halal — owner review management (Phase 1).
+-- Lets a business owner see ALL reviews on their listings (incl. pending) and
+-- reply to them. Both RPCs are SECURITY DEFINER but hard-scoped to listings the
+-- caller owns (businesses.owner_id / claimed_by = auth.uid()). Run after 0013.
+-- (0014 is reserved for the separate events-display work.)
+
+-- All reviews for the caller's listings, newest first.
+create or replace function public.owner_reviews()
+returns table (
+  id            uuid,
+  listing_slug  text,
+  business_name text,
+  rating        int,
+  text          text,
+  reply         text,
+  status        text,
+  created_at    timestamptz
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select r.id, b.slug, b.name, r.rating, r.text, r.reply, r.status, r.created_at
+  from public.reviews r
+  join public.businesses b on b.id = r.business_id
+  where b.owner_id = auth.uid() or b.claimed_by = auth.uid()
+  order by r.created_at desc;
+$$;
+
+revoke all on function public.owner_reviews() from public;
+grant execute on function public.owner_reviews() to authenticated;
+
+-- Reply to one review — only if it belongs to a listing the caller owns.
+create or replace function public.owner_reply_to_review(
+  p_review_id uuid,
+  p_reply     text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.reviews
+     set reply = p_reply, replied_at = now()
+   where id = p_review_id
+     and business_id in (
+       select id from public.businesses
+       where owner_id = auth.uid() or claimed_by = auth.uid()
+     );
+  if not found then
+    raise exception 'not your review';
+  end if;
+end;
+$$;
+
+revoke all on function public.owner_reply_to_review(uuid, text) from public;
+grant execute on function public.owner_reply_to_review(uuid, text) to authenticated;
+
+
+-- ─────────────────────────────────────────────────────────
+-- supabase/migrations/0016_event_payouts.sql
+-- ─────────────────────────────────────────────────────────
+-- Humble Halal — event-ticket payouts (separate charges + transfers).
+-- We take a SEPARATE charge for the buyer on the platform (face + booking fee),
+-- hold the funds, and a cron transfers the organiser's net (face value) to their
+-- Connect account 24h after the event ends. These columns track that payout on
+-- the existing orders table. Run after 0015. Idempotent (only ALTERs `orders`).
+
+alter table if exists public.orders
+  add column if not exists connected_account_id text,            -- organiser's acct_… (destination)
+  add column if not exists net_cents int,                        -- organiser's share to transfer (subtotal)
+  add column if not exists payout_status text not null default 'none'
+    check (payout_status in ('none','pending','paid','skipped','failed')),
+  add column if not exists payout_due date,                      -- event end date + 1 day
+  add column if not exists stripe_transfer_id text,
+  add column if not exists buyer_name text,
+  add column if not exists qty int;
+
+-- cron scans for due, unpaid payouts
+create index if not exists orders_payout_due_idx on public.orders (payout_status, payout_due)
+  where payout_status = 'pending';
 
 commit;
