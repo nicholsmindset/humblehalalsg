@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon } from "../ui";
 import { HOME_FAQ, VERIFY_FAQ } from "@/lib/faq";
+import { CONTACT_EMAILS } from "@/lib/contact";
 
 function Crumb({ trail }: { trail: { label: string; href?: string }[] }) {
   return (
@@ -111,9 +112,9 @@ export function ContactScreen() {
             <div className="card" style={{ padding: 18 }}>
               <h3 style={{ fontSize: "1.02rem", marginBottom: 10 }}>Email us</h3>
               <ul className="contact-list">
-                <li><Icon name="mail" size={15} /><div><strong>General &amp; support</strong><a href="mailto:hello@humblehalal.com">hello@humblehalal.com</a></div></li>
-                <li><Icon name="mail" size={15} /><div><strong>Business &amp; advertising</strong><a href="mailto:partners@humblehalal.com">partners@humblehalal.com</a></div></li>
-                <li><Icon name="mail" size={15} /><div><strong>Privacy &amp; data requests</strong><a href="mailto:privacy@humblehalal.com">privacy@humblehalal.com</a></div></li>
+                <li><Icon name="mail" size={15} /><div><strong>General &amp; support</strong><a href={`mailto:${CONTACT_EMAILS.general}`}>{CONTACT_EMAILS.general}</a></div></li>
+                <li><Icon name="mail" size={15} /><div><strong>Business &amp; advertising</strong><a href={`mailto:${CONTACT_EMAILS.partners}`}>{CONTACT_EMAILS.partners}</a></div></li>
+                <li><Icon name="mail" size={15} /><div><strong>Privacy &amp; data requests</strong><a href={`mailto:${CONTACT_EMAILS.privacy}`}>{CONTACT_EMAILS.privacy}</a></div></li>
               </ul>
             </div>
             <div className="card" style={{ padding: 18 }}>

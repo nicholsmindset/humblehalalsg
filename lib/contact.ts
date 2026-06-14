@@ -1,6 +1,14 @@
 /* Humble Halal — contact intent helpers. Turn raw business contact fields into
    real, tappable hrefs (tel:, wa.me, website, Instagram). Singapore-aware. */
 
+/** Single source of truth for Humble Halal's own contact addresses (was
+ *  duplicated across advertise, pages, contact route and legal copy). */
+export const CONTACT_EMAILS = {
+  general: "hello@humblehalal.com",
+  partners: "partners@humblehalal.com",
+  privacy: "privacy@humblehalal.com",
+} as const;
+
 /** tel: link — keep leading + and digits only. */
 export function telHref(phone: string): string {
   return `tel:${phone.replace(/[^+\d]/g, "")}`;

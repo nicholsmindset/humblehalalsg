@@ -45,7 +45,7 @@ export const areas: Area[] = [
 ];
 
 // Singapore's geographic centre — default map view.
-export const SG_CENTER = { lat: 1.3521, lng: 103.8198 };
+export { SG_CENTER } from "./sg-locations"; // single source (was duplicated here)
 
 // badge keys: muis, admin, owned, friendly, nopork, pending
 export const listings: Listing[] = [
