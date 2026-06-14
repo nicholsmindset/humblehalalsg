@@ -396,9 +396,9 @@ export function EventDetailScreen() {
             <span className="muted">{ev.venue}</span>
           </div>
           <ImagePh label="venue map" tone="emerald" style={{ height: 180, borderRadius: 14, marginTop: 12 }} icon="map" />
-          <button className="btn btn-outline mt12" onClick={() => toast("Opening directions…")}>
+          <a className="btn btn-outline mt12" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ev.venue} ${ev.area}`)}`} target="_blank" rel="noopener noreferrer">
             <Icon name="directions" size={17} /> Get directions
-          </button>
+          </a>
 
           <h3 style={{ fontSize: "1.2rem", marginTop: 24 }}>Hosted by</h3>
           <div className="evt-organiser">

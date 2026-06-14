@@ -41,9 +41,9 @@ export function AdvertiseScreen() {
             eat, shop and gather — across web, map, newsletter and AI search.
           </p>
           <div className="flex g10 wrap" style={{ marginTop: 18 }}>
-            <button className="btn btn-primary btn-lg" onClick={() => toast("Our team will email you the media kit")}>
+            <a className="btn btn-primary btn-lg" href="mailto:partners@humblehalal.com?subject=Media%20kit%20request&body=Hi%20Humble%20Halal%2C%20please%20send%20me%20the%20advertising%20media%20kit.">
               Get the media kit <Icon name="arrow" size={17} />
-            </button>
+            </a>
             <button className="btn btn-outline btn-lg" onClick={() => navigate("pricing")}>
               See listing plans
             </button>
