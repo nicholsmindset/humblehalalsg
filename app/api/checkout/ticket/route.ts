@@ -3,6 +3,7 @@ import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { computeOrder, CURRENCY } from "@/lib/fees";
 import { getEvent } from "@/lib/data";
+import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
@@ -32,7 +33,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
   }
 
-  const ev = getEvent(String(body.eventId || ""));
+  // Resolve the event: mock seed first (fast), then the Supabase `events` table
+  // (published) so DB-only paid events work too.
+  const supa = getSupabaseAdmin();
+  const eventId = String(body.eventId || "");
+  let ev = getEvent(eventId);
+  if (!ev && supa) {
+    const { data: row } = await supa
+      .from("events")
+      .select("*")
+      .or(`id.eq.${eventId},slug.eq.${eventId}`)
+      .eq("status", "published")
+      .maybeSingle();
+    if (row) ev = rowToEvent(row);
+  }
   if (!ev || ev.free) return NextResponse.json({ ok: false, reason: "not_a_paid_event" }, { status: 404 });
 
   const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
@@ -43,7 +57,6 @@ export async function POST(req: Request) {
   // 2) resolve the organiser's connected account. For separate charges we don't
   //    need charges_enabled, but we MUST be able to pay them out later, so we
   //    require payouts_enabled before selling.
-  const supa = getSupabaseAdmin();
   if (!supa) return NextResponse.json({ ok: false, reason: "db_not_configured" });
   const { data: acct } = await supa
     .from("stripe_accounts")

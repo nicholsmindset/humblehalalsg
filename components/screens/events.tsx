@@ -4,7 +4,8 @@
    (ported from screens-events.jsx). Owns the shared EventCard / EventPriceTag /
    EventDateChip / EventsStrip used by other screen modules. */
 import { Fragment, useMemo, useState, type MouseEvent } from "react";
-import { HHData, spotsLeft, getEvent } from "@/lib/data";
+import { HHData, spotsLeft } from "@/lib/data";
+import { useEvents } from "../events-context";
 import type { EventItem } from "@/lib/types";
 import { screenToPath } from "@/lib/routes";
 import { shareOrCopy } from "@/lib/share";
@@ -132,13 +133,14 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
 /* ========================= EVENTS DISCOVERY ========================= */
 export function EventsScreen() {
   const { navigate, params, flags } = useApp();
+  const { list: allEvents } = useEvents();
   const [cat, setCat] = useState((params.cat as string) || "");
   const [price, setPrice] = useState(""); // '', 'free', 'paid'
   const [area, setArea] = useState("");
   const [q, setQ] = useState("");
 
   const results = useMemo(() => {
-    let r = HHData.events.slice();
+    let r = allEvents.slice();
     if (q) {
       const s = q.toLowerCase();
       r = r.filter((e) => (e.title + e.cat + e.venue + e.organiser + e.blurb).toLowerCase().includes(s));
@@ -148,9 +150,9 @@ export function EventsScreen() {
     if (price === "paid") r = r.filter((e) => !e.free);
     if (area) r = r.filter((e) => e.area.toLowerCase().includes(area));
     return r;
-  }, [q, cat, price, area]);
+  }, [q, cat, price, area, allEvents]);
 
-  const featured = HHData.events.filter((e) => e.featured);
+  const featured = allEvents.filter((e) => e.featured);
 
   return (
     <div className="screen-in hh-page">
@@ -262,7 +264,8 @@ export function EventsScreen() {
 /* ========================= EVENT DETAIL ========================= */
 export function EventDetailScreen() {
   const { navigate, params, state, toggleEventSave, toast, flags } = useApp();
-  const ev = getEvent(String(params.slug || params.id || "")) || HHData.events[0];
+  const { get, list } = useEvents();
+  const ev = get(String(params.slug || params.id || "")) || list[0];
   const saved = state.savedEvents.includes(ev.id);
   // Free unless the business set a price AND paid ticketing is switched on.
   const effFree = ev.free || !flags.paidTickets;
@@ -500,7 +503,8 @@ export function EventDetailScreen() {
 /* ========================= CHECKOUT / RSVP ========================= */
 export function CheckoutScreen() {
   const { navigate, params, bookEvent, state, flags } = useApp();
-  const ev = HHData.events.find((e) => e.id === params.id) || HHData.events[0];
+  const { get, list } = useEvents();
+  const ev = get(String(params.id)) || list[0];
   const [tier, setTier] = useState(ev.tiers ? 0 : -1);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState(state.user.loggedIn ? state.user.name : "");
@@ -673,7 +677,28 @@ export function HostEventScreen() {
   });
   const set = <K extends keyof HostForm>(k: K, v: HostForm[K]) => setD((s) => ({ ...s, [k]: v }));
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : navigate("success", { type: "event-listing" }));
+  const [submitting, setSubmitting] = useState(false);
+
+  // Persist the event to Supabase as 'pending' (admin approves → published).
+  // Degrades gracefully to the success screen when DB/auth isn't available.
+  const submitEvent = async () => {
+    setSubmitting(true);
+    try {
+      const catLabel = HHData.eventCats.find((c) => c.id === d.cat)?.label || "Community";
+      await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: d.title, catId: d.cat, catLabel, desc: d.desc,
+          dateISO: d.date, dateLabel: d.date, venue: d.venue, area: d.area,
+          free: d.free, price: Number(d.price) || 0, capacity: Number(d.cap) || 0,
+        }),
+      });
+    } catch { /* graceful — still show success */ }
+    setSubmitting(false);
+    navigate("success", { type: "event-listing" });
+  };
+  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submitEvent());
   const prev = () => (step > 0 ? setStep(step - 1) : navigate("events"));
 
   return (
@@ -856,8 +881,8 @@ export function HostEventScreen() {
           <button className="btn btn-ghost" onClick={prev}>
             {step === 0 ? "Cancel" : "Back"}
           </button>
-          <button className="btn btn-primary" onClick={next}>
-            {step === steps.length - 1 ? "Submit for review" : "Continue"}
+          <button className="btn btn-primary" onClick={next} disabled={submitting}>
+            {step === steps.length - 1 ? (submitting ? "Submitting…" : "Submit for review") : "Continue"}
             <Icon name="arrow" size={17} />
           </button>
         </div>
@@ -869,7 +894,8 @@ export function HostEventScreen() {
 /* ========================= HOMEPAGE STRIP ========================= */
 export function EventsStrip() {
   const { navigate } = useApp();
-  const evs = HHData.events.filter((e) => e.featured).slice(0, 4);
+  const { list } = useEvents();
+  const evs = list.filter((e) => e.featured).slice(0, 4);
   return (
     <section className="hh-wrap hh-section" style={{ paddingTop: 0 }}>
       <SectionHead title="Events happening soon" action="See all events" onAction={() => navigate("events")} />

@@ -598,17 +598,7 @@ export function OwnerDashboardScreen() {
           </div>
         )}
 
-        {tab === "reviews" && (
-          <div className="dash-pane stack g14">
-            {HHData.reviews.map((r) => (
-              <div key={r.id} className="card" style={{ padding: 16 }}>
-                <div className="flex between"><div className="flex g10 center"><span className="avatar">{r.avatar}</span><div><div style={{ fontWeight: 700 }}>{r.name}</div><span className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={12} style={{ color: i <= r.rating ? "var(--gold)" : "var(--line-strong)" }} />)}</span></div></div><span className="faint" style={{ fontSize: ".8rem" }}>{r.date}</span></div>
-                <p className="muted" style={{ marginTop: 10, fontSize: ".92rem" }}>{r.text}</p>
-                <button className="btn btn-soft btn-sm mt8" onClick={() => toast("Reply sent")}><Icon name="edit" size={15} /> Reply</button>
-              </div>
-            ))}
-          </div>
-        )}
+        {tab === "reviews" && <OwnerReviews toast={toast} />}
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
 
@@ -696,6 +686,102 @@ function OwnerInsights() {
           <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* Owner reviews — real reviews across the owner's listings (incl. pending),
+   with inline reply. Uses the owner_reviews / owner_reply_to_review RPCs (0015),
+   hard-scoped server-side to listings the caller owns. Falls back to the mock
+   seed in mock mode so the dashboard still demos. */
+type OwnerReviewRow = {
+  id: string; business_name: string; rating: number; text: string;
+  reply: string | null; status: string; created_at: string;
+};
+function OwnerReviews({ toast }: { toast: (m: string) => void }) {
+  const [rows, setRows] = useState<OwnerReviewRow[] | null>(null);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const sb = getSupabaseBrowser();
+      if (!sb) { if (alive) setRows([]); return; }
+      const { data, error } = await sb.rpc("owner_reviews");
+      if (alive) setRows(!error && Array.isArray(data) ? (data as OwnerReviewRow[]) : []);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const sendReply = async (id: string) => {
+    const reply = (draft[id] || "").trim();
+    if (reply.length < 2) return toast("Write a short reply");
+    const sb = getSupabaseBrowser();
+    if (!sb) { toast("Reply sent"); setOpen((o) => ({ ...o, [id]: false })); return; }
+    const { error } = await sb.rpc("owner_reply_to_review", { p_review_id: id, p_reply: reply });
+    if (error) return toast("Couldn’t send reply");
+    setRows((rs) => (rs || []).map((r) => (r.id === id ? { ...r, reply } : r)));
+    setOpen((o) => ({ ...o, [id]: false }));
+    toast("Reply posted");
+  };
+
+  // Mock-mode fallback: show the seed so the dashboard isn't empty in demos.
+  const display: OwnerReviewRow[] =
+    rows === null
+      ? []
+      : rows.length > 0
+        ? rows
+        : getSupabaseBrowser()
+          ? []
+          : HHData.reviews.map((r) => ({ id: r.id, business_name: "Your listing", rating: r.rating, text: r.text, reply: null, status: "published", created_at: "" }));
+
+  if (rows === null) return <div className="dash-pane"><div className="card" style={{ padding: 24, height: 100, opacity: 0.5 }} aria-busy="true" /></div>;
+  if (display.length === 0) {
+    return (
+      <div className="dash-pane">
+        <div className="card" style={{ padding: 28, textAlign: "center" }}>
+          <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="star" size={24} /></div>
+          <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No reviews yet</h3>
+          <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>When customers review your listings, they’ll appear here and you can reply.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dash-pane stack g14">
+      {display.map((r) => (
+        <div key={r.id} className="card" style={{ padding: 16 }}>
+          <div className="flex between">
+            <div className="flex g10 center">
+              <span className="avatar">★</span>
+              <div>
+                <div style={{ fontWeight: 700 }}>{r.business_name}</div>
+                <span className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={12} style={{ color: i <= r.rating ? "var(--gold)" : "var(--line-strong)" }} />)}</span>
+              </div>
+            </div>
+            {r.status !== "published" && <span className="tag" style={{ background: "var(--cream-200)", color: "var(--ink-soft)" }}>{r.status}</span>}
+          </div>
+          <p className="muted" style={{ marginTop: 10, fontSize: ".92rem" }}>{r.text}</p>
+          {r.reply ? (
+            <div className="card" style={{ marginTop: 10, padding: "10px 12px", background: "var(--emerald-50)" }}>
+              <div className="faint" style={{ fontSize: ".76rem", marginBottom: 2 }}>Your reply</div>
+              <p style={{ fontSize: ".9rem" }}>{r.reply}</p>
+            </div>
+          ) : open[r.id] ? (
+            <div className="mt8">
+              <textarea className="textarea" placeholder="Thank the reviewer or address their feedback…" value={draft[r.id] || ""} onChange={(e) => setDraft((d) => ({ ...d, [r.id]: e.target.value }))} />
+              <div className="flex g8 mt8">
+                <button className="btn btn-primary btn-sm" onClick={() => sendReply(r.id)}><Icon name="edit" size={15} /> Post reply</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => ({ ...o, [r.id]: false }))}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn btn-soft btn-sm mt8" onClick={() => setOpen((o) => ({ ...o, [r.id]: true }))}><Icon name="edit" size={15} /> Reply</button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
