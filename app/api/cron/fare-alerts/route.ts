@@ -48,7 +48,7 @@ export async function GET(req: Request) {
         html: `<p>Assalamualaikum,</p><p>The flight you're watching just dropped in price:</p>
 <p><strong>${w.origin} → ${w.destination}</strong> on ${w.depart_date}<br/>
 Now from <strong>${cur} ${price}</strong> (was ${cur} ${prev}).</p>
-<p><a href="https://humblehalal.com/travel/flights">Search this route on Humble Halal →</a></p>
+<p><a href="https://www.humblehalal.com/travel/flights">Search this route on Humble Halal →</a></p>
 <p style="color:#888;font-size:12px">You're receiving this because you set a fare alert. Prices change quickly — confirm on the airline before booking.</p>`,
       });
       patch.notify_count = (Number(w.notify_count) || 0) + 1;

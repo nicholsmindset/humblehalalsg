@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const items = newest
       .map((l) => `<li><strong>${l.name}</strong> — ${l.cuisine}, ${l.area}</li>`)
       .join("");
-    const html = `<h2>New this week on Humble Halal</h2><ul>${items}</ul><p>Latest guide: <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://humblehalal.com"}/blog/${guide?.slug}">${guide?.title}</a></p>`;
+    const html = `<h2>New this week on Humble Halal</h2><ul>${items}</ul><p>Latest guide: <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://www.humblehalal.com"}/blog/${guide?.slug}">${guide?.title}</a></p>`;
 
     const { getSupabaseAdmin } = await import("@/lib/supabase/server");
     const sb = getSupabaseAdmin();

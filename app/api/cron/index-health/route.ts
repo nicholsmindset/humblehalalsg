@@ -10,7 +10,7 @@ const AI_BOTS = ["GPTBot", "PerplexityBot", "ClaudeBot"];
 
 export async function GET(req: Request) {
   if (!authorizeCron(req)) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://humblehalal.com";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://www.humblehalal.com";
   const issues: string[] = [];
   try {
     const robots = await fetch(`${base}/robots.txt`, { cache: "no-store" }).then((r) => r.text()).catch(() => "");

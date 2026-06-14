@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       .limit(200);
 
     let emailed = 0;
-    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://humblehalal.com";
+    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://www.humblehalal.com";
     for (const b of stale || []) {
       if (!b.claimed_by) continue;
       const { data: prof } = await sb.from("profiles").select("email").eq("id", b.claimed_by).single();
