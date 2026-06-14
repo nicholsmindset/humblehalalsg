@@ -1256,7 +1256,6 @@ export function DetailOverview({ item }: { item: Listing }) {
 
 export function DetailReviews({ item }: { item: Listing }) {
   const { toast } = useApp();
-  const dist = [70, 18, 8, 3, 1];
   const [reviews, setReviews] = useState(() => HHData.reviews.map((r) => ({ ...r })));
   const [sort, setSort] = useState<"recent" | "helpful" | "rating">("recent");
   const [helped, setHelped] = useState<Record<string, boolean>>({});
@@ -1305,6 +1304,14 @@ export function DetailReviews({ item }: { item: Listing }) {
 
   const addedCount = reviews.filter((r) => r.id.startsWith("new-")).length;
   const totalReviews = item.reviews + addedCount;
+
+  // Rating distribution (5★ … 1★) computed from the loaded reviews, not hardcoded.
+  const dist = useMemo(() => {
+    const counts = [0, 0, 0, 0, 0];
+    reviews.forEach((r) => { const i = 5 - Math.round(r.rating); if (i >= 0 && i < 5) counts[i]++; });
+    const total = reviews.length || 1;
+    return counts.map((c) => Math.round((c / total) * 100));
+  }, [reviews]);
 
   const sorted = useMemo(() => {
     const r = reviews.slice();
