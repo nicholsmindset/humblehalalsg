@@ -14,6 +14,7 @@ import { scoreListing, scoreTone } from "@/lib/halal-score";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useApp } from "../app-context";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
@@ -1261,6 +1262,41 @@ export function DetailReviews({ item }: { item: Listing }) {
   const [hp, setHp] = useState(""); // honeypot
   const [busy, setBusy] = useState(false);
 
+  const slug = item.slug || item.id;
+
+  // Replace the mock seed with real published reviews (by slug) when the backend
+  // is configured. No-op in mock mode → keeps the seeded examples.
+  useEffect(() => {
+    const sb = getSupabaseBrowser();
+    if (!sb) return;
+    let alive = true;
+    (async () => {
+      const { data, error } = await sb
+        .from("v_reviews_public")
+        .select("*")
+        .eq("listing_slug", slug)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!alive || error || !data || data.length === 0) return;
+      const rel = (iso: string) => {
+        const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+        return d <= 0 ? "Today" : d === 1 ? "Yesterday" : d < 30 ? `${d}d ago` : `${Math.floor(d / 30)}mo ago`;
+      };
+      setReviews(
+        (data as { id: string; rating: number; text: string; helpful: number | null; created_at: string }[]).map((r) => ({
+          id: r.id,
+          name: "Verified diner",
+          avatar: "✓",
+          rating: r.rating,
+          date: rel(r.created_at),
+          text: r.text,
+          helpful: r.helpful ?? 0,
+        })),
+      );
+    })();
+    return () => { alive = false; };
+  }, [slug]);
+
   const addedCount = reviews.filter((r) => r.id.startsWith("new-")).length;
   const totalReviews = item.reviews + addedCount;
 
@@ -1289,7 +1325,7 @@ export function DetailReviews({ item }: { item: Listing }) {
     };
     setReviews((rs) => [optimistic, ...rs]);
     setShowForm(false);
-    const payload = { businessId: item.id, rating, name: optimistic.name, text: optimistic.text, website: hp };
+    const payload = { businessSlug: slug, rating, name: optimistic.name, text: optimistic.text, website: hp };
     setRating(0); setName(""); setText("");
     try {
       const res = await fetch("/api/reviews", {

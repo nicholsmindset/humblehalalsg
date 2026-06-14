@@ -15,6 +15,7 @@ import "../styles/travel.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
+import { AnalyticsPageView } from "@/components/analytics/page-view";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
 import { SITE } from "@/lib/seo";
@@ -122,6 +123,7 @@ export default async function RootLayout({
           </DirectoryProvider>
         </AppProviders>
         <CookieConsent />
+        <AnalyticsPageView />
       </body>
     </html>
   );

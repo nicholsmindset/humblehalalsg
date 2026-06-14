@@ -2,9 +2,11 @@
 
 /* Humble Halal — Business screens (ported from screens-business.jsx):
    For Business value page, Pricing, Add-Listing wizard, Owner Dashboard, Sparkline. */
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -545,11 +547,7 @@ export function OwnerDashboardScreen() {
                 <div><div style={{ fontWeight: 700 }}>Verification: Approved</div><p className="faint" style={{ fontSize: ".84rem" }}>MUIS Certified · last reviewed 12 May 2026</p></div></div>
               <button className="btn btn-outline btn-sm" onClick={() => navigate("verify")}>View details</button>
             </div>
-            <div className="card mt20" style={{ padding: 28, textAlign: "center" }}>
-              <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="chart" size={24} /></div>
-              <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>Your listing insights will appear here</h3>
-              <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Once your listing is published and getting views, you’ll see profile views, WhatsApp clicks, calls and directions — updated daily.</p>
-            </div>
+            <OwnerInsights />
           </div>
         )}
 
@@ -622,6 +620,81 @@ export function OwnerDashboardScreen() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* Owner listing insights — real per-listing metrics from analytics_events via
+   the owner_listing_analytics RPC (0013), summed across the owner's listings.
+   Falls back to the published empty-state when there's no backend, no owned
+   listings, or no events yet — so the dashboard never breaks in mock mode. */
+type OwnerRow = {
+  listing_views: number; enquiries: number; whatsapp_clicks: number;
+  calls: number; directions: number; shortlists: number;
+};
+function OwnerInsights() {
+  const [rows, setRows] = useState<OwnerRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const sb = getSupabaseBrowser();
+      if (!sb) { if (alive) setLoading(false); return; }
+      const { from, to } = resolveRange("30d");
+      const { data, error } = await sb.rpc("owner_listing_analytics", { p_from: from, p_to: to });
+      if (alive) {
+        if (!error && Array.isArray(data)) setRows(data as OwnerRow[]);
+        setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  if (loading) {
+    return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;
+  }
+
+  const total = (rows || []).reduce(
+    (a, r) => ({
+      views: a.views + (r.listing_views || 0),
+      enquiries: a.enquiries + (r.enquiries || 0),
+      whatsapp: a.whatsapp + (r.whatsapp_clicks || 0),
+      calls: a.calls + (r.calls || 0),
+      directions: a.directions + (r.directions || 0),
+      saves: a.saves + (r.shortlists || 0),
+    }),
+    { views: 0, enquiries: 0, whatsapp: 0, calls: 0, directions: 0, saves: 0 },
+  );
+  const anyActivity = rows && rows.length > 0 && Object.values(total).some((v) => v > 0);
+
+  // Empty-state (no backend / no owned listings / no events yet).
+  if (!anyActivity) {
+    return (
+      <div className="card mt20" style={{ padding: 28, textAlign: "center" }}>
+        <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="chart" size={24} /></div>
+        <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>Your listing insights will appear here</h3>
+        <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Once your listing is published and getting views, you’ll see profile views, WhatsApp clicks, calls and directions — updated daily.</p>
+      </div>
+    );
+  }
+
+  const cards: [string, number, string?][] = [
+    ["Profile views", total.views],
+    ["Quote enquiries", total.enquiries, "var(--emerald)"],
+    ["WhatsApp taps", total.whatsapp],
+    ["Calls", total.calls],
+    ["Directions", total.directions],
+    ["Shortlisted", total.saves],
+  ];
+  return (
+    <div className="mt20">
+      <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>Last 30 days · across your listings</p>
+      <div className="admin-statgrid">
+        {cards.map(([l, v, c]) => (
+          <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
+        ))}
       </div>
     </div>
   );
