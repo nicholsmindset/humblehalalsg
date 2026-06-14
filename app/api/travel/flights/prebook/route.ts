@@ -25,6 +25,7 @@ export async function POST(req: Request) {
   if (!passengers.length || passengers.some((p) => !p.firstName || !p.lastName || !p.birthday || !p.documentNumber)) {
     return NextResponse.json({ ok: false, error: "Complete passenger details (incl. passport) are required" }, { status: 422 });
   }
+  if (passengers.length > 9) return NextResponse.json({ ok: false, error: "Too many passengers (max 9)" }, { status: 422 }); // L3
 
   try {
     const r = await prebookFlight(offerId, contact, passengers);

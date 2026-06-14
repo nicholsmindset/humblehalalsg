@@ -14,9 +14,14 @@ export function waHref(phone: string, text?: string): string {
   return `https://wa.me/${d}${q}`;
 }
 
-/** Ensure a website value is an absolute URL. */
+/** Ensure a website value is an absolute http(s) URL. Rejects any other scheme
+ *  (javascript:, data:, etc.) so a tampered value can't become an active link
+ *  if these hrefs are ever rendered from user-submitted data (security audit L2). */
 export function webHref(web: string): string {
-  return /^https?:\/\//i.test(web) ? web : `https://${web}`;
+  const v = web.trim();
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return "#"; // some other scheme — neutralise
+  return `https://${v}`;
 }
 
 /** Instagram profile link from a handle or URL. */

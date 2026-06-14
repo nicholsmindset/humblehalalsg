@@ -52,7 +52,8 @@ export async function POST(req: Request) {
     result = await book({
       prebookId,
       holder,
-      guests: body.guests || [holder],
+      guests: (Array.isArray(body.guests) ? body.guests.slice(0, 9) : [holder]), // L3 cap
+
       payment: { method: "TRANSACTION_ID", transactionId },
       ...(body.clientReference ? { clientReference: String(body.clientReference) } : {}),
     });

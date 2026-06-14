@@ -52,7 +52,8 @@ export async function POST(req: Request) {
           origin: body.origin ?? null,
           destination: body.destination ?? null,
           depart_date: body.date ?? null,
-          passengers: body.passengers ?? [],
+          passengers: Array.isArray(body.passengers) ? body.passengers.slice(0, 9) : [], // L3 cap
+
           contact_email: body.contactEmail ?? null,
           currency: body.currency ?? null,
           total: body.total != null ? Number(body.total) : null,
