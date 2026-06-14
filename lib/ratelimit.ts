@@ -8,9 +8,16 @@ import "server-only";
    outage never blocks legitimate bookings. */
 
 function clientIp(req: Request): string {
+  // Prefer Vercel's injected client IP — it's set by the platform and can't be
+  // spoofed by the caller. Raw `x-forwarded-for` is client-controllable, so a
+  // caller could otherwise rotate the first value to evade per-IP limits (M7).
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0].trim();
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "unknown";
+  return "unknown";
 }
 
 const REST_URL = process.env.UPSTASH_REDIS_REST_URL;

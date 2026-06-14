@@ -1,18 +1,18 @@
 /* Cron auth. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` when the
-   CRON_SECRET env var is set. When it's not set (dev / pre-DB), allow the call
-   so the graceful endpoints still respond.
+   CRON_SECRET env var is set.
 
-   IMPORTANT (production): always set CRON_SECRET. The fallback below is dev-only —
-   it intentionally fails OPEN so local testing works. In production an unset
-   secret would make every cron endpoint publicly triggerable, so treat a missing
-   CRON_SECRET in prod as a misconfiguration. */
+   Production fails CLOSED: if CRON_SECRET is unset in production we DENY every
+   cron call — an unset secret would otherwise make money-moving/email crons
+   (e.g. event-payouts) publicly triggerable. Outside production the fallback
+   fails open so local testing and pre-DB demos still respond. */
 export function authorizeCron(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      console.warn("[cron] CRON_SECRET is unset in production — cron endpoints are unprotected. Set it in the environment.");
+      console.error("[cron] CRON_SECRET is unset in production — denying cron call. Set it in the environment.");
+      return false; // fail closed in prod
     }
-    return true;
+    return true; // dev / demo convenience only
   }
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }

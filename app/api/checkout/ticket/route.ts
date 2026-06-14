@@ -50,6 +50,14 @@ export async function POST(req: Request) {
   if (!ev || ev.free) return NextResponse.json({ ok: false, reason: "not_a_paid_event" }, { status: 404 });
 
   const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
+
+  // Capacity gate (security audit M2): don't sell past capacity. capacity===0
+  // means unlimited. Final oversell-on-race is also bounded by the atomic
+  // increment in the webhook (increment_event_taken).
+  if (ev.capacity > 0 && (ev.taken ?? 0) + qty > ev.capacity) {
+    const left = Math.max(0, ev.capacity - (ev.taken ?? 0));
+    return NextResponse.json({ ok: false, reason: left > 0 ? "insufficient_capacity" : "sold_out", left }, { status: 409 });
+  }
   const tier = ev.tiers?.find((t) => t.name === body.tier) ?? ev.tiers?.[0];
   const faceCents = Math.round((tier ? tier.price : ev.priceFrom) * 100);
   const order = computeOrder(faceCents, qty); // subtotal (→organiser), fee (→us), total (buyer pays)

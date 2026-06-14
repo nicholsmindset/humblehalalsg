@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDirectory } from "@/lib/directory";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 import type { Listing } from "@/lib/types";
 
 /* Phase 2 — halal concierge / natural-language search. GROUNDED in the directory:
@@ -29,6 +30,11 @@ function rank(listings: Listing[], q: string): Listing[] {
 }
 
 export async function POST(req: Request) {
+  // Paid LLM call — throttle per IP so the endpoint can't be scripted into a
+  // token-burn / cost-DoS (it's unauthenticated by design for public search).
+  const rl = await rateLimit(req, "concierge", 20, 60);
+  if (!rl.ok) return tooMany(rl.retryAfter);
+
   let query = "";
   try { query = String(((await req.json()) as { query?: unknown }).query || "").slice(0, 300).trim(); } catch { /* noop */ }
   if (query.length < 2) return NextResponse.json({ ok: false, error: "Ask a question." }, { status: 422 });

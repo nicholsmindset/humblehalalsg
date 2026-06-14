@@ -11,8 +11,28 @@ const KINDS = ["listing", "suggest", "claim"] as const;
 type Kind = (typeof KINDS)[number];
 const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+const MAX_BODY_BYTES = 64 * 1024; // 64KB — generous for a form, blocks payload DoS
+
+/* Allow-list the moderation `raw` blob (security audit M5): keep only primitive
+   fields, cap each string and the total key count, and never store the honeypot.
+   Prevents mass-assignment of arbitrary/huge/nested client objects into the DB. */
+function sanitizeRaw(body: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(body)) {
+    if (n >= 40) break;
+    if (k === "website") continue; // honeypot — drop
+    if (typeof v === "string") { out[k] = v.slice(0, 2000); n++; }
+    else if (typeof v === "number" || typeof v === "boolean") { out[k] = v; n++; }
+    // objects/arrays/null are intentionally skipped
+  }
+  return out;
+}
+
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "submissions", 8, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
+  const len = Number(req.headers.get("content-length") || 0);
+  if (len > MAX_BODY_BYTES) return NextResponse.json({ ok: false, error: "Payload too large" }, { status: 413 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -51,7 +71,7 @@ export async function POST(req: Request) {
           postal: String(body?.postal || "") || null,
           category_suggested: String(body?.cat || body?.category || "") || null,
           source: "owner",
-          raw: body,
+          raw: sanitizeRaw(body),
           review_status: "new",
         };
       } else if (kind === "suggest") {

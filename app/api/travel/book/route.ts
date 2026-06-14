@@ -2,6 +2,25 @@ import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, book } from "@/lib/liteapi";
 import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
+
+/* Sanitize client-reported ledger money (security audit M3). These figures come
+   from the client's prebook state and are reconciled against LiteAPI's weekly
+   payout report — but we must reject tampered values (negatives, absurd amounts,
+   injected currencies, commission > retail) before they pollute the ledger. */
+const MONEY_MAX = 1_000_000; // sane per-booking ceiling
+const toMoney = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= MONEY_MAX ? n : null;
+};
+const toCurrency = (v: unknown): string => {
+  const c = String(v ?? "").toUpperCase();
+  return /^[A-Z]{3}$/.test(c) ? c : "USD";
+};
+const toPct = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+};
 
 /* Step 3 of booking — confirm the booking with LiteAPI (merchant of record via
    its Payment SDK; method TRANSACTION_ID), then record the outcome + commission
@@ -14,6 +33,7 @@ export async function POST(req: Request) {
   if (!getServerFlags().paidHotels) {
     return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
   }
+  const rl = await rateLimit(req, "hotel-book", 10, 600); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -53,8 +73,12 @@ export async function POST(req: Request) {
   const db = getSupabaseAdmin();
   if (db) {
     try {
-      const currency = String(body.currency || "USD");
-      const commission = body.commissionAmount != null ? Number(body.commissionAmount) : null;
+      const currency = toCurrency(body.currency);
+      const retailTotal = toMoney(body.retailTotal);
+      let commission = toMoney(body.commissionAmount);
+      // Commission can never exceed the retail total — drop tampered values.
+      if (commission != null && retailTotal != null && commission > retailTotal) commission = null;
+      const marginPct = toPct(body.marginPct);
       const { data: bk } = await db
         .from("hotel_bookings")
         .insert({
@@ -70,7 +94,7 @@ export async function POST(req: Request) {
           occupancies: body.occupancies ?? [],
           guest_email: holder.email,
           currency,
-          retail_total: body.retailTotal != null ? Number(body.retailTotal) : null,
+          retail_total: retailTotal,
           commission_amount: commission,
           refundable_tag: body.refundableTag ?? null,
           muslim_friendly_tags: Array.isArray(body.tags) ? body.tags : [],
@@ -83,7 +107,7 @@ export async function POST(req: Request) {
           booking_id: bk.id,
           commission_amount: commission,
           currency,
-          margin_pct: body.marginPct != null ? Number(body.marginPct) : null,
+          margin_pct: marginPct,
           payout_status: "upcoming",
         });
       }
