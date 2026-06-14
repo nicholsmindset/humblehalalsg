@@ -677,7 +677,28 @@ export function HostEventScreen() {
   });
   const set = <K extends keyof HostForm>(k: K, v: HostForm[K]) => setD((s) => ({ ...s, [k]: v }));
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : navigate("success", { type: "event-listing" }));
+  const [submitting, setSubmitting] = useState(false);
+
+  // Persist the event to Supabase as 'pending' (admin approves → published).
+  // Degrades gracefully to the success screen when DB/auth isn't available.
+  const submitEvent = async () => {
+    setSubmitting(true);
+    try {
+      const catLabel = HHData.eventCats.find((c) => c.id === d.cat)?.label || "Community";
+      await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: d.title, catId: d.cat, catLabel, desc: d.desc,
+          dateISO: d.date, dateLabel: d.date, venue: d.venue, area: d.area,
+          free: d.free, price: Number(d.price) || 0, capacity: Number(d.cap) || 0,
+        }),
+      });
+    } catch { /* graceful — still show success */ }
+    setSubmitting(false);
+    navigate("success", { type: "event-listing" });
+  };
+  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submitEvent());
   const prev = () => (step > 0 ? setStep(step - 1) : navigate("events"));
 
   return (
@@ -860,8 +881,8 @@ export function HostEventScreen() {
           <button className="btn btn-ghost" onClick={prev}>
             {step === 0 ? "Cancel" : "Back"}
           </button>
-          <button className="btn btn-primary" onClick={next}>
-            {step === steps.length - 1 ? "Submit for review" : "Continue"}
+          <button className="btn btn-primary" onClick={next} disabled={submitting}>
+            {step === steps.length - 1 ? (submitting ? "Submitting…" : "Submit for review") : "Continue"}
             <Icon name="arrow" size={17} />
           </button>
         </div>

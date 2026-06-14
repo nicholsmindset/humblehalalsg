@@ -1,7 +1,6 @@
 -- ============================================================
--- Humble Halal — combined migrations 0001 → 0014
--- Paste this whole file into Supabase → SQL Editor → Run.
--- Idempotent; safe to re-run. Runs in one transaction.
+-- Humble Halal — combined migrations (all)
+-- Paste into Supabase → SQL Editor → Run. Idempotent; safe to re-run.
 -- ============================================================
 begin;
 
