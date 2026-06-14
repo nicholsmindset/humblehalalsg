@@ -4,6 +4,7 @@
    PrayerStrip, Onboarding, CertifiedToggle. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { useApp } from "./app-context";
@@ -88,8 +89,37 @@ export function PrayerStrip({
     return () => clearInterval(id);
   }, [pt]);
 
+  // Nearest mosque via geolocation (was hardcoded to mosques[0], so it always
+  // showed Masjid Sultan). Silent when location is already permitted; otherwise
+  // the button asks for it on click.
+  const [nearest, setNearest] = useState<{ name: string; area: string; km: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const findNearest = useCallback(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) { navigate("map", { show: "mosques" }); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        let best: { name: string; area: string; km: number } | null = null;
+        for (const m of HHData.mosques) {
+          if (!m.coords) continue;
+          const km = haversineKm(me, m.coords);
+          if (!best || km < best.km) best = { name: m.name, area: m.area, km };
+        }
+        setNearest(best);
+        setLocating(false);
+      },
+      () => { setLocating(false); navigate("map", { show: "mosques" }); },
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  }, [navigate]);
+  useEffect(() => {
+    const nav = typeof navigator !== "undefined" ? navigator : undefined;
+    if (!nav?.permissions?.query) return;
+    nav.permissions.query({ name: "geolocation" as PermissionName }).then((p) => { if (p.state === "granted") findNearest(); }).catch(() => {});
+  }, [findNearest]);
+
   const next = pt.times[nextIndex] ?? pt.times[0];
-  const mosque = HHData.mosques[0];
   if (state.prefs && state.prefs.prayerHidden) return null;
   return (
     <>
@@ -112,10 +142,20 @@ export function PrayerStrip({
           </span>
           <Icon name="chevdown" size={16} className={`prayer-caret ${open ? "up" : ""}`} />
         </button>
-        <button className="prayer-mosque" onClick={() => navigate("map", { show: "mosques" })}>
+        <button
+          className="prayer-mosque"
+          onClick={() => (nearest ? navigate("map", { show: "mosques" }) : findNearest())}
+          aria-label={nearest ? `Nearest mosque: ${nearest.name}, ${nearest.km.toFixed(1)} km away — open map` : "Find the nearest mosque"}
+        >
           <Icon name="pin" size={15} />{" "}
           <span>
-            <strong>{mosque.name}</strong> · {mosque.dist || mosque.area}
+            {locating ? (
+              <strong>Locating…</strong>
+            ) : nearest ? (
+              <><strong>{nearest.name}</strong> · {nearest.km.toFixed(1)} km</>
+            ) : (
+              <strong>Find masjid near you</strong>
+            )}
           </span>
         </button>
       </div>
