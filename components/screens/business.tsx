@@ -491,11 +491,38 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
   );
 }
 
+type OwnerBiz = { id: string; slug: string; name: string; area: string | null; cat_id: string | null; plan: string; featured: boolean; halal_tier: string | null; last_verified_at: string | null };
+type OwnerEvent = { id: string; slug: string; title: string; status: string; taken: number; capacity: number; is_free: boolean; date_iso: string | null; display: { cat?: string; area?: string; priceFrom?: number } | null };
+
 export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
   const dir = useDirectory();
   const [tab, setTab] = useState("overview");
-  const myListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
+  const demoListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
+
+  // Real owner data when Supabase is live + the user is signed in; otherwise
+  // mock-mode keeps the demo so the screen isn't bare in dev/previews.
+  const live = !!getSupabaseBrowser();
+  const [biz, setBiz] = useState<OwnerBiz[] | null>(null); // null = loading
+  const [ownerEvents, setOwnerEvents] = useState<OwnerEvent[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const sb = getSupabaseBrowser();
+      if (!sb) return; // mock mode
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); } return; }
+      const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at").eq("owner_id", user.id);
+      const list = (bd as OwnerBiz[]) || [];
+      if (alive) setBiz(list);
+      if (list.length) {
+        const { data: ed } = await sb.from("events").select("id, slug, title, status, taken, capacity, is_free, date_iso, display").in("business_id", list.map((b) => b.id)).order("date_iso", { ascending: false });
+        if (alive) setOwnerEvents((ed as OwnerEvent[]) || []);
+      } else if (alive) setOwnerEvents([]);
+    })();
+    return () => { alive = false; };
+  }, []);
+  const myBiz = biz && biz.length ? biz[0] : null;
 
   // Open the Stripe Customer Portal so owners can self-serve manage their
   // subscription (update card, change plan, cancel). Degrades gracefully when
@@ -519,8 +546,8 @@ export function OwnerDashboardScreen() {
         <div className="hh-wrap">
           <div className="flex between center wrap g12">
             <div><span className="eyebrow" style={{ color: "var(--gold)" }}>Business dashboard</span>
-              <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>Warung Bumbu Rempah</h1>
-              <div className="flex g8 center" style={{ marginTop: 8 }}><Badge type="muis" /><Badge type="owned" /></div></div>
+              <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{live ? (myBiz?.name || (biz === null ? "Loading…" : "Your business")) : "Warung Bumbu Rempah"}</h1>
+              <div className="flex g8 center" style={{ marginTop: 8 }}>{live ? (myBiz ? <>{myBiz.halal_tier === "muis" && <Badge type="muis" />}{myBiz.halal_tier === "admin" && <Badge type="admin" />}</> : null) : <><Badge type="muis" /><Badge type="owned" /></>}</div></div>
             <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
           </div>
         </div>
@@ -533,7 +560,7 @@ export function OwnerDashboardScreen() {
 
         {tab === "overview" && (
           <div className="dash-pane">
-            {myListings.some((l) => l?.verify?.expiringSoon) && (
+            {!live && demoListings.some((l) => l?.verify?.expiringSoon) && (
               <div className="notice notice-warn" style={{ marginBottom: 16 }}>
                 <Icon name="info" size={18} />
                 <span>
@@ -542,27 +569,61 @@ export function OwnerDashboardScreen() {
                 </span>
               </div>
             )}
-            <div className="verif-banner">
-              <div className="flex g12 center"><div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)" }}><Icon name="shield-check" size={22} /></div>
-                <div><div style={{ fontWeight: 700 }}>Verification: Approved</div><p className="faint" style={{ fontSize: ".84rem" }}>MUIS Certified · last reviewed 12 May 2026</p></div></div>
-              <button className="btn btn-outline btn-sm" onClick={() => navigate("verify")}>View details</button>
-            </div>
+            {(() => {
+              if (!live) return (
+                <div className="verif-banner">
+                  <div className="flex g12 center"><div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)" }}><Icon name="shield-check" size={22} /></div>
+                    <div><div style={{ fontWeight: 700 }}>Verification: Approved</div><p className="faint" style={{ fontSize: ".84rem" }}>MUIS Certified · last reviewed 12 May 2026</p></div></div>
+                  <button className="btn btn-outline btn-sm" onClick={() => navigate("verify")}>View details</button>
+                </div>
+              );
+              if (!myBiz) return null;
+              const verified = myBiz.halal_tier === "muis" || myBiz.halal_tier === "admin";
+              const reviewedOn = myBiz.last_verified_at ? new Date(myBiz.last_verified_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" }) : "";
+              return (
+                <div className="verif-banner">
+                  <div className="flex g12 center"><div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)" }}><Icon name="shield-check" size={22} /></div>
+                    <div><div style={{ fontWeight: 700 }}>{verified ? "Verification: Approved" : "Not verified yet"}</div>
+                      <p className="faint" style={{ fontSize: ".84rem" }}>{verified ? `${myBiz.halal_tier === "muis" ? "MUIS Certified" : "Admin Verified"}${reviewedOn ? ` · last reviewed ${reviewedOn}` : ""}` : "Submit your halal verification to earn a trust badge."}</p></div></div>
+                  <button className="btn btn-outline btn-sm" onClick={() => navigate("verify")}>{verified ? "View details" : "Verify now"}</button>
+                </div>
+              );
+            })()}
             <OwnerInsights />
           </div>
         )}
 
         {tab === "listings" && (
           <div className="dash-pane stack g14">
-            {myListings.map((l) => (
-              <div key={l?.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center" }}>
-                <ImagePh label={l?.img} tone={l?.tone} src={l?.image} style={{ width: 90, height: 70, borderRadius: 10, flex: "none" }} />
-                <div className="f1"><div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.1rem" }}>{l?.name}</div>
-                  <div className="lc-meta">{l?.cuisine} · {l?.area}</div>
-                  <div className="flex g6" style={{ marginTop: 6 }}>{l?.badges.slice(0, 2).map((b) => <Badge key={b} type={b} />)}</div></div>
-                <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("detail", { id: l?.id })}><Icon name="eye" size={16} /> View</button><button className="btn btn-soft btn-sm"><Icon name="edit" size={16} /> Edit</button></div>
+            {!live ? (
+              demoListings.map((l) => (
+                <div key={l?.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center" }}>
+                  <ImagePh label={l?.img} tone={l?.tone} src={l?.image} style={{ width: 90, height: 70, borderRadius: 10, flex: "none" }} />
+                  <div className="f1"><div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.1rem" }}>{l?.name}</div>
+                    <div className="lc-meta">{l?.cuisine} · {l?.area}</div>
+                    <div className="flex g6" style={{ marginTop: 6 }}>{l?.badges.slice(0, 2).map((b) => <Badge key={b} type={b} />)}</div></div>
+                  <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("detail", { id: l?.id })}><Icon name="eye" size={16} /> View</button><button className="btn btn-soft btn-sm"><Icon name="edit" size={16} /> Edit</button></div>
+                </div>
+              ))
+            ) : biz === null ? (
+              <div className="card" style={{ padding: 24, height: 90, opacity: 0.5 }} aria-busy="true" />
+            ) : biz.length === 0 ? (
+              <div className="card" style={{ padding: 28, textAlign: "center" }}>
+                <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="store" size={24} /></div>
+                <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No listings yet</h3>
+                <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Add your business so customers can find you in the directory.</p>
               </div>
-            ))}
-            <button className="btn btn-outline btn-block" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add another listing</button>
+            ) : (
+              biz.map((b) => (
+                <div key={b.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center" }}>
+                  <div className="f1"><div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.1rem" }}>{b.name}</div>
+                    <div className="lc-meta">{[b.cat_id, b.area].filter(Boolean).join(" · ") || "—"}</div>
+                    <div className="flex g6" style={{ marginTop: 6 }}>{b.halal_tier === "muis" && <Badge type="muis" />}{b.halal_tier === "admin" && <Badge type="admin" />}{b.featured && <span className="pill-tag green">Featured</span>}</div></div>
+                  <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("detail", { id: b.slug })}><Icon name="eye" size={16} /> View</button></div>
+                </div>
+              ))
+            )}
+            <button className="btn btn-outline btn-block" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> {live && biz && biz.length ? "Add another listing" : "Add your business"}</button>
           </div>
         )}
 
@@ -573,26 +634,56 @@ export function OwnerDashboardScreen() {
               <button className="btn btn-gold" onClick={() => navigate("host-event")}><Icon name="plus" size={17} /> Host an event</button>
             </div>
             <div className="stack g12">
-              {([HHData.events.find((e) => e.id === "e2"), HHData.events.find((e) => e.id === "e1")].filter(Boolean) as EventItem[]).map((ev, i) => {
-                const left = spotsLeft(ev);
-                const status: [string, string] = i === 0 ? ["Live", "green"] : ["Under review", "amber"];
-                return (
-                  <div key={ev.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
-                    <ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{ width: 90, height: 66, borderRadius: 10, flex: "none" }} />
-                    <div className="f1" style={{ minWidth: 160 }}>
-                      <div className="flex g8 center wrap"><span className={`pill-tag ${status[1]}`}>{status[0]}</span><EventPriceTag ev={ev} /></div>
-                      <div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.05rem", marginTop: 5 }}>{ev.title}</div>
-                      <div className="evt-meta" style={{ marginTop: 4 }}><Icon name="calendar" size={13} /> {ev.dateLabel} · {ev.area}</div>
+              {!live ? (
+                ([HHData.events.find((e) => e.id === "e2"), HHData.events.find((e) => e.id === "e1")].filter(Boolean) as EventItem[]).map((ev, i) => {
+                  const left = spotsLeft(ev);
+                  const status: [string, string] = i === 0 ? ["Live", "green"] : ["Under review", "amber"];
+                  return (
+                    <div key={ev.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
+                      <ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{ width: 90, height: 66, borderRadius: 10, flex: "none" }} />
+                      <div className="f1" style={{ minWidth: 160 }}>
+                        <div className="flex g8 center wrap"><span className={`pill-tag ${status[1]}`}>{status[0]}</span><EventPriceTag ev={ev} /></div>
+                        <div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.05rem", marginTop: 5 }}>{ev.title}</div>
+                        <div className="evt-meta" style={{ marginTop: 4 }}><Icon name="calendar" size={13} /> {ev.dateLabel} · {ev.area}</div>
+                      </div>
+                      <div className="evt-mini-stats">
+                        <div><div className="ems-v">{ev.taken}</div><div className="ems-l">booked</div></div>
+                        <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
+                        <div><div className="ems-v">{ev.free ? "Free" : "$" + ev.priceFrom}</div><div className="ems-l">price</div></div>
+                      </div>
+                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="eye" size={15} /> View</button><button className="btn btn-soft btn-sm"><Icon name="edit" size={15} /> Manage</button></div>
                     </div>
-                    <div className="evt-mini-stats">
-                      <div><div className="ems-v">{ev.taken}</div><div className="ems-l">booked</div></div>
-                      <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
-                      <div><div className="ems-v">{ev.free ? "Free" : "$" + ev.priceFrom}</div><div className="ems-l">price</div></div>
+                  );
+                })
+              ) : ownerEvents === null ? (
+                <div className="card" style={{ padding: 24, height: 90, opacity: 0.5 }} aria-busy="true" />
+              ) : ownerEvents.length === 0 ? (
+                <div className="card" style={{ padding: 28, textAlign: "center" }}>
+                  <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="calendar" size={24} /></div>
+                  <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No events yet</h3>
+                  <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Host a bazaar, class or talk — it shows here once it’s live.</p>
+                </div>
+              ) : (
+                ownerEvents.map((ev) => {
+                  const left = Math.max(0, (ev.capacity || 0) - (ev.taken || 0));
+                  const st: [string, string] = ev.status === "published" ? ["Live", "green"] : ev.status === "pending" ? ["Under review", "amber"] : [ev.status, "amber"];
+                  return (
+                    <div key={ev.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
+                      <div className="f1" style={{ minWidth: 160 }}>
+                        <div className="flex g8 center wrap"><span className={`pill-tag ${st[1]}`}>{st[0]}</span></div>
+                        <div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.05rem", marginTop: 5 }}>{ev.title}</div>
+                        <div className="evt-meta" style={{ marginTop: 4 }}><Icon name="calendar" size={13} /> {ev.date_iso || "—"}{ev.display?.area ? ` · ${ev.display.area}` : ""}</div>
+                      </div>
+                      <div className="evt-mini-stats">
+                        <div><div className="ems-v">{ev.taken || 0}</div><div className="ems-l">booked</div></div>
+                        <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
+                        <div><div className="ems-v">{ev.is_free ? "Free" : "$" + (ev.display?.priceFrom ?? 0)}</div><div className="ems-l">price</div></div>
+                      </div>
+                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.slug })}><Icon name="eye" size={15} /> View</button></div>
                     </div>
-                    <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="eye" size={15} /> View</button><button className="btn btn-soft btn-sm"><Icon name="edit" size={15} /> Manage</button></div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
             <button className="btn btn-outline btn-block mt14" onClick={() => navigate("host-event")}><Icon name="plus" size={18} /> Host another event</button>
           </div>
