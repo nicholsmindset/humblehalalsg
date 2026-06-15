@@ -167,6 +167,8 @@ interface ListingOutlet {
 interface ListingForm {
   name: string;
   desc: string;
+  phone: string;
+  whatsapp: string;
   cat: string;
   address: string;
   region: string;
@@ -184,7 +186,7 @@ const emptyOutlet = (): ListingOutlet => ({ name: "", address: "", region: "", t
 export function AddListingScreen() {
   const { navigate } = useApp();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<ListingForm>({ name: "", desc: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, franchise: false, outlets: [emptyOutlet()] });
+  const [data, setData] = useState<ListingForm>({ name: "", desc: "", phone: "", whatsapp: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, franchise: false, outlets: [emptyOutlet()] });
   const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => setData((d) => ({ ...d, [k]: v }));
   const setOutlet = (i: number, patch: Partial<ListingOutlet>) => setData((d) => { const o = d.outlets.slice(); o[i] = { ...o[i], ...patch }; return { ...d, outlets: o }; });
   const addOutlet = () => setData((d) => ({ ...d, outlets: [...d.outlets, emptyOutlet()] }));
@@ -252,8 +254,8 @@ export function AddListingScreen() {
               <div className="field"><label>Business name</label><input className="input" placeholder="e.g. Warung Bumbu Rempah" value={data.name} onChange={(e) => set("name", e.target.value)} /></div>
               <div className="field"><label>Short description</label><textarea className="textarea" placeholder="What makes your place special?" value={data.desc} onChange={(e) => set("desc", e.target.value)} /></div>
               <div className="grid2">
-                <div className="field"><label>Phone</label><input className="input" placeholder="+65 …" /></div>
-                <div className="field"><label>WhatsApp</label><input className="input" placeholder="+65 …" /></div>
+                <div className="field"><label>Phone</label><input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+65 …" value={data.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+                <div className="field"><label>WhatsApp</label><input className="input" type="tel" inputMode="tel" placeholder="+65 …" value={data.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /></div>
               </div>
             </div>
           )}
@@ -538,7 +540,20 @@ export function OwnerDashboardScreen() {
     } catch { toast("Couldn’t open the billing portal — try again"); }
   };
 
-  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["billing", "Billing", "settings"]];
+  // Cancel an event (soft) + refresh the local list.
+  const cancelEvent = async (id: string) => {
+    if (!window.confirm("Cancel this event? Ticket holders will be notified and paid tickets refunded.")) return;
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      const j = await res.json();
+      if (j?.ok) {
+        setOwnerEvents((evs) => (evs || []).map((e) => (e.id === id ? { ...e, status: "cancelled" } : e)));
+        toast("Event cancelled — attendees notified");
+      } else toast(j?.reason === "forbidden" ? "You can’t cancel this event" : "Couldn’t cancel — try again");
+    } catch { toast("Couldn’t cancel — try again"); }
+  };
+
+  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ["billing", "Billing", "settings"]];
 
   return (
     <div className="screen-in hh-page dash">
@@ -679,7 +694,18 @@ export function OwnerDashboardScreen() {
                         <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
                         <div><div className="ems-v">{ev.is_free ? "Free" : "$" + (ev.display?.priceFrom ?? 0)}</div><div className="ems-l">price</div></div>
                       </div>
-                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.slug })}><Icon name="eye" size={15} /> View</button></div>
+                      <div className="flex g8 wrap">
+                        <button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { slug: ev.slug })}><Icon name="eye" size={15} /> View</button>
+                        {ev.status === "published" && (
+                          <>
+                            <a className="btn btn-soft btn-sm" href={`/events/${ev.slug}/checkin`}><Icon name="check" size={15} /> Check in</a>
+                            <a className="btn btn-soft btn-sm" href={`/api/events/${ev.id}/attendees?format=csv`}><Icon name="users" size={15} /> Roster</a>
+                          </>
+                        )}
+                        {ev.status !== "cancelled" && (
+                          <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => cancelEvent(ev.id)}><Icon name="x" size={15} /> Cancel</button>
+                        )}
+                      </div>
                     </div>
                   );
                 })
@@ -693,6 +719,8 @@ export function OwnerDashboardScreen() {
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
 
+        {tab === "ads" && <OwnerAds navigate={navigate} />}
+
         {tab === "billing" && (
           <div className="dash-pane">
             <div className="card" style={{ padding: 22 }}>
@@ -701,6 +729,68 @@ export function OwnerDashboardScreen() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* Advertiser report — the owner's own sponsored campaigns + real reach, via the
+   owner_campaign_performance RPC (0024, scoped to auth.uid()). Empty-state pitches
+   the ad products when there's nothing live. */
+type OwnerCampaign = {
+  campaign_id: string; title: string; placement_key: string; status: string;
+  rate_cents: number; starts_on: string | null; ends_on: string | null; impressions: number; clicks: number;
+};
+function OwnerAds({ navigate }: { navigate: ReturnType<typeof useApp>["navigate"] }) {
+  const [rows, setRows] = useState<OwnerCampaign[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const sb = getSupabaseBrowser();
+      if (!sb) { if (alive) setLoading(false); return; }
+      const { data, error } = await sb.rpc("owner_campaign_performance");
+      if (alive) { if (!error && Array.isArray(data)) setRows(data as OwnerCampaign[]); setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  if (loading) return <div className="dash-pane"><div className="card" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" /></div>;
+
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="dash-pane">
+        <div className="card" style={{ padding: 28, textAlign: "center" }}>
+          <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--cream-200)", margin: "0 auto 12px" }}><Icon name="trophy" size={24} /></div>
+          <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>Promote your business</h3>
+          <p className="faint" style={{ fontSize: ".9rem", maxWidth: 440, margin: "0 auto" }}>Featured placement, homepage spotlight and category sponsorships put you in front of more of Singapore’s Muslim community. When a campaign is live, you’ll see its reach &amp; clicks here.</p>
+          <button className="btn btn-gold btn-sm" style={{ marginTop: 14 }} onClick={() => navigate("advertise")}>See ad options</button>
+        </div>
+      </div>
+    );
+  }
+
+  const money = (c: number) => `S$${Math.round(c / 100).toLocaleString()}`;
+  return (
+    <div className="dash-pane">
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Your campaigns</h3><span className="faint" style={{ fontSize: ".82rem" }}>Reach &amp; engagement, updated live</span></div>
+        <div className="tbl-scroll"><table className="tbl">
+          <thead><tr><th>Campaign</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Rate</th></tr></thead>
+          <tbody>{rows.map((r) => {
+            const ctr = r.impressions > 0 ? Math.round((r.clicks / r.impressions) * 1000) / 10 : 0;
+            return (
+              <tr key={r.campaign_id} className="rowhover">
+                <td style={{ fontWeight: 700 }}>{r.title}</td>
+                <td><span className={`pill-tag ${r.status === "active" ? "green" : r.status === "paused" ? "amber" : ""}`}>{r.status}</span></td>
+                <td>{r.impressions.toLocaleString()}</td>
+                <td>{r.clicks.toLocaleString()}</td>
+                <td>{ctr}%</td>
+                <td className="muted">{money(r.rate_cents)}</td>
+              </tr>
+            );
+          })}</tbody>
+        </table></div>
       </div>
     </div>
   );

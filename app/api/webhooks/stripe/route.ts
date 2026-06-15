@@ -114,6 +114,40 @@ export async function POST(req: Request) {
             }
           }
         }
+        // Zakat / sadaqah donation for a charity event. Record it + mirror the
+        // running total into events.display so the public page shows a real figure.
+        else if (s.mode === "payment" && s.metadata?.kind === "donation" && supa) {
+          const m = s.metadata;
+          const amount = s.amount_total ?? parseInt(m.amountCents || "0", 10);
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          const { error: dErr } = await supa.from("donations").insert({
+            event_id: m.eventId || null,
+            amount_cents: amount,
+            currency: s.currency || "sgd",
+            donor_email: s.customer_details?.email || null,
+            stripe_payment_intent: pi,
+            status: "paid",
+          });
+          // Mirror the honest running total into the event's display jsonb.
+          if (!dErr && m.eventId) {
+            const { data: evRow } = await supa.from("events").select("display").eq("id", m.eventId).maybeSingle();
+            const disp = (evRow?.display && typeof evRow.display === "object" ? evRow.display : {}) as Record<string, unknown>;
+            const prev = Number(disp.donationRaisedCents) || 0;
+            await supa.from("events").update({ display: { ...disp, donationRaisedCents: prev + amount } }).eq("id", m.eventId);
+          }
+        }
+        // Sponsored-ad / promo purchase → record the ad order (revenue ledger).
+        else if (s.mode === "payment" && s.metadata?.kind === "ad" && supa) {
+          const m = s.metadata;
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          await supa.from("ad_orders").insert({
+            business_id: m.businessId || null,
+            product: m.product || "ad",
+            amount_cents: s.amount_total ?? 0,
+            stripe_payment_intent: pi,
+            status: "paid",
+          });
+        }
         break;
       }
       case "customer.subscription.created":

@@ -152,6 +152,9 @@ export interface EventTier {
   perks: string;
 }
 
+/** How attendees are seated/grouped. Surfaced as a badge + filter. */
+export type GenderArrangement = "mixed" | "segregated" | "sisters" | "brothers";
+
 export interface EventItem {
   id: string;
   slug?: string;
@@ -166,9 +169,13 @@ export interface EventItem {
   dateLabel: string;
   timeLabel: string;
   dateISO: string;
+  /** Optional event end time (HH:MM, 24h) — used for prayer-overlap detection. */
+  endTime?: string;
   multiDay?: string;
   venue: string;
   area: string;
+  /** Venue coordinates — powers the nearest-mosque + prayer-aware features. */
+  venueCoords?: LatLng;
   capacity: number;
   taken: number;
   rsvp?: boolean;
@@ -182,6 +189,19 @@ export interface EventItem {
   featured: boolean;
   attendees: number;
   soldOut?: boolean;
+  // ── Islamic / Muslim-first layer ──────────────────────────────────────────
+  /** Attendee gender arrangement (mixed/segregated/sisters/brothers). */
+  genderArrangement?: GenderArrangement;
+  /** Free-text seating note, e.g. "Sisters on level 2, brothers on level 1". */
+  seatingNote?: string;
+  /** Organiser note about the prayer arrangement at/near the venue. */
+  prayerSlotNote?: string;
+  /** Whether a charity event accepts zakat/sadaqah donations (distinct from tickets). */
+  donationEnabled?: boolean;
+  /** Running total raised (cents) — real figure only; never fabricated. */
+  donationRaisedCents?: number;
+  /** Organiser refund policy label, e.g. "Flexible — full refund up to 48h before". */
+  refundPolicy?: string;
 }
 
 export interface Ticket {

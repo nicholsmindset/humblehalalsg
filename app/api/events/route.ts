@@ -19,8 +19,11 @@ export async function POST(req: Request) {
 
   let b: {
     title?: string; catId?: string; catLabel?: string; desc?: string; dateISO?: string;
-    dateLabel?: string; timeLabel?: string; venue?: string; area?: string;
-    free?: boolean; price?: number; capacity?: number; tiers?: { name: string; price: number }[];
+    dateLabel?: string; timeLabel?: string; endTime?: string; venue?: string; area?: string;
+    free?: boolean; price?: number; capacity?: number; tiers?: { name: string; price: number; perks?: string }[];
+    prayerNearby?: boolean; halalCatering?: boolean; prayerSlotNote?: string;
+    genderArrangement?: string; seatingNote?: string; refundPolicy?: string;
+    donationEnabled?: boolean; venueCoords?: { lat: number; lng: number }; coverUrl?: string;
   };
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
 
@@ -36,6 +39,14 @@ export async function POST(req: Request) {
     ? (Array.isArray(b.tiers) && b.tiers.length ? b.tiers : [{ name: "Standard", price: priceFrom }])
     : undefined;
 
+  const gender = ["mixed", "segregated", "sisters", "brothers"].includes(String(b.genderArrangement || ""))
+    ? String(b.genderArrangement)
+    : undefined;
+  const coords =
+    b.venueCoords && typeof b.venueCoords.lat === "number" && typeof b.venueCoords.lng === "number"
+      ? { lat: b.venueCoords.lat, lng: b.venueCoords.lng }
+      : undefined;
+
   const display = {
     catId: b.catId || "community",
     cat: b.catLabel || "Community",
@@ -44,11 +55,21 @@ export async function POST(req: Request) {
     area: String(b.area || ""),
     dateLabel: String(b.dateLabel || b.dateISO || ""),
     timeLabel: String(b.timeLabel || ""),
+    endTime: b.endTime ? String(b.endTime) : undefined,
     priceFrom,
     tiers,
     organiser: (biz?.name as string) || "",
     tone: "emerald",
-    img: "",
+    img: typeof b.coverUrl === "string" && /^https?:\/\//.test(b.coverUrl) ? b.coverUrl : "",
+    // Islamic / Muslim-first fields (host-controlled)
+    prayerNearby: b.prayerNearby === true,
+    halalCatering: b.halalCatering === true,
+    prayerSlotNote: b.prayerSlotNote ? String(b.prayerSlotNote).slice(0, 200) : undefined,
+    genderArrangement: gender,
+    seatingNote: b.seatingNote ? String(b.seatingNote).slice(0, 200) : undefined,
+    refundPolicy: b.refundPolicy ? String(b.refundPolicy).slice(0, 200) : undefined,
+    donationEnabled: b.catId === "charity" && b.donationEnabled === true,
+    venueCoords: coords,
   };
 
   const id = `evt_${randomUUID().slice(0, 12)}`;

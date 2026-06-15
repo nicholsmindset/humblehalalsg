@@ -2,7 +2,8 @@
 
 /* Humble Halal — Misc screens: Auth, User dashboard, Suggest, Claim, Report, Trust, SEO, States
    (ported from screens-misc.jsx). */
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { HHData } from "@/lib/data";
 import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
@@ -799,20 +800,89 @@ export function SuccessScreen() {
   );
 }
 
+/* ---------- Scannable ticket QR (generated client-side, no network) ---------- */
+function TicketQR({ value, size = 96 }: { value: string; size?: number }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    let alive = true;
+    QRCode.toDataURL(value, { margin: 1, width: size * 2, errorCorrectionLevel: "M" })
+      .then((u) => { if (alive) setUrl(u); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [value, size]);
+  if (!url) return <div className="ticket-qr" aria-hidden />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="Ticket QR code — show at the door" width={size} height={size} style={{ borderRadius: 8, display: "block" }} />;
+}
+
+type DbTicket = {
+  id: string; qrRef: string; tier: string; status: string;
+  event: { title: string; slug: string; dateISO: string; img: string; cat: string } | null;
+};
+
 /* ---------- My Tickets (user dashboard) ---------- */
 export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof useApp>["navigate"]; state: ReturnType<typeof useApp>["state"] }) {
-  const tickets = state.tickets || [];
+  const localTickets = state.tickets || [];
   const savedEvs = (state.savedEvents||[]).map(id=>HHData.events.find(e=>e.id===id)).filter(Boolean) as typeof HHData.events;
-  if (!tickets.length && !savedEvs.length) {
+  const [dbTickets, setDbTickets] = useState<DbTicket[] | null>(null);
+
+  // Pull the signed-in user's real tickets (with the scannable qr_ref). Falls
+  // back to the local mock tickets when signed out or the backend is empty.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/tickets/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && Array.isArray(j?.tickets)) setDbTickets(j.tickets as DbTicket[]); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const hasDb = dbTickets && dbTickets.length > 0;
+  if (!localTickets.length && !savedEvs.length && !hasDb) {
     return <Empty icon="ticket" title="No tickets yet" body="RSVP to free events or grab tickets — they’ll show up here with a QR code." action="Browse events" onAction={()=>navigate('events')} />;
   }
+
+  const STATUS_LABEL: Record<string, string> = { valid: "Valid", used: "Checked in", refunded: "Refunded", cancelled: "Cancelled" };
+
   return (
     <div className="stack g20">
-      {tickets.length>0 && (
+      {hasDb ? (
+        <div>
+          <h3 style={{fontSize:'1.15rem', marginBottom:12}}>Your tickets</h3>
+          <div className="stack g12">
+            {dbTickets!.map((t)=>{
+              const ev = t.event;
+              return (
+                <div key={t.id} className="ticket-card" style={t.status !== "valid" ? { opacity: .6 } : undefined}>
+                  <div className="ticket-stub"><ImagePh label={(ev?.cat||"event").toLowerCase()} tone="emerald" src={ev?.img} style={{position:'absolute',inset:0}}/></div>
+                  <div className="ticket-perf" />
+                  <div className="ticket-body">
+                    <div className="flex between" style={{gap:12}}>
+                      <div className="f1">
+                        <span className="evt-cat">{ev?.cat || "Event"}</span>
+                        <div style={{fontWeight:700, fontFamily:'var(--serif)', fontSize:'1.1rem', marginTop:3}}>{ev?.title || "Event"}</div>
+                        {ev?.dateISO && <div className="evt-meta" style={{marginTop:6}}><Icon name="calendar" size={14}/> {ev.dateISO}</div>}
+                        <div className="flex g8 center" style={{marginTop:8}}>
+                          <span className="tag">{t.tier}</span>
+                          <span className={`tag ${t.status === "used" ? "green" : ""}`}>{STATUS_LABEL[t.status] || t.status}</span>
+                        </div>
+                      </div>
+                      <div className="flex col center g8">
+                        <TicketQR value={t.qrRef} />
+                        {ev?.slug && <button className="btn btn-ghost btn-sm" style={{padding:'4px 8px'}} onClick={()=>navigate('event-detail',{slug:ev.slug})}>View</button>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : localTickets.length>0 && (
         <div>
           <h3 style={{fontSize:'1.15rem', marginBottom:12}}>Upcoming</h3>
           <div className="stack g12">
-            {tickets.map(t=>{
+            {localTickets.map(t=>{
               const ev = HHData.events.find(e=>e.id===t.eventId); if(!ev) return null;
               return (
                 <div key={t.ref} className="ticket-card">
@@ -830,7 +900,7 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
                           <span className="tag">{t.tier} × {t.qty}</span>
                         </div>
                       </div>
-                      <div className="flex col center g8"><div className="ticket-qr"/><button className="btn btn-ghost btn-sm" style={{padding:'4px 8px'}} onClick={()=>navigate('event-detail',{id:ev.id})}>View</button></div>
+                      <div className="flex col center g8"><TicketQR value={t.ref} /><button className="btn btn-ghost btn-sm" style={{padding:'4px 8px'}} onClick={()=>navigate('event-detail',{id:ev.id})}>View</button></div>
                     </div>
                   </div>
                 </div>
