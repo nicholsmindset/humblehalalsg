@@ -30,7 +30,8 @@ export async function POST(req: Request) {
     line_items: [
       { quantity: 1, price_data: { currency: CURRENCY, unit_amount: item.cents, product_data: { name: item.name } } },
     ],
-    metadata: { product: product! },
+    metadata: { kind: "ad", product: product! },
+    payment_intent_data: { metadata: { kind: "ad", product: product! } },
     success_url: `${SITE.url}/advertise?purchase=done&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/advertise`,
   });
