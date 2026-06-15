@@ -66,7 +66,7 @@ export function PrayerStrip({
   open: boolean;
   setOpen: (v: boolean) => void;
 }) {
-  const { state, navigate, ramadan, toggleRamadan } = useApp();
+  const { state, navigate, ramadan, toggleRamadan, ramadanModeEnabled } = useApp();
   const fallback = HHData.prayerTimes;
   const [pt, setPt] = useState<{ date: string; hijri: string; times: PrayerRow[] }>(fallback);
   const [nextIndex, setNextIndex] = useState(fallback.nextIndex);
@@ -180,22 +180,24 @@ export function PrayerStrip({
               </button>
             </div>
           </div>
-          <button
-            className={`ramadan-toggle ${ramadan ? "on" : ""}`}
-            onClick={toggleRamadan}
-            aria-pressed={ramadan}
-          >
-            <span className="flex g8 center">
-              <Icon name="crescent" size={16} /> Ramadan mode — iftar &amp; open-late spots
-            </span>
-            <span className="cert-switch">
-              <span className="cert-knob" />
-            </span>
-          </button>
+          {ramadanModeEnabled && (
+            <button
+              className={`ramadan-toggle ${ramadan ? "on" : ""}`}
+              onClick={toggleRamadan}
+              aria-pressed={ramadan}
+            >
+              <span className="flex g8 center">
+                <Icon name="crescent" size={16} /> Ramadan mode — iftar &amp; open-late spots
+              </span>
+              <span className="cert-switch">
+                <span className="cert-knob" />
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>
-    {ramadan && (
+    {ramadanModeEnabled && ramadan && (
       <div className="ramadan-bar">
         <div className="hh-wrap">
           <span className="flex g8 center">

@@ -3,11 +3,11 @@
 import { Suspense } from "react";
 import { AppProvider } from "./app-context";
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({ children, ramadanModeEnabled = false }: { children: React.ReactNode; ramadanModeEnabled?: boolean }) {
   // AppProvider reads useSearchParams(), which requires a Suspense boundary.
   return (
     <Suspense fallback={null}>
-      <AppProvider>{children}</AppProvider>
+      <AppProvider ramadanModeEnabled={ramadanModeEnabled}>{children}</AppProvider>
     </Suspense>
   );
 }

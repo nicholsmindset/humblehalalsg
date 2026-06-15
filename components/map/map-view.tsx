@@ -20,6 +20,7 @@ export function MapView(props: {
   points: MapPoint[];
   onSelect?: (id: string) => void;
   onPick?: (c: LatLng) => void;
+  fit?: boolean;
 }) {
   return <LeafletMap {...props} />;
 }

@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isChromeless && <BottomNav />}
       {!isChromeless && !isMapFull && <Footer />}
       <Toast msg={toastMsg} />
-      {!state.prefs.onboarded && <Onboarding />}
+      {state.hydrated && !state.prefs.onboarded && <Onboarding />}
       <HHTweaks />
     </div>
   );

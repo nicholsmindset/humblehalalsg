@@ -1,0 +1,97 @@
+/* ============================================================
+   MOBILE OPTIMISATION PASS
+   Loaded LAST so these additive overrides win by source order.
+   Scope: small phones (<=520px) + the mobile chrome breakpoint (<=860px,
+   where the bottom tab bar replaces the desktop nav). Desktop is untouched.
+   Breakpoints reuse the existing 860/520 convention — no new ones introduced.
+   ============================================================ */
+
+/* ---- Tap targets: meet WCAG 2.1 AA (>=44px) on touch devices ---- */
+@media (pointer: coarse) {
+  /* small buttons get a comfortable tap height without changing desktop */
+  .btn-sm {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* prayer-space / franchise filter toggles — grow the hit area, keep visual */
+  .fp-toggle,
+  .franchise-switch {
+    min-height: 44px;
+  }
+}
+
+/* hamburger was 42px — bump to 44px so it clears the AA minimum */
+.mobilebar-burger {
+  width: 44px;
+  height: 44px;
+}
+
+/* ---- Carousels: show a peek of the next card on phones instead of one
+   near-full-width card (signals scrollability, less awkward UX) ---- */
+@media (max-width: 520px) {
+  .map-cc,
+  .map-railcard {
+    min-width: 78vw;
+    max-width: 78vw;
+  }
+  .mosque-cc {
+    min-width: 74vw;
+    max-width: 74vw;
+  }
+}
+
+/* ---- Map canvas: scale its fixed 420px height down on small screens so the
+   results/rail aren't pushed far below the fold ---- */
+@media (max-width: 520px) {
+  .map-canvas {
+    height: clamp(300px, 56vh, 420px);
+  }
+}
+
+/* ---- Travel/flight search: stack fields on phones so date & location inputs
+   keep a usable width (they only drop to 2 columns at 880px today) ---- */
+@media (max-width: 560px) {
+  .travel-search,
+  .travel-search.v2,
+  .travel-search.flight-search {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Cookie banner: lift above the fixed bottom tab bar (and the home
+   indicator) on mobile so it never overlaps navigation ---- */
+@media (max-width: 860px) {
+  .cookie-banner {
+    bottom: calc(var(--tab-h, 68px) + 12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- Safe-area: pad page bottom for notch / home-indicator devices so
+   content isn't hidden behind the tab bar on iOS Safari ---- */
+@media (max-width: 860px) {
+  .hh-page {
+    padding-bottom: calc(var(--tab-h, 68px) + 28px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ---- Sponsored ad slot (transparent "Sponsored" label) ---- */
+.sponsored-slot { display:flex; align-items:center; gap:14px; padding:14px 16px; cursor:pointer; position:relative; }
+.sponsored-badge { position:absolute; top:10px; right:12px; display:inline-flex; align-items:center; gap:4px; font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--gold-700, #8a6d2b); background:var(--cream-200, #f3ecdd); border:1px solid var(--line-strong, #e3d9c5); border-radius:999px; padding:3px 9px; }
+.sponsored-media { width:84px; height:64px; border-radius:12px; overflow:hidden; flex:none; }
+.sponsored-body { flex:1; min-width:0; }
+.sponsored-body strong { font-family:var(--serif); font-size:1.02rem; }
+
+/* ---- Reduced motion: explicitly disable the decorative animations for users
+   who ask for it (some only opted in via no-preference before) ---- */
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .screen-in,
+  .hero-collage-stat {
+    animation: none !important;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}

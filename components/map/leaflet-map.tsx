@@ -41,11 +41,39 @@ function pinIcon(point: MapPoint) {
   });
 }
 
-function Recenter({ center, zoom }: { center: LatLng; zoom: number }) {
+/* When `fit` is on (nothing selected) frame ALL the markers — robust against
+   container-size quirks and better UX than a single guessed center. When a pin
+   or the user's location is active, fly to that point instead. */
+function FitOrCenter({ center, zoom, points, fit }: { center: LatLng; zoom: number; points: MapPoint[]; fit: boolean }) {
+  const map = useMap();
+  const key = points.map((p) => p.id).join(",");
+  useEffect(() => {
+    map.invalidateSize();
+    if (fit && points.length > 1) {
+      const b = L.latLngBounds(points.map((p) => [p.coords.lat, p.coords.lng] as [number, number]));
+      map.fitBounds(b, { padding: [48, 48], maxZoom: 15, animate: false });
+    } else {
+      map.flyTo([center.lat, center.lng], zoom, { duration: 0.5 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fit, key, points.length, center.lat, center.lng, zoom, map]);
+  return null;
+}
+
+/* Keep Leaflet's internal size in sync with its container. Essential when the
+   map lives in a grid/flex cell (split layout) that resolves its size AFTER the
+   map mounts — without this the map renders the wrong area until interaction. */
+function AutoSize() {
   const map = useMap();
   useEffect(() => {
-    map.flyTo([center.lat, center.lng], zoom, { duration: 0.6 });
-  }, [center.lat, center.lng, zoom, map]);
+    const el = map.getContainer();
+    map.invalidateSize();
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(el);
+    // one more tick after first paint, for slow layout settles
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [map]);
   return null;
 }
 
@@ -65,6 +93,7 @@ export default function LeafletMap({
   points,
   onSelect,
   onPick,
+  fit = false,
 }: {
   center: LatLng;
   zoom?: number;
@@ -73,6 +102,8 @@ export default function LeafletMap({
   /** When set, the map becomes a single-pin location picker: tap the map or
    *  drag the marker to choose a precise spot. */
   onPick?: (c: LatLng) => void;
+  /** Frame all markers (used on the results map when nothing is selected). */
+  fit?: boolean;
 }) {
   return (
     <MapContainer
@@ -86,27 +117,31 @@ export default function LeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Recenter center={center} zoom={zoom} />
+      <FitOrCenter center={center} zoom={zoom} points={points} fit={fit} />
+      <AutoSize />
       {onPick && <ClickToPick onPick={onPick} />}
-      {points.map((p) => (
-        <Marker
-          key={p.id}
-          position={[p.coords.lat, p.coords.lng]}
-          icon={pinIcon(p)}
-          draggable={!!onPick}
-          eventHandlers={{
-            click: () => onSelect?.(p.id),
-            dragend: onPick
-              ? (e) => {
-                  const ll = (e.target as L.Marker).getLatLng();
-                  onPick({ lat: ll.lat, lng: ll.lng });
-                }
-              : undefined,
-          }}
-          keyboard
-          title={p.name}
-        />
-      ))}
+      {points.map((p) => {
+        // Build handlers WITHOUT undefined values (passing dragend:undefined
+        // makes Leaflet log "wrong listener type" for every marker).
+        const handlers: L.LeafletEventHandlerFnMap = { click: () => onSelect?.(p.id) };
+        if (onPick) {
+          handlers.dragend = (e) => {
+            const ll = (e.target as L.Marker).getLatLng();
+            onPick({ lat: ll.lat, lng: ll.lng });
+          };
+        }
+        return (
+          <Marker
+            key={p.id}
+            position={[p.coords.lat, p.coords.lng]}
+            icon={pinIcon(p)}
+            draggable={!!onPick}
+            eventHandlers={handlers}
+            keyboard
+            title={p.name}
+          />
+        );
+      })}
     </MapContainer>
   );
 }

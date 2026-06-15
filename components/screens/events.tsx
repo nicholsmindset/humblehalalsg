@@ -3,17 +3,239 @@
 /* Humble Halal — Events: discovery, detail, checkout, host wizard, homepage strip
    (ported from screens-events.jsx). Owns the shared EventCard / EventPriceTag /
    EventDateChip / EventsStrip used by other screen modules. */
-import { Fragment, useMemo, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import { useEvents } from "../events-context";
-import type { EventItem } from "@/lib/types";
+import type { EventItem, GenderArrangement } from "@/lib/types";
+import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
 import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
 import { computeOrder } from "@/lib/fees";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
+import { AddressAutocomplete } from "../biz/address-autocomplete";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
+
+/* ---------- Islamic-layer helpers ---------- */
+const GENDER_LABELS: Record<string, string> = {
+  mixed: "Mixed / family seating",
+  segregated: "Segregated seating",
+  sisters: "Sisters only",
+  brothers: "Brothers only",
+};
+
+/** Parse a label like "4:00 PM", "16:00" or "16:00–18:00" → minutes from midnight. */
+function parseTimeToMins(s?: string): number | null {
+  if (!s) return null;
+  const part = s.split(/[–—-]/)[0].trim();
+  const m = part.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2] || 0);
+  const ap = (m[3] || "").toLowerCase();
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+type PrayerRow = { name: string; time: string; mins: number };
+
+/** Gentle banner when an event overlaps one or more prayer times. Fetches the
+   day's Singapore prayer times and compares to the event window. Honest + opt-in:
+   renders nothing if we can't determine an overlap. */
+function PrayerAwareBanner({ ev }: { ev: EventItem }) {
+  const [times, setTimes] = useState<PrayerRow[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/prayer-times")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && j?.times) setTimes(j.times as PrayerRow[]); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const start = parseTimeToMins(ev.timeLabel);
+  if (start == null || !times.length) return null;
+  const end = parseTimeToMins(ev.endTime) ?? parseTimeToMins(ev.timeLabel.split(/[–—-]/)[1]) ?? start + 120;
+  // Only the daily salah (skip Syuruk/sunrise, which isn't a prayer).
+  const overlap = times.filter((t) => t.name.toLowerCase() !== "syuruk" && t.mins >= start - 10 && t.mins <= end);
+  if (!overlap.length) return null;
+  const names = overlap.map((t) => `${t.name} (${t.time})`).join(", ");
+  return (
+    <div className="notice" style={{ marginTop: 14, background: "var(--emerald-50)", borderColor: "var(--emerald-200)" }}>
+      <Icon name="mosque" size={18} />
+      <span>
+        This event runs through <strong>{names}</strong>.{" "}
+        {ev.prayerNearby
+          ? "A prayer space is available at or near the venue, in shaa Allah."
+          : <>Plan to pray nearby — <a href="/mosques" style={{ color: "var(--emerald)", fontWeight: 700 }}>find a mosque</a>.</>}
+      </span>
+    </div>
+  );
+}
+
+/** Zakat / sadaqah donation panel for charity events — separate from tickets.
+   Honest: shows the real running total only when the backend reports one. */
+function DonatePanel({ ev }: { ev: EventItem }) {
+  const { toast } = useApp();
+  const [amount, setAmount] = useState(25);
+  const [custom, setCustom] = useState("");
+  const [busy, setBusy] = useState(false);
+  const presets = [10, 25, 50, 100];
+  const raised = ev.donationRaisedCents != null ? `S$${(ev.donationRaisedCents / 100).toLocaleString()}` : null;
+
+  const donate = async () => {
+    const amt = custom ? Math.round(Number(custom) * 100) : amount * 100;
+    if (!(amt >= 100)) return toast("Enter an amount of at least S$1");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/donate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: ev.id, amountCents: amt }),
+      });
+      const j = await res.json();
+      if (j?.url) { window.location.href = j.url as string; return; }
+      toast(j?.ok ? "Jazākallāhu khayran — donation recorded." : "Donations aren’t open yet — please try again later.");
+    } catch { toast("Something went wrong — please try again."); }
+    setBusy(false);
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 20, padding: 18, borderColor: "var(--emerald-200)" }}>
+      <div className="flex between center">
+        <h3 style={{ fontSize: "1.12rem", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="heart" size={18} /> Give zakat / sadaqah
+        </h3>
+        {raised && <span className="faint" style={{ fontSize: ".82rem" }}>{raised} raised</span>}
+      </div>
+      <p className="muted" style={{ fontSize: ".88rem", marginTop: 6 }}>
+        100% supports this cause. Donations are separate from event entry.
+      </p>
+      <div className="pillbar" style={{ marginTop: 12, flexWrap: "wrap" }}>
+        {presets.map((p) => (
+          <button key={p} className={`chip ${!custom && amount === p ? "active" : ""}`} onClick={() => { setAmount(p); setCustom(""); }}>
+            S${p}
+          </button>
+        ))}
+        <input
+          className="input" type="number" placeholder="Custom" style={{ maxWidth: 110 }}
+          value={custom} onChange={(e) => setCustom(e.target.value)}
+        />
+      </div>
+      <button className="btn btn-primary btn-block mt12" onClick={donate} disabled={busy}>
+        {busy ? "Processing…" : "Donate"} <Icon name="heart" size={16} />
+      </button>
+    </div>
+  );
+}
+
+/* ---------- Follow an organiser ---------- */
+function FollowButton({ businessId }: { businessId: string }) {
+  const { state, toast, navigate } = useApp();
+  const [following, setFollowing] = useState(false);
+  const [count, setCount] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/follow")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && Array.isArray(j?.following)) setFollowing(j.following.includes(businessId)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [businessId]);
+  const toggle = async () => {
+    if (!state.user.loggedIn) { toast("Sign in to follow organisers"); return navigate("login"); }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/follow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, follow: !following }) });
+      const j = await res.json();
+      if (j?.ok) { setFollowing(j.following); setCount(j.count); }
+      else if (j?.reason === "unauthenticated") { toast("Sign in to follow organisers"); navigate("login"); }
+    } catch { toast("Couldn’t update — try again"); }
+    setBusy(false);
+  };
+  return (
+    <button className={`btn btn-sm ${following ? "btn-soft" : "btn-outline"}`} onClick={toggle} disabled={busy} aria-pressed={following}>
+      <Icon name={following ? "check" : "plus"} size={15} /> {following ? "Following" : "Follow"}{count != null && count > 0 ? ` · ${count}` : ""}
+    </button>
+  );
+}
+
+/* ---------- Event ratings (honest: hidden until ≥1 published) ---------- */
+type EvReview = { id: string; rating: number; text: string; author: string; createdAt: string };
+function EventRatings({ ev }: { ev: EventItem }) {
+  const { toast, state } = useApp();
+  const [data, setData] = useState<{ avg: number | null; count: number; reviews: EvReview[] }>({ avg: null, count: 0, reviews: [] });
+  const [show, setShow] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const slug = ev.slug || ev.id;
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/events/${encodeURIComponent(slug)}/reviews`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && j?.ok) setData({ avg: j.avg, count: j.count, reviews: j.reviews || [] }); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [slug]);
+  const submit = async () => {
+    if (rating < 1) return toast("Pick a star rating");
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/events/${encodeURIComponent(slug)}/reviews`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, text, name: state.user?.name }),
+      });
+      const j = await res.json();
+      if (j?.ok) { setShow(false); setRating(0); setText(""); toast(j.pending ? "Jazākallāhu khayran — your rating is pending review." : "Thanks for the rating!"); }
+      else toast("Couldn’t submit — try again");
+    } catch { toast("Couldn’t submit — try again"); }
+    setBusy(false);
+  };
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div className="flex between center">
+        <h3 style={{ fontSize: "1.2rem" }}>Ratings</h3>
+        <button className="btn btn-soft btn-sm" onClick={() => setShow((s) => !s)}><Icon name="star" size={15} /> Rate this event</button>
+      </div>
+      {data.count > 0 ? (
+        <div className="flex g8 center" style={{ marginTop: 8 }}>
+          <Icon name="star" size={18} style={{ color: "var(--gold)" }} />
+          <strong>{data.avg}</strong><span className="faint">· {data.count} rating{data.count > 1 ? "s" : ""}</span>
+        </div>
+      ) : (
+        <p className="faint" style={{ marginTop: 8, fontSize: ".9rem" }}>No ratings yet — be the first after you attend.</p>
+      )}
+      {show && (
+        <div className="card" style={{ marginTop: 12, padding: 14 }}>
+          <div className="flex g4" style={{ marginBottom: 8 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} aria-label={`${n} star${n > 1 ? "s" : ""}`} onMouseEnter={() => setHover(n)} onMouseLeave={() => setHover(0)} onClick={() => setRating(n)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}>
+                <Icon name="star" size={26} style={{ color: (hover || rating) >= n ? "var(--gold)" : "var(--line-strong)", fill: (hover || rating) >= n ? "var(--gold)" : "none" }} />
+              </button>
+            ))}
+          </div>
+          <textarea className="textarea" placeholder="Share a little about your experience (optional)" value={text} onChange={(e) => setText(e.target.value)} />
+          <button className="btn btn-primary btn-sm mt8" onClick={submit} disabled={busy}>{busy ? "Submitting…" : "Submit rating"}</button>
+        </div>
+      )}
+      {data.reviews.length > 0 && (
+        <div className="stack g10" style={{ marginTop: 12 }}>
+          {data.reviews.slice(0, 5).map((r) => (
+            <div key={r.id} className="card" style={{ padding: 12 }}>
+              <div className="flex g6 center"><Icon name="star" size={14} style={{ color: "var(--gold)" }} /><strong>{r.rating}</strong><span className="faint" style={{ fontSize: ".82rem" }}>· {r.author}</span></div>
+              {r.text && <p style={{ marginTop: 6, fontSize: ".92rem", color: "var(--ink-soft)" }}>{r.text}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ---------- Price / Free tag (clear distinction) ---------- */
 export function EventPriceTag({ ev, lg, free }: { ev: EventItem; lg?: boolean; free?: boolean }) {
@@ -111,6 +333,17 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
         <div className="evt-meta">
           <Icon name="pin" size={14} /> {ev.venue}
         </div>
+        {(() => {
+          const s = ev.dateISO ? hijriSeason(ev.dateISO) : null;
+          const g = ev.genderArrangement && ev.genderArrangement !== "mixed" ? GENDER_LABELS[ev.genderArrangement] : "";
+          if (!s && !g) return null;
+          return (
+            <div className="flex g6 wrap" style={{ marginTop: 6 }}>
+              {s && <span className="tag" style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}><Icon name="moon" size={12} /> {s.label}</span>}
+              {g && <span className="tag"><Icon name="users" size={12} /> {g}</span>}
+            </div>
+          );
+        })()}
         <div className="evt-foot">
           <span className="evt-host">by {ev.organiser}</span>
           {ev.soldOut ? (
@@ -137,6 +370,7 @@ export function EventsScreen() {
   const [cat, setCat] = useState((params.cat as string) || "");
   const [price, setPrice] = useState(""); // '', 'free', 'paid'
   const [area, setArea] = useState("");
+  const [gender, setGender] = useState(""); // '', 'segregated', 'sisters', 'brothers', 'mixed'
   const [q, setQ] = useState("");
 
   const results = useMemo(() => {
@@ -149,8 +383,9 @@ export function EventsScreen() {
     if (price === "free") r = r.filter((e) => e.free);
     if (price === "paid") r = r.filter((e) => !e.free);
     if (area) r = r.filter((e) => e.area.toLowerCase().includes(area));
+    if (gender) r = r.filter((e) => e.genderArrangement === gender);
     return r;
-  }, [q, cat, price, area, allEvents]);
+  }, [q, cat, price, area, gender, allEvents]);
 
   const featured = allEvents.filter((e) => e.featured);
 
@@ -214,13 +449,23 @@ export function EventsScreen() {
                 ))}
               </select>
             </div>
+            <div className="sortwrap">
+              <Icon name="users" size={15} style={{ color: "var(--ink-soft)" }} />
+              <select className="sort-select" value={gender} onChange={(e) => setGender(e.target.value)} aria-label="Filter by seating arrangement">
+                <option value="">Any seating</option>
+                <option value="mixed">Mixed / family</option>
+                <option value="segregated">Segregated</option>
+                <option value="sisters">Sisters only</option>
+                <option value="brothers">Brothers only</option>
+              </select>
+            </div>
           </div>
           <button className="btn btn-gold btn-sm" onClick={() => navigate("host-event")}>
             <Icon name="plus" size={16} /> Host an event
           </button>
         </div>
 
-        {!cat && !price && !area && !q && (
+        {!cat && !price && !area && !gender && !q && (
           <section className="hh-section" style={{ paddingBottom: 8 }}>
             <SectionHead title="Featured events" />
             <div className="evt-grid">
@@ -231,7 +476,7 @@ export function EventsScreen() {
           </section>
         )}
 
-        <section className="hh-section" style={{ paddingTop: !cat && !price && !area && !q ? 8 : 24 }}>
+        <section className="hh-section" style={{ paddingTop: !cat && !price && !area && !gender && !q ? 8 : 24 }}>
           <div className="flex between center" style={{ marginBottom: 16 }}>
             <h2 style={{ fontSize: "1.5rem" }}>
               {cat ? HHData.eventCats.find((c) => c.id === cat)?.label : "All events"}
@@ -272,6 +517,9 @@ export function EventDetailScreen() {
   const left = spotsLeft(ev);
   const pct = ev.capacity ? Math.min(100, Math.round((ev.taken / ev.capacity) * 100)) : 0;
   const org = ev.organiserId ? HHData.listings.find((l) => l.id === ev.organiserId) : null;
+  const hijri = ev.dateISO ? formatHijri(ev.dateISO) : "";
+  const season = ev.dateISO ? hijriSeason(ev.dateISO) : null;
+  const genderLabel = GENDER_LABELS[ev.genderArrangement || ""] || "";
 
   const book = () => {
     if (ev.soldOut) return;
@@ -324,12 +572,31 @@ export function EventDetailScreen() {
             <span className="evt-meta lg">
               <Icon name="pin" size={17} /> {ev.area}
             </span>
+            {hijri && (
+              <span className="evt-meta lg" title="Approximate Islamic (Hijri) date">
+                <Icon name="moon" size={16} /> {hijri}
+              </span>
+            )}
+          </div>
+          <div className="flex g8 wrap" style={{ marginTop: 10 }}>
+            {season && (
+              <span className="tag" style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}>
+                <Icon name="moon" size={13} /> {season.label}
+              </span>
+            )}
+            {genderLabel && (
+              <span className="tag">
+                <Icon name="users" size={13} /> {genderLabel}
+              </span>
+            )}
           </div>
           {ev.multiDay && (
             <div className="tag mt12">
               <Icon name="info" size={13} /> {ev.multiDay}
             </div>
           )}
+
+          <PrayerAwareBanner ev={ev} />
 
           {!ev.soldOut && (
             <div className="evt-capacity">
@@ -373,7 +640,11 @@ export function EventDetailScreen() {
               <div>
                 <div style={{ fontWeight: 700 }}>Prayer space</div>
                 <span className="muted" style={{ fontSize: ".86rem" }}>
-                  {ev.prayerNearby ? "Available at / near the venue" : "None at venue — check nearby"}
+                  {ev.prayerSlotNote
+                    ? ev.prayerSlotNote
+                    : ev.prayerNearby
+                      ? "Available at / near the venue"
+                      : "None at venue — check nearby"}
                 </span>
               </div>
             </div>
@@ -388,7 +659,22 @@ export function EventDetailScreen() {
                 </span>
               </div>
             </div>
+            {genderLabel && (
+              <div className="evt-info-item">
+                <span className="attn-ico">
+                  <Icon name="users" size={17} />
+                </span>
+                <div>
+                  <div style={{ fontWeight: 700 }}>Seating</div>
+                  <span className="muted" style={{ fontSize: ".86rem" }}>
+                    {genderLabel}{ev.seatingNote ? ` — ${ev.seatingNote}` : ""}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
+
+          {ev.donationEnabled && <DonatePanel ev={ev} />}
 
           <h3 style={{ fontSize: "1.2rem", marginTop: 24 }}>Venue</h3>
           <div className="flex g8 center mt8">
@@ -415,11 +701,14 @@ export function EventDetailScreen() {
                 {org ? `${org.cuisine} · ${org.area}` : "Community organiser"}
               </span>
             </div>
-            {org && (
-              <button className="btn btn-soft btn-sm" onClick={() => navigate("detail", { id: org.id })}>
-                View profile <Icon name="arrow" size={15} />
-              </button>
-            )}
+            <div className="flex g8 center">
+              {ev.organiserBiz && ev.organiserId && <FollowButton businessId={ev.organiserId} />}
+              {org && (
+                <button className="btn btn-soft btn-sm" onClick={() => navigate("detail", { id: org.id })}>
+                  View profile <Icon name="arrow" size={15} />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="detail-footactions">
@@ -440,6 +729,8 @@ export function EventDetailScreen() {
               <Icon name="flag" size={17} /> Report
             </button>
           </div>
+
+          <EventRatings ev={ev} />
         </div>
 
         <aside className="detail-side">
@@ -666,18 +957,45 @@ export function CheckoutScreen() {
 
 /* ========================= HOST AN EVENT WIZARD ========================= */
 interface HostForm {
-  title: string; cat: string; desc: string; date: string; venue: string;
-  area: string; free: boolean; price: string; cap: string; photos: number;
+  title: string; cat: string; desc: string; date: string; time: string; endTime: string;
+  venue: string; area: string; lat: number | null; lng: number | null; coverUrl: string;
+  free: boolean; price: string; tierName: string; cap: string;
+  photos: number; prayer: boolean; halal: boolean; prayerNote: string;
+  gender: "" | GenderArrangement; seating: string; refundPolicy: string; donation: boolean;
 }
+const REFUND_POLICIES = [
+  { id: "", label: "No refunds" },
+  { id: "flexible", label: "Flexible — full refund up to 48h before" },
+  { id: "moderate", label: "Moderate — 50% refund up to 7 days before" },
+];
 export function HostEventScreen() {
-  const { navigate, flags } = useApp();
+  const { navigate, flags, toast } = useApp();
   const [step, setStep] = useState(0);
   const [d, setD] = useState<HostForm>({
-    title: "", cat: "", desc: "", date: "", venue: "", area: "", free: true, price: "", cap: "", photos: 0,
+    title: "", cat: "", desc: "", date: "", time: "", endTime: "", venue: "", area: "",
+    lat: null, lng: null, coverUrl: "",
+    free: true, price: "", tierName: "Standard", cap: "", photos: 0,
+    prayer: false, halal: false, prayerNote: "", gender: "", seating: "", refundPolicy: "", donation: false,
   });
   const set = <K extends keyof HostForm>(k: K, v: HostForm[K]) => setD((s) => ({ ...s, [k]: v }));
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const uploadCover = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/events/upload", { method: "POST", body: fd });
+      const j = await res.json();
+      if (j?.ok && j.url) set("coverUrl", j.url as string);
+      else toast(j?.reason === "unauthenticated" ? "Sign in to upload photos" : j?.reason === "too_large" ? "Image is too large (max 5MB)" : "Upload isn’t available yet — you can add a photo later");
+    } catch { toast("Couldn’t upload — try again"); }
+    setUploading(false);
+  };
+  const hijri = d.date ? formatHijri(d.date) : "";
+  const season = d.date ? hijriSeason(d.date) : null;
+  const isCharity = d.cat === "charity";
 
   // Persist the event to Supabase as 'pending' (admin approves → published).
   // Degrades gracefully to the success screen when DB/auth isn't available.
@@ -685,13 +1003,24 @@ export function HostEventScreen() {
     setSubmitting(true);
     try {
       const catLabel = HHData.eventCats.find((c) => c.id === d.cat)?.label || "Community";
+      const timeLabel = d.time ? d.time + (d.endTime ? `–${d.endTime}` : "") : "";
       await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: d.title, catId: d.cat, catLabel, desc: d.desc,
-          dateISO: d.date, dateLabel: d.date, venue: d.venue, area: d.area,
-          free: d.free, price: Number(d.price) || 0, capacity: Number(d.cap) || 0,
+          dateISO: d.date, dateLabel: d.date, timeLabel, endTime: d.endTime || undefined,
+          venue: d.venue, area: d.area,
+          venueCoords: d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng } : undefined,
+          coverUrl: d.coverUrl || undefined,
+          free: d.free, price: Number(d.price) || 0,
+          tiers: !d.free ? [{ name: d.tierName || "Standard", price: Number(d.price) || 0 }] : undefined,
+          capacity: Number(d.cap) || 0,
+          prayerNearby: d.prayer, halalCatering: d.halal,
+          prayerSlotNote: d.prayerNote || undefined,
+          genderArrangement: d.gender || undefined, seatingNote: d.seating || undefined,
+          refundPolicy: REFUND_POLICIES.find((r) => r.id === d.refundPolicy)?.label || undefined,
+          donationEnabled: isCharity && d.donation,
         }),
       });
     } catch { /* graceful — still show success */ }
@@ -752,15 +1081,33 @@ export function HostEventScreen() {
                 <div className="field">
                   <label>Date</label>
                   <input className="input" type="date" value={d.date} onChange={(e) => set("date", e.target.value)} />
+                  {hijri && (
+                    <span className="hint">
+                      <Icon name="moon" size={13} /> {hijri}
+                      {season && <strong style={{ marginLeft: 6, color: "var(--emerald)" }}>· {season.label}</strong>}
+                    </span>
+                  )}
                 </div>
-                <div className="field">
-                  <label>Start time</label>
-                  <input className="input" type="time" />
+                <div className="grid2" style={{ gap: 10 }}>
+                  <div className="field">
+                    <label>Start</label>
+                    <input className="input" type="time" value={d.time} onChange={(e) => set("time", e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>End</label>
+                    <input className="input" type="time" value={d.endTime} onChange={(e) => set("endTime", e.target.value)} />
+                  </div>
                 </div>
               </div>
               <div className="field">
                 <label>Venue name &amp; address</label>
-                <input className="input" placeholder="Venue, street, postal code" value={d.venue} onChange={(e) => set("venue", e.target.value)} />
+                <AddressAutocomplete
+                  value={d.venue}
+                  placeholder="Search venue, street or postal code"
+                  onChange={(v) => setD((s) => ({ ...s, venue: v, lat: null, lng: null }))}
+                  onPick={(r) => setD((s) => ({ ...s, venue: r.address, lat: r.lat, lng: r.lng }))}
+                />
+                <span className="hint">{d.lat != null ? "📍 Location pinned — attendees get directions & nearby prayer spaces." : "Tip: pick a result to pin the location for maps & prayer-aware info."}</span>
               </div>
               <div className="field">
                 <label>Area</label>
@@ -775,18 +1122,43 @@ export function HostEventScreen() {
               </div>
               <div className="flex g14 wrap">
                 <label className="evt-check">
-                  <input type="checkbox" />{" "}
+                  <input type="checkbox" checked={d.prayer} onChange={(e) => set("prayer", e.target.checked)} />{" "}
                   <span>
                     <Icon name="mosque" size={15} /> Prayer space available
                   </span>
                 </label>
                 <label className="evt-check">
-                  <input type="checkbox" />{" "}
+                  <input type="checkbox" checked={d.halal} onChange={(e) => set("halal", e.target.checked)} />{" "}
                   <span>
                     <Icon name="utensils" size={15} /> Halal catering
                   </span>
                 </label>
               </div>
+              {d.prayer && (
+                <div className="field">
+                  <label>Prayer arrangement note <span className="faint">(optional)</span></label>
+                  <input className="input" placeholder="e.g. Musholla on level 2, wudhu area available" value={d.prayerNote} onChange={(e) => set("prayerNote", e.target.value)} />
+                </div>
+              )}
+              <div className="field">
+                <label>Gender arrangement</label>
+                <div className="pillbar" style={{ marginTop: 8, flexWrap: "wrap" }}>
+                  {([
+                    ["", "Not specified"], ["mixed", "Mixed / family"], ["segregated", "Segregated"],
+                    ["sisters", "Sisters only"], ["brothers", "Brothers only"],
+                  ] as [string, string][]).map(([id, label]) => (
+                    <button key={id || "none"} className={`chip ${d.gender === id ? "active" : ""}`} onClick={() => set("gender", id as HostForm["gender"])}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {d.gender && d.gender !== "mixed" && (
+                <div className="field">
+                  <label>Seating note <span className="faint">(optional)</span></label>
+                  <input className="input" placeholder="e.g. Sisters level 2, brothers level 1" value={d.seating} onChange={(e) => set("seating", e.target.value)} />
+                </div>
+              )}
             </div>
           )}
           {step === 2 && (
@@ -811,39 +1183,65 @@ export function HostEventScreen() {
                 </div>
               )}
               {flags.paidTickets && !d.free && (
-                <div className="grid2">
-                  <div className="field">
-                    <label>Ticket price (SGD)</label>
-                    <input className="input" type="number" placeholder="0.00" value={d.price} onChange={(e) => set("price", e.target.value)} />
+                <>
+                  <div className="grid2">
+                    <div className="field">
+                      <label>Ticket price (SGD)</label>
+                      <input className="input" type="number" placeholder="0.00" value={d.price} onChange={(e) => set("price", e.target.value)} />
+                    </div>
+                    <div className="field">
+                      <label>Ticket name</label>
+                      <input className="input" placeholder="e.g. Standard" value={d.tierName} onChange={(e) => set("tierName", e.target.value)} />
+                    </div>
                   </div>
                   <div className="field">
-                    <label>Ticket name</label>
-                    <input className="input" placeholder="e.g. Standard" />
+                    <label>Refund policy</label>
+                    <select className="select" value={d.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)}>
+                      {REFUND_POLICIES.map((r) => <option key={r.id || "none"} value={r.id}>{r.label}</option>)}
+                    </select>
                   </div>
-                </div>
+                </>
               )}
               <div className="field">
                 <label>Capacity</label>
                 <input className="input" type="number" placeholder="Max attendees" value={d.cap} onChange={(e) => set("cap", e.target.value)} />
                 <span className="hint">We’ll show “spots left” as people book.</span>
               </div>
+              {isCharity && (
+                <label className="evt-check">
+                  <input type="checkbox" checked={d.donation} onChange={(e) => set("donation", e.target.checked)} />{" "}
+                  <span>
+                    <Icon name="heart" size={15} /> Accept zakat / sadaqah donations (in addition to free RSVP)
+                  </span>
+                </label>
+              )}
             </div>
           )}
           {step === 3 && (
             <div>
-              <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Event photos</label>
+              <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Cover photo</label>
               <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>
-                A bright cover photo helps your event stand out.
+                A bright cover photo helps your event stand out. JPG/PNG/WebP, up to 5MB.
               </p>
-              <div className="photo-grid">
-                <button className="upload-zone" style={{ aspectRatio: "1" }} onClick={() => set("photos", d.photos + 1)}>
+              {d.coverUrl ? (
+                <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "16/9", maxWidth: 460 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={d.coverUrl} alt="Event cover" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  <button className="btn btn-sm" style={{ position: "absolute", top: 10, right: 10, background: "rgba(255,255,255,.92)" }} onClick={() => set("coverUrl", "")}>
+                    <Icon name="x" size={15} /> Replace
+                  </button>
+                </div>
+              ) : (
+                <label className="upload-zone" style={{ aspectRatio: "16/9", maxWidth: 460, cursor: uploading ? "wait" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                   <Icon name="camera" size={24} />
-                  <span style={{ fontSize: ".78rem", fontWeight: 700, marginTop: 6 }}>Add photo</span>
-                </button>
-                {Array.from({ length: d.photos }).map((_, i) => (
-                  <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />
-                ))}
-              </div>
+                  <span style={{ fontSize: ".82rem", fontWeight: 700, marginTop: 6 }}>{uploading ? "Uploading…" : "Add cover photo"}</span>
+                  <input
+                    type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCover(f); e.target.value = ""; }}
+                  />
+                </label>
+              )}
+              <p className="hint" style={{ marginTop: 10 }}>Optional — you can add or change this later from your dashboard.</p>
             </div>
           )}
           {step === 4 && (
@@ -854,10 +1252,15 @@ export function HostEventScreen() {
                   [
                     ["Title", d.title || "—"],
                     ["Category", HHData.eventCats.find((c) => c.id === d.cat)?.label || "—"],
-                    ["Date", d.date || "—"],
+                    ["Date", d.date ? `${d.date}${hijri ? ` · ${hijri}` : ""}` : "—"],
+                    ["Time", d.time ? d.time + (d.endTime ? `–${d.endTime}` : "") : "—"],
                     ["Area", HHData.areas.find((a) => a.id === d.area)?.name || "—"],
                     ["Pricing", d.free ? "Free RSVP" : d.price ? `$${d.price}` : "Paid"],
                     ["Capacity", d.cap || "—"],
+                    ["Prayer space", d.prayer ? "Yes" : "—"],
+                    ["Halal catering", d.halal ? "Yes" : "—"],
+                    ["Gender arrangement", d.gender ? d.gender : "Not specified"],
+                    ...(isCharity && d.donation ? [["Donations", "Zakat / sadaqah enabled"]] as [string, string][] : []),
                   ] as [string, string][]
                 ).map(([k, v]) => (
                   <div key={k} className="rsb-row">

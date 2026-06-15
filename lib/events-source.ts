@@ -9,7 +9,7 @@
    `events.display` jsonb (migration 0014) and are merged here. */
 import "server-only";
 import { events as mockEvents } from "./events-data";
-import type { EventItem, EventTier } from "./types";
+import type { EventItem, EventTier, GenderArrangement, LatLng } from "./types";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 
@@ -24,6 +24,13 @@ export function rowToEvent(r: Row): EventItem {
   const capacity = num(r.capacity);
   const taken = num(r.taken);
   const tiers = Array.isArray(d.tiers) ? (d.tiers as EventTier[]) : undefined;
+  const coords =
+    d.venueCoords && typeof d.venueCoords === "object"
+      ? (d.venueCoords as LatLng)
+      : undefined;
+  const gender = ["mixed", "segregated", "sisters", "brothers"].includes(str(d.genderArrangement))
+    ? (str(d.genderArrangement) as GenderArrangement)
+    : undefined;
   return {
     id: str(r.id),
     slug: str(r.slug) || slugify(str(r.title)),
@@ -53,6 +60,14 @@ export function rowToEvent(r: Row): EventItem {
     featured: bool(d.featured),
     attendees: num(d.attendees, taken),
     soldOut: capacity > 0 && taken >= capacity,
+    endTime: d.endTime ? str(d.endTime) : undefined,
+    venueCoords: coords,
+    genderArrangement: gender,
+    seatingNote: d.seatingNote ? str(d.seatingNote) : undefined,
+    prayerSlotNote: d.prayerSlotNote ? str(d.prayerSlotNote) : undefined,
+    donationEnabled: bool(d.donationEnabled),
+    donationRaisedCents: d.donationRaisedCents != null ? num(d.donationRaisedCents) : undefined,
+    refundPolicy: d.refundPolicy ? str(d.refundPolicy) : undefined,
   };
 }
 

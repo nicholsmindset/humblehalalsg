@@ -8,6 +8,7 @@ import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
+import { fmtSGD } from "@/lib/fees";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -121,7 +122,17 @@ export function AdminScreen() {
 }
 
 export function AdminMonetization() {
-  const { flags, setFlag, toast } = useApp();
+  const { flags, setFlag, toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  // Ramadan mode persists to platform_settings so EVERY visitor sees it (server-
+  // hydrated), unlike the demo paid-flag toggles which are client-side only.
+  const toggleRamadan = async () => {
+    const next = !ramadanModeEnabled;
+    setRamadanModeEnabled(next);
+    toast(`Ramadan mode ${next ? "enabled — visitors will see it on next load" : "disabled"}`);
+    try {
+      await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ramadan_mode_enabled: next }) });
+    } catch { /* optimistic; admin can retry */ }
+  };
   const rows: { key: "paidTickets" | "paidAds" | "paidPlans"; title: string; desc: string }[] = [
     { key: "paidTickets", title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
     { key: "paidAds", title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
@@ -166,6 +177,29 @@ export function AdminMonetization() {
             </div>
           );
         })}
+
+        {/* Ramadan mode — seasonal, persisted globally */}
+        <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", borderColor: "var(--emerald-200)" }}>
+          <div style={{ flex: 1 }}>
+            <div className="flex g8 center" style={{ marginBottom: 4 }}>
+              <h3 style={{ fontSize: "1.05rem", display: "flex", alignItems: "center", gap: 6 }}><Icon name="crescent" size={17} /> Ramadan mode</h3>
+              <span className="tag" style={{ background: ramadanModeEnabled ? "var(--emerald-50)" : "var(--cream-200)", color: ramadanModeEnabled ? "var(--emerald)" : "var(--ink-soft)" }}>
+                {ramadanModeEnabled ? "Live" : "Off"}
+              </span>
+            </div>
+            <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>Surface the Ramadan affordance for the season — iftar deals, bazaars &amp; open-late spots. Persisted platform-wide; every visitor sees it.</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={ramadanModeEnabled}
+            aria-label={`${ramadanModeEnabled ? "Disable" : "Enable"} Ramadan mode`}
+            className={`cert-toggle ${ramadanModeEnabled ? "on" : ""}`}
+            style={{ flex: "none" }}
+            onClick={toggleRamadan}
+          >
+            <span className="cert-switch"><span className="cert-knob" /></span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -544,19 +578,131 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
   );
 }
 
+/* ── Sponsored-ad campaign manager (Phase 2) ────────────────────────────────
+   Real schema-backed: sales team books campaigns on placements, tracks live
+   impressions/clicks/CTR + booked revenue. Degrades to a sign-in prompt when
+   the backend isn't configured / caller isn't an admin. */
+type AdPlacement = { key: string; label: string; monthly_rate_cents: number; inventory_cap: number };
+type AdCampaign = {
+  campaign_id: string; title: string; placement_key: string; status: string;
+  advertiser_name: string | null; rate_cents: number; starts_on: string | null; ends_on: string | null;
+  impressions: number; clicks: number; ctr: number;
+};
+const STATUS_TAG: Record<string, string> = { active: "green", paused: "amber", scheduled: "blue", draft: "", ended: "" };
+
 export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
-  const [feat,setFeat]=useState<boolean[]>(HHData.listings.map(l=>l.featured));
-  const tog=(i: number)=>{ setFeat(f=>f.map((v,idx)=>idx===i?!v:v)); toast('Featured updated'); };
+  const [data, setData] = useState<{ placements: AdPlacement[]; campaigns: AdCampaign[]; revenueCents: number } | null>(null);
+  const [err, setErr] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const empty = { title: "", placementKey: "", advertiserName: "", rate: "", startsOn: "", endsOn: "", targetUrl: "", body: "" };
+  const [form, setForm] = useState(empty);
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/admin/campaigns");
+      const d = await r.json();
+      if (d.ok) { setData(d); setErr(false); } else setErr(true);
+    } catch { setErr(true); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const setStatus = async (id: string, status: string) => {
+    await fetch("/api/admin/campaigns", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
+    toast(`Campaign ${status}`);
+    load();
+  };
+  const create = async () => {
+    if (!form.title.trim() || !form.placementKey) return toast("Add a title and pick a placement");
+    const res = await fetch("/api/admin/campaigns", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: form.title, placementKey: form.placementKey, advertiserName: form.advertiserName || undefined,
+        rateCents: Math.round((Number(form.rate) || 0) * 100), startsOn: form.startsOn || undefined,
+        endsOn: form.endsOn || undefined, targetUrl: form.targetUrl || undefined, body: form.body || undefined,
+        status: "active",
+      }),
+    });
+    const d = await res.json();
+    if (d.ok) { toast("Campaign created — now live"); setForm(empty); setCreating(false); load(); }
+    else toast(d.error || "Couldn’t create campaign");
+  };
+
+  if (err) {
+    return <Empty icon="trophy" title="Sponsored ads" body="Sign in as an admin (and apply the ads migration) to create campaigns and track impressions, clicks and revenue." />;
+  }
+  const placements = data?.placements || [];
+  const campaigns = data?.campaigns || [];
+
   return (
-    <div className="card" style={{overflow:'hidden'}}>
-      <div className="admin-tablehead"><h3 style={{fontSize:'1.05rem'}}>Featured listings &amp; ads</h3><span className="faint" style={{fontSize:'.82rem'}}>Toggle homepage & category placement</span></div>
-      <div className="tbl-scroll"><table className="tbl">
-        <thead><tr><th>Business</th><th>Plan</th><th>Area</th><th>Featured</th></tr></thead>
-        <tbody>{HHData.listings.map((l,i)=>(
-          <tr key={l.id} className="rowhover"><td><div style={{fontWeight:700}}>{l.name}</div></td><td><span className="pill-tag blue">{i%3===0?'Featured':i%2?'Verified':'Free'}</span></td><td className="muted">{l.area}</td>
-            <td><button className={`fp-toggle ${feat[i]?'on':''}`} style={{width:64,padding:8,justifyContent:'center'}} onClick={()=>tog(i)}><span className="switch"/></button></td></tr>
-        ))}</tbody>
-      </table></div>
+    <div className="stack g16" style={{ maxWidth: 920 }}>
+      <div className="flex between center wrap g10">
+        <div>
+          <h3 style={{ fontSize: "1.15rem" }}>Sponsored ads</h3>
+          <p className="faint" style={{ fontSize: ".86rem" }}>
+            {campaigns.length} campaign{campaigns.length === 1 ? "" : "s"} · <strong>{fmtSGD(data?.revenueCents || 0)}</strong> booked
+          </p>
+        </div>
+        <button className="btn btn-gold btn-sm" onClick={() => setCreating((c) => !c)}><Icon name="plus" size={16} /> New campaign</button>
+      </div>
+
+      {/* Rate card */}
+      <div className="flex g8 wrap">
+        {placements.map((p) => (
+          <span key={p.key} className="tag" title={`${p.inventory_cap} slot${p.inventory_cap === 1 ? "" : "s"}`}>
+            {p.label} · {fmtSGD(p.monthly_rate_cents)}/mo
+          </span>
+        ))}
+      </div>
+
+      {creating && (
+        <div className="card" style={{ padding: 16 }}>
+          <div className="grid2">
+            <div className="field"><label>Campaign title</label><input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Qahwa & Co. — Ramadan brunch" /></div>
+            <div className="field"><label>Placement</label>
+              <select className="select" value={form.placementKey} onChange={(e) => setForm({ ...form, placementKey: e.target.value })}>
+                <option value="">Select placement</option>
+                {placements.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+              </select>
+            </div>
+            <div className="field"><label>Advertiser</label><input className="input" value={form.advertiserName} onChange={(e) => setForm({ ...form, advertiserName: e.target.value })} placeholder="Business name" /></div>
+            <div className="field"><label>Agreed rate (SGD)</label><input className="input" type="number" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} placeholder="0.00" /></div>
+            <div className="field"><label>Starts</label><input className="input" type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} /></div>
+            <div className="field"><label>Ends</label><input className="input" type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} /></div>
+            <div className="field"><label>Click-through URL</label><input className="input" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} placeholder="/business/… or https://…" /></div>
+            <div className="field"><label>Tagline</label><input className="input" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Short creative line" /></div>
+          </div>
+          <button className="btn btn-primary btn-sm mt12" onClick={create}>Create &amp; activate</button>
+        </div>
+      )}
+
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Campaigns</h3><span className="faint" style={{ fontSize: ".82rem" }}>Live impressions, clicks &amp; CTR</span></div>
+        {campaigns.length === 0 ? (
+          <div style={{ padding: 24, textAlign: "center" }} className="faint">No campaigns yet — book one to start tracking.</div>
+        ) : (
+          <div className="tbl-scroll"><table className="tbl">
+            <thead><tr><th>Campaign</th><th>Placement</th><th>Status</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Rate</th><th>Actions</th></tr></thead>
+            <tbody>{campaigns.map((c) => (
+              <tr key={c.campaign_id} className="rowhover">
+                <td><div style={{ fontWeight: 700 }}>{c.title}</div><div className="faint" style={{ fontSize: ".78rem" }}>{c.advertiser_name || "—"}</div></td>
+                <td className="muted">{placements.find((p) => p.key === c.placement_key)?.label || c.placement_key}</td>
+                <td><span className={`pill-tag ${STATUS_TAG[c.status] || ""}`}>{c.status}</span></td>
+                <td>{c.impressions.toLocaleString()}</td>
+                <td>{c.clicks.toLocaleString()}</td>
+                <td>{c.ctr}%</td>
+                <td className="muted">{fmtSGD(c.rate_cents)}</td>
+                <td>
+                  <div className="flex g6">
+                    {c.status !== "active" && <button className="btn btn-soft btn-sm" onClick={() => setStatus(c.campaign_id, "active")}>Activate</button>}
+                    {c.status === "active" && <button className="btn btn-ghost btn-sm" onClick={() => setStatus(c.campaign_id, "paused")}>Pause</button>}
+                    {c.status !== "ended" && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setStatus(c.campaign_id, "ended")}>End</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
     </div>
   );
 }

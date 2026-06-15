@@ -114,6 +114,45 @@ export async function POST(req: Request) {
             }
           }
         }
+        // Zakat / sadaqah donation for a charity event. Record it + mirror the
+        // running total into events.display so the public page shows a real figure.
+        else if (s.mode === "payment" && s.metadata?.kind === "donation" && supa) {
+          const m = s.metadata;
+          const amount = s.amount_total ?? parseInt(m.amountCents || "0", 10);
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          const { error: dErr } = await supa.from("donations").insert({
+            event_id: m.eventId || null,
+            amount_cents: amount,
+            currency: s.currency || "sgd",
+            donor_email: s.customer_details?.email || null,
+            stripe_payment_intent: pi,
+            status: "paid",
+          });
+          // Mirror the honest running total into the event's display jsonb.
+          // Atomic increment so concurrent donations don't lose updates; fall
+          // back to read+write only if the RPC isn't deployed yet.
+          if (!dErr && m.eventId) {
+            const { error: incErr } = await supa.rpc("increment_donation_raised", { p_event_id: m.eventId, p_amount: amount });
+            if (incErr) {
+              const { data: evRow } = await supa.from("events").select("display").eq("id", m.eventId).maybeSingle();
+              const disp = (evRow?.display && typeof evRow.display === "object" ? evRow.display : {}) as Record<string, unknown>;
+              const prev = Number(disp.donationRaisedCents) || 0;
+              await supa.from("events").update({ display: { ...disp, donationRaisedCents: prev + amount } }).eq("id", m.eventId);
+            }
+          }
+        }
+        // Sponsored-ad / promo purchase → record the ad order (revenue ledger).
+        else if (s.mode === "payment" && s.metadata?.kind === "ad" && supa) {
+          const m = s.metadata;
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          await supa.from("ad_orders").insert({
+            business_id: m.businessId || null,
+            product: m.product || "ad",
+            amount_cents: s.amount_total ?? 0,
+            stripe_payment_intent: pi,
+            status: "paid",
+          });
+        }
         break;
       }
       case "customer.subscription.created":
@@ -155,9 +194,27 @@ export async function POST(req: Request) {
         const charge = event.data.object as Stripe.Charge;
         const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : undefined;
         if (supa && pi) {
-          await supa.from("orders").update({ status: "refunded" }).eq("stripe_payment_intent", pi);
-          const { data: ord } = await supa.from("orders").select("id").eq("stripe_payment_intent", pi).maybeSingle();
-          if (ord?.id) await supa.from("tickets").update({ status: "refunded" }).eq("order_id", ord.id);
+          // Read first so we only reverse once (avoids double-decrementing the
+          // event's taken counter if charge.refunded fires for the same order).
+          const { data: ord } = await supa.from("orders").select("id, status, event_id, qty").eq("stripe_payment_intent", pi).maybeSingle();
+          if (ord?.id && ord.status !== "refunded") {
+            await supa.from("orders").update({ status: "refunded" }).eq("id", ord.id);
+            await supa.from("tickets").update({ status: "refunded" }).eq("order_id", ord.id).neq("status", "used");
+            // Free the refunded capacity back to the event (atomic, clamped ≥0).
+            if (ord.event_id && ord.qty) {
+              await supa.rpc("decrement_event_taken", { p_event_id: ord.event_id, p_qty: ord.qty });
+            }
+          } else if (!ord) {
+            // No order matched → it may be a donation refund (e.g. issued from the
+            // Stripe dashboard). Reverse it so the public total stays honest.
+            const { data: don } = await supa.from("donations").select("id, status, event_id, amount_cents").eq("stripe_payment_intent", pi).maybeSingle();
+            if (don?.id && don.status !== "refunded") {
+              await supa.from("donations").update({ status: "refunded" }).eq("id", don.id);
+              if (don.event_id && don.amount_cents) {
+                await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -don.amount_cents });
+              }
+            }
+          }
         }
         break;
       }

@@ -124,6 +124,10 @@ export const events: EventItem[] = [
     halalCatering: false,
     featured: false,
     attendees: 96,
+    endTime: "21:30",
+    genderArrangement: "segregated",
+    seatingNote: "Sisters upstairs, brothers on the main floor",
+    prayerSlotNote: "At the masjid — Isyak in congregation before the talk",
   },
   {
     id: "e4",
@@ -188,6 +192,10 @@ export const events: EventItem[] = [
     halalCatering: true,
     featured: false,
     attendees: 74,
+    endTime: "21:00",
+    genderArrangement: "mixed",
+    donationEnabled: true,
+    prayerSlotNote: "Maghrib in congregation at the venue before dinner",
   },
   {
     id: "e6",

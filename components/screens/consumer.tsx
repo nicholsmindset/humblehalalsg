@@ -14,10 +14,10 @@ import { scoreListing, scoreTone } from "@/lib/halal-score";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useApp } from "../app-context";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
+import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
 import { EventsStrip } from "./events";
 import { MapView, type MapPoint } from "../map/map-view";
@@ -57,6 +57,11 @@ export function HomeScreen() {
         <div className="hh-wrap hh-section">
           <DiscoverRail dir={dir} certifiedOnly={!!state.prefs?.certifiedOnly} navigate={navigate} />
         </div>
+      </div>
+
+      {/* SPONSORED — renders only when the team has an active homepage campaign */}
+      <div className="hh-wrap" style={{ marginTop: 8 }}>
+        <SponsoredSlot placement="homepage_hero" />
       </div>
 
       {/* POPULAR AREAS */}
@@ -563,6 +568,14 @@ export function MapScreen() {
   const [mapMounted, setMapMounted] = useState(false);
   useEffect(() => setMapMounted(true), []);
   const tog = (k: keyof typeof chips) => setChips((c) => ({ ...c, [k]: !c[k] }));
+  // Keep the left list in sync when a map pin is selected (GMB-style).
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const selectedId = activeMosque || activeId;
+  useEffect(() => {
+    if (!selectedId || !resultsRef.current) return;
+    const el = resultsRef.current.querySelector(`[data-id="${selectedId}"]`);
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedId]);
   const nextPrayer = HHData.prayerTimes.times[HHData.prayerTimes.nextIndex];
 
   const nearMe = () => {
@@ -644,41 +657,45 @@ export function MapScreen() {
     setActiveId(id);
   };
 
+  const resultCount = chips.mosque ? mosqueList.length : list.length;
+
   return (
-    <div className="map-screen">
-      <div className="map-full">
-        <div className="map-live">
-          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} />
-        </div>
-
-        {/* floating top controls */}
-        <div className="map-controls">
-          <div className="searchbar" style={{ flex: 1, boxShadow: "var(--sh-md)" }}>
-            <Icon name="search" className="lead" />
-            <input placeholder="Search this area" aria-label="Search this area" value={q} onChange={(e) => setQ(e.target.value)} />
+    <div className="map-split">
+      {/* LEFT — results list (Google-Maps / GMB style) */}
+      <aside className="map-split-list">
+        <div className="map-split-head">
+          <div className="flex g8 center">
+            <div className="searchbar" style={{ flex: 1 }}>
+              <Icon name="search" className="lead" />
+              <input placeholder="Search this area" aria-label="Search this area" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <button className="map-iconbtn" aria-label="View as full list" onClick={() => navigate("explore")} title="Explore as list">
+              <Icon name="list" size={20} />
+            </button>
           </div>
-          <button className="map-iconbtn" aria-label="View as list" onClick={() => navigate("explore")}>
-            <Icon name="list" size={20} />
-          </button>
-        </div>
-        <div className="map-chiprow pillbar">
-          <button className={`chip ${userLoc ? "active" : ""}`} onClick={nearMe} aria-pressed={!!userLoc}>
-            <Icon name="near" size={15} /> {locating ? "Locating…" : "Near me"}
-          </button>
-          <button className={`chip ${chips.mosque ? "active" : ""}`} onClick={() => tog("mosque")} aria-pressed={chips.mosque}>
-            <Icon name="mosque" size={15} /> Mosques
-          </button>
-          <button className={`chip ${chips.open ? "active" : ""}`} onClick={() => tog("open")} aria-pressed={chips.open}>Open now</button>
-          <button className={`chip ${chips.prayer ? "active" : ""}`} onClick={() => tog("prayer")} aria-pressed={chips.prayer}>Prayer space</button>
-          <button className={`chip ${chips.family ? "active" : ""}`} onClick={() => tog("family")} aria-pressed={chips.family}>Family friendly</button>
+          <div className="pillbar map-split-chips">
+            <button className={`chip ${userLoc ? "active" : ""}`} onClick={nearMe} aria-pressed={!!userLoc}>
+              <Icon name="near" size={15} /> {locating ? "Locating…" : "Near me"}
+            </button>
+            <button className={`chip ${chips.mosque ? "active" : ""}`} onClick={() => tog("mosque")} aria-pressed={chips.mosque}>
+              <Icon name="mosque" size={15} /> Mosques
+            </button>
+            <button className={`chip ${chips.open ? "active" : ""}`} onClick={() => tog("open")} aria-pressed={chips.open}>Open now</button>
+            <button className={`chip ${chips.prayer ? "active" : ""}`} onClick={() => tog("prayer")} aria-pressed={chips.prayer}>Prayer space</button>
+            <button className={`chip ${chips.family ? "active" : ""}`} onClick={() => tog("family")} aria-pressed={chips.family}>Family friendly</button>
+          </div>
+          <div className="map-split-count">
+            <strong>{resultCount}</strong> {chips.mosque ? "mosque" : "place"}{resultCount === 1 ? "" : "s"}
+            {userLoc ? " · nearest first" : ""}
+          </div>
         </div>
 
-        {/* bottom card carousel */}
-        <div className="map-carousel">
+        <div className="map-split-results" ref={resultsRef}>
           {chips.mosque ? (
             mosqueList.map((m) => (
               <div
                 key={m.id}
+                data-id={m.id}
                 className={`map-cc mosque-cc ${m.id === activeMosque ? "on" : ""}`}
                 onClick={() => setActiveMosque(m.id)}
               >
@@ -698,23 +715,34 @@ export function MapScreen() {
               </div>
             ))
           ) : list.length === 0 ? (
-            <div className="map-cc on" style={{ display: "grid", placeItems: "center", color: "var(--ink-soft)", fontWeight: 600 }}>
-              No places match these filters
-            </div>
+            <Empty icon="search" title="No places match" body="Try removing a filter or searching a different area." />
           ) : (
             list.map((l) => (
               <div
                 key={l.id}
+                data-id={l.id}
                 className={`map-cc ${l.id === activeId ? "on" : ""}`}
                 onClick={() => (l.id === activeId ? navigate("detail", { id: l.id }) : setActiveId(l.id))}
               >
                 <ListingCard item={l} variant="row" />
+                {l.id === activeId && (
+                  <button className="btn btn-primary btn-sm btn-block mt8" onClick={(e) => { e.stopPropagation(); navigate("detail", { id: l.id }); }}>
+                    View details <Icon name="arrow" size={15} />
+                  </button>
+                )}
                 {l.distanceKm != null && (
                   <span className="map-cc-dist"><Icon name="near" size={12} /> {formatKm(l.distanceKm)} away</span>
                 )}
               </div>
             ))
           )}
+        </div>
+      </aside>
+
+      {/* RIGHT — live map */}
+      <div className="map-split-map">
+        <div className="map-live">
+          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} fit={!activeId && !activeMosque && !userLoc} />
         </div>
       </div>
     </div>
@@ -1269,35 +1297,38 @@ export function DetailReviews({ item }: { item: Listing }) {
 
   const slug = item.slug || item.id;
 
-  // Replace the mock seed with real published reviews (by slug) when the backend
-  // is configured. No-op in mock mode → keeps the seeded examples.
+  // Replace the mock seed with real published reviews (by slug) via our own API
+  // route. Reading server-side keeps the browser console clean when the backend
+  // isn't fully provisioned — an empty result simply keeps the seeded examples.
   useEffect(() => {
-    const sb = getSupabaseBrowser();
-    if (!sb) return;
     let alive = true;
     (async () => {
-      const { data, error } = await sb
-        .from("v_reviews_public")
-        .select("*")
-        .eq("listing_slug", slug)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (!alive || error || !data || data.length === 0) return;
-      const rel = (iso: string) => {
-        const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-        return d <= 0 ? "Today" : d === 1 ? "Yesterday" : d < 30 ? `${d}d ago` : `${Math.floor(d / 30)}mo ago`;
-      };
-      setReviews(
-        (data as { id: string; rating: number; text: string; helpful: number | null; created_at: string }[]).map((r) => ({
-          id: r.id,
-          name: "Verified diner",
-          avatar: "✓",
-          rating: r.rating,
-          date: rel(r.created_at),
-          text: r.text,
-          helpful: r.helpful ?? 0,
-        })),
-      );
+      try {
+        const res = await fetch(`/api/reviews?slug=${encodeURIComponent(slug)}`);
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          reviews?: { id: string; rating: number; text: string; helpful: number | null; created_at: string }[];
+        };
+        const data = json.reviews;
+        if (!alive || !data || data.length === 0) return;
+        const rel = (iso: string) => {
+          const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+          return d <= 0 ? "Today" : d === 1 ? "Yesterday" : d < 30 ? `${d}d ago` : `${Math.floor(d / 30)}mo ago`;
+        };
+        setReviews(
+          data.map((r) => ({
+            id: r.id,
+            name: "Verified diner",
+            avatar: "✓",
+            rating: r.rating,
+            date: rel(r.created_at),
+            text: r.text,
+            helpful: r.helpful ?? 0,
+          })),
+        );
+      } catch {
+        /* keep seeded reviews */
+      }
     })();
     return () => { alive = false; };
   }, [slug]);

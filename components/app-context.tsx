@@ -40,6 +40,7 @@ interface AppState {
   savedEvents: string[];
   tickets: Ticket[];
   collections: Collection[];
+  hydrated: boolean;
 }
 
 interface AppContextValue {
@@ -67,6 +68,9 @@ interface AppContextValue {
   t: (key: Parameters<typeof translate>[1]) => string;
   ramadan: boolean;
   toggleRamadan: () => void;
+  // admin-controlled Ramadan season switch (server-hydrated; gates the UI affordance)
+  ramadanModeEnabled: boolean;
+  setRamadanModeEnabled: (v: boolean) => void;
   // monetization kill-switches (admin-controlled; UI gating only)
   flags: Flags;
   setFlag: (key: keyof Flags, value: boolean) => void;
@@ -109,7 +113,7 @@ function loadLS(): Persisted {
   }
 }
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial = false }: { children: React.ReactNode; ramadanModeEnabled?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const routeParams = useParams();
@@ -127,6 +131,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);
   const [toastMsg, setToastMsg] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  // Admin-controlled Ramadan mode (server-hydrated; admins flip it for the season).
+  const [ramadanModeEnabled, setRamadanModeEnabled] = useState(ramadanModeInitial);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // hydrate from localStorage after mount (avoids SSR mismatch)
@@ -354,7 +360,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       params,
       navigate,
       back,
-      state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, collections },
+      state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, collections, hydrated },
       setUser,
       toggleSave,
       toggleWish,
@@ -372,6 +378,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       t,
       ramadan,
       toggleRamadan,
+      ramadanModeEnabled,
+      setRamadanModeEnabled,
       flags,
       setFlag,
     }),
@@ -380,7 +388,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       savedEvents, tickets, collections, setUser, toggleSave, toggleWish, toast, setTweak, setPref,
       toggleCertifiedOnly, toggleEventSave, bookEvent, toastMsg,
       createCollection, toggleInCollection, lang, setLang, t, ramadan, toggleRamadan,
-      flags, setFlag,
+      ramadanModeEnabled, setRamadanModeEnabled, flags, setFlag, hydrated,
     ],
   );
 
