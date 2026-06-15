@@ -4,7 +4,7 @@ import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 /* Admin-only monetization-flag writes (persisted to platform_settings).
    Until Supabase is wired, flags live client-side (localStorage) for demos;
    this route is the production source of truth. */
-const ALLOWED = ["paid_tickets_enabled", "paid_ads_enabled", "paid_plans_enabled"];
+const ALLOWED = ["paid_tickets_enabled", "paid_ads_enabled", "paid_plans_enabled", "ramadan_mode_enabled"];
 
 export async function POST(req: Request) {
   const supa = await getSupabaseServer();
