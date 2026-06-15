@@ -56,7 +56,7 @@ function FitOrCenter({ center, zoom, points, fit }: { center: LatLng; zoom: numb
       map.flyTo([center.lat, center.lng], zoom, { duration: 0.5 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fit, key, center.lat, center.lng, zoom, map]);
+  }, [fit, key, points.length, center.lat, center.lng, zoom, map]);
   return null;
 }
 

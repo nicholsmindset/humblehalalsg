@@ -35,7 +35,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     .from("orders")
     .select("id, buyer_name, buyer_email, qty, amount_cents, status, created_at, stripe_payment_intent")
     .eq("event_id", id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(10000); // cap the roster export so a huge event can't exhaust memory
 
   const { data: tix } = await admin
     .from("tickets").select("order_id, tier, status, checked_in_at").eq("event_id", id);

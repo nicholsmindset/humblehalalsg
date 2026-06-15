@@ -6,6 +6,7 @@ import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Zakat / sadaqah donation for a charity event. Creates a Stripe Checkout
    session (charged on the platform); the webhook records the donation and
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
   const supa = getSupabaseAdmin();
   const eventId = String(body.eventId || "");
   let ev = getEvent(eventId);
-  if (!ev && supa) {
+  if (!ev && supa && isSafeEventRef(eventId)) {
     const { data: row } = await supa
       .from("events").select("*")
       .or(`id.eq.${eventId},slug.eq.${eventId}`)

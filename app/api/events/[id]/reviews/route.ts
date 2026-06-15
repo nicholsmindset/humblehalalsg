@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Event ratings. GET → published reviews + honest aggregate (avg/count) read
    server-side (no anon DB exposure). POST → submit a rating (1–5) for moderation.
@@ -9,7 +10,7 @@ const TEXT_MAX = 1000;
 
 async function resolveEventId(id: string): Promise<string | null> {
   const admin = getSupabaseAdmin();
-  if (!admin) return null;
+  if (!admin || !isSafeEventRef(id)) return null;
   const { data } = await admin.from("events").select("id").or(`id.eq.${id},slug.eq.${id}`).maybeSingle();
   return (data?.id as string) || null;
 }

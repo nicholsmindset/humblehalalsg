@@ -33,18 +33,36 @@ export async function POST(req: Request) {
   }
   if (!ok) return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
 
-  // Paid order → issue the Stripe refund. Free RSVP → just cancel.
+  // Claim the refund atomically: only the request that flips confirmed→refunded
+  // proceeds, so two concurrent clicks can't both fire a Stripe refund.
+  const { data: claimed } = await admin
+    .from("orders").update({ status: "refunded" })
+    .eq("id", orderId).neq("status", "refunded")
+    .select("id");
+  if (!claimed?.length) return NextResponse.json({ ok: true, already: true });
+
+  // Paid order → issue the Stripe refund. Free RSVP → just cancel. The
+  // idempotency key dedupes at Stripe even if this runs twice for one order.
   if (order.amount_cents && order.stripe_payment_intent) {
     const stripe = getStripe();
-    if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" }, { status: 503 });
+    if (!stripe) {
+      await admin.from("orders").update({ status: order.status }).eq("id", orderId);
+      return NextResponse.json({ ok: false, reason: "stripe_not_configured" }, { status: 503 });
+    }
     try {
-      await stripe.refunds.create({ payment_intent: order.stripe_payment_intent });
+      await stripe.refunds.create(
+        { payment_intent: order.stripe_payment_intent },
+        { idempotencyKey: `refund_order_${orderId}` },
+      );
     } catch {
+      // Roll the claim back so the refund can be retried instead of being
+      // silently stuck as "refunded" with the money still held.
+      await admin.from("orders").update({ status: order.status }).eq("id", orderId);
       return NextResponse.json({ ok: false, reason: "refund_failed" }, { status: 502 });
     }
   }
 
-  await admin.from("orders").update({ status: "refunded", payout_status: "none" }).eq("id", orderId);
-  await admin.from("tickets").update({ status: "refunded" }).eq("order_id", orderId).neq("status", "used");
+  await admin.from("orders").update({ payout_status: "none" }).eq("id", orderId);
+  await admin.from("tickets").update({ status: "refunded" }).eq("order_id", orderId).eq("status", "valid");
   return NextResponse.json({ ok: true });
 }

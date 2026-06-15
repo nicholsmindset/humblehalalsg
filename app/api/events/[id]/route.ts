@@ -62,18 +62,52 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (error) return NextResponse.json({ ok: false, reason: "cancel_failed" }, { status: 500 });
   await admin.from("tickets").update({ status: "cancelled" }).eq("event_id", id).eq("status", "valid");
 
-  // Refund paid orders for this event (best-effort). The charge.refunded webhook
-  // also reverses them, so this is idempotent enough for a cancellation.
+  // Refund paid orders + donations for this event. We only mark a row refunded
+  // when Stripe actually reverses the charge — never optimistically — so the DB
+  // can't claim "refunded" while the customer's money is still held. The
+  // charge.refunded webhook reverses tickets/capacity; idempotency keys make a
+  // double-fire (cancel + manual refund) safe.
   try {
     const stripe = getStripe();
-    const { data: paid } = await admin
-      .from("orders").select("id, stripe_payment_intent")
-      .eq("event_id", id).gt("amount_cents", 0).neq("status", "refunded");
-    for (const o of paid || []) {
-      if (stripe && o.stripe_payment_intent) {
-        await stripe.refunds.create({ payment_intent: o.stripe_payment_intent as string }).catch(() => {});
+    if (stripe) {
+      const { data: paid } = await admin
+        .from("orders").select("id, stripe_payment_intent")
+        .eq("event_id", id).gt("amount_cents", 0).neq("status", "refunded");
+      for (const o of paid || []) {
+        if (!o.stripe_payment_intent) continue;
+        try {
+          await stripe.refunds.create(
+            { payment_intent: o.stripe_payment_intent as string },
+            { idempotencyKey: `refund_order_${o.id}` },
+          );
+          await admin.from("orders").update({ status: "refunded", payout_status: "none" }).eq("id", o.id);
+        } catch (err) {
+          console.error("event-cancel: order refund failed", o.id, err);
+        }
       }
-      await admin.from("orders").update({ status: "refunded", payout_status: "none" }).eq("id", o.id);
+
+      // Refund zakat/sadaqah donations too, then reset the public running total.
+      const { data: dons } = await admin
+        .from("donations").select("id, stripe_payment_intent")
+        .eq("event_id", id).eq("status", "paid");
+      let anyDonationRefunded = false;
+      for (const d of dons || []) {
+        if (!d.stripe_payment_intent) continue;
+        try {
+          await stripe.refunds.create(
+            { payment_intent: d.stripe_payment_intent as string },
+            { idempotencyKey: `refund_donation_${d.id}` },
+          );
+          await admin.from("donations").update({ status: "refunded" }).eq("id", d.id);
+          anyDonationRefunded = true;
+        } catch (err) {
+          console.error("event-cancel: donation refund failed", d.id, err);
+        }
+      }
+      if (anyDonationRefunded) {
+        const cur = (a.ev.display && typeof a.ev.display === "object" ? a.ev.display : {}) as Record<string, unknown>;
+        await admin.from("events").update({ display: { ...cur, donationRaisedCents: 0 } }).eq("id", id);
+      }
     }
   } catch { /* refunds best-effort */ }
 

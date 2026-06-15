@@ -22,6 +22,7 @@ deploy:
 | `0022_ramadan_mode.sql` | `platform_settings.ramadan_mode_enabled` | Admin-controlled Ramadan mode |
 | `0023_ads.sql` | `ad_placements`, `ad_campaigns`, `ad_events`, `v_campaign_performance`, `track_ad_event()` | Sponsored-ad sales + tracking |
 | `0024_owner_campaign_perf.sql` | `owner_campaign_performance()` RPC | Advertiser report in `/owner` |
+| `0025_premerge_review_fixes.sql` | `events` `cancelled` status, `ad_orders` unique PI, `increment_donation_raised()` + `decrement_event_taken()` RPCs, `security_invoker` views | Pre-merge review fixes: event cancellation, atomic donation total, refund capacity, RLS-safe views |
 
 **How** (any one):
 - **Supabase CLI:** `supabase db push` (or `supabase migration up`) from the repo root.

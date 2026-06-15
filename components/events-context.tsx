@@ -12,7 +12,8 @@ interface EventsValue {
 
 function build(list: EventItem[]): EventsValue {
   const byId = new Map(list.map((e) => [e.id, e]));
-  const bySlug = new Map(list.map((e) => [e.slug || "", e]));
+  // Fall back to id so events without a slug don't collide at the empty key.
+  const bySlug = new Map(list.map((e) => [e.slug || e.id, e]));
   return { list, get: (x) => bySlug.get(x) || byId.get(x) };
 }
 

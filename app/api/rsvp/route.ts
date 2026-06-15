@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Free RSVP — the launch path. DB-backed when the event exists in Supabase;
    otherwise returns simulated:true so the client keeps the local mock ticket
@@ -35,12 +36,15 @@ export async function POST(req: Request) {
   }
 
   // Resolve the real DB event (by id or slug). If it isn't seeded yet, degrade
-  // gracefully instead of failing on the orders.event_id FK.
-  const { data: row } = await supa
-    .from("events")
-    .select("id, capacity, taken, business_id, status")
-    .or(`id.eq.${eventId},slug.eq.${eventId}`)
-    .maybeSingle();
+  // gracefully instead of failing on the orders.event_id FK. Reject unsafe refs
+  // before interpolation (PostgREST .or() injection guard).
+  const { data: row } = isSafeEventRef(eventId)
+    ? await supa
+        .from("events")
+        .select("id, capacity, taken, business_id, status")
+        .or(`id.eq.${eventId},slug.eq.${eventId}`)
+        .maybeSingle()
+    : { data: null };
   if (!row) {
     if (!mockEv) return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
     return NextResponse.json({ ok: true, simulated: true, ref });

@@ -43,6 +43,9 @@ export function SponsoredSlot({ placement }: { placement: string }) {
     } catch { /* ignore */ }
   };
 
+  // A new creative (campaign rotation) is a fresh impression opportunity.
+  useEffect(() => { seen.current = false; }, [ad]);
+
   useEffect(() => {
     if (!ad || !el.current || seen.current) return;
     const io = new IntersectionObserver((entries) => {

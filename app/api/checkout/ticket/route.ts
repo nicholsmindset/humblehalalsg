@@ -6,6 +6,7 @@ import { getEvent } from "@/lib/data";
 import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Paid event-ticket checkout — SEPARATE CHARGES + delayed transfer model.
 
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   const supa = getSupabaseAdmin();
   const eventId = String(body.eventId || "");
   let ev = getEvent(eventId);
-  if (!ev && supa) {
+  if (!ev && supa && isSafeEventRef(eventId)) {
     const { data: row } = await supa
       .from("events")
       .select("*")
