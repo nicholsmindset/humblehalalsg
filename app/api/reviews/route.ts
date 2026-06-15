@@ -7,6 +7,30 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 const TEXT_MAX = 1500;
 
+/* Published reviews for a listing, read server-side so the browser never sees a
+   Supabase 404 when the `v_reviews_public` view isn't deployed yet. Any error
+   (incl. missing relation) degrades silently to an empty list → the detail page
+   keeps its seeded examples. */
+export async function GET(req: Request) {
+  const slug = (new URL(req.url).searchParams.get("slug") || "").trim().slice(0, 120);
+  if (!slug) return NextResponse.json({ ok: true, reviews: [] });
+  try {
+    const { getSupabaseAdmin } = await import("@/lib/supabase/server");
+    const sb = getSupabaseAdmin();
+    if (!sb) return NextResponse.json({ ok: true, reviews: [] });
+    const { data, error } = await sb
+      .from("v_reviews_public")
+      .select("id,rating,text,helpful,created_at")
+      .eq("listing_slug", slug)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error || !data) return NextResponse.json({ ok: true, reviews: [] });
+    return NextResponse.json({ ok: true, reviews: data });
+  } catch {
+    return NextResponse.json({ ok: true, reviews: [] });
+  }
+}
+
 export async function POST(req: Request) {
   // Throttle to stop bots flooding the moderation queue (security audit M6).
   const rl = await rateLimit(req, "reviews", 8, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
