@@ -90,3 +90,38 @@ test("API: highlights returns at least one grounded card", async ({ request }) =
   expect(Array.isArray(body.highlights)).toBeTruthy();
   expect(body.highlights.length).toBeGreaterThan(0);
 });
+
+test.describe("transfers", () => {
+  test("landing: search form renders and returns simulated quotes", async ({ page }) => {
+    await page.goto("/travel/transfers");
+    // Scope to the main region — the chrome mirrors page content elsewhere in the
+    // DOM (the flights landing does the same), so a bare testid is ambiguous.
+    const main = page.locator("#main-content");
+    await expect(main.getByRole("heading", { level: 1 })).toContainText(/transfer/i);
+    await expect(main.getByTestId("transfer-search-form")).toBeVisible();
+    await main.getByTestId("transfer-pickup").fill("Changi Airport (SIN)");
+    await main.getByTestId("transfer-dropoff").fill("Marina Bay Sands");
+    await main.getByTestId("transfer-datetime").fill("2026-09-01T10:00");
+    await main.getByTestId("transfer-search-submit").click();
+    await expect(main.getByTestId("transfer-quote").first()).toBeVisible();
+    // Never asserts halal certification (golden rule).
+    await expect(page.locator("body")).not.toContainText(/halal certified/i);
+  });
+
+  test("API: search returns simulated quotes without a key", async ({ request }) => {
+    const res = await request.post("/api/travel/transfers/search", {
+      data: { pickup: "SIN", dropoff: "Marina Bay Sands", pickupDateTime: "2026-09-01T10:00", passengers: 2 },
+    });
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(Array.isArray(body.quotes) && body.quotes.length > 0).toBe(true);
+  });
+
+  test("API: book is gated off by default (403)", async ({ request }) => {
+    const res = await request.post("/api/travel/transfers/book", {
+      data: { searchId: "x", resultId: "y", contact: { firstName: "A", lastName: "B", email: "a@b.co", phone: "+10000000000" }, passengers: 2, currency: "USD" },
+    });
+    expect(res.status()).toBe(403);
+  });
+});
