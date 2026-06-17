@@ -6,6 +6,7 @@
    itinerary cards. Booking is gated downstream by PAID_FLIGHTS_ENABLED. */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Icon, Empty } from "../../ui";
 import { Carousel, DateRangeField, AiAnswer, SkeletonCard, isoOf, parseISO } from "../../ota";
 import { fmtDuration, sortItineraries, type FlightItinerary } from "@/lib/flights";
@@ -221,8 +222,7 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
 
       {/* ── hero ── */}
       <section className="ota-hero flt-hero">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="ota-hero-media" src={HERO_IMG} alt="" aria-hidden loading="eager" />
+        <Image className="ota-hero-media" src={HERO_IMG} alt="" aria-hidden fill priority sizes="100vw" style={{ objectFit: "cover" }} />
         <div className="ota-hero-scrim pattern" />
         <div className="hh-wrap">
           <div className="ota-hero-head">
