@@ -4,7 +4,7 @@
    Add an entry here when a tool ships; the hub renders from this list so
    there are never dead links. Keep `live: true` only for routes that exist. */
 
-export type ToolCategory = "Worship" | "Calculators" | "Knowledge" | "Finders";
+export type ToolCategory = "Worship" | "Trackers" | "Calculators" | "Knowledge" | "Finders";
 
 export interface Tool {
   slug: string; // route segment under /tools
@@ -86,6 +86,52 @@ export const TOOLS: Tool[] = [
     privateLocal: true,
     live: true,
   },
+  // Trackers — all local-first (on-device), no account.
+  {
+    slug: "salah-tracker",
+    title: "Salah Tracker",
+    blurb: "Log the 5 daily prayers and build a streak.",
+    icon: "check",
+    category: "Trackers",
+    privateLocal: true,
+    live: true,
+  },
+  {
+    slug: "ramadan",
+    title: "Ramadan Tracker",
+    blurb: "Mark the days you fast across the month.",
+    icon: "moon",
+    category: "Trackers",
+    privateLocal: true,
+    live: true,
+  },
+  {
+    slug: "hifz",
+    title: "Hifz Tracker",
+    blurb: "Track Quran memorization across all 114 surahs.",
+    icon: "bookmark",
+    category: "Trackers",
+    privateLocal: true,
+    live: true,
+  },
+  {
+    slug: "khatam",
+    title: "Khatam Tracker",
+    blurb: "Complete a 30-juz Quran read-through.",
+    icon: "list",
+    category: "Trackers",
+    privateLocal: true,
+    live: true,
+  },
+  {
+    slug: "sadaqah",
+    title: "Sadaqah Log",
+    blurb: "Track your charity and a giving goal.",
+    icon: "heart",
+    category: "Trackers",
+    privateLocal: true,
+    live: true,
+  },
   // Finders cross-link into the core product — we already have a MUIS-verified
   // directory and a mosque directory, so we route here rather than rebuild.
   {
@@ -108,7 +154,7 @@ export const TOOLS: Tool[] = [
   },
 ];
 
-export const CATEGORY_ORDER: ToolCategory[] = ["Worship", "Calculators", "Knowledge", "Finders"];
+export const CATEGORY_ORDER: ToolCategory[] = ["Worship", "Trackers", "Calculators", "Knowledge", "Finders"];
 
 /** Live tools grouped by category, in display order. */
 export function toolsByCategory(): { category: ToolCategory; items: Tool[] }[] {
