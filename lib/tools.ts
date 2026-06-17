@@ -28,6 +28,23 @@ export function toolHref(t: Tool): string {
 
 export const TOOLS: Tool[] = [
   {
+    slug: "quran",
+    title: "Quran Reader",
+    blurb: "Read all 114 surahs in Arabic, English & audio.",
+    icon: "doc",
+    category: "Worship",
+    live: true,
+  },
+  {
+    slug: "quran-search",
+    title: "Search the Quran",
+    blurb: "Find any word across the whole Quran.",
+    icon: "search",
+    category: "Worship",
+    href: "/tools/quran/search",
+    live: true,
+  },
+  {
     slug: "prayer-times",
     title: "Prayer Times",
     blurb: "Daily salah times for your location.",

@@ -6,6 +6,7 @@ import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
 import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
+import { SURAHS } from "@/lib/tools/surahs";
 import { SITE } from "@/lib/seo";
 
 const PUBLIC_STATIC = [
@@ -96,6 +97,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const quranEntries: MetadataRoute.Sitemap = SURAHS.map((s) => ({
+    url: `${base}/tools/quran/${s.n}`,
+    lastModified: now,
+    changeFrequency: "yearly",
+    priority: 0.6,
+  }));
+
   return [
     ...staticEntries,
     ...listingEntries,
@@ -105,5 +113,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...blogEntries,
     ...travelEntries,
     ...toolEntries,
+    ...quranEntries,
   ];
 }

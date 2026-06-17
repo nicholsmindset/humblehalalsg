@@ -256,3 +256,34 @@
 }
 .sadaqah-amt { font-weight: 700; }
 @media (max-width: 480px) { .sadaqah-add .field { flex: 1 1 100%; } .sadaqah-add .btn { width: 100%; } }
+
+/* ============================================================
+   QURAN READER + SEARCH
+   ============================================================ */
+.quran-search-box { max-width: 560px; }
+
+/* Surah index */
+.quran-surah-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.quran-surah-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; text-decoration: none; color: var(--ink); }
+.quran-surah-num {
+  flex: none; width: 34px; height: 34px; border-radius: 9px; background: var(--emerald-50); color: var(--emerald);
+  display: grid; place-items: center; font-weight: 700; font-size: .82rem;
+}
+.quran-surah-name { flex: 1; font-family: var(--serif); font-weight: 600; min-width: 0; }
+.quran-surah-ar { font-size: 1.3rem; color: var(--emerald); }
+
+/* Reader */
+.quran-reader { display: flex; flex-direction: column; gap: 12px; }
+.quran-ayah { padding: 18px 20px; }
+.quran-ayah-num { font-size: .78rem; font-weight: 700; color: var(--gold-700); margin-bottom: 8px; }
+.quran-ayah-ar { font-size: 1.9rem; line-height: 2.2; color: var(--ink); text-align: right; }
+.quran-ayah-en { margin-top: 10px; color: var(--ink-soft); line-height: 1.6; }
+.quran-ayah:target { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-100); }
+
+.quran-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 24px; }
+.quran-audio { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Search results */
+.quran-result { display: block; padding: 14px 18px; text-decoration: none; color: var(--ink); }
+.quran-result-ref { font-size: .8rem; font-weight: 700; color: var(--emerald); }
+.quran-result-text { margin-top: 6px; line-height: 1.55; color: var(--ink-soft); }
