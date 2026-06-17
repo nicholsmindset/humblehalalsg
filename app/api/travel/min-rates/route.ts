@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { minRates, liteapiConfigured } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Cheapest "from $X" rate per hotel for a date range — used to label city/hub
    cards. POST { hotelIds[], checkin, checkout, nationality, currency, adults }.
@@ -7,6 +8,10 @@ import { minRates, liteapiConfigured } from "@/lib/liteapi";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function POST(req: Request) {
+  // Throttle: /hotels/min-rates is a paid premium endpoint. Cap per-IP bursts so a
+  // card-heavy page (or abuse) can't fan out unbounded paid calls (results are
+  // also cached 30m in lib/liteapi.ts:minRates).
+  const rl = await rateLimit(req, "min-rates", 30, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const hotelIds = Array.isArray(body.hotelIds) ? (body.hotelIds as unknown[]).map(String).filter(Boolean) : [];
   const checkin = String(body.checkin || "").trim();

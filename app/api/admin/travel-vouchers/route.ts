@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { createVoucher, liteapiConfigured } from "@/lib/liteapi";
+import { createVoucher, liteapiConfigured, LiteApiError } from "@/lib/liteapi";
 
 /* Create a discount voucher/promo for marketing campaigns (LiteAPI da.liteapi.travel).
    Admin-gated. Travellers redeem the code at hotel prebook (/api/travel/prebook) or
@@ -43,7 +43,11 @@ export async function POST(req: Request) {
     const v = await createVoucher(payload);
     if (!v) return NextResponse.json({ ok: false, error: "Voucher creation failed." }, { status: 502 });
     return NextResponse.json({ ok: true, code });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Voucher creation failed — is the voucher API enabled on your LiteAPI account?" }, { status: 502 });
+  } catch (err) {
+    // A 404/401/403 here usually means the da.liteapi.travel host is wrong or the
+    // voucher API isn't enabled on the account — surface the status to diagnose.
+    const status = err instanceof LiteApiError ? err.status : 0;
+    const hint = status === 404 ? " (endpoint not found — check the da.liteapi.travel host)" : status === 401 || status === 403 ? " (not authorised — is the voucher API enabled on your LiteAPI account?)" : "";
+    return NextResponse.json({ ok: false, error: `Voucher creation failed${hint}`, status }, { status: 502 });
   }
 }

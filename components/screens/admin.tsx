@@ -901,12 +901,24 @@ function LiteApiWeeklyAnalytics() {
   const [weeks, setWeeks] = useState<{ week: string; bookings: number; revenue: number; currency: string }[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [simulated, setSimulated] = useState(false);
-  useEffect(() => { (async () => { try { const r = await fetch("/api/admin/travel-analytics"); const d = await r.json(); if (d.ok) { setWeeks(d.weeks || []); setSimulated(!!d.simulated); } } catch { /* ignore */ } setLoading(false); })(); }, []);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { (async () => {
+    try {
+      const r = await fetch("/api/admin/travel-analytics");
+      const d = await r.json();
+      if (d.ok) { setWeeks(d.weeks || []); setSimulated(!!d.simulated); }
+      // Distinguish a real upstream failure from "no data yet" so the da.liteapi.travel
+      // host / account-enablement question is diagnosable rather than silent.
+      else setErr(d.status === 404 ? "Couldn't load — endpoint not found (verify the da.liteapi.travel host)." : d.status === 401 || d.status === 403 ? "Couldn't load — not authorised (is the analytics API enabled on your LiteAPI account?)." : "Couldn't load LiteAPI analytics right now.");
+    } catch { setErr("Couldn't reach LiteAPI analytics."); }
+    setLoading(false);
+  })(); }, []);
   return (
     <div className="card mt20" style={{ padding: 20 }}>
       <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>LiteAPI weekly sales</h3>
       <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>From LiteAPI&apos;s analytics — the authoritative payout view (last 12 weeks).</p>
       {loading ? <div className="route-loading" role="status"><span className="spinner" /></div>
+        : err ? <p style={{ color: "var(--danger)", fontSize: ".88rem" }}>{err}</p>
         : simulated ? <p className="muted">Connect a LiteAPI key to see weekly sales here.</p>
         : !weeks || !weeks.length ? <p className="muted">No weekly data yet.</p>
         : <div className="tbl-scroll"><table className="tbl"><thead><tr><th>Week</th><th>Bookings</th><th>Revenue</th></tr></thead><tbody>{weeks.map((w, i) => (<tr key={i} className="rowhover"><td className="muted">{w.week}</td><td>{w.bookings}</td><td style={{ fontWeight: 700 }}>{w.currency} {Math.round(w.revenue).toLocaleString()}</td></tr>))}</tbody></table></div>}

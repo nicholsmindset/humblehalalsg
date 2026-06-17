@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
-import { analyticsWeekly, liteapiConfigured } from "@/lib/liteapi";
+import { analyticsWeekly, liteapiConfigured, LiteApiError } from "@/lib/liteapi";
 
 /* LiteAPI's OWN weekly sales/booking analytics (da.liteapi.travel) — the payout
    source of truth, complementing the ledger view in /api/admin/travel-revenue.
@@ -23,7 +23,10 @@ export async function GET(req: Request) {
   try {
     const weeks = await analyticsWeekly(from, to);
     return NextResponse.json({ ok: true, from, to, weeks });
-  } catch {
-    return NextResponse.json({ ok: false, error: "analytics_failed" }, { status: 502 });
+  } catch (err) {
+    // Surface the upstream status so the admin UI can tell a wrong host / disabled
+    // analytics API (404/401/403 on da.liteapi.travel) from a transient blip.
+    const status = err instanceof LiteApiError ? err.status : 0;
+    return NextResponse.json({ ok: false, error: "analytics_failed", status }, { status: 502 });
   }
 }
