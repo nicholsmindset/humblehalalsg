@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runHotelSearch } from "@/lib/travel-data";
+import { runHotelSearch, parseRateFilters } from "@/lib/travel-data";
 
 /* Hotel search → LiteAPI POST /hotels/rates, then left-join our Muslim-friendly
    overlay and re-rank by halal_score. Graceful: without a LiteAPI key it returns
@@ -37,6 +37,9 @@ export async function POST(req: Request) {
     ? (body.occupancies as { adults: number; children?: number[] }[])
     : [{ adults: 2 }];
 
+  // Stable per-session id (client-generated) keeps search→prebook prices consistent.
+  const sessionId = String(body.sessionId || "").trim().slice(0, 64) || undefined;
+
   const { simulated, hotels } = await runHotelSearch({
     placeId: placeId || undefined,
     cityName: cityName || undefined,
@@ -48,7 +51,9 @@ export async function POST(req: Request) {
     guestNationality: String(body.guestNationality || "SG"),
     occupancies,
     limit: Number(body.limit) || 30,
+    sessionId,
+    filters: parseRateFilters(body),
   });
 
-  return NextResponse.json({ ok: true, simulated, hotels });
+  return NextResponse.json({ ok: true, simulated, hotels, sessionId });
 }

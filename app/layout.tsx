@@ -13,6 +13,7 @@ import "../styles/screens2.css";
 import "../styles/moat.css";
 import "../styles/events.css";
 import "../styles/travel.css";
+import "../styles/tools.css";
 import "../styles/mobile.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
