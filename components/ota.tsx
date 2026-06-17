@@ -293,11 +293,14 @@ export function DateRangeField({
   checkout,
   onChange,
   startLabel = "Dates",
+  singleDate = false,
 }: {
   checkin: string | null;
   checkout: string | null;
   onChange: (checkin: string | null, checkout: string | null) => void;
   startLabel?: string;
+  /** One-way mode: pick a single date, no range, closes on select. */
+  singleDate?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const today = useMemo(() => startOfToday(), []);
@@ -308,7 +311,10 @@ export function DateRangeField({
 
   const pick = (d: Date) => {
     const iso = isoOf(d);
-    if (!checkin || (checkin && checkout)) {
+    if (singleDate) {
+      onChange(iso, null);
+      setOpen(false);
+    } else if (!checkin || (checkin && checkout)) {
       onChange(iso, null);
     } else if (iso <= checkin) {
       onChange(iso, null);
@@ -332,8 +338,11 @@ export function DateRangeField({
     });
   };
 
-  const summary =
-    checkin && checkout
+  const summary = singleDate
+    ? checkin
+      ? fmtRange(checkin)
+      : null
+    : checkin && checkout
       ? `${fmtRange(checkin)} – ${fmtRange(checkout)}`
       : checkin
         ? `${fmtRange(checkin)} – …`
@@ -395,7 +404,7 @@ export function DateRangeField({
           </div>
         ))}
       </div>
-      <p className="ota-cal-hint">{checkin && !checkout ? "Select a check-out date" : "Select your travel dates"}</p>
+      <p className="ota-cal-hint">{singleDate ? "Select your departure date" : checkin && !checkout ? "Select a check-out date" : "Select your travel dates"}</p>
     </Popover>
   );
 }

@@ -463,12 +463,13 @@
 .why-book li svg { color:var(--emerald); flex:none; margin-top:1px; }
 
 /* ── flights Wave 2 — Muslim-first moat (HH tokens only) ─────────────────── */
-.flt-umrah { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
-.flt-umrah-label { display:inline-flex; align-items:center; gap:5px; color:var(--gold); font-weight:700; font-size:.82rem; }
-.flt-umrah button { border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.10); color:#fff; font-weight:700; font-size:.8rem; padding:5px 12px; border-radius:var(--r-pill); cursor:pointer; }
-.flt-umrah button:hover { background:rgba(255,255,255,.2); }
-.flt-hijri { color:#cfe0da; font-size:.8rem; margin-left:2px; }
-.flt-season { color:var(--gold); font-style:normal; font-weight:700; }
+/* Umrah/Hajj presets sit inside the white search box now (light surface) */
+.flt-umrah { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:4px 8px 4px; padding:12px 0 2px; border-top:1px solid var(--line); }
+.flt-umrah-label { display:inline-flex; align-items:center; gap:5px; color:var(--gold-700); font-weight:700; font-size:.82rem; }
+.flt-umrah button { border:1px solid var(--line-strong); background:var(--white); color:var(--emerald); font-weight:700; font-size:.8rem; padding:5px 12px; border-radius:var(--r-pill); cursor:pointer; transition:border-color .12s, background .12s; }
+.flt-umrah button:hover { border-color:var(--emerald); background:var(--emerald-50); }
+.flt-hijri-inline { margin-left:auto; color:var(--ink-soft); font-size:.8rem; font-weight:600; }
+.flt-season { color:var(--gold-700); font-style:normal; font-weight:700; }
 
 .flt-muslim { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
 .flt-mtag { display:inline-flex; align-items:center; gap:5px; font-size:.74rem; font-weight:700; padding:4px 9px; border-radius:var(--r-pill); background:var(--emerald-50); color:var(--emerald); }
@@ -622,3 +623,45 @@
 /* ask-ai beta accent keeps the gold treatment with an inline spark */
 .aa-beta { display:inline-flex; align-items:center; gap:4px; }
 .aa-beta svg { width:12px; height:12px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FLIGHTS OTA UPGRADE — hero glue, search-row swap, passengers+cabin popover,
+   trending/recent carousel cards, AI results. Consumes ota.css primitives
+   (.ota-hero/.ota-searchbox/.ota-segtabs/.ota-optrow/.ota-swap/.ota-citem);
+   only adds the flights-specific glue here. HH tokens only.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* hero: same overlaid-search treatment as hotels; the search-row gets the
+   swap button + airport autocompletes seamlessly inside each seg */
+.flt-hero .ota-search-row { align-items:stretch; }
+.flt-hero .ota-seg-where { overflow:visible; }
+.flt-hero .ota-seg-where .ac { width:100%; }
+.flt-hero .ota-seg-where .ac > input { border:none; background:none; padding:0; font-size:.98rem; font-weight:700; color:var(--ink); border-radius:0; width:100%; }
+.flt-hero .ota-seg-where .ac > input:focus { outline:none; }
+.flt-hero .ota-seg-where .ac > input::placeholder { color:var(--ink-faint); font-weight:600; }
+/* the swap control nestles between From / To and folds neatly on mobile */
+.flt-hero .ota-swap { margin:0 -4px; }
+@media (max-width: 760px) {
+  .flt-hero .ota-swap { align-self:center; transform:rotate(90deg); margin:2px auto; }
+}
+
+/* cabin select inside the passengers popover (under the steppers) */
+.flt-cabin-row { display:flex; flex-direction:column; gap:5px; padding:12px 2px 4px; border-top:1px solid var(--line); }
+.flt-cabin-row label { font-weight:700; font-size:.82rem; color:var(--ink-soft); }
+.flt-cabin-row select { border:1px solid var(--line-strong); border-radius:var(--r-sm); padding:9px 11px; font-size:.9rem; font-weight:600; color:var(--ink); background:var(--white); cursor:pointer; }
+.flt-cabin-row select:focus { outline:none; border-color:var(--emerald); }
+
+/* trending-destination cards in the landing carousel */
+.flt-trend { display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); cursor:pointer; text-align:left; transition:box-shadow .12s, transform .12s, border-color .12s; }
+.flt-trend:hover { box-shadow:var(--sh-md); transform:translateY(-2px); border-color:var(--line-strong); }
+.flt-trend-ico { width:42px; height:42px; border-radius:11px; background:var(--emerald-50); color:var(--emerald); display:grid; place-items:center; flex:none; }
+.flt-trend-main { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+.flt-trend-route { display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:.92rem; color:var(--ink); }
+.flt-trend-route svg { color:var(--emerald); flex:none; }
+.flt-trend-sub { font-size:.78rem; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.flt-trend .frc-tag { flex:none; }
+/* recent-search carousel card reuses .ota-recent; just align as a flex button */
+.ota-recent.flt-trend, button.ota-recent { text-align:left; }
+
+/* AI flight results stack */
+.flt-ai-results .flt-list { margin-top:16px; }
