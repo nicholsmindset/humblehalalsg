@@ -28,6 +28,15 @@ export function toolHref(t: Tool): string {
 
 export const TOOLS: Tool[] = [
   {
+    slug: "prayer-times",
+    title: "Prayer Times",
+    blurb: "Daily salah times for your location.",
+    icon: "clock",
+    category: "Worship",
+    privateLocal: true,
+    live: true,
+  },
+  {
     slug: "tasbih",
     title: "Tasbih Counter",
     blurb: "A digital misbaha for dhikr — counts stay on your device.",

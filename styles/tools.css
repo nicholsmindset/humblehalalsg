@@ -129,3 +129,56 @@
   .zakat-grid { grid-template-columns: 1fr; }
   .zakat-result { position: static; }
 }
+
+/* ============================================================
+   QIBLA COMPASS
+   ============================================================ */
+.qibla { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.qibla-dial {
+  position: relative; width: 240px; height: 240px; border-radius: 50%;
+  background: var(--white); border: 2px solid var(--line-strong); box-shadow: var(--sh-md);
+  opacity: .55; transition: opacity .2s;
+}
+.qibla-dial.on { opacity: 1; border-color: var(--emerald-300); }
+.qibla-mark { position: absolute; font-weight: 700; font-size: .82rem; color: var(--ink-faint); }
+.qibla-mark.n { top: 8px; left: 50%; transform: translateX(-50%); color: var(--danger); }
+.qibla-mark.s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.qibla-mark.e { right: 10px; top: 50%; transform: translateY(-50%); }
+.qibla-mark.w { left: 10px; top: 50%; transform: translateY(-50%); }
+.qibla-needle {
+  position: absolute; left: 50%; top: 50%; transform-origin: bottom center;
+  color: var(--emerald); transition: transform .2s ease;
+}
+.qibla-needle svg { filter: drop-shadow(0 1px 2px rgba(15,92,74,.4)); }
+.qibla-center { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--gold); transform: translate(-50%, -50%); box-shadow: 0 0 0 4px var(--cream); }
+.qibla-readout { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-height: 48px; }
+.qibla-bearing { font-family: var(--serif); font-size: 1.8rem; color: var(--emerald); line-height: 1.1; }
+@media (prefers-reduced-motion: reduce) { .qibla-needle { transition: none; } }
+
+/* ============================================================
+   PRAYER TIMES
+   ============================================================ */
+.prayer { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.prayer-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.prayer-controls .field { flex: 1; min-width: 180px; }
+.prayer-card { padding: 0; overflow: hidden; }
+.prayer-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; background: var(--emerald-50); border-bottom: 1px solid var(--emerald-100);
+}
+.prayer-date { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; }
+.prayer-next { text-align: right; display: flex; flex-direction: column; }
+.prayer-next strong { color: var(--emerald); }
+.prayer-list { list-style: none; margin: 0; padding: 0; }
+.prayer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px; border-bottom: 1px solid var(--line); font-size: 1.02rem;
+}
+.prayer-row:last-child { border-bottom: none; }
+.prayer-row .prayer-name { font-weight: 600; }
+.prayer-row .prayer-time { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.prayer-row.next { background: var(--gold-50); }
+.prayer-row.next .prayer-name, .prayer-row.next .prayer-time { color: var(--gold-700); font-weight: 700; }
+.prayer-row.sun { color: var(--ink-faint); }
+.prayer-row.sun .prayer-name { font-weight: 500; color: var(--ink-faint); }
+.prayer-foot { padding: 12px 18px; font-size: .82rem; }
