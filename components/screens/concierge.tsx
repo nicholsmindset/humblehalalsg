@@ -5,7 +5,9 @@
    status). Degrades to keyword results when no AI key is configured. */
 import { useState } from "react";
 import type { Listing } from "@/lib/types";
+import type { Hotel } from "@/lib/halal-hotels";
 import { ListingCard, Icon, SearchBar } from "../ui";
+import { RatingBadge } from "../ota";
 
 const EXAMPLES = [
   "MUIS-certified nasi padang near Tampines with prayer space",
@@ -18,6 +20,7 @@ export function ConciergeScreen() {
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [results, setResults] = useState<Listing[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
   const [asked, setAsked] = useState(false);
 
@@ -36,9 +39,11 @@ export function ConciergeScreen() {
       const d = await r.json();
       setAnswer(typeof d.answer === "string" ? d.answer : null);
       setResults(Array.isArray(d.results) ? d.results : []);
+      setHotels(Array.isArray(d.hotels) ? d.hotels : []);
     } catch {
       setAnswer("Something went wrong — please try again.");
       setResults([]);
+      setHotels([]);
     } finally {
       setLoading(false);
     }
@@ -76,7 +81,7 @@ export function ConciergeScreen() {
       </div>
 
       {!loading && results.length > 0 && (
-        <div className="hh-wrap" style={{ paddingBottom: 40 }}>
+        <div className="hh-wrap" style={{ paddingBottom: hotels.length ? 24 : 40 }}>
           <div className="grid-cards">
             {results.map((l) => <ListingCard key={l.id} item={l} />)}
           </div>
@@ -86,7 +91,32 @@ export function ConciergeScreen() {
         </div>
       )}
 
-      {!loading && asked && results.length === 0 && (
+      {!loading && hotels.length > 0 && (
+        <div className="hh-wrap" style={{ paddingBottom: 40 }}>
+          <h2 style={{ fontSize: "1.1rem", margin: "8px 0 4px", display: "flex", alignItems: "center", gap: 8 }}>
+            <Icon name="moon" size={18} style={{ color: "var(--emerald)" }} /> Muslim-friendly stays
+          </h2>
+          <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>
+            We surface the facilities each property declares — confirm specifics with the hotel.
+          </p>
+          <div className="flex col g8">
+            {hotels.map((h) => (
+              <a key={h.id} href={`/travel/hotel/${h.id}`} className="card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
+                <span style={{ minWidth: 0 }}>
+                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</strong>
+                  <small className="faint">{[h.city, h.country].filter(Boolean).join(", ")}</small>
+                </span>
+                <span className="flex g8" style={{ alignItems: "center", flex: "none" }}>
+                  {h.guestRating ? <RatingBadge score={h.guestRating} count={h.reviewCount} /> : null}
+                  {h.priceFrom ? <span className="price" style={{ whiteSpace: "nowrap" }}>{h.priceFrom.currency} {Math.round(h.priceFrom.amount)}<small>/stay</small></span> : null}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && asked && results.length === 0 && hotels.length === 0 && (
         <div className="hh-wrap" style={{ paddingBottom: 40 }}>
           <p className="faint">No matching places yet — try a different area or cuisine.</p>
         </div>

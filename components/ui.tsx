@@ -73,6 +73,7 @@ const ICONS: Record<string, string> = {
   edit: "M4 20h4L18 10l-4-4L4 16v4zM14 6l4 4",
   doc: "M7 3h7l5 5v13H7V3zm7 0v5h5",
   building: "M5 21V4a1 1 0 011-1h8a1 1 0 011 1v17M15 9h3a1 1 0 011 1v11M8 7h3M8 11h3M8 15h3",
+  bed: "M2 10v9M2 18h20M22 13v6M2 13h13a5 5 0 015 5M6 13v-2a1 1 0 011-1h3a1 1 0 011 1v2",
   tag: "M3 12V4a1 1 0 011-1h8l9 9-9 9-9-9zm5-5v.01",
   list: "M8 6h13M8 12h13M8 18h13M3 6v.01M3 12v.01M3 18v.01",
   menu: "M3 6h18M3 12h18M3 18h18",

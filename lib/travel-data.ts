@@ -1,11 +1,14 @@
 import "server-only";
-import { cityPriceIndex, getHotel, getHotelReviews, getHotelsByCity, searchRates } from "./liteapi";
+import { cityPriceIndex, getHotel, getHotelReviews, getHotelsByCity, liteapiConfigured, searchRates } from "./liteapi";
 import { getSupabaseAdmin } from "./supabase/server";
 import {
+  activeFlagLabels,
   groupRooms,
   hotelFromContent,
+  hotelFromRates,
   offersFromRatesHotel,
   type Hotel,
+  type HotelFlags,
   type HotelReview,
   type HotelSentiment,
   type OverlayRow,
@@ -14,7 +17,7 @@ import {
 } from "./halal-hotels";
 import { nearbyPlaces, type NearbyPlace } from "./mosques-nearby";
 import { getPrayerTimes, type PrayerTimesResult } from "./prayer";
-import type { LiteApiHotelContent, LiteApiRatesHotel } from "./liteapi-types";
+import type { LiteApiHotelContent, LiteApiRatesHotel, RatesSearchBody } from "./liteapi-types";
 import type { TravelCity } from "./travel-locations";
 
 /* Server-side travel data: LiteAPI content/rates merged with our Supabase
@@ -71,6 +74,144 @@ export async function cityHotels(c: TravelCity, limit = 18): Promise<Hotel[]> {
   return content
     .map((h) => hotelFromContent(h, ov.get(h.id)))
     .sort((a, b) => b.halalScore - a.halalScore);
+}
+
+/* ── Shared hotel search (used by /api/travel/search AND /api/travel/ai-search) ──
+   Single source of truth so the two routes can never drift: LiteAPI /hotels/rates
+   → overlay-join via halal-hotels → sort by halalScore (price tiebreak). Graceful:
+   no LiteAPI key → { simulated:true, hotels:[] }. Never throws. */
+
+/** Sensible future stay window (check-in +30d, 2-night stay) for when a caller
+ *  (e.g. the AI parser) doesn't supply dates. */
+export function defaultStayDates(nights = 2): { checkin: string; checkout: string } {
+  const inDate = new Date(Date.now() + 30 * 864e5);
+  const outDate = new Date(inDate.getTime() + Math.max(1, nights) * 864e5);
+  return { checkin: inDate.toISOString().slice(0, 10), checkout: outDate.toISOString().slice(0, 10) };
+}
+
+export interface RunHotelSearchParams {
+  destination?: string; // free text (unused by LiteAPI directly; resolve to placeId/cityName upstream)
+  placeId?: string;
+  cityName?: string;
+  countryCode?: string;
+  checkin: string;
+  checkout: string;
+  currency?: string;
+  guestNationality?: string;
+  adults?: number;
+  children?: number;
+  rooms?: number;
+  hotelIds?: string[];
+  limit?: number;
+  /** Exact LiteAPI occupancies passthrough (preserves child ages / per-room blocks).
+   *  When provided it wins over adults/children/rooms (used by the search route to
+   *  keep its request byte-identical). */
+  occupancies?: { adults: number; children?: number[] }[];
+  /** Muslim-friendly post-filter: only keep hotels whose overlay flags satisfy ALL. */
+  constraints?: (keyof HotelFlags)[];
+}
+
+/** Run the canonical hotel search. Mirrors app/api/travel/search/route.ts exactly
+ *  (rates → overlay join → sort), with an optional constraints post-filter. */
+export async function runHotelSearch(
+  params: RunHotelSearchParams,
+): Promise<{ simulated: boolean; hotels: Hotel[] }> {
+  const adults = Math.min(9, Math.max(1, Math.round(params.adults || 2)));
+  const children = Math.min(8, Math.max(0, Math.round(params.children || 0)));
+  const roomCount = Math.min(8, Math.max(1, Math.round(params.rooms || 1)));
+  // Exact passthrough when given (search route), else derive: one occupancy entry
+  // per room with the same adults/children block (matches the UI's request shape).
+  const occupancies: { adults: number; children?: number[] }[] =
+    params.occupancies && params.occupancies.length
+      ? params.occupancies
+      : Array.from({ length: roomCount }, () => ({
+          adults,
+          ...(children > 0 ? { children: Array.from({ length: children }, () => 8) } : {}),
+        }));
+
+  const placeId = (params.placeId || "").trim();
+  const cityName = (params.cityName || "").trim();
+  const countryCode = (params.countryCode || "").trim();
+  const hotelIds = params.hotelIds && params.hotelIds.length ? params.hotelIds.slice(0, 200) : undefined;
+  if (!placeId && !cityName && !countryCode && !(hotelIds && hotelIds.length)) {
+    return { simulated: true, hotels: [] };
+  }
+
+  if (!liteapiConfigured()) return { simulated: true, hotels: [] };
+
+  const search: RatesSearchBody = {
+    checkin: params.checkin,
+    checkout: params.checkout,
+    currency: String(params.currency || "USD").toUpperCase().slice(0, 3),
+    guestNationality: String(params.guestNationality || "SG").toUpperCase().slice(0, 2),
+    occupancies,
+    ...(placeId ? { placeId } : cityName ? { cityName } : {}),
+    ...(!placeId && countryCode ? { countryCode } : {}),
+    ...(hotelIds ? { hotelIds } : {}),
+    limit: Math.min(50, Math.max(1, params.limit || 30)),
+  };
+
+  let hits: LiteApiRatesHotel[];
+  try {
+    hits = await searchRates(search);
+  } catch {
+    return { simulated: false, hotels: [] };
+  }
+
+  const overlay = await overlayFor(hits.map((h) => h.id));
+  let hotels: Hotel[] = hits
+    .map((h) => hotelFromRates(h, overlay.get(h.id)))
+    .sort((a, b) => b.halalScore - a.halalScore || (a.priceFrom?.amount ?? 1e9) - (b.priceFrom?.amount ?? 1e9));
+
+  const constraints = (params.constraints || []).filter(Boolean) as (keyof HotelFlags)[];
+  if (constraints.length) hotels = hotels.filter((h) => constraints.every((c) => h.flags[c]));
+
+  return { simulated: false, hotels };
+}
+
+/* ── Grounded facts for the AI highlights generator ─────────────────────────── */
+
+export interface HotelHighlightFacts {
+  id: string;
+  name: string;
+  city?: string;
+  country?: string;
+  stars?: number;
+  guestRating?: number;
+  reviewCount?: number;
+  flags: HotelFlags;
+  flagLabels: string[];
+  amenities: string[];
+  pros: string[];
+  mosqueCount: number;
+  nearestMosqueM?: number;
+  halalFoodCount: number;
+}
+
+/** Gather ONLY grounded facts (no invention) for the highlights generator. Reuses
+ *  hotelDetail so flags/amenities/sentiment/nearby counts stay consistent with the
+ *  hotel page. Returns null when the hotel can't be loaded. */
+export async function hotelHighlightFacts(hotelId: string): Promise<HotelHighlightFacts | null> {
+  const detail = await hotelDetail(hotelId);
+  if (!detail) return null;
+  const { hotel, mosques, halalFood, sentiment } = detail;
+  const nearest = mosques.length ? Math.min(...mosques.map((m) => m.distanceM)) : undefined;
+  return {
+    id: hotel.id,
+    name: hotel.name,
+    city: hotel.city,
+    country: hotel.country,
+    stars: hotel.stars,
+    guestRating: hotel.guestRating,
+    reviewCount: hotel.reviewCount,
+    flags: hotel.flags,
+    flagLabels: activeFlagLabels(hotel.flags),
+    amenities: (hotel.amenities || []).slice(0, 12),
+    pros: (sentiment?.pros || []).slice(0, 6),
+    mosqueCount: mosques.length,
+    nearestMosqueM: nearest,
+    halalFoodCount: halalFood.length,
+  };
 }
 
 export interface HotelDetail {
