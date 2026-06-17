@@ -11,6 +11,7 @@ export interface Flags {
   paidPlans: boolean;
   paidHotels: boolean;
   paidFlights: boolean;
+  paidTransfers: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -23,7 +24,8 @@ export function getServerFlags(): Flags {
     paidPlans: truthy(process.env.PAID_PLANS_ENABLED),
     paidHotels: truthy(process.env.PAID_HOTELS_ENABLED),
     paidFlights: truthy(process.env.PAID_FLIGHTS_ENABLED),
+    paidTransfers: truthy(process.env.PAID_TRANSFERS_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, paidTransfers: false };
