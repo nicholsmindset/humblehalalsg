@@ -2,13 +2,51 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDirectory } from "@/lib/directory";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { runHotelSearch, defaultStayDates } from "@/lib/travel-data";
+import { travelCities } from "@/lib/travel-locations";
+import type { Hotel } from "@/lib/halal-hotels";
 import type { Listing } from "@/lib/types";
 
 /* Phase 2 — halal concierge / natural-language search. GROUNDED in the directory:
    the model may only choose from listings we pass it, and is told never to assert
    halal certification beyond each listing's stated tier (it explains, it never
-   certifies). Graceful: with no AI key it falls back to keyword ranking. */
+   certifies). Travel-aware: when the query looks hotel/stay-shaped it ALSO runs the
+   shared hotel search (lib/travel-data) and returns `hotels` alongside `results`.
+   Graceful: with no AI key it falls back to keyword ranking. */
 export const dynamic = "force-dynamic";
+
+// Heuristic: does the query look like a hotel/stay request for a travel city?
+const TRAVEL_RE = /\b(hotel|hotels|stay|staying|accommodation|umrah|hajj|resort|trip|travel|night|nights|check[\s-]?in)\b/i;
+function travelMatch(q: string): { city: (typeof travelCities)[number] } | null {
+  const low = q.toLowerCase();
+  const city = travelCities.find((c) => low.includes(c.name.toLowerCase()) || low.includes(c.cityName.toLowerCase()));
+  if (!city) return null;
+  // Only treat as travel when there's also a stay-shaped signal OR an Umrah/Hajj hub.
+  if (TRAVEL_RE.test(q) || city.umrah) return { city };
+  return null;
+}
+
+/** Best-effort hotel results for a travel-shaped concierge query (never throws). */
+async function travelHotels(query: string): Promise<Hotel[]> {
+  const m = travelMatch(query);
+  if (!m) return [];
+  const { checkin, checkout } = defaultStayDates(2);
+  try {
+    const { hotels } = await runHotelSearch({
+      cityName: m.city.cityName,
+      countryCode: m.city.countryCode,
+      currency: m.city.currency,
+      checkin,
+      checkout,
+      adults: 2,
+      rooms: 1,
+      limit: 6,
+    });
+    return hotels.slice(0, 6);
+  } catch {
+    return [];
+  }
+}
 
 const tierOf = (l: Listing): string =>
   l.badges.includes("muis") ? "MUIS Certified"
@@ -39,7 +77,9 @@ export async function POST(req: Request) {
   try { query = String(((await req.json()) as { query?: unknown }).query || "").slice(0, 300).trim(); } catch { /* noop */ }
   if (query.length < 2) return NextResponse.json({ ok: false, error: "Ask a question." }, { status: 422 });
 
-  const all = await getDirectory();
+  // Directory + (optional) travel hotels run together — hotels is best-effort and
+  // only populated for travel/stay-shaped queries naming a curated city.
+  const [all, hotels] = await Promise.all([getDirectory(), travelHotels(query)]);
   const ranked = rank(all, query);
   const candidates = (ranked.length ? ranked : all).slice(0, 40);
 
@@ -53,8 +93,11 @@ export async function POST(req: Request) {
       simulated: true,
       answer: results.length
         ? `Here are ${results.length} halal places matching “${query}”. Always confirm certification on MUIS HalalSG.`
-        : `No listings matched “${query}” yet — try a different area or cuisine.`,
+        : hotels.length
+          ? `Here are Muslim-friendly stays matching “${query}”. We surface declared facilities — confirm with the hotel and the MUIS HalalSG register.`
+          : `No listings matched “${query}” yet — try a different area or cuisine.`,
       results,
+      ...(hotels.length ? { hotels } : {}),
     });
   }
 
@@ -81,10 +124,10 @@ export async function POST(req: Request) {
   if (!out) {
     // AI errored → degrade to keyword results.
     const results = candidates.slice(0, 6);
-    return NextResponse.json({ ok: true, simulated: true, answer: `Here are some matches for “${query}”.`, results });
+    return NextResponse.json({ ok: true, simulated: true, answer: `Here are some matches for “${query}”.`, results, ...(hotels.length ? { hotels } : {}) });
   }
 
   const bySlug = new Map(all.map((l) => [l.slug, l] as const));
   const results = out.slugs.map((s) => bySlug.get(s)).filter(Boolean).slice(0, 8);
-  return NextResponse.json({ ok: true, simulated: false, answer: out.answer, results });
+  return NextResponse.json({ ok: true, simulated: false, answer: out.answer, results, ...(hotels.length ? { hotels } : {}) });
 }

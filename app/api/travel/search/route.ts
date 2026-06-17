@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { liteapiConfigured, searchRates } from "@/lib/liteapi";
-import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { hotelFromRates, type OverlayRow, type Hotel } from "@/lib/halal-hotels";
-import type { RatesSearchBody } from "@/lib/liteapi-types";
+import { runHotelSearch } from "@/lib/travel-data";
 
 /* Hotel search → LiteAPI POST /hotels/rates, then left-join our Muslim-friendly
    overlay and re-rank by halal_score. Graceful: without a LiteAPI key it returns
    {ok,simulated,hotels:[]} so the UI still renders. Discovery only — no payment,
-   so this is NOT behind the PAID_HOTELS_ENABLED switch. */
+   so this is NOT behind the PAID_HOTELS_ENABLED switch. The actual search logic
+   lives in lib/travel-data:runHotelSearch (shared with /api/travel/ai-search). */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,47 +31,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Tell us where to search" }, { status: 422 });
   }
 
-  const search: RatesSearchBody = {
+  // Pass occupancies through unchanged so the LiteAPI request stays byte-identical
+  // to the prior route (child ages + per-room blocks preserved).
+  const occupancies = Array.isArray(body.occupancies) && body.occupancies.length
+    ? (body.occupancies as { adults: number; children?: number[] }[])
+    : [{ adults: 2 }];
+
+  const { simulated, hotels } = await runHotelSearch({
+    placeId: placeId || undefined,
+    cityName: cityName || undefined,
+    countryCode: countryCode || undefined,
+    hotelIds,
     checkin,
     checkout,
-    currency: String(body.currency || "USD").toUpperCase().slice(0, 3),
-    guestNationality: String(body.guestNationality || "SG").toUpperCase().slice(0, 2),
-    occupancies: Array.isArray(body.occupancies) && body.occupancies.length
-      ? (body.occupancies as { adults: number; children?: number[] }[])
-      : [{ adults: 2 }],
-    ...(placeId ? { placeId } : cityName ? { cityName } : {}),
-    ...(!placeId && countryCode ? { countryCode } : {}),
-    ...(hotelIds ? { hotelIds } : {}),
-    limit: Math.min(50, Math.max(1, Number(body.limit) || 30)),
-  };
+    currency: String(body.currency || "USD"),
+    guestNationality: String(body.guestNationality || "SG"),
+    occupancies,
+    limit: Number(body.limit) || 30,
+  });
 
-  if (!liteapiConfigured()) {
-    return NextResponse.json({ ok: true, simulated: true, hotels: [] });
-  }
-
-  let hits;
-  try {
-    hits = await searchRates(search);
-  } catch {
-    return NextResponse.json({ ok: false, error: "Could not fetch hotels right now" }, { status: 502 });
-  }
-
-  // Overlay join (best-effort): public-read table, but use admin to avoid RLS noise.
-  const overlay = new Map<string, OverlayRow>();
-  const db = getSupabaseAdmin();
-  if (db && hits.length) {
-    try {
-      const ids = hits.map((h) => h.id);
-      const { data } = await db.from("muslim_friendly_hotels").select("*").in("liteapi_hotel_id", ids);
-      for (const row of (data as OverlayRow[]) || []) overlay.set(row.liteapi_hotel_id, row);
-    } catch {
-      /* overlay is best-effort */
-    }
-  }
-
-  const hotels: Hotel[] = hits
-    .map((h) => hotelFromRates(h, overlay.get(h.id)))
-    .sort((a, b) => b.halalScore - a.halalScore || (a.priceFrom?.amount ?? 1e9) - (b.priceFrom?.amount ?? 1e9));
-
-  return NextResponse.json({ ok: true, simulated: false, hotels });
+  return NextResponse.json({ ok: true, simulated, hotels });
 }
