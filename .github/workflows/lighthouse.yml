@@ -11,12 +11,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Run Lighthouse CI
+      - name: Run Lighthouse CI (mobile)
+        # Mobile preset + assertions live in .lighthouserc.json. error-level
+        # assertions (viewport present, content-width = no horizontal overflow,
+        # seo) GATE the PR; perf / LCP / CLS / tap-targets / font-size are warn
+        # only (CI perf is too variable to block on). No `|| echo` swallow — the
+        # deterministic mobile-correctness audits are the guard.
         run: |
           npm i -g @lhci/cli@0.14.x
           BASE="${{ vars.SITE_URL || 'https://humblehalal.com' }}"
           lhci autorun \
             --collect.url="$BASE/" \
             --collect.url="$BASE/explore" \
-            --collect.url="$BASE/blog/what-is-halal-singapore" \
-            || echo "LHCI reported budget warnings (non-blocking)"
+            --collect.url="$BASE/travel" \
+            --collect.url="$BASE/blog/what-is-halal-singapore"

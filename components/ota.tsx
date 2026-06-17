@@ -13,6 +13,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Image from "next/image";
 import { Icon } from "./ui";
 
 /* ---------------------------------------------------------------
@@ -482,8 +483,9 @@ export function ImageGallery({ images, alt = "" }: { images: string[]; alt?: str
     <>
       <div className="travel-gallery">
         {shown.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img key={i} src={src} alt={`${alt} photo ${i + 1}`} loading={i === 0 ? "eager" : "lazy"} onClick={() => setBox(i)} style={{ cursor: "zoom-in" }} />
+          <button key={i} type="button" className="tg-cell" onClick={() => setBox(i)} aria-label={`View ${alt} photo ${i + 1}`}>
+            <Image src={src} alt={`${alt} photo ${i + 1}`} fill priority={i === 0} sizes="(max-width: 720px) 100vw, 50vw" style={{ objectFit: "cover" }} />
+          </button>
         ))}
         {list.length > 1 && (
           <button className="ota-gallery-more" onClick={() => setBox(0)}>
