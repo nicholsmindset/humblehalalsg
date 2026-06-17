@@ -1,5 +1,6 @@
 import { TravelScreen } from "@/components/screens/travel";
-import { allTravelHubs } from "@/lib/travel-hubs";
+import { allTravelHubs, getTravelHub } from "@/lib/travel-hubs";
+import { cityHotels } from "@/lib/travel-data";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
@@ -10,8 +11,18 @@ export const metadata = pageMeta({
   path: "/travel",
 });
 
-export default function Page() {
+export const revalidate = 3600;
+
+export default async function Page() {
   const cities = allTravelHubs();
+  // Featured hub for "Recommended" (Umrah core) + a local hub for "Nearby".
+  const recommendedHub = getTravelHub("mecca") || getTravelHub("medina");
+  const nearbyHub = getTravelHub("singapore") || getTravelHub("kuala-lumpur");
+  const [recommended, nearby] = await Promise.all([
+    recommendedHub ? cityHotels(recommendedHub, 10) : Promise.resolve([]),
+    nearbyHub ? cityHotels(nearbyHub, 10) : Promise.resolve([]),
+  ]);
+
   const collection = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -22,7 +33,7 @@ export default function Page() {
   return (
     <>
       <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }])]} />
-      <TravelScreen cities={cities} />
+      <TravelScreen cities={cities} recommended={recommended} nearby={nearby} />
     </>
   );
 }

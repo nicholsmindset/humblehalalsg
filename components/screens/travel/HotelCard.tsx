@@ -1,0 +1,48 @@
+"use client";
+
+/* Humble Halal — hotel result card (zzzello-grade, emerald brand).
+   Image with verified halal overlay · gold stars · name · location ·
+   distance-from-centre · emerald RatingBadge · honest price line. */
+import Link from "next/link";
+import { Icon } from "../../ui";
+import { RatingBadge, Stars } from "../../ota";
+import { activeFlagLabels, ratingWord, type Hotel } from "@/lib/halal-hotels";
+import { HalalChip, countryLabel } from "./shared";
+
+export function HotelCard({ hotel }: { hotel: Hotel }) {
+  const flags = activeFlagLabels(hotel.flags).slice(0, 3);
+  return (
+    <Link href={`/travel/hotel/${hotel.id}`} className="hotel-card">
+      <div className="hotel-photo">
+        {hotel.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={hotel.image} alt={hotel.name} loading="lazy" />
+        ) : (
+          <div className="ph-empty" aria-hidden />
+        )}
+        <HalalChip hotel={hotel} compact />
+      </div>
+      <div className="body">
+        {hotel.stars ? <Stars count={hotel.stars} /> : null}
+        <h3>{hotel.name}</h3>
+        <div className="loc">
+          <Icon name="pin" size={13} /> {hotel.city || ""}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}
+        </div>
+        {flags.length > 0 && (
+          <div className="halal-flags">{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={11} /> {l}</span>)}</div>
+        )}
+        <div className="card-foot">
+          {hotel.guestRating ? (
+            <RatingBadge score={hotel.guestRating} count={hotel.reviewCount} word={ratingWord(hotel.guestRating)} />
+          ) : <span />}
+          {hotel.priceFrom ? (
+            <span className="price">
+              from {hotel.priceFrom.currency} {Math.round(hotel.priceFrom.amount)}
+              <small> / night · incl. taxes</small>
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </Link>
+  );
+}
