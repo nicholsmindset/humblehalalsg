@@ -79,6 +79,9 @@ export interface Listing {
   prayer: boolean;
   delivery: boolean;
   featured: boolean;
+  /** Subscription tier (PlanKey: free | verified | featured | premium). Drives
+   *  feature-gating via lib/plans. Optional — defaults to "free" when absent. */
+  plan?: string;
   hours: string;
   phone: string;
   wa: string;

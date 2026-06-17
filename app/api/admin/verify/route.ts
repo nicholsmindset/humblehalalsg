@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
-import { halalScore } from "@/lib/halal-score";
 import { normalizeCertNo } from "@/lib/muis";
+import { buildGrantPatch, isExpiringSoon, tierAndScore, type GrantAction } from "@/lib/verify-grant";
 
 /* Admin halal-verification intake.
 
@@ -15,20 +15,7 @@ import { normalizeCertNo } from "@/lib/muis";
    writes. Without Supabase configured it succeeds in "simulated" mode so the
    admin console works in dev. */
 
-type Action = "muis" | "admin" | "revoke";
-
-function tierAndScore(action: Action, certNo: string, expiringSoon: boolean) {
-  if (action === "revoke") {
-    return { tier: "declared", score: halalScore({ badges: ["friendly"] }).score };
-  }
-  const badge = action === "muis" ? "muis" : "admin";
-  const { score, tier } = halalScore({
-    badges: [badge],
-    certified: true,
-    verify: { certNo: certNo || null, verified: null, expires: null, confirms: 0, renewed: false, expiringSoon },
-  });
-  return { tier, score };
-}
+type Action = GrantAction;
 
 export async function POST(req: Request) {
   let body: {
@@ -58,12 +45,9 @@ export async function POST(req: Request) {
 
   const certNo = normalizeCertNo(body.certNo);
   const expiry = String(body.expiry || "").trim() || null;
+  const scheme = String(body.scheme || "").trim() || null;
   // Expiry within ~90 days lowers the score and flags re-verification.
-  const expiringSoon = !!expiry && (() => {
-    const t = Date.parse(expiry);
-    return Number.isFinite(t) && t - Date.now() < 90 * 24 * 60 * 60 * 1000;
-  })();
-  const { tier, score } = tierAndScore(action, certNo, expiringSoon);
+  const { tier, score } = tierAndScore(action, certNo, isExpiringSoon(expiry));
 
   // No Supabase configured (dev) — accept gracefully without persisting.
   if (!supabaseConfigured) {
@@ -81,10 +65,7 @@ export async function POST(req: Request) {
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, error: "service_unavailable" }, { status: 503 });
 
-  const patch =
-    action === "revoke"
-      ? { muis_cert_no: null, muis_scheme: null, muis_expiry: null, halal_tier: tier, halal_score: score, last_verified_at: new Date().toISOString() }
-      : { muis_cert_no: action === "muis" ? certNo : null, muis_scheme: action === "muis" ? String(body.scheme || "").trim() || null : null, muis_expiry: expiry, halal_tier: tier, halal_score: score, last_verified_at: new Date().toISOString() };
+  const patch = buildGrantPatch({ action, certNo, scheme, expiry });
 
   try {
     const { error } = await db.from("businesses").update(patch).eq("id", businessId);
@@ -101,7 +82,7 @@ export async function POST(req: Request) {
       actor: gate.userId,
       action: action === "revoke" ? "Revoked halal verification" : `Granted ${action === "muis" ? "MUIS Certified" : "Admin Verified"}`,
       target: businessId,
-      meta: action === "muis" ? { cert: certNo, expiry: expiry || null, scheme: String(body.scheme || "").trim() || null } : {},
+      meta: action === "muis" ? { cert: certNo, expiry: expiry || null, scheme } : {},
     });
   } catch {
     /* audit is best-effort */

@@ -11,6 +11,7 @@ export interface Flags {
   paidPlans: boolean;
   paidHotels: boolean;
   paidFlights: boolean;
+  certVault: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -23,7 +24,10 @@ export function getServerFlags(): Flags {
     paidPlans: truthy(process.env.PAID_PLANS_ENABLED),
     paidHotels: truthy(process.env.PAID_HOTELS_ENABLED),
     paidFlights: truthy(process.env.PAID_FLIGHTS_ENABLED),
+    // Halal Certificate Vault — owner upload + admin review. Default OFF for a
+    // flag-gated pilot before GA. Not a payment route; gates the feature surface.
+    certVault: truthy(process.env.CERT_VAULT_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, certVault: false };
