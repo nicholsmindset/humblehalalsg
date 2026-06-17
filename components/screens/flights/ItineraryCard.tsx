@@ -56,7 +56,13 @@ export function ItineraryCard({ it, bookingEnabled, adults }: { it: FlightItiner
     <div className="flt-card">
       <div className="flt-card-main">
         <div className="flt-airline">
-          {lead.carrierLogo ? <img src={lead.carrierLogo} alt={lead.carrierName} /> : <span className="flt-airline-ph"><Icon name="plane" size={16} /></span>}
+          {lead.carrierLogo ? (
+            // Airline logos come from many small CDNs — keep a raw <img> (no
+            // remotePatterns guesswork) but set intrinsic width/height so the
+            // 36×36 slot is reserved up-front (zero CLS).
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={lead.carrierLogo} alt={lead.carrierName} width={36} height={36} loading="lazy" />
+          ) : <span className="flt-airline-ph"><Icon name="plane" size={16} /></span>}
           <div><div className="flt-airline-name">{it.carriers.join(", ") || lead.carrierName}</div>{it.fareFamily && <div className="flt-fare-family">{it.fareFamily}</div>}</div>
         </div>
         <div className="flt-legs">

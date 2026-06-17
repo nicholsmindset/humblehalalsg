@@ -1,0 +1,84 @@
+/* ============================================================
+   Humble Halal — mobile-readiness overrides (Stages 1–2).
+   Loaded LAST (after mobile.css) so it wins. Enforces the compass
+   standard: ≥44–48px tap targets, ≥12px legible text, safe-area
+   insets, and 320–360px overflow fixes. Additive + min-* only, so
+   it grows under-sized hit areas without shrinking desktop layout.
+   ============================================================ */
+
+/* ---- Tap targets: ≥44–48px hit size (web.dev / Material 3) ---- */
+.btn { min-height: 48px; }
+.btn-sm { min-height: 44px; }
+.chip, .filter-chip { min-height: 44px; }
+.viewtoggle button { min-height: 44px; }
+.search-opt { min-height: 48px; }
+.detail-tabs button, .hotel-tabs a { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* OTA primitives — icon buttons were 32–38px */
+.ota-arrow, .ota-swap, .ota-step-btn { width: 44px; height: 44px; }
+.ota-cal-nav { width: 40px; height: 40px; }
+.ota-segtab { min-height: 44px; }
+/* The overlaid search "segment" wraps a bare input that renders ~21px tall —
+   make the whole field a comfortable tap target. */
+.ota-seg { min-height: 56px; }
+
+/* Bottom-tab add button + prayer strip */
+.hh-tab.add .addbtn { width: 48px; height: 48px; }
+.prayer-lead, .prayer-mosque { min-height: 44px; }
+
+/* Filter rows: give each checkbox/radio label a 44px hit row */
+.fp-opt, .flt-radio, .flt-check { min-height: 44px; display: flex; align-items: center; }
+
+/* Form fields — text inputs/selects need a 44px tap height (the email
+   subscribe field rendered ~20px tall). */
+.input, .select { min-height: 44px; }
+
+/* Bare search inputs nested in the OTA search segments — the segment
+   wrapper is the real 56px tap target, but fill the inner input too so
+   the whole field is comfortably tappable. */
+.ota-seg-where input, .ota-ai-input input { min-height: 44px; width: 100%; }
+
+/* Footer language pills (EN/BM) were 23px tall */
+.lang-toggle button { min-height: 44px; }
+
+/* Header cert toggle was 36px tall */
+.cert-toggle { min-height: 44px; }
+
+/* Breadcrumb links — bump the hit row (they flex-wrap, so taller is fine) */
+.breadcrumbs a, .breadcrumbs span[aria-current="page"],
+.travel-breadcrumbs .crumb a, .travel-breadcrumbs .crumb [aria-current] {
+  display: inline-flex; align-items: center; min-height: 44px;
+}
+
+/* Footer link rows — give every nav/category/legal link a 44px tap row.
+   The footer stacks single-column on phones, so full-height rows read well. */
+.hh-footer-col a, .hh-footer-catlinks a, .hh-footer-legal a {
+  display: inline-flex; align-items: center; min-height: 44px;
+}
+
+/* ---- Legible text: ≥12px floor (Lighthouse "legible font sizes") ---- */
+.hh-tab span { font-size: 0.78rem; } /* tab labels were ~10.5px */
+.eyebrow { font-size: 0.8rem; }       /* was ~11.5px */
+.badge { font-size: 0.75rem; }        /* was ~11.8px */
+
+/* ---- Safe-area insets (enabled by viewport-fit=cover) ---- */
+.detail-stickybar, .evt-stickybar { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+.fp-apply { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+.hh-mobilebar, .hh-topnav, .hh-tabbar {
+  padding-left: max(env(safe-area-inset-left, 0px), 0px);
+  padding-right: max(env(safe-area-inset-right, 0px), 0px);
+}
+
+/* ---- Overflow fixes at 320–360px ---- */
+.room-opt { overflow-wrap: anywhere; }
+.room-opt > :first-child { min-width: 0; }
+
+/* Date-range calendar popover was two 252px months (~560px) → overflowed
+   phones. Below 520px: cap the popover to the viewport, scroll internally,
+   and show a single month (the month-nav arrows still reach later dates). */
+@media (max-width: 520px) {
+  .ota-popover { max-width: calc(100vw - 24px); max-height: 72vh; overflow: auto; }
+  .ota-cal-months { flex-direction: column; gap: 16px; }
+  .ota-cal-month { width: min(252px, calc(100vw - 60px)); }
+  .ota-cal-month:nth-child(2) { display: none; }
+}
