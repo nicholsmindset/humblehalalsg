@@ -11,6 +11,8 @@ import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone } from "@/lib/halal-score";
+import { canUse, galleryMax } from "@/lib/plans";
+import { HalalConfidenceBadge } from "../halal-confidence-badge";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
@@ -781,8 +783,13 @@ export function DetailScreen() {
   }, [slug, item.catId]);
   const logLead = (type: LeadAction) => track.leadAction(type, slug, item.catId);
 
-  // Photo lightbox
-  const galleryImgs = [item.image, ...HHData.gallery].filter(Boolean) as string[];
+  // Photo lightbox — capped at the business's plan gallery limit (lib/plans).
+  // Lower tiers show fewer photos; premium/featured are unaffected (high caps).
+  const galleryImgs = ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item));
+
+  // Verified+ unlocks the rich contact buttons (WhatsApp & directions). Free
+  // listings still keep their core contact (phone / website) — never hidden.
+  const richContact = canUse(item, "contact_buttons");
   const [lb, setLb] = useState<number | null>(null);
   useEffect(() => {
     if (lb === null) return;
@@ -811,8 +818,10 @@ export function DetailScreen() {
     : mapsSearchUrl(`${item.name} ${item.area} Singapore`);
   const contacts = [
     item.phone && { icon: "phone", label: "Call", href: telHref(item.phone), external: false, action: "call" as LeadAction },
-    item.wa && { icon: "whatsapp", label: "WhatsApp", href: waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`), external: true, action: "whatsapp" as LeadAction },
-    { icon: "directions", label: "Directions", href: dirHref, external: true, action: "directions" as LeadAction },
+    // WhatsApp & directions are Verified+ (contact_buttons). Free listings keep
+    // phone/website so a business is never left without a way to be reached.
+    richContact && item.wa && { icon: "whatsapp", label: "WhatsApp", href: waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`), external: true, action: "whatsapp" as LeadAction },
+    richContact && { icon: "directions", label: "Directions", href: dirHref, external: true, action: "directions" as LeadAction },
     item.web && { icon: "globe", label: "Website", href: webHref(item.web), external: true, action: "website" as LeadAction },
     item.ig && { icon: "instagram", label: "Instagram", href: igHref(item.ig), external: true },
   ].filter(Boolean) as { icon: string; label: string; href: string; external: boolean; action?: LeadAction }[];
@@ -888,6 +897,9 @@ export function DetailScreen() {
             {item.badges.map((b) => <Badge key={b} type={b} lg />)}
             {item.prayer && <Badge type="prayer" lg />}
           </div>
+
+          {/* Halal Confidence (HalalRank) — expandable "why this score" */}
+          <HalalConfidenceBadge item={item} />
 
           {/* Verification provenance + community confirmation */}
           <VerificationCard item={item} navigate={navigate} toast={toast} />
@@ -1029,11 +1041,19 @@ export function DetailScreen() {
         </aside>
       </div>
 
-      {/* sticky mobile contact bar — real intents */}
+      {/* sticky mobile contact bar — real intents. WhatsApp & directions are
+          Verified+ (contact_buttons); free listings keep Call / Website so the
+          bar is never empty. */}
       <div className="detail-stickybar">
         {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)}><Icon name="phone" size={17} /> Call</a>}
-        {item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
-        <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+        {richContact && item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
+        {richContact ? (
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+        ) : item.web ? (
+          <a className="btn btn-primary btn-sm" href={webHref(item.web)} target="_blank" rel="noopener noreferrer"><Icon name="globe" size={17} /> Website</a>
+        ) : (
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+        )}
       </div>
 
       {/* photo lightbox */}
@@ -1257,6 +1277,13 @@ export function DetailOverview({ item }: { item: Listing }) {
   return (
     <div className="detail-pane">
       <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb} A neighbourhood favourite in {item.area}, known for warm service and consistent quality across {item.cuisine.toLowerCase()}.</p>
+      {/* Offers & promotions — Premium-only (offers_block). Hidden for lower tiers. */}
+      {canUse(item, "offers_block") && (
+        <div className="offers-block">
+          <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offers &amp; promotions</span></div>
+          <p className="offers-body">Show your Humble Halal save to staff for current deals from {item.name}. Promotions are managed by the business from their dashboard.</p>
+        </div>
+      )}
       <PrayerSpaceCard item={item} />
       <div className="amenity-row">
         {item.tags.map((t) => {

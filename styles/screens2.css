@@ -81,6 +81,9 @@
 /* =========================== DASHBOARD (shared) =========================== */
 .dash-header { background: linear-gradient(150deg, var(--emerald), var(--emerald-700)); padding: 28px 0; margin-bottom:0; }
 .dash-header-user { padding:24px 0; }
+/* current-plan chip in the dashboard header (Workstream B) */
+.plan-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:var(--r-pill); background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); color:#fff; font-size:.78rem; font-weight:700; white-space:nowrap; }
+.plan-chip svg { color:var(--gold); flex:none; }
 .dash-tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-top:0; overflow-x:auto; scrollbar-width:none; position:sticky; top:var(--nav-h); background:var(--cream); z-index:20; }
 /* sit below the mobile top bar (56px) + prayer strip bar (42px) so the tabs
    stay visible on scroll instead of tucking behind the chrome */

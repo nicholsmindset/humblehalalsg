@@ -5,7 +5,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
-import { canUse } from "@/lib/plans";
+import { canUse, planKey, PLAN_LIST } from "@/lib/plans";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
@@ -105,13 +105,19 @@ export function PricingScreen() {
     }
     navigate("add-listing");
   };
-  // SGD, SG-realistic. Yearly ≈ 2 months free (monthly × 10 / 12).
-  const tiers = [
-    { id: "free", name: "Free", price: 0, year: 0, tag: "Get listed", features: ["Basic profile", "1 category", "Up to 3 photos", "Map pin", "Customer reviews"], cta: "Start free", accent: false },
-    { id: "verified", name: "Verified", price: yearly ? 16 : 19, year: 190, tag: "Build trust", features: ["Everything in Free", "Admin Verified badge", "Halal status review", "Muslim-owned label", "Up to 15 photos", "Reply to reviews", "WhatsApp & directions buttons"], cta: "Choose Verified", accent: true, popular: true },
-    { id: "featured", name: "Featured", price: yearly ? 41 : 49, year: 490, tag: "Get seen", features: ["Everything in Verified", "Featured placement", "Top of category & area", "Homepage rotation", "Priority support"], cta: "Choose Featured", accent: false },
-    { id: "premium", name: "Premium", price: yearly ? 82 : 99, year: 990, tag: "Grow faster", features: ["Everything in Featured", "Multiple locations", "Advanced analytics", "Promo & ad credits", "Dedicated manager"], cta: "Contact sales", accent: false },
-  ];
+  // The plan catalog (lib/plans) is the single source of truth — no duplicated
+  // tier list here. Yearly shows the monthly-equivalent (yearly ÷ 12, ≈2 months free).
+  const tiers = PLAN_LIST.map((p) => ({
+    id: p.key,
+    name: p.name,
+    price: yearly && p.monthly > 0 ? Math.round(p.yearly / 12) : p.monthly,
+    year: p.yearly,
+    tag: p.tag,
+    features: p.bullets,
+    cta: p.cta,
+    accent: !!p.accent,
+    popular: !!p.popular,
+  }));
   return (
     <div className="screen-in hh-page">
       <section className="hh-wrap" style={{ paddingTop: 40, textAlign: "center" }}>
@@ -526,6 +532,11 @@ export function OwnerDashboardScreen() {
     return () => { alive = false; };
   }, []);
   const myBiz = biz && biz.length ? biz[0] : null;
+  // Current subscription tier (from the business `plan`). In mock/demo mode show
+  // "verified" so the header isn't bare; the upgrade CTA shows below premium.
+  const currentPlan = planKey(live ? myBiz : "verified");
+  const currentPlanLabel = currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1);
+  const canUpgrade = currentPlan !== "premium";
 
   // Open the Stripe Customer Portal so owners can self-serve manage their
   // subscription (update card, change plan, cancel). Degrades gracefully when
@@ -564,7 +575,13 @@ export function OwnerDashboardScreen() {
             <div><span className="eyebrow" style={{ color: "var(--gold)" }}>Business dashboard</span>
               <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{live ? (myBiz?.name || (biz === null ? "Loading…" : "Your business")) : "Warung Bumbu Rempah"}</h1>
               <div className="flex g8 center" style={{ marginTop: 8 }}>{live ? (myBiz ? <>{myBiz.halal_tier === "muis" && <Badge type="muis" />}{myBiz.halal_tier === "admin" && <Badge type="admin" />}</> : null) : <><Badge type="muis" /><Badge type="owned" /></>}</div></div>
-            <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
+            <div className="flex g10 center wrap" style={{ alignItems: "center" }}>
+              <div className="flex g8 center" style={{ flexWrap: "wrap" }}>
+                <span className="plan-chip"><Icon name="crescent" size={13} /> {currentPlanLabel} plan</span>
+                {canUpgrade && <button className="btn btn-soft btn-sm" onClick={() => navigate("pricing")}><Icon name="arrow" size={15} /> Upgrade</button>}
+              </div>
+              <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
+            </div>
           </div>
         </div>
       </div>
