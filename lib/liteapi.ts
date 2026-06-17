@@ -1,8 +1,11 @@
 import "server-only";
+import { withCache, hashKey } from "./cache";
 import type {
   LiteApiHotelContent,
   LiteApiRatesHotel,
   LiteApiPlace,
+  LiteApiSemanticHotel,
+  LiteApiRoomHit,
   LiteApiAirport,
   FlightSearchBody,
   FlightContactInput,
@@ -18,6 +21,9 @@ import type {
    lib/stripe.ts, so /api/travel/* can run in "simulated" mode in dev. */
 
 const BASE = "https://api.liteapi.travel/v3.0";
+/* The dashboard/analytics host. LiteAPI routes vouchers + analytics through
+   da.liteapi.travel (no /v3.0 prefix), separate from the search/booking host. */
+const DA_BASE = "https://da.liteapi.travel";
 const TIMEOUT_MS = 10_000;
 
 /** Active key: prod when LITEAPI_ENV=prod, else sandbox; falls back either way. */
@@ -51,11 +57,12 @@ async function once(url: string, init: RequestInit, key: string): Promise<Respon
   }
 }
 
-/** Core request with one retry on 5xx. Throws LiteApiError on non-2xx. */
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+/** Core request with one retry on 5xx. Throws LiteApiError on non-2xx. `base`
+ *  defaults to the search/booking host; pass DA_BASE for analytics/voucher CRUD. */
+async function request<T>(path: string, init: RequestInit = {}, base: string = BASE): Promise<T> {
   const key = apiKey();
   if (!key) throw new LiteApiError(0, "liteapi_not_configured");
-  const url = `${BASE}${path}`;
+  const url = `${base}${path}`;
   let res = await once(url, init, key);
   if (res.status >= 500) res = await once(url, init, key); // retry once
   if (!res.ok) throw new LiteApiError(res.status, `liteapi_${res.status}`);
@@ -72,8 +79,12 @@ function qs(params: Record<string, string | number | undefined>): string {
 /* ── Static content ─────────────────────────────────────────────────────── */
 
 export async function getHotel(hotelId: string): Promise<LiteApiHotelContent | null> {
-  const r = await request<{ data?: LiteApiHotelContent }>(`/data/hotel${qs({ hotelId, timeout: 4 })}`);
-  return r.data ?? null;
+  // Static content (descriptions/images/facilities) — safe to cache 24h. Never
+  // affects the price the guest pays (that comes from the live rates/prebook path).
+  return withCache(`liteapi:hotel:${hotelId}`, 86_400, async () => {
+    const r = await request<{ data?: LiteApiHotelContent }>(`/data/hotel${qs({ hotelId, timeout: 4 })}`);
+    return r.data ?? null;
+  });
 }
 
 export async function getHotelsByCity(
@@ -97,11 +108,92 @@ export async function getCountries(): Promise<{ code: string; name: string }[]> 
   return Array.isArray(r.data) ? r.data : [];
 }
 
+/** Hotel-type classifications (resort, boutique, business…) with ids used to filter
+ *  /hotels/rates. Stable reference data — cache 24h. */
+export async function getHotelTypes(): Promise<{ id: number; name: string }[]> {
+  return withCache(`liteapi:hoteltypes`, 86_400, async () => {
+    const r = await request<{ data?: { hotelTypeId?: number | string; id?: number | string; name?: string }[] }>(`/data/hotelTypes`);
+    return (Array.isArray(r.data) ? r.data : [])
+      .map((t) => ({ id: Number(t.hotelTypeId ?? t.id), name: String(t.name || "") }))
+      .filter((t) => Number.isFinite(t.id) && t.name);
+  });
+}
+
+/** Hotel chains/brands with ids used to filter /hotels/rates. Cache 24h. */
+export async function getChains(): Promise<{ id: number; name: string }[]> {
+  return withCache(`liteapi:chains`, 86_400, async () => {
+    const r = await request<{ data?: { chainId?: number | string; id?: number | string; name?: string }[] }>(`/data/chains`);
+    return (Array.isArray(r.data) ? r.data : [])
+      .map((c) => ({ id: Number(c.chainId ?? c.id), name: String(c.name || "") }))
+      .filter((c) => Number.isFinite(c.id) && c.name);
+  });
+}
+
 /** Global destination autocomplete (cities, landmarks, areas). */
 export async function searchPlaces(textQuery: string): Promise<LiteApiPlace[]> {
-  if (!textQuery.trim()) return [];
-  const r = await request<{ data?: LiteApiPlace[] }>(`/data/places${qs({ textQuery })}`);
-  return Array.isArray(r.data) ? r.data : [];
+  const q = textQuery.trim();
+  if (!q) return [];
+  // /data/places is a paid premium endpoint ($0.01/req); the place list is stable,
+  // so cache by normalized query for 24h (debounce + rate limit guard the rest).
+  return withCache(`liteapi:places:${q.toLowerCase()}`, 86_400, async () => {
+    const r = await request<{ data?: LiteApiPlace[] }>(`/data/places${qs({ textQuery: q })}`);
+    return Array.isArray(r.data) ? r.data : [];
+  });
+}
+
+/** Natural-language ("semantic") hotel discovery (LiteAPI beta). Returns content +
+ *  relevance, NO pricing — callers add "from $X" via minRates. */
+export async function semanticSearch(query: string, limit = 12, minRating?: number): Promise<LiteApiSemanticHotel[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const r = await request<{ data?: Record<string, unknown>[] }>(
+    `/data/hotels/semantic-search${qs({ query: q, limit, min_rating: minRating })}`,
+  );
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : undefined);
+  return (Array.isArray(r.data) ? r.data : [])
+    .map((h) => ({
+      id: String(h.id ?? h.hotelId ?? ""),
+      name: h.name ? String(h.name) : undefined,
+      main_photo: (h.main_photo as string) || (h.thumbnail as string) || undefined,
+      thumbnail: h.thumbnail ? String(h.thumbnail) : undefined,
+      address: h.address ? String(h.address) : undefined,
+      city: (h.city as string) || (h.city_name as string) || undefined,
+      country: (h.country as string) || (h.country_code as string) || undefined,
+      rating: num(h.rating),
+      stars: num(h.stars ?? h.starRating),
+      reviewCount: num(h.reviewCount ?? h.review_count),
+      score: num(h.relevance ?? h.score),
+      tags: Array.isArray(h.tags) ? (h.tags as unknown[]).map(String) : undefined,
+    }))
+    .filter((h) => h.id);
+}
+
+/** Room-level visual/text search (LiteAPI beta). Rooms matched by image, grouped
+ *  under their hotel. Geo is optional (placeId | lat/lng+radius | city/country). */
+export async function roomSearch(
+  query: string,
+  geo: { placeId?: string; latitude?: number; longitude?: number; radius?: number; city?: string; country?: string } = {},
+  limit = 12,
+): Promise<LiteApiRoomHit[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const r = await request<{ data?: Record<string, unknown>[] }>(
+    `/data/hotels/room-search${qs({ query: q, limit, placeId: geo.placeId, latitude: geo.latitude, longitude: geo.longitude, radius: geo.radius, city: geo.city, country: geo.country })}`,
+  );
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : undefined);
+  return (Array.isArray(r.data) ? r.data : [])
+    .map((h) => {
+      const rooms = Array.isArray(h.rooms) ? (h.rooms as Record<string, unknown>[]) : [];
+      return {
+        hotelId: String(h.hotelId ?? h.id ?? ""),
+        hotelName: h.name ? String(h.name) : h.hotelName ? String(h.hotelName) : undefined,
+        city: (h.city as string) || (h.city_name as string) || undefined,
+        country: (h.country as string) || (h.country_code as string) || undefined,
+        rating: num(h.rating),
+        rooms: rooms.map((rm) => ({ name: rm.name ? String(rm.name) : undefined, image: (rm.image as string) || (rm.url as string) || undefined, score: num(rm.score ?? rm.similarity) })),
+      };
+    })
+    .filter((h) => h.hotelId);
 }
 
 /* ── Rates / booking ────────────────────────────────────────────────────── */
@@ -115,11 +207,24 @@ export async function searchRates(body: RatesSearchBody): Promise<LiteApiRatesHo
   return r.hotels ?? r.data ?? [];
 }
 
-export async function prebook(offerId: string, usePaymentSdk = true): Promise<PrebookResult> {
+/** Extra prebook inputs LiteAPI accepts alongside the offer: a discount voucher,
+ *  paid add-ons, and preferred bed-type ids. Applying a voucher here is what makes
+ *  the discount real — LiteAPI returns a fresh transactionId/price reflecting it. */
+export interface PrebookOptions {
+  voucherCode?: string;
+  addons?: unknown[];
+  bedTypeIds?: (string | number)[];
+}
+
+export async function prebook(offerId: string, usePaymentSdk = true, opts: PrebookOptions = {}): Promise<PrebookResult> {
+  const payload: Record<string, unknown> = { offerId, usePaymentSdk };
+  if (opts.voucherCode) payload.voucherCode = opts.voucherCode;
+  if (Array.isArray(opts.addons) && opts.addons.length) payload.addons = opts.addons;
+  if (Array.isArray(opts.bedTypeIds) && opts.bedTypeIds.length) payload.bedTypeIds = opts.bedTypeIds;
   const r = await request<{ data?: PrebookResult } & PrebookResult>(`/rates/prebook?timeout=30`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ offerId, usePaymentSdk }),
+    body: JSON.stringify(payload),
   });
   return r.data ?? r;
 }
@@ -189,6 +294,37 @@ export async function getVoucher(code: string): Promise<{ code: string; discount
   return { code: String(d.voucherCode), discountType: String(d.discountType || "fixed"), discountValue: Number(d.discountValue) || 0, currency: d.currency ? String(d.currency) : undefined, active: String(d.status || "") === "active" };
 }
 
+export interface WeeklyAnalyticsRow { week: string; bookings: number; revenue: number; currency: string }
+
+/** Weekly sales/booking totals from LiteAPI's analytics (da.liteapi.travel) — the
+ *  payout source of truth, complementing our own ledger. Admin-only callers. */
+export async function analyticsWeekly(from: string, to: string): Promise<WeeklyAnalyticsRow[]> {
+  const r = await request<{ data?: Record<string, unknown>[]; weeks?: Record<string, unknown>[] }>(
+    `/analytics/weekly`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from, to }) },
+    DA_BASE,
+  );
+  const rows = Array.isArray(r.data) ? r.data : Array.isArray(r.weeks) ? r.weeks : [];
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  return rows.map((w) => ({
+    week: String(w.week ?? w.weekStart ?? w.label ?? ""),
+    bookings: num(w.bookings ?? w.count ?? w.totalBookings),
+    revenue: num(w.revenue ?? w.sales ?? w.totalSales ?? w.amount),
+    currency: String(w.currency ?? "USD"),
+  })).filter((w) => w.week);
+}
+
+/** Create a discount voucher/promo for marketing campaigns (da.liteapi.travel).
+ *  Admin-only. Returns the created voucher object, or null on a soft failure. */
+export async function createVoucher(payload: Record<string, unknown>): Promise<Record<string, unknown> | null> {
+  const r = await request<{ data?: Record<string, unknown> } & Record<string, unknown>>(
+    `/vouchers`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+    DA_BASE,
+  );
+  return (r.data as Record<string, unknown>) ?? r ?? null;
+}
+
 export interface DailyWeather { date: string; tempMin?: number; tempMax?: number; humidity?: number; precipitation?: number; units: string }
 
 /** Daily weather forecast for a location (trip planning). LiteAPI /data/weather. */
@@ -208,14 +344,21 @@ export async function getWeather(lat: number, lng: number, startDate: string, en
 /** Cheapest available rate per hotel (for "from $X" labels). LiteAPI /hotels/min-rates. */
 export async function minRates(hotelIds: string[], checkin: string, checkout: string, guestNationality: string, currency = "USD", adults = 2): Promise<Record<string, { price: number; offerId?: string }>> {
   if (!hotelIds.length) return {};
-  const r = await request<{ data?: { hotelId: string; price: number; offerId?: string }[] }>(`/hotels/min-rates`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ hotelIds: hotelIds.slice(0, 200), checkin, checkout, occupancies: [{ adults }], guestNationality, currency }),
+  const ids = hotelIds.slice(0, 200);
+  // Indicative "from $X" labels (not booking-binding) — cache 30m. Key is hashed
+  // over the SORTED id set so card order never fragments the cache. Booking always
+  // re-prices live via /hotels/rates → prebook, so short staleness here is harmless.
+  const key = `liteapi:minrates:${checkin}:${checkout}:${guestNationality}:${currency}:${adults}:${hashKey([...ids].sort().join(","))}`;
+  return withCache(key, 1_800, async () => {
+    const r = await request<{ data?: { hotelId: string; price: number; offerId?: string }[] }>(`/hotels/min-rates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hotelIds: ids, checkin, checkout, occupancies: [{ adults }], guestNationality, currency }),
+    });
+    const out: Record<string, { price: number; offerId?: string }> = {};
+    for (const x of r.data || []) if (x.hotelId && Number.isFinite(Number(x.price))) out[x.hotelId] = { price: Number(x.price), offerId: x.offerId };
+    return out;
   });
-  const out: Record<string, { price: number; offerId?: string }> = {};
-  for (const x of r.data || []) if (x.hotelId && Number.isFinite(Number(x.price))) out[x.hotelId] = { price: Number(x.price), offerId: x.offerId };
-  return out;
 }
 
 /* ── flights ────────────────────────────────────────────────────────────── */

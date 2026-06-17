@@ -4,7 +4,7 @@
    Image hero + tabbed search (Search / ✦ Ask AI) overlaid on the banner, with
    inline live results (client sort), AI-search answer, and recommended/nearby
    carousels. Booking is gated downstream by PAID_HOTELS_ENABLED. */
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon } from "../../ui";
 import {
@@ -47,10 +47,12 @@ export function TravelScreen({
   cities,
   recommended = [],
   nearby = [],
+  semanticEnabled = false,
 }: {
   cities: TravelHub[];
   recommended?: Hotel[];
   nearby?: Hotel[];
+  semanticEnabled?: boolean;
 }) {
   const today = useMemo(() => new Date(), []);
   const first = cities[0];
@@ -69,6 +71,32 @@ export function TravelScreen({
   const [filters, setFilters] = useState<string[]>([]);
   const [sort, setSort] = useState<HotelSort>("halal");
 
+  /* Native LiteAPI refine filters (narrow the rate query server-side, unlike the
+     halal FilterBar which filters the returned list client-side). */
+  const [refine, setRefine] = useState<{ refundableOnly: boolean; starRating: number | null; hotelTypeId: number | null }>({ refundableOnly: false, starRating: null, hotelTypeId: null });
+  const [hotelTypes, setHotelTypes] = useState<{ id: number; name: string }[]>([]);
+
+  /* Stable id for this search session — keeps rate prices consistent from search
+     through prebook. Generated lazily on first search, reused across refinements. */
+  const sessionRef = useRef("");
+  const ensureSession = () =>
+    (sessionRef.current ||=
+      typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `s_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`);
+
+  // Load hotel-type options once the first results appear (for the refine chips).
+  useEffect(() => {
+    if (!results || hotelTypes.length) return;
+    let on = true;
+    fetch("/api/travel/hoteltypes").then((r) => r.json()).then((d) => { if (on && d.ok && Array.isArray(d.types)) setHotelTypes(d.types.slice(0, 8)); }).catch(() => {});
+    return () => { on = false; };
+  }, [results, hotelTypes.length]);
+
+  const refineToBody = (r: typeof refine) => ({
+    ...(r.refundableOnly ? { refundableRatesOnly: true } : {}),
+    ...(r.starRating ? { starRating: r.starRating } : {}),
+    ...(r.hotelTypeId ? { hotelTypeIds: [r.hotelTypeId] } : {}),
+  });
+
   /* ── AI search state ── */
   const [aiQuery, setAiQuery] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -76,8 +104,7 @@ export function TravelScreen({
   const [aiHotels, setAiHotels] = useState<Hotel[] | null>(null);
   const [aiSimulated, setAiSimulated] = useState(false);
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  const runSearch = async (refineOverride?: typeof refine) => {
     if (!dest || !checkin || !checkout) return;
     setLoading(true);
     setNote("");
@@ -87,7 +114,7 @@ export function TravelScreen({
       const res = await fetch("/api/travel/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ placeId: dest.placeId, cityName: dest.cityName, countryCode: dest.countryCode, checkin, checkout, currency: dest.currency || "USD", guestNationality: "SG", occupancies, limit: 30 }),
+        body: JSON.stringify({ placeId: dest.placeId, cityName: dest.cityName, countryCode: dest.countryCode, checkin, checkout, currency: dest.currency || "USD", guestNationality: "SG", occupancies, limit: 30, sessionId: ensureSession(), ...refineToBody(refineOverride ?? refine) }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -99,6 +126,15 @@ export function TravelScreen({
       setNote("Couldn't search right now.");
     }
     setLoading(false);
+  };
+
+  const submit = (e: FormEvent) => { e.preventDefault(); void runSearch(); };
+
+  // Change a native refine filter and immediately re-run the server search.
+  const applyRefine = (patch: Partial<typeof refine>) => {
+    const next = { ...refine, ...patch };
+    setRefine(next);
+    void runSearch(next);
   };
 
   const askAi = async (e: FormEvent) => {
@@ -121,6 +157,34 @@ export function TravelScreen({
       setAiSimulated(!!data.simulated);
     } catch {
       setAiAnswer("Couldn't reach the concierge right now — try the Search tab.");
+      setAiHotels([]);
+    }
+    setAiLoading(false);
+  };
+
+  // Semantic discovery (beta) — same query, LiteAPI's intent engine instead of our
+  // LLM parser. Renders into the same AI results grid; no advisory sentence.
+  const askSemantic = async () => {
+    const query = aiQuery.trim();
+    if (query.length < 4 || aiLoading) return;
+    setAiLoading(true);
+    setAiAnswer(null);
+    setAiHotels(null);
+    setAiSimulated(false);
+    try {
+      const res = await fetch("/api/travel/semantic-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      setAiHotels((data.hotels as Hotel[]) || []);
+      setAiSimulated(!!data.simulated);
+      setAiAnswer(data.ok && (data.hotels?.length || data.simulated)
+        ? "Matched to the vibe of your request. We surface the Muslim-friendly facilities each property declares — always confirm with the hotel."
+        : "Couldn't match that just now — try the concierge search above.");
+    } catch {
+      setAiAnswer("Couldn't reach semantic search right now — try the concierge search above.");
       setAiHotels([]);
     }
     setAiLoading(false);
@@ -178,6 +242,11 @@ export function TravelScreen({
                   />
                 </div>
                 <button className="ota-search-go btn btn-primary" type="submit" disabled={aiLoading}>{aiLoading ? "Finding…" : "Find stays"}</button>
+                {semanticEnabled && (
+                  <button className="ota-search-go btn btn-soft" type="button" disabled={aiLoading} onClick={askSemantic} title="LiteAPI semantic match (beta)">
+                    <Icon name="sparkles" size={15} /> Match my vibe
+                  </button>
+                )}
               </form>
             )}
           </div>
@@ -208,6 +277,31 @@ export function TravelScreen({
         {results && results.length > 0 && (
           <>
             <FilterBar active={filters} setActive={setFilters} options={availableFilters(results)} />
+            {/* Native LiteAPI refine — re-runs the server search (vs. the halal FilterBar
+                above, which filters the returned list client-side). */}
+            <div className="travel-refine flex g10 center" style={{ flexWrap: "wrap", margin: "10px 0" }} role="group" aria-label="Refine results">
+              <button type="button" className={`btn btn-sm ${refine.refundableOnly ? "btn-primary" : "btn-soft"}`} aria-pressed={refine.refundableOnly} disabled={loading} onClick={() => applyRefine({ refundableOnly: !refine.refundableOnly })}>
+                <Icon name="check" size={13} /> Free cancellation
+              </button>
+              <label className="flex g6 center" style={{ fontSize: ".82rem" }}>
+                <span className="muted">Stars</span>
+                <select value={refine.starRating ?? ""} disabled={loading} onChange={(e) => applyRefine({ starRating: e.target.value ? Number(e.target.value) : null })}>
+                  <option value="">Any</option>
+                  <option value="3">3★</option>
+                  <option value="4">4★</option>
+                  <option value="5">5★</option>
+                </select>
+              </label>
+              {hotelTypes.length > 0 && (
+                <label className="flex g6 center" style={{ fontSize: ".82rem" }}>
+                  <span className="muted">Type</span>
+                  <select value={refine.hotelTypeId ?? ""} disabled={loading} onChange={(e) => applyRefine({ hotelTypeId: e.target.value ? Number(e.target.value) : null })}>
+                    <option value="">Any</option>
+                    {hotelTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
             <div className="flex between center" style={{ margin: "14px 0", gap: 12, flexWrap: "wrap" }}>
               <h2 style={{ fontSize: "1.35rem" }}>{shown!.length} hotel{shown!.length !== 1 ? "s" : ""}</h2>
               <div className="flt-sort-tabs" role="tablist" aria-label="Sort results" style={{ marginBottom: 0 }}>

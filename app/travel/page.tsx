@@ -1,6 +1,7 @@
 import { TravelScreen } from "@/components/screens/travel";
 import { allTravelHubs, getTravelHub } from "@/lib/travel-hubs";
 import { cityHotels } from "@/lib/travel-data";
+import { getServerFlags } from "@/lib/flags";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
@@ -33,7 +34,7 @@ export default async function Page() {
   return (
     <>
       <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }])]} />
-      <TravelScreen cities={cities} recommended={recommended} nearby={nearby} />
+      <TravelScreen cities={cities} recommended={recommended} nearby={nearby} semanticEnabled={getServerFlags().semanticSearch} />
     </>
   );
 }

@@ -12,12 +12,23 @@ export async function POST(req: Request) {
   }
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 
-  const body = (await req.json().catch(() => ({}))) as { offerId?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    offerId?: string;
+    voucherCode?: string;
+    addons?: unknown[];
+    bedTypeIds?: (string | number)[];
+  };
   const offerId = String(body.offerId || "").trim();
   if (!offerId) return NextResponse.json({ ok: false, error: "Missing offerId" }, { status: 422 });
+  // Sanitize the promo code the same way as the validate route (uppercase, ≤32).
+  const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 32) || undefined;
 
   try {
-    const r = (await prebook(offerId, true)) as Record<string, unknown>;
+    const r = (await prebook(offerId, true, {
+      voucherCode,
+      addons: Array.isArray(body.addons) ? body.addons : undefined,
+      bedTypeIds: Array.isArray(body.bedTypeIds) ? body.bedTypeIds : undefined,
+    })) as Record<string, unknown>;
     const prebookId = r.prebookId as string | undefined;
     if (!prebookId) return NextResponse.json({ ok: false, error: "Rate no longer available" }, { status: 409 });
     return NextResponse.json({
@@ -29,6 +40,10 @@ export async function POST(req: Request) {
       price: r.price != null ? Number(r.price) : null,
       sellingPrice: r.sellingPriceToUser != null ? Number(r.sellingPriceToUser) : null,
       commission: r.commission != null ? Number(r.commission) : null,
+      // Discount applied by the voucher (LiteAPI echoes it on the prebook), plus the
+      // code itself so the client can show "promo applied" and the ledger can record it.
+      discount: r.discount != null ? Number(r.discount) : null,
+      voucherCode: voucherCode && r.prebookId ? voucherCode : null,
       hotelId: r.hotelId ?? null,
       checkin: r.checkin ?? null,
       checkout: r.checkout ?? null,

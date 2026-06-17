@@ -39,6 +39,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
   const [err, setErr] = useState("");
   const [holder, setHolder] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [booking, setBooking] = useState(false);
+  const [promoBusy, setPromoBusy] = useState(false);
   const payRef = useRef<HTMLDivElement>(null);
   const publicKey = process.env.NEXT_PUBLIC_LITEAPI_PUBLIC_KEY;
 
@@ -61,6 +62,22 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
     return () => { on = false; };
   }, [offerId, bookingEnabled]);
 
+  // Applying a promo MUST re-prebook with the voucher: that's what produces a fresh
+  // payment intent (transactionId) and prebookId for the *discounted* total, so the
+  // amount charged matches what the guest sees. Validation already happened in PromoCode.
+  const applyPromo = async (codeRaw: string) => {
+    const code = (codeRaw || "").trim().toUpperCase();
+    if (!code || promoBusy || !pb) return;
+    setPromoBusy(true); setErr("");
+    try {
+      const res = await fetch("/api/travel/prebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ offerId, voucherCode: code }) });
+      const d = await res.json();
+      if (!d.ok) { setErr(d.error || "That promo code couldn't be applied to this rate."); }
+      else { setPb(d as Prebook); if (!d.voucherCode) setErr("That code isn't valid for this rate."); }
+    } catch { setErr("Couldn't apply that promo code."); }
+    setPromoBusy(false);
+  };
+
   const total = pb?.sellingPrice ?? pb?.price ?? null;
 
   const confirm = async (e: FormEvent) => {
@@ -79,6 +96,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
           guests: [{ occupancyNumber: 1, ...holder }],
           hotelName, city, liteapiHotelId: hotelId,
           currency: pb.currency, retailTotal: total, commissionAmount: pb.commission,
+          ...(pb.voucherCode ? { voucherCode: pb.voucherCode, discountAmount: pb.discount ?? null } : {}),
         }),
       });
       const d = await res.json();
@@ -127,18 +145,19 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
                 </div>
               )}
               {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginBottom: 10 }}>{err}</p>}
-              <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={booking}>
-                {booking ? "Confirming…" : total != null ? `Pay ${pb.currency} ${Math.round(total)} & confirm` : "Confirm booking"}
+              <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={booking || promoBusy}>
+                {booking ? "Confirming…" : promoBusy ? "Updating price…" : total != null ? `Pay ${pb.currency} ${Math.round(total)} & confirm` : "Confirm booking"}
               </button>
               <p className="muted" style={{ fontSize: ".78rem", marginTop: 10, textAlign: "center" }}>You won&apos;t be charged until your booking is confirmed.</p>
             </form>
 
             <aside className="card booking-summary" style={{ padding: 18 }}>
               <h2 style={{ fontSize: "1.05rem", marginBottom: 12 }}>Price summary</h2>
-              <div className="sum-row"><span>Room total</span><span>{pb.currency} {Math.round(pb.price ?? total ?? 0)}</span></div>
+              <div className="sum-row"><span>Room total</span><span>{pb.currency} {Math.round((pb.price ?? total ?? 0) + (pb.discount ?? 0))}</span></div>
               {pb.commission != null && <div className="sum-row faint"><span>Incl. our service</span><span>{pb.currency} {Math.round(pb.commission)}</span></div>}
+              {pb.discount ? <div className="sum-row" style={{ color: "var(--emerald)" }}><span>Promo {pb.voucherCode}</span><span>−{pb.currency} {Math.round(pb.discount)}</span></div> : null}
               <div className="sum-row total"><span>Total</span><span>{pb.currency} {Math.round(total ?? 0)}</span></div>
-              <PromoCode amount={total} currency={pb.currency} />
+              <PromoCode amount={total} currency={pb.currency} onApply={applyPromo} />
               <RewardsNote amount={total} currency={pb.currency} />
               <p className="muted" style={{ fontSize: ".78rem", marginTop: 12 }}>Booking handled securely by LiteAPI. Free cancellation where the rate allows.</p>
             </aside>
