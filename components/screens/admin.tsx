@@ -1,7 +1,7 @@
 "use client";
 
 /* Humble Halal — Admin Dashboard (ported from screens-admin.jsx) */
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
@@ -104,7 +104,7 @@ export function AdminScreen() {
           {section==='overview' && <AdminOverview setSection={setSection} />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
-          {section==='verification' && <AdminVerification toast={toast} />}
+          {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} />}
@@ -307,6 +307,144 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
               </tr>
             ))}
             {rows.length===0 && <tr><td colSpan={7}><Empty icon="check" title="All caught up" body="No events awaiting approval." /></td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* Halal Certificate Vault — admin review queue. Lists pending (and recent) certs
+   uploaded by owners, with a short-TTL signed-URL preview and approve/reject
+   actions. Approve re-runs the same score path as /api/admin/verify. When the
+   backend isn't live / caller isn't admin, the list is simply empty. */
+type AdminCert = {
+  id: string;
+  business_id: string;
+  business_name: string | null;
+  issuer: string | null;
+  scheme: string | null;
+  cert_no: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  status: string;
+  review_note: string | null;
+  created_at: string;
+  url: string | null;
+};
+const CERT_PILL: Record<string, [string, string]> = {
+  pending: ["Pending", "amber"],
+  approved: ["Approved", "green"],
+  rejected: ["Rejected", "red"],
+  expired: ["Expired", "amber"],
+};
+export function AdminCertQueue({ toast }: { toast: (msg: string) => void }) {
+  const [certs, setCerts] = useState<AdminCert[] | null>(null);
+  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/admin/cert");
+      const d = await r.json().catch(() => ({ ok: false }));
+      setCerts(d.ok && Array.isArray(d.certs) ? (d.certs as AdminCert[]) : []);
+    } catch {
+      setCerts([]);
+    }
+  };
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/cert");
+        const d = await r.json().catch(() => ({ ok: false }));
+        if (alive) setCerts(d.ok && Array.isArray(d.certs) ? (d.certs as AdminCert[]) : []);
+      } catch {
+        if (alive) setCerts([]);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const act = async (id: string, action: "approve" | "reject", review_note?: string) => {
+    setBusy(id);
+    try {
+      const r = await fetch("/api/admin/cert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certId: id, action, review_note }),
+      });
+      const d = await r.json().catch(() => ({ ok: false }));
+      if (!d.ok) { toast(d.error || "Action failed"); return; }
+      toast(action === "approve" ? `Approved${d.score ? ` — score ${d.score}` : ""}` : "Certificate rejected");
+      setNoteFor(null); setNote("");
+      load();
+    } catch {
+      toast("Action failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const pending = (certs || []).filter((c) => c.status === "pending");
+  return (
+    <div className="card" style={{ overflow: "hidden", marginBottom: 18 }}>
+      <div className="admin-tablehead">
+        <h3 style={{ fontSize: "1.05rem" }}>Halal certificate vault</h3>
+        <span className="faint" style={{ fontSize: ".82rem" }}>{pending.length} pending · open each file to verify before approving</span>
+      </div>
+      <div className="tbl-scroll">
+        <table className="tbl">
+          <thead><tr><th>Business</th><th>Certificate</th><th>Status</th><th>File</th><th>Decision</th></tr></thead>
+          <tbody>
+            {certs === null ? (
+              <tr><td colSpan={5} className="faint" style={{ padding: 16 }}>Loading…</td></tr>
+            ) : certs.length === 0 ? (
+              <tr><td colSpan={5} className="faint" style={{ padding: 16 }}>No certificates uploaded yet.</td></tr>
+            ) : (
+              certs.map((c) => {
+                const [label, tone] = CERT_PILL[c.status] || [c.status, "amber"];
+                return (
+                  <Fragment key={c.id}>
+                    <tr className="rowhover">
+                      <td><div style={{ fontWeight: 700 }}>{c.business_name || c.business_id.slice(0, 8)}</div></td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{[c.issuer, c.scheme].filter(Boolean).join(" · ") || "—"}</div>
+                        <div className="faint" style={{ fontSize: ".78rem" }}>{[c.cert_no && `No. ${c.cert_no}`, c.expires_on && `exp ${c.expires_on}`].filter(Boolean).join(" · ") || "—"}</div>
+                      </td>
+                      <td><span className={`pill-tag ${tone}`}>{label}</span></td>
+                      <td>
+                        {c.url ? (
+                          <a className="btn btn-soft btn-sm" href={c.url} target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} /> Preview</a>
+                        ) : <span className="faint">—</span>}
+                      </td>
+                      <td>
+                        {c.status === "pending" ? (
+                          <div className="flex g6 wrap">
+                            <button className="btn btn-primary btn-sm" disabled={busy === c.id} onClick={() => act(c.id, "approve")}><Icon name="check" size={14} /> Approve</button>
+                            <button className="btn btn-ghost btn-sm" disabled={busy === c.id} onClick={() => { setNoteFor(noteFor === c.id ? null : c.id); setNote(""); }}><Icon name="x" size={14} /> Reject</button>
+                          </div>
+                        ) : (
+                          <span className="faint" style={{ fontWeight: 600 }}>Reviewed</span>
+                        )}
+                      </td>
+                    </tr>
+                    {noteFor === c.id && (
+                      <tr>
+                        <td colSpan={5} style={{ background: "var(--cream)" }}>
+                          <div className="flex g8 wrap" style={{ alignItems: "flex-end" }}>
+                            <div className="field" style={{ flex: 1, minWidth: 220 }}><label>Reason (shown to the owner)</label><input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Certificate expired / unreadable" /></div>
+                            <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} disabled={busy === c.id} onClick={() => act(c.id, "reject", note.trim() || undefined)}>Confirm reject</button>
+                            <button className="btn btn-soft btn-sm" onClick={() => setNoteFor(null)}>Cancel</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -723,26 +861,94 @@ export function AdminTravelRevenue() {
   const [data, setData] = useState<RevData | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => { (async () => { try { const r = await fetch("/api/admin/travel-revenue"); const d = await r.json(); if (d.ok) setData(d); } catch { /* ignore */ } setLoading(false); })(); }, []);
-  if (loading) return <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading…</span></div>;
-  if (!data || data.totals.count === 0) return <Empty icon="plane" title="No travel bookings yet" body="Hotel bookings (and their commissions) appear here once you have them. LiteAPI's dashboard holds the authoritative payout ledger." />;
   return (
     <div>
-      <div className="notice notice-warn" style={{ marginBottom: 16 }}><Icon name="info" size={18} /><span>Reconciliation view from our records. LiteAPI&apos;s dashboard remains the source of truth for actual payouts and refunds.</span></div>
-      <div className="admin-statgrid">
-        <div className="stat"><div className="v">{data.totals.confirmed}</div><div className="l">Confirmed</div></div>
-        <div className="stat"><div className="v">{data.totals.cancelled}</div><div className="l">Cancelled</div></div>
-        <div className="stat"><div className="v">{data.totals.refunded}</div><div className="l">Refunded</div></div>
-        {data.byCurrency.map((c) => <div key={c.currency} className="stat"><div className="v">{c.currency} {c.commission.toLocaleString()}</div><div className="l">Commission ({c.currency})</div></div>)}
-      </div>
-      <div className="card mt20" style={{ overflow: "hidden" }}>
-        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Recent hotel bookings</h3></div>
-        <div className="tbl-scroll"><table className="tbl">
-          <thead><tr><th>Hotel</th><th>City</th><th>Dates</th><th>Total</th><th>Commission</th><th>Status</th></tr></thead>
-          <tbody>{data.recent.map((b, i) => (
-            <tr key={i} className="rowhover"><td style={{ fontWeight: 600 }}>{b.hotel || "—"}</td><td className="muted">{b.city || "—"}</td><td className="muted">{b.checkin && b.checkout ? `${b.checkin} → ${b.checkout}` : "—"}</td><td style={{ fontWeight: 700 }}>{b.total != null ? `${b.currency || ""} ${b.total}` : "—"}</td><td>{b.commission != null ? `${b.currency || ""} ${b.commission}` : "—"}</td><td><span className={`pill-tag ${b.status === "confirmed" ? "green" : "gray"}`}>{b.status}</span></td></tr>
-          ))}</tbody>
-        </table></div>
-      </div>
+      {/* Our ledger (reconciliation view). */}
+      {loading ? (
+        <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading…</span></div>
+      ) : !data || data.totals.count === 0 ? (
+        <Empty icon="plane" title="No travel bookings yet" body="Hotel bookings (and their commissions) appear here once you have them. LiteAPI's dashboard holds the authoritative payout ledger." />
+      ) : (
+        <>
+          <div className="notice notice-warn" style={{ marginBottom: 16 }}><Icon name="info" size={18} /><span>Reconciliation view from our records. LiteAPI&apos;s dashboard remains the source of truth for actual payouts and refunds.</span></div>
+          <div className="admin-statgrid">
+            <div className="stat"><div className="v">{data.totals.confirmed}</div><div className="l">Confirmed</div></div>
+            <div className="stat"><div className="v">{data.totals.cancelled}</div><div className="l">Cancelled</div></div>
+            <div className="stat"><div className="v">{data.totals.refunded}</div><div className="l">Refunded</div></div>
+            {data.byCurrency.map((c) => <div key={c.currency} className="stat"><div className="v">{c.currency} {c.commission.toLocaleString()}</div><div className="l">Commission ({c.currency})</div></div>)}
+          </div>
+          <div className="card mt20" style={{ overflow: "hidden" }}>
+            <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Recent hotel bookings</h3></div>
+            <div className="tbl-scroll"><table className="tbl">
+              <thead><tr><th>Hotel</th><th>City</th><th>Dates</th><th>Total</th><th>Commission</th><th>Status</th></tr></thead>
+              <tbody>{data.recent.map((b, i) => (
+                <tr key={i} className="rowhover"><td style={{ fontWeight: 600 }}>{b.hotel || "—"}</td><td className="muted">{b.city || "—"}</td><td className="muted">{b.checkin && b.checkout ? `${b.checkin} → ${b.checkout}` : "—"}</td><td style={{ fontWeight: 700 }}>{b.total != null ? `${b.currency || ""} ${b.total}` : "—"}</td><td>{b.commission != null ? `${b.currency || ""} ${b.commission}` : "—"}</td><td><span className={`pill-tag ${b.status === "confirmed" ? "green" : "gray"}`}>{b.status}</span></td></tr>
+              ))}</tbody>
+            </table></div>
+          </div>
+        </>
+      )}
+
+      {/* LiteAPI's own weekly sales (payout source of truth) + promo voucher creation. */}
+      <LiteApiWeeklyAnalytics />
+      <VoucherCreator />
+    </div>
+  );
+}
+
+/* LiteAPI weekly sales analytics (da.liteapi.travel) — the authoritative payout view. */
+function LiteApiWeeklyAnalytics() {
+  const [weeks, setWeeks] = useState<{ week: string; bookings: number; revenue: number; currency: string }[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [simulated, setSimulated] = useState(false);
+  useEffect(() => { (async () => { try { const r = await fetch("/api/admin/travel-analytics"); const d = await r.json(); if (d.ok) { setWeeks(d.weeks || []); setSimulated(!!d.simulated); } } catch { /* ignore */ } setLoading(false); })(); }, []);
+  return (
+    <div className="card mt20" style={{ padding: 20 }}>
+      <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>LiteAPI weekly sales</h3>
+      <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>From LiteAPI&apos;s analytics — the authoritative payout view (last 12 weeks).</p>
+      {loading ? <div className="route-loading" role="status"><span className="spinner" /></div>
+        : simulated ? <p className="muted">Connect a LiteAPI key to see weekly sales here.</p>
+        : !weeks || !weeks.length ? <p className="muted">No weekly data yet.</p>
+        : <div className="tbl-scroll"><table className="tbl"><thead><tr><th>Week</th><th>Bookings</th><th>Revenue</th></tr></thead><tbody>{weeks.map((w, i) => (<tr key={i} className="rowhover"><td className="muted">{w.week}</td><td>{w.bookings}</td><td style={{ fontWeight: 700 }}>{w.currency} {Math.round(w.revenue).toLocaleString()}</td></tr>))}</tbody></table></div>}
+    </div>
+  );
+}
+
+/* Create a promo voucher (LiteAPI da.liteapi.travel). Travellers redeem at checkout. */
+function VoucherCreator() {
+  const [form, setForm] = useState({ code: "", discountType: "percentage", discountValue: "", currency: "USD", validityEnd: "", usagesLimit: "" });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setMsg(null);
+    try {
+      const r = await fetch("/api/admin/travel-vouchers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, discountValue: Number(form.discountValue), usagesLimit: form.usagesLimit ? Number(form.usagesLimit) : undefined }),
+      });
+      const d = await r.json();
+      setMsg(d.ok ? { ok: true, text: `Created promo ${d.code}.` } : { ok: false, text: d.error || (d.reason === "liteapi_not_configured" ? "Connect a LiteAPI key first." : "Couldn't create voucher.") });
+      if (d.ok) setForm((f) => ({ ...f, code: "", discountValue: "" }));
+    } catch { setMsg({ ok: false, text: "Couldn't create voucher." }); }
+    setBusy(false);
+  };
+  return (
+    <div className="card mt20" style={{ padding: 20 }}>
+      <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Create a promo voucher</h3>
+      <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>Travellers redeem the code at checkout (hotels &amp; flights). Discounts come off LiteAPI&apos;s side.</p>
+      <form className="flex g10" style={{ flexWrap: "wrap", alignItems: "flex-end" }} onSubmit={submit}>
+        <div className="field"><label>Code</label><input value={form.code} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="RAMADAN10" required /></div>
+        <div className="field"><label>Type</label><select value={form.discountType} onChange={(e) => set("discountType", e.target.value)}><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select></div>
+        <div className="field"><label>Value</label><input type="number" min="1" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder={form.discountType === "percentage" ? "10" : "25"} required /></div>
+        <div className="field"><label>Currency</label><input value={form.currency} onChange={(e) => set("currency", e.target.value.toUpperCase())} style={{ width: 80 }} /></div>
+        <div className="field"><label>Expires</label><input type="date" value={form.validityEnd} onChange={(e) => set("validityEnd", e.target.value)} /></div>
+        <div className="field"><label>Usage limit</label><input type="number" min="1" value={form.usagesLimit} onChange={(e) => set("usagesLimit", e.target.value)} placeholder="∞" style={{ width: 100 }} /></div>
+        <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Creating…" : "Create voucher"}</button>
+      </form>
+      {msg && <p style={{ marginTop: 10, fontSize: ".88rem", color: msg.ok ? "var(--emerald)" : "var(--danger)" }}>{msg.text}</p>}
     </div>
   );
 }
