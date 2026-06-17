@@ -7,6 +7,7 @@ import {
   Newsreader,
 } from "next/font/google";
 import "../styles/styles.css";
+import "../styles/ota.css";
 import "../styles/screens.css";
 import "../styles/screens2.css";
 import "../styles/moat.css";

@@ -1,0 +1,207 @@
+/* ============================================================
+   Humble Halal — OTA primitives (zzzello-grade, emerald brand)
+   Loaded after styles.css, before travel.css. All classes are
+   `ota-` prefixed (additive — no overrides of existing classes),
+   except a couple of additive states on .hotel-tabs / .travel-gallery.
+   ============================================================ */
+
+/* ---------------------------------------------------------------
+   HERO BANNER (image + emerald scrim + overlaid search widget)
+--------------------------------------------------------------- */
+.ota-hero {
+  position: relative;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 30px;
+  isolation: isolate;
+}
+.ota-hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.ota-hero-scrim {
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(12,74,60,.18) 0%, rgba(12,74,60,.10) 38%, rgba(12,74,60,.62) 100%),
+    linear-gradient(90deg, rgba(15,92,74,.45), rgba(15,92,74,0) 60%);
+}
+.ota-hero-scrim.pattern { opacity: .9; }
+.ota-hero-head { text-align: center; margin-bottom: 22px; }
+.ota-hero-head h1 { color: #fff; font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.08; text-shadow: 0 2px 18px rgba(8,40,32,.35); }
+.ota-hero-head p { color: #eaf2ee; margin-top: 10px; font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 500; text-shadow: 0 1px 12px rgba(8,40,32,.35); }
+@media (max-width: 640px) { .ota-hero { min-height: 380px; padding: 18px 14px; } }
+
+/* ---------------------------------------------------------------
+   SEARCH WIDGET (overlaid white card with segments)
+--------------------------------------------------------------- */
+.ota-searchbox { background: var(--white); border-radius: var(--r-lg); box-shadow: var(--sh-lg); padding: 10px; max-width: 980px; width: 100%; margin: 0 auto; }
+.ota-searchbox.tabbed { border-top-left-radius: var(--r-md); }
+.ota-search-row { display: flex; align-items: stretch; gap: 4px; }
+.ota-seg { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--r-md); position: relative; min-width: 0; cursor: pointer; transition: background .12s; }
+.ota-seg:hover { background: var(--cream); }
+.ota-seg + .ota-seg::before { content: ""; position: absolute; left: -2px; top: 12px; bottom: 12px; width: 1px; background: var(--line); }
+.ota-seg .ota-seg-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); }
+.ota-seg .ota-seg-value { font-size: .98rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ota-seg .ota-seg-value.placeholder { color: var(--ink-faint); font-weight: 600; }
+.ota-seg input { border: none; background: none; padding: 0; font-size: .98rem; font-weight: 700; color: var(--ink); width: 100%; outline: none; }
+.ota-seg input::placeholder { color: var(--ink-faint); font-weight: 600; }
+.ota-search-go { flex: none; align-self: center; }
+.ota-search-go.btn { padding: 0 22px; height: 52px; border-radius: var(--r-md); font-size: 1rem; display: inline-flex; align-items: center; gap: 8px; }
+.ota-search-go.icon { width: 52px; padding: 0; justify-content: center; border-radius: 50%; }
+@media (max-width: 760px) {
+  .ota-search-row { flex-direction: column; gap: 6px; }
+  .ota-seg { border: 1px solid var(--line); }
+  .ota-seg + .ota-seg::before { display: none; }
+  .ota-search-go.btn, .ota-search-go.icon { width: 100%; border-radius: var(--r-md); }
+}
+
+/* segmented tabs on top of the widget (Search / ✦ Ask AI) */
+.ota-segtabs { display: inline-flex; gap: 2px; background: rgba(255,255,255,.16); border-radius: var(--r-pill); padding: 4px; margin-bottom: 12px; backdrop-filter: blur(6px); }
+.ota-segtab { border: 0; background: none; color: #eaf2ee; font-weight: 700; font-size: .9rem; padding: 8px 18px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s; }
+.ota-segtab.on { background: #fff; color: var(--emerald); }
+.ota-segtab .ai-spark { color: var(--gold); }
+.ota-segtab.on .ai-spark { color: var(--gold-700); }
+
+/* Ask-AI single-input row */
+.ota-ai-row { display: flex; gap: 8px; align-items: center; padding: 8px; }
+.ota-ai-input { flex: 1; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 12px 16px; background: var(--cream); }
+.ota-ai-input .ai-spark { color: var(--gold); flex: none; }
+.ota-ai-input input { flex: 1; border: none; background: none; outline: none; font-size: 1rem; color: var(--ink); }
+.ota-ai-input input::placeholder { color: var(--ink-faint); }
+@media (max-width: 560px) { .ota-ai-row { flex-direction: column; } .ota-ai-input { width: 100%; } .ota-ai-row .btn { width: 100%; } }
+
+/* trip-type / option pills row (Round trip · One way · Non-stop) */
+.ota-optrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 4px 8px 10px; }
+.ota-pill-group { display: inline-flex; background: var(--cream-200); border-radius: var(--r-pill); padding: 4px; gap: 2px; }
+.ota-pill { border: 0; background: none; color: var(--ink-soft); font-weight: 700; font-size: .86rem; padding: 7px 16px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ota-pill.on { background: var(--white); color: var(--emerald); box-shadow: var(--sh-sm); }
+.ota-check { display: inline-flex; align-items: center; gap: 7px; font-size: .88rem; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
+.ota-swap { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--emerald); box-shadow: var(--sh-sm); cursor: pointer; align-self: center; }
+.ota-swap:hover { background: var(--emerald-50); }
+
+/* ---------------------------------------------------------------
+   CAROUSEL (arrow-controlled horizontal scroller)
+--------------------------------------------------------------- */
+.ota-carousel { margin: 0; }
+.ota-carousel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.ota-carousel-head h2 { font-size: clamp(1.2rem, 2.4vw, 1.5rem); }
+.ota-carousel-arrows { display: flex; gap: 8px; flex: none; }
+.ota-arrow { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--emerald); box-shadow: var(--sh-sm); cursor: pointer; transition: background .12s, opacity .12s; }
+.ota-arrow:hover { background: var(--emerald-50); }
+.ota-arrow:disabled { opacity: .35; cursor: default; }
+.ota-track { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 4px 2px 8px; scrollbar-width: none; -ms-overflow-style: none; }
+.ota-track::-webkit-scrollbar { display: none; }
+.ota-track > * { scroll-snap-align: start; flex: 0 0 auto; }
+.ota-track > .ota-citem { width: 300px; max-width: 78vw; }
+
+/* ---------------------------------------------------------------
+   POPOVER (date / occupancy)
+--------------------------------------------------------------- */
+.ota-pop-wrap { position: relative; }
+.ota-popover { position: absolute; top: calc(100% + 8px); left: 0; z-index: 60; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-lg); padding: 16px; animation: ota-pop .14s ease; }
+.ota-popover.right { left: auto; right: 0; }
+@keyframes ota-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 560px) { .ota-popover { left: 0; right: 0; } }
+
+/* ---------------------------------------------------------------
+   DATE-RANGE CALENDAR
+--------------------------------------------------------------- */
+.ota-cal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ota-cal-nav { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--ink); cursor: pointer; }
+.ota-cal-nav:disabled { opacity: .3; cursor: default; }
+.ota-cal-months { display: flex; gap: 26px; }
+@media (max-width: 620px) { .ota-cal-months { flex-direction: column; gap: 18px; } }
+.ota-cal-month { width: 252px; }
+.ota-cal-title { text-align: center; font-weight: 700; font-size: .96rem; margin-bottom: 8px; font-family: var(--serif); }
+.ota-cal-dows { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+.ota-cal-dows span { text-align: center; font-size: .68rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; }
+.ota-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.ota-cal-cell { aspect-ratio: 1; border: 0; background: none; border-radius: var(--r-sm); font-size: .85rem; font-weight: 600; color: var(--ink); cursor: pointer; display: grid; place-items: center; position: relative; }
+.ota-cal-cell:hover:not(:disabled) { background: var(--emerald-50); }
+.ota-cal-cell:disabled { color: var(--line-strong); cursor: default; }
+.ota-cal-cell.in-range { background: var(--emerald-50); border-radius: 0; }
+.ota-cal-cell.start { background: var(--emerald); color: #fff; border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.ota-cal-cell.end { background: var(--emerald); color: #fff; border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.ota-cal-cell.start.end { border-radius: var(--r-sm); }
+.ota-cal-hint { margin-top: 10px; font-size: .78rem; color: var(--ink-faint); text-align: center; }
+
+/* ---------------------------------------------------------------
+   OCCUPANCY STEPPER
+--------------------------------------------------------------- */
+.ota-stepper { min-width: 240px; display: flex; flex-direction: column; gap: 4px; }
+.ota-step-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 2px; }
+.ota-step-row + .ota-step-row { border-top: 1px solid var(--line); }
+.ota-step-meta .ota-step-label { font-weight: 700; font-size: .95rem; color: var(--ink); }
+.ota-step-meta .ota-step-sub { font-size: .78rem; color: var(--ink-faint); }
+.ota-step-ctrl { display: inline-flex; align-items: center; gap: 12px; }
+.ota-step-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--emerald); background: var(--white); color: var(--emerald); display: grid; place-items: center; cursor: pointer; }
+.ota-step-btn:disabled { border-color: var(--line-strong); color: var(--line-strong); cursor: default; }
+.ota-step-val { min-width: 20px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ota-step-done { margin-top: 8px; text-align: right; }
+
+/* ---------------------------------------------------------------
+   FEATURE CARDS (Real-time prices / etc.)
+--------------------------------------------------------------- */
+.ota-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 760px) { .ota-features { grid-template-columns: 1fr; } }
+.ota-feature { display: flex; flex-direction: column; gap: 8px; padding: 22px; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.ota-feature .ota-feature-ico { width: 44px; height: 44px; border-radius: 12px; background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; }
+.ota-feature h3 { font-size: 1.08rem; }
+.ota-feature p { font-size: .9rem; color: var(--ink-soft); line-height: 1.55; }
+
+/* ---------------------------------------------------------------
+   SMART HIGHLIGHTS (AI cards with emerald→gold gradient border)
+--------------------------------------------------------------- */
+.ota-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.ota-highlight { position: relative; border-radius: var(--r-lg); padding: 1.5px; background: linear-gradient(120deg, var(--emerald), var(--gold)); box-shadow: var(--sh-sm); }
+.ota-highlight-inner { background: var(--white); border-radius: calc(var(--r-lg) - 2px); padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
+.ota-highlight .ota-hl-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--gold-50); color: var(--gold-700); display: grid; place-items: center; }
+.ota-highlight h4 { font-size: .98rem; }
+.ota-highlight p { font-size: .85rem; color: var(--ink-soft); line-height: 1.5; }
+.ota-highlights-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ota-highlights-head h2 { font-size: 1.25rem; }
+.ota-highlights-head .ai-spark { color: var(--gold); }
+
+/* ---------------------------------------------------------------
+   AI ANSWER CALLOUT (Ask-AI result framing)
+--------------------------------------------------------------- */
+.ota-ai-answer { display: flex; gap: 12px; padding: 16px 18px; background: var(--emerald-50); border: 1px solid var(--emerald-100); border-radius: var(--r-lg); margin-bottom: 18px; }
+.ota-ai-answer .ota-ai-ico { width: 32px; height: 32px; border-radius: 9px; background: var(--white); color: var(--emerald); display: grid; place-items: center; flex: none; box-shadow: var(--sh-sm); }
+.ota-ai-answer p { font-size: .95rem; line-height: 1.6; color: var(--ink); }
+
+/* ---------------------------------------------------------------
+   IMAGE GALLERY — "show all pictures" overlay tile
+--------------------------------------------------------------- */
+.ota-gallery-more { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.94); color: var(--ink); font-weight: 700; font-size: .84rem; padding: 8px 14px; border-radius: var(--r-pill); border: 0; box-shadow: var(--sh-md); cursor: pointer; }
+.ota-gallery-more:hover { background: #fff; }
+.travel-gallery { position: relative; }
+
+/* ---------------------------------------------------------------
+   STICKY IN-PAGE TABS — additive active state on .hotel-tabs
+--------------------------------------------------------------- */
+.hotel-tabs a.active { color: var(--emerald); border-bottom-color: var(--emerald); }
+.hotel-tabs a.ai { color: var(--gold-700); display: inline-flex; align-items: center; gap: 5px; }
+.hotel-tabs a.ai .ai-spark { color: var(--gold); }
+.hotel-tabs a.ai.active { border-bottom-color: var(--gold); }
+
+/* ---------------------------------------------------------------
+   SKELETON (shimmer)
+--------------------------------------------------------------- */
+.ota-skel { position: relative; overflow: hidden; background: var(--cream-200); border-radius: var(--r-sm); }
+.ota-skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent); animation: ota-shimmer 1.3s infinite; }
+@keyframes ota-shimmer { 100% { transform: translateX(100%); } }
+.ota-skel-card { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--white); }
+.ota-skel-card .ota-skel-img { width: 100%; aspect-ratio: 3 / 2; border-radius: 0; }
+.ota-skel-card .ota-skel-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .ota-skel::after { animation: none; } }
+
+/* ---------------------------------------------------------------
+   SECTION HELPERS
+--------------------------------------------------------------- */
+.ota-stack > * + * { margin-top: 40px; }
+.ota-recent { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); min-width: 240px; cursor: pointer; transition: box-shadow .12s, transform .12s; }
+.ota-recent:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+.ota-recent .ota-recent-ico { width: 42px; height: 42px; border-radius: 11px; background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; flex: none; }
+.ota-recent .ota-recent-main p:first-child { font-weight: 700; font-size: .92rem; color: var(--ink); }
+.ota-recent .ota-recent-main p { font-size: .8rem; color: var(--ink-soft); }
