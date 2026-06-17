@@ -5,6 +5,7 @@ import { allSeoPages } from "@/lib/seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
 import { allTravelHubs } from "@/lib/travel-hubs";
+import { TOOLS } from "@/lib/tools";
 import { SITE } from "@/lib/seo";
 
 const PUBLIC_STATIC = [
@@ -12,6 +13,7 @@ const PUBLIC_STATIC = [
   "/explore",
   "/map",
   "/mosques",
+  "/tools",
   "/halal",
   "/is-halal",
   "/travel",
@@ -87,6 +89,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const toolEntries: MetadataRoute.Sitemap = TOOLS.filter((t) => t.live && !t.href).map((t) => ({
+    url: `${base}/tools/${t.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   return [
     ...staticEntries,
     ...listingEntries,
@@ -95,5 +104,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...brandEntries,
     ...blogEntries,
     ...travelEntries,
+    ...toolEntries,
   ];
 }

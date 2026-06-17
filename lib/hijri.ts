@@ -42,6 +42,41 @@ export function formatHijri(isoDate: string): string {
   return h ? `${h.day} ${h.monthName} ${h.year} AH (approx.)` : "";
 }
 
+/** Month names (1-indexed lookup) for callers that build their own pickers. */
+export const HIJRI_MONTH_NAMES = HIJRI_MONTHS;
+
+function jdnToGregorian(jdn: number): { y: number; m: number; d: number } {
+  // Fliegel–Van Flandern algorithm (proleptic Gregorian).
+  let l = jdn + 68569;
+  const n = Math.floor((4 * l) / 146097);
+  l = l - Math.floor((146097 * n + 3) / 4);
+  const i = Math.floor((4000 * (l + 1)) / 1461001);
+  l = l - Math.floor((1461 * i) / 4) + 31;
+  const j = Math.floor((80 * l) / 2447);
+  const d = l - Math.floor((2447 * j) / 80);
+  l = Math.floor(j / 11);
+  const m = j + 2 - 12 * l;
+  const y = 100 * (n - 49) + i + l;
+  return { y, m, d };
+}
+
+/** Convert a tabular Hijri date to the Gregorian ISO date (YYYY-MM-DD).
+   Inverse of toHijri — same tabular ("Kuwaiti") calendar, so ±1 day vs. a
+   moon-sighted date. For display/planning only, never religious rulings. */
+export function fromHijri(year: number, month: number, day: number): string | null {
+  if (month < 1 || month > 12 || day < 1 || day > 30) return null;
+  // Days elapsed in the tabular Islamic calendar since the epoch, then back to JDN.
+  const jdn =
+    day +
+    Math.ceil(29.5 * (month - 1)) +
+    (year - 1) * 354 +
+    Math.floor((3 + 11 * year) / 30) +
+    1948439;
+  const g = jdnToGregorian(jdn);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${g.y}-${pad(g.m)}-${pad(g.d)}`;
+}
+
 export type HijriSeason = { key: "ramadan" | "hajj" | "dhul-hijjah"; label: string } | null;
 
 /** Flag the Ramadan / Hajj seasons for an ISO date (factual, for travel planning). */
