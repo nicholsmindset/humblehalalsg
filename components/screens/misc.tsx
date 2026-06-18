@@ -188,7 +188,7 @@ export function UserDashboardScreen() {
   const [tab, setTab] = useState("saved");
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
-  const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
+  const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
 
   // Profile settings — real save to /api/user/update (display name) + client pref (home area).
@@ -279,6 +279,7 @@ export function UserDashboardScreen() {
             </div>
           )}
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
+          {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
           {tab==='reviews' && (
             <div className="stack g14">
               {HHData.reviews.slice(0,2).map(r=>(
@@ -376,7 +377,7 @@ const QUOTE_VERTICALS = [
 const QUOTE_BUDGETS = ["Under $500", "$500–$2,000", "$2,000–$5,000", "$5,000+", "Not sure yet"];
 
 export function RequestQuoteScreen() {
-  const { navigate, params } = useApp();
+  const { navigate, params, addRequest } = useApp();
   const [vertical, setVertical] = useState(String(params.category || ""));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -407,6 +408,7 @@ export function RequestQuoteScreen() {
       /* graceful — still confirm to the user */
     }
     setSubmitting(false);
+    addRequest("quote", [vertical, area].filter(Boolean).join(" · ") || "Quote request");
     navigate("success", { type: "quote" });
   };
 
@@ -494,7 +496,7 @@ export function RequestQuoteScreen() {
    CLAIM BUSINESS
 ============================================================= */
 export function ClaimScreen() {
-  const { navigate, params, toast } = useApp();
+  const { navigate, params, toast, addRequest } = useApp();
   const dir = useDirectory();
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState(params.id ? dir.get(String(params.id)) || null : null);
@@ -570,6 +572,7 @@ export function ClaimScreen() {
                 try {
                   await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name, role, message, proofFileName: proof.name, proofType: proof.type, proofSize: proof.size }) });
                 } catch { /* graceful */ }
+                addRequest("claim", picked.name);
                 navigate('success',{type:'claim'});
               }}>{submitting ? "Submitting…" : "Submit claim"}</button>
               {!proof && <p className="faint tc" style={{fontSize:'.8rem'}}>Attach a proof-of-ownership document to submit your claim.</p>}
@@ -856,7 +859,7 @@ export function SuccessScreen() {
     listing: { t:'Listing submitted!', d:'Your business has been submitted for review. We’ll verify your details and let you know within 1–2 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
     claim: { t:'Claim submitted!', d:'We’ve received your ownership claim and proof document. Our team will review it and email you within 3–5 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
     suggest: { t:'Thank you!', d:'Your suggestion has been sent to our team. We usually review and add new places within a few business days to help the community discover them.', cta:'Back home', go:'home' },
-    quote: { t:'Request sent! 🎉', d:'We’ve received your request and will match you with relevant Muslim-owned & halal-friendly providers, who typically reach out within 1–2 business days. Quotes are no-obligation, and you’re never charged by Humble Halal.', cta:'Browse the directory', go:'explore' },
+    quote: { t:'Request sent! 🎉', d:'We’ve received your request and will match you with relevant Muslim-owned & halal-friendly providers, who typically reach out within 1–2 business days. Track it under “My requests” — quotes are no-obligation, and you’re never charged by Humble Halal.', cta:'View my requests', go:'user-dashboard' },
     report: { t:'Report received', d:'Thanks for helping us stay accurate. We aim to review reports within 3 business days and update the listing if needed.', cta:'Back home', go:'home' },
     payment: { t:'Payment successful', d:'Your plan is now active. Enjoy your upgraded visibility on Humble Halal.', cta:'Go to dashboard', go:'owner-dashboard' },
     rsvp: { t:'You’re going! 🎉', d:'Your free RSVP is confirmed. Find your ticket and QR code under “My tickets” — see you there.', cta:'View my tickets', go:'user-dashboard' },
@@ -900,6 +903,39 @@ type DbTicket = {
 };
 
 /* ---------- My Tickets (user dashboard) ---------- */
+export function MyRequests({ navigate, state }: { navigate: ReturnType<typeof useApp>["navigate"]; state: ReturnType<typeof useApp>["state"] }) {
+  const requests = state.requests || [];
+  if (!requests.length) {
+    return <Empty icon="doc" title="No requests yet" body="Quote requests and business claims you submit will show up here so you can keep track of them." action="Request a quote" onAction={()=>navigate('request-quote')} />;
+  }
+  const META: Record<string, { label: string; icon: string }> = {
+    quote: { label: "Quote request", icon: "doc" },
+    claim: { label: "Business claim", icon: "shield-check" },
+  };
+  return (
+    <div className="stack g12">
+      {requests.map((r)=>{
+        const m = META[r.kind] || META.quote;
+        return (
+          <div key={r.id} className="card" style={{padding:16}}>
+            <div className="flex g12 center between">
+              <div className="flex g10 center">
+                <span className="attn-ico"><Icon name={m.icon} size={18}/></span>
+                <div>
+                  <div style={{fontWeight:700}}>{m.label}{r.label ? ` — ${r.label}` : ""}</div>
+                  <div className="faint" style={{fontSize:'.8rem'}}>Submitted {new Date(r.at).toLocaleDateString("en-SG", { day:"numeric", month:"short", year:"numeric" })}</div>
+                </div>
+              </div>
+              <span className="tag"><Icon name="clock" size={13}/> Under review</span>
+            </div>
+          </div>
+        );
+      })}
+      <p className="faint" style={{fontSize:'.82rem'}}>We email you when there’s an update. Submitted requests are kept on this device.</p>
+    </div>
+  );
+}
+
 export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof useApp>["navigate"]; state: ReturnType<typeof useApp>["state"] }) {
   const localTickets = state.tickets || [];
   const savedEvs = (state.savedEvents||[]).map(id=>HHData.events.find(e=>e.id===id)).filter(Boolean) as typeof HHData.events;
