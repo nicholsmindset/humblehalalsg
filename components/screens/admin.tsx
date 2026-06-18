@@ -62,6 +62,8 @@ export function AdminScreen() {
 
   const nav: [string, string, string][] = [
     ["overview", "Overview", "chart"],
+    ["revenue", "Revenue (P&L)", "trend"],
+    ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
@@ -102,6 +104,8 @@ export function AdminScreen() {
 
         <div className="admin-body">
           {section==='overview' && <AdminOverview setSection={setSection} />}
+          {section==='revenue' && <AdminRevenue />}
+          {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
@@ -200,6 +204,182 @@ export function AdminMonetization() {
             <span className="cert-switch"><span className="cert-knob" /></span>
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Unified revenue P&L ─────────────────────────────────────────────────────
+   One view across every stream — subscriptions (MRR), event fees, ad orders and
+   travel commission — from our own ledger. Stripe/LiteAPI dashboards stay the
+   source of truth for payouts; this is the at-a-glance platform P&L. Graceful
+   (zeroed) when the backend isn't configured. Data: /api/admin/revenue. */
+interface RevenueData {
+  simulated?: boolean;
+  flags: Record<string, boolean>;
+  windowDays: number;
+  mrrCents: number; activePlans: number; plansByTier: Record<string, number>;
+  windowSgdCents: { events: number; ads: number; travelApprox: number; total: number };
+  eventGmvCents: number;
+  travelByCurrency: { currency: string; commission: number; count: number }[];
+  trend: { month: string; events: number; ads: number; travel: number; total: number }[];
+}
+const STREAM_FLAG: [string, string, string][] = [
+  ["paidPlans", "Directory plans", "Subscriptions"],
+  ["paidAds", "Sponsored ads", "Ad orders"],
+  ["paidTickets", "Event tickets", "Booking fees"],
+  ["paidHotels", "Travel — hotels", "Commission"],
+];
+
+export function AdminRevenue() {
+  const [d, setD] = useState<RevenueData | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { (async () => {
+    try { const r = await fetch("/api/admin/revenue"); const j = await r.json(); if (j.ok) setD(j); }
+    catch { /* ignore */ }
+    setLoading(false);
+  })(); }, []);
+
+  if (loading) return <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading…</span></div>;
+  if (!d) return <Empty icon="dollar" title="Revenue P&L" body="Sign in as an admin (with the backend configured) to see the unified revenue view." />;
+
+  const w = d.windowSgdCents;
+  const runRateCents = d.mrrCents * 12 + Math.round((w.total * 365) / d.windowDays);
+  const cards: { l: string; v: string; hint?: string }[] = [
+    { l: "Est. MRR", v: fmtSGD(d.mrrCents), hint: `${d.activePlans} active plan${d.activePlans === 1 ? "" : "s"}` },
+    { l: `Event fees · ${d.windowDays}d`, v: fmtSGD(w.events), hint: `GMV ${fmtSGD(d.eventGmvCents)}` },
+    { l: `Ad revenue · ${d.windowDays}d`, v: fmtSGD(w.ads) },
+    { l: `Travel · ${d.windowDays}d`, v: `≈ ${fmtSGD(w.travelApprox)}`, hint: "approx SGD" },
+    { l: `Total · ${d.windowDays}d`, v: fmtSGD(w.total) },
+    { l: "Annual run-rate", v: fmtSGD(runRateCents), hint: "est. MRR×12 + annualised" },
+  ];
+  const maxTrend = Math.max(...d.trend.map((t) => t.total), 1);
+
+  return (
+    <div className="stack g16" style={{ maxWidth: 920 }}>
+      <div className="notice notice-warn">
+        <Icon name="info" size={18} />
+        <span>Unified view from <strong>our</strong> ledger. Stripe holds authoritative MRR &amp; payouts; LiteAPI holds travel payouts. Travel commission is converted to an approximate SGD figure. {d.simulated && <em>Backend not configured — showing zeros.</em>}</span>
+      </div>
+
+      <div className="admin-statgrid">
+        {cards.map((c) => (
+          <div key={c.l} className="stat"><div className="v">{c.v}</div><div className="l">{c.l}</div>{c.hint && <div className="faint" style={{ fontSize: ".72rem", marginTop: 2 }}>{c.hint}</div>}</div>
+        ))}
+      </div>
+
+      {/* Per-stream live/off status (server flags). */}
+      <div className="card" style={{ padding: 18 }}>
+        <h3 style={{ fontSize: "1.05rem", marginBottom: 12 }}>Streams</h3>
+        <div className="stack g8">
+          {STREAM_FLAG.map(([key, title, sub]) => {
+            const on = !!d.flags?.[key];
+            return (
+              <div key={key} className="flex between center" style={{ borderTop: "0.5px solid var(--line)", paddingTop: 8 }}>
+                <span><strong>{title}</strong> <span className="faint" style={{ fontSize: ".82rem" }}>· {sub}</span></span>
+                <span className="pill-tag" style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>{on ? "Live" : "Off"}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Transactional revenue by month (events + ads + travel, realized). */}
+      <div className="card" style={{ padding: 18 }}>
+        <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Transactional revenue by month</h3>
+        <p className="faint" style={{ fontSize: ".82rem", marginBottom: 14 }}>Events + ads + travel (approx SGD). Subscriptions are point-in-time MRR, shown above.</p>
+        {d.trend.length === 0 ? (
+          <p className="muted" style={{ fontSize: ".88rem" }}>No transactions yet — figures populate once revenue streams go live.</p>
+        ) : (
+          <div className="stack g10">
+            {d.trend.map((t) => (
+              <div key={t.month}>
+                <div className="flex between" style={{ fontSize: ".82rem", marginBottom: 4 }}><span className="muted">{t.month}</span><span style={{ fontWeight: 700 }}>{fmtSGD(t.total)}</span></div>
+                <div style={{ height: 8, background: "var(--cream-200)", borderRadius: 99 }}>
+                  <div style={{ width: `${Math.round((100 * t.total) / maxTrend)}%`, height: "100%", background: "var(--emerald)", borderRadius: 99 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Travel commission by currency (native — LiteAPI is authoritative). */}
+      {d.travelByCurrency.length > 0 && (
+        <div className="card" style={{ overflow: "hidden" }}>
+          <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Travel commission by currency</h3><span className="faint" style={{ fontSize: ".82rem" }}>Native currency · last {d.windowDays}d</span></div>
+          <div className="tbl-scroll"><table className="tbl">
+            <thead><tr><th>Currency</th><th>Bookings</th><th>Commission</th></tr></thead>
+            <tbody>{d.travelByCurrency.map((c) => (
+              <tr key={c.currency} className="rowhover"><td style={{ fontWeight: 700 }}>{c.currency}</td><td>{c.count}</td><td style={{ fontWeight: 700 }}>{c.currency} {c.commission.toLocaleString()}</td></tr>
+            ))}</tbody>
+          </table></div>
+        </div>
+      )}
+
+      <div className="flex g8 wrap">
+        <a className="btn btn-soft btn-sm" href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} /> Stripe (MRR &amp; payouts)</a>
+      </div>
+    </div>
+  );
+}
+
+/* ── Staged paid-flag rollout ────────────────────────────────────────────────
+   The recommended go-live order (easiest→hardest operational risk) with each
+   stage's prerequisites and current live/off state (server flags). Real
+   enablement is via Vercel env vars (PAID_*_ENABLED) — see the runbook at
+   docs/runbooks/paid-flag-rollout.md. This panel is operator guidance. */
+const ROLLOUT_STAGES: { n: number; title: string; env: string; flags: string[]; why: string; prereqs: string[] }[] = [
+  { n: 1, title: "Directory plans", env: "PAID_PLANS_ENABLED", flags: ["paidPlans"],
+    why: "Pure Stripe subscriptions — no payouts to third parties, lowest risk, and it’s the trust layer (Verified badge + Cert Vault).",
+    prereqs: ["Stripe keys live", "STRIPE_PRICE_* IDs set", "Migrations applied"] },
+  { n: 2, title: "Sponsored ads", env: "PAID_ADS_ENABLED", flags: ["paidAds"],
+    why: "Direct-sold, you keep 100%, no payout logic — but only worth selling once there’s traffic, so it follows Directory.",
+    prereqs: ["Audience / traffic", "ad_placements seeded"] },
+  { n: 3, title: "Event tickets", env: "PAID_TICKETS_ENABLED", flags: ["paidTickets"],
+    why: "Now holding buyers’ money and paying organisers via Stripe Connect 24h post-event — more moving parts.",
+    prereqs: ["Stripe Connect enabled", "Organiser onboarding", "event-payouts cron live"] },
+  { n: 4, title: "Travel — hotels → flights", env: "PAID_HOTELS_ENABLED → PAID_FLIGHTS_ENABLED", flags: ["paidHotels", "paidFlights"],
+    why: "Highest ceiling, most dependencies. Enable hotels first; flights need Vercel Pro (10-min retry cron).",
+    prereqs: ["LiteAPI key + volume", "Hotels before flights", "Vercel Pro for live flights"] },
+];
+
+export function AdminRollout() {
+  const [flags, setFlags] = useState<Record<string, boolean> | null>(null);
+  useEffect(() => { (async () => {
+    try { const r = await fetch("/api/admin/revenue"); const j = await r.json(); if (j.ok) setFlags(j.flags || {}); else setFlags({}); }
+    catch { setFlags({}); }
+  })(); }, []);
+
+  return (
+    <div className="stack g16" style={{ maxWidth: 820 }}>
+      <div className="notice notice-warn">
+        <Icon name="info" size={18} />
+        <span>Recommended go-live order, easiest→hardest. Each flag is enabled in <strong>Vercel env</strong> (<code>PAID_*_ENABLED</code>); the toggles on the Monetization tab are client-side demo only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
+      </div>
+
+      <div className="stack g12">
+        {ROLLOUT_STAGES.map((s) => {
+          const live = s.flags.some((f) => flags?.[f]);
+          const allLive = s.flags.every((f) => flags?.[f]);
+          return (
+            <div key={s.n} className="card" style={{ padding: 18 }}>
+              <div className="flex between center wrap g10" style={{ marginBottom: 6 }}>
+                <h3 style={{ fontSize: "1.08rem", display: "flex", alignItems: "center", gap: 10 }}>
+                  <span className="attn-ico" style={{ fontWeight: 700 }}>{s.n}</span>{s.title}
+                </h3>
+                <span className="pill-tag" style={{ background: live ? "var(--emerald-50)" : "var(--cream-200)", color: live ? "var(--emerald)" : "var(--ink-soft)" }}>
+                  {allLive ? "Live" : live ? "Partly live" : "Off"}
+                </span>
+              </div>
+              <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5, marginBottom: 10 }}>{s.why}</p>
+              <div className="flex g8 wrap" style={{ marginBottom: 8 }}>
+                {s.prereqs.map((p) => <span key={p} className="tag"><Icon name="check" size={13} /> {p}</span>)}
+              </div>
+              <code className="faint" style={{ fontSize: ".8rem" }}>{s.env}</code>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
