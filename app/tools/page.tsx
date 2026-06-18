@@ -6,10 +6,11 @@ import { toolsByCategory, toolHref, TOOLS } from "@/lib/tools";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMeta({
-  title: "Free Islamic Tools — Tasbih, Duas, 99 Names, Zakat & Hijri dates",
+  title: "Free Islamic Tools — Prayer Times, Quran, Zakat & Duas",
   description:
-    "A free suite of everyday Islamic tools — tasbih counter, dua library, the 99 Names of Allah, a Zakat calculator and a Hijri date converter. No sign-up, private by default.",
+    "Free everyday Islamic tools: prayer times, Quran reader, qibla finder, Zakat calculator, tasbih, duas and the 99 Names. No sign-up, private by default.",
   path: "/tools",
+  absoluteTitle: true,
 });
 
 export default function Page() {
