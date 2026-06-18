@@ -119,6 +119,22 @@ export const TOOLS: Tool[] = [
     live: true,
   },
   {
+    slug: "inheritance",
+    title: "Inheritance (Faraid)",
+    blurb: "Qur'anic shares for spouse, parents & children.",
+    icon: "users",
+    category: "Calculators",
+    live: true,
+  },
+  {
+    slug: "halal-stocks",
+    title: "Halal Stock Screener",
+    blurb: "Screen shares against Shariah financial ratios.",
+    icon: "chart",
+    category: "Calculators",
+    live: true,
+  },
+  {
     slug: "qibla",
     title: "Qibla Compass",
     blurb: "Find the direction of prayer from where you are.",
