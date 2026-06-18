@@ -737,7 +737,6 @@ export function Footer() {
         <span>© 2026 Humble Halal. Built for the Singapore Muslim community.</span>
         <div className="flex g12 center">
           <span className="faint">Always verify certification on MUIS HalalSG.</span>
-          <LangToggle />
         </div>
       </div>
     </footer>
