@@ -22,9 +22,10 @@ export async function generateMetadata({ params }: { params: Promise<{ surah: st
   if (!n) return pageMeta({ title: "Surah not found", path: "/tools/quran", index: false });
   const s = SURAHS[n - 1];
   return pageMeta({
-    title: `Surah ${s.name} (${s.english}) — Arabic, English & audio`,
-    description: `Read Surah ${s.name} — ${s.english} (chapter ${n}) of the Quran in Arabic with the Saheeh International English translation and recitation.`,
+    title: `Surah ${s.name} (${s.english}) — Read Online & Audio`,
+    description: `Read Surah ${s.name} — ${s.english} (chapter ${n}) of the Quran online in Arabic with the Saheeh International English translation and audio recitation.`,
     path: `/tools/quran/${n}`,
+    absoluteTitle: true,
   });
 }
 

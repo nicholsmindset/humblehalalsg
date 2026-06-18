@@ -122,6 +122,78 @@ export const brands: BrandHalal[] = [
     slug: "haribo", brand: "Haribo", category: "Gummy sweets", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
     answer: "Most Haribo gummy sweets sold in Singapore are not halal — they typically contain pork-derived gelatine. Haribo makes halal-certified ranges in some countries, so always check the specific pack; standard Haribo is not halal.",
   },
+  {
+    slug: "jollibee", brand: "Jollibee", category: "Fast food", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Jollibee's Singapore outlets are MUIS halal-certified, so its fried chicken, burgers and rice meals are halal. Certification is per outlet and can change, so confirm the specific Jollibee outlet on the MUIS HalalSG register before dining.",
+  },
+  {
+    slug: "pepper-lunch", brand: "Pepper Lunch", category: "Japanese restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Pepper Lunch is MUIS halal-certified in Singapore, so its sizzling beef, chicken and salmon plates are halal. Always confirm the specific outlet's certificate on the MUIS HalalSG register, as statuses can change.",
+  },
+  {
+    slug: "koi", brand: "KOI Thé", category: "Bubble tea", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO, aliases: ["koi-the"],
+    answer: "KOI Thé is not MUIS halal-certified in Singapore — its outlets are not listed on the MUIS HalalSG register. Without certification it is not officially halal, even if many ingredients may be permissible. Verify on HalalSG before ordering.",
+  },
+  {
+    slug: "liho", brand: "LiHO TEA", category: "Bubble tea", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "LiHO TEA is not MUIS halal-certified in Singapore and is not listed on the MUIS HalalSG register. Treat it as not halal-certified and check HalalSG for the latest status before ordering.",
+  },
+  {
+    slug: "old-chang-kee", brand: "Old Chang Kee", category: "Snacks", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Old Chang Kee is not MUIS halal-certified in Singapore — its outlets are not on the MUIS HalalSG register and some items are not halal. Treat it as not halal-certified and verify on HalalSG.",
+  },
+  {
+    slug: "nandos", brand: "Nando's", category: "Restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Nando's is not MUIS halal-certified in Singapore — its outlets are not on the MUIS HalalSG register and it serves alcohol. It is not halal-certified; confirm the latest status on HalalSG.",
+  },
+  {
+    slug: "shake-shack", brand: "Shake Shack", category: "Burgers", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Shake Shack is not MUIS halal-certified in Singapore. Its outlets are not on the MUIS HalalSG register and the menu includes pork and alcohol, so it is not suitable for halal-conscious diners.",
+  },
+  {
+    slug: "awfully-chocolate", brand: "Awfully Chocolate", category: "Bakery", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Awfully Chocolate is not MUIS halal-certified in Singapore. Some cakes contain alcohol and its outlets are not on the MUIS HalalSG register. Treat it as not halal-certified and check the specific product before buying.",
+  },
+  {
+    slug: "chocolate-origin", brand: "Chocolate Origin", category: "Bakery", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Chocolate Origin is not listed as MUIS halal-certified in Singapore. Without certification on the MUIS HalalSG register, treat it as not halal-certified and verify the latest status before buying.",
+  },
+  {
+    slug: "famous-amos", brand: "Famous Amos", category: "Bakery", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Famous Amos is not MUIS halal-certified in Singapore — its cookies are not listed on the MUIS HalalSG register. Treat it as not halal-certified and check HalalSG for any updates.",
+  },
+  {
+    slug: "a-w", brand: "A&W", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO, aliases: ["aw", "a-and-w"],
+    answer: "A&W is not MUIS halal-certified in Singapore. Although it does not serve pork, its outlets are not on the MUIS HalalSG register, so it is not officially halal-certified. Verify on HalalSG before dining.",
+  },
+  {
+    slug: "burger-king", brand: "Burger King", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Burger King is not MUIS halal-certified in Singapore. Its outlets are not on the MUIS HalalSG register and the menu includes bacon and other pork items, so it is not halal-certified.",
+  },
+  {
+    slug: "popeyes", brand: "Popeyes", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Popeyes is not MUIS halal-certified in Singapore — its outlets are not on the MUIS HalalSG register. Treat it as not halal-certified and confirm the latest status on HalalSG.",
+  },
+  {
+    slug: "mcdonalds", brand: "McDonald's", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO, aliases: ["mcdonald", "mcdonalds-singapore"],
+    answer: "McDonald's is not MUIS halal-certified in Singapore — unlike in Malaysia, its Singapore outlets are not on the MUIS HalalSG register. Treat it as not halal-certified and verify the latest status on HalalSG.",
+  },
+  {
+    slug: "kfc", brand: "KFC", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "KFC is not MUIS halal-certified in Singapore — unlike in Malaysia, its Singapore outlets are not on the MUIS HalalSG register. Treat it as not halal-certified and confirm on HalalSG.",
+  },
+  {
+    slug: "subway", brand: "Subway", category: "Fast food", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Subway is not MUIS halal-certified in Singapore — its outlets are not on the MUIS HalalSG register and serve pork (ham, bacon). It is not halal-certified; verify on HalalSG before ordering.",
+  },
+  {
+    slug: "din-tai-fung", brand: "Din Tai Fung", category: "Restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Din Tai Fung is not halal in Singapore. Many signature dishes such as xiao long bao contain pork, and its outlets are not on the MUIS HalalSG register. It is not halal-certified.",
+  },
+  {
+    slug: "fish-and-co", brand: "Fish & Co.", category: "Seafood restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Fish & Co. is not MUIS halal-certified in Singapore — its outlets are not listed on the MUIS HalalSG register and it serves alcohol. Treat it as not halal-certified and verify on HalalSG.",
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
