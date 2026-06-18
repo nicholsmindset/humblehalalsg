@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DetailScreen } from "@/components/screens/consumer";
 import { getDirectory, getListingBySlug } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
+import { joinParts } from "@/lib/format";
 import {
   JsonLd,
   listingJsonLd,
@@ -21,9 +22,10 @@ export async function generateMetadata({
   const l = await getListingBySlug(slug);
   if (!l) return pageMeta({ title: "Business", path: `/business/${slug}`, index: false });
   const certified = l.certified ? "MUIS / verified halal" : "halal-friendly";
+  const reviewLine = l.reviews > 0 ? ` ${l.rating}★ from ${l.reviews} reviews.` : "";
   return pageMeta({
-    title: `${l.name} — ${l.cuisine}, ${l.area}`,
-    description: `${l.blurb} ${certified} listing in ${l.area}, Singapore. ${l.rating}★ from ${l.reviews} reviews.`,
+    title: joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
+    description: `${l.blurb} ${certified} listing in ${l.area}, Singapore.${reviewLine}`,
     path: `/business/${l.slug}`,
     image: l.image,
   });

@@ -396,7 +396,7 @@ export function ExploreScreen() {
       });
     }
     if (filters.cat) r = r.filter((l) => l.catId === filters.cat);
-    if (filters.area) r = r.filter((l) => l.area.toLowerCase().includes(filters.area));
+    if (filters.area) r = r.filter((l) => l.area.toLowerCase().includes(filters.area.toLowerCase()));
     if (filters.price) r = r.filter((l) => l.price === filters.price);
     if (filters.halal === "certified") r = r.filter((l) => l.badges.some((b) => ["muis", "admin"].includes(b)));
     if (filters.halal === "muis") r = r.filter((l) => l.badges.includes("muis"));
@@ -929,7 +929,7 @@ export function DetailScreen() {
 
           {/* badge row */}
           <div className="lc-badges" style={{ marginTop: 16, gap: 8 }}>
-            {item.badges.map((b) => <Badge key={b} type={b} lg />)}
+            {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).map((b) => <Badge key={b} type={b} lg />)}
             {item.prayer && <Badge type="prayer" lg />}
           </div>
 
@@ -1327,7 +1327,7 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
 export function DetailOverview({ item }: { item: Listing }) {
   return (
     <div className="detail-pane">
-      <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb} A neighbourhood favourite in {item.area}, known for warm service and consistent quality across {item.cuisine.toLowerCase()}.</p>
+      <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb}{item.area ? ` A neighbourhood favourite in ${item.area}, known for warm service${item.cuisine ? ` and consistent quality across ${item.cuisine.toLowerCase()}` : ""}.` : ""}</p>
       {/* Offers & promotions — Premium-only (offers_block). Hidden for lower tiers. */}
       {canUse(item, "offers_block") && (
         <div className="offers-block">
@@ -1474,9 +1474,18 @@ export function DetailReviews({ item }: { item: Listing }) {
     <div className="detail-pane">
       <div className="review-summary">
         <div className="rs-big">
-          <div className="rs-num">{item.rating.toFixed(1)}</div>
-          <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(item.rating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
-          <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{totalReviews} reviews</div>
+          {totalReviews > 0 ? (
+            <>
+              <div className="rs-num">{item.rating.toFixed(1)}</div>
+              <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(item.rating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
+              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{totalReviews} reviews</div>
+            </>
+          ) : (
+            <>
+              <div className="rs-num" style={{ fontSize: "1.4rem" }}>New</div>
+              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>No reviews yet — be the first</div>
+            </>
+          )}
         </div>
         <div className="rs-bars">
           {dist.map((p, i) => (
