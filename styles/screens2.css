@@ -331,7 +331,8 @@
 .hh-footer-catlinks { display:flex; flex-wrap:wrap; gap:7px 16px; }
 .hh-footer-catlinks a { color:#B7CEC6; font-size:.84rem; cursor:pointer; transition:color .14s; }
 .hh-footer-catlinks a:hover { color:#fff; }
-.hh-footer-col { display:flex; flex-direction:column; gap:10px; }
+.hh-footer-col { display:flex; flex-direction:column; gap:5px; }
+.hh-footer-col a { line-height:1.35; padding:1px 0; }
 .hh-footer-title { font-weight:700; color:#fff; font-size:.92rem; margin-bottom:2px; }
 .hh-footer-col a { font-size:.88rem; color:#B7CEC6; cursor:pointer; transition: color .14s; }
 .hh-footer-col a:hover { color:var(--gold); }

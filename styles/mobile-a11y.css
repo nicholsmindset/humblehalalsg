@@ -50,10 +50,13 @@
   display: inline-flex; align-items: center; min-height: 44px;
 }
 
-/* Footer link rows — give every nav/category/legal link a 44px tap row.
-   The footer stacks single-column on phones, so full-height rows read well. */
-.hh-footer-col a, .hh-footer-catlinks a, .hh-footer-legal a {
-  display: inline-flex; align-items: center; min-height: 44px;
+/* Footer link rows — give every nav/category/legal link a 44px tap row, but
+   only on touch/small screens. On desktop the links stay tight (the 44px rows
+   made the footer columns very spread-out vertically). */
+@media (max-width: 700px) {
+  .hh-footer-col a, .hh-footer-catlinks a, .hh-footer-legal a {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
 }
 
 /* ---- Directory/home tap targets the OTA pass didn't cover (audit #7) ---- */
