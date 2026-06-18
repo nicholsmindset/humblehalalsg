@@ -4,13 +4,24 @@
 //  - listing_id in views/RPCs is the LISTING SLUG (see 0010_analytics.sql)
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  LineChart, Line, Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
 import {
   getSb, resolveRange, RANGE_LABELS, LEAD_LABELS, fmt, pct, type RangeKey,
 } from "@/lib/analytics-dashboard";
+
+// Recharts is code-split into its own chunk (loaded only after the dashboard
+// shell paints, and only on this auth-gated route — never on public pages).
+const chartLoading = () => (
+  <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "rgba(128,128,128,.6)", fontSize: 13 }}>Loading chart…</div>
+);
+const LeadsOverTimeChart = dynamic(
+  () => import("./analytics-charts").then((m) => m.LeadsOverTimeChart),
+  { ssr: false, loading: chartLoading },
+);
+const EnquiriesByVendorChart = dynamic(
+  () => import("./analytics-charts").then((m) => m.EnquiriesByVendorChart),
+  { ssr: false, loading: chartLoading },
+);
 
 type Tab = "overview" | "vendors" | "search" | "journeys";
 
@@ -31,11 +42,6 @@ interface Journey {
   final_category: string; final_action_at: string;
 }
 interface DailyRow { day: string; lead_action_type: string; category: string; actions: number }
-
-const ACTION_COLOR: Record<string, string> = {
-  enquiry_form: "#0F6E56", whatsapp: "#1D9E75", call: "#185FA5",
-  website: "#378ADD", directions: "#85B7EB", shortlist: "#BA7517",
-};
 
 export default function Dashboard() {
   const [range, setRange] = useState<RangeKey>("30d");
@@ -214,31 +220,12 @@ function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] 
     <>
       <p style={S.sectionLabel}>Lead actions over time</p>
       <div style={{ height: 260, marginBottom: 24 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={byDay} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,.15)" />
-            <XAxis dataKey="day" tick={{ fontSize: 11 }} tickFormatter={(d) => String(d).slice(5)} />
-            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            {Object.keys(LEAD_LABELS).map((k) => (
-              <Line key={k} type="monotone" dataKey={k} name={LEAD_LABELS[k]}
-                stroke={ACTION_COLOR[k]} strokeWidth={k === "enquiry_form" ? 2.5 : 1.5} dot={false} />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+        <LeadsOverTimeChart byDay={byDay} />
       </div>
 
       <p style={S.sectionLabel}>Enquiries by vendor</p>
       <div style={{ height: Math.max(topVendors.length * 38 + 40, 160) }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={topVendors} layout="vertical" margin={{ left: 8, right: 16 }}>
-            <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} />
-            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} cursor={{ fill: "rgba(128,128,128,.08)" }} />
-            <Bar dataKey="enquiries" name="Enquiries" fill="#0F6E56" radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <EnquiriesByVendorChart topVendors={topVendors} />
       </div>
     </>
   );

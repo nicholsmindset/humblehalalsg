@@ -140,9 +140,11 @@
 
 /* ── hotel detail ────────────────────────────────────────────────────────── */
 .travel-gallery { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; border-radius: var(--r-lg, 20px); overflow: hidden; max-height: 400px; }
-.travel-gallery img { width: 100%; height: 100%; object-fit: cover; min-height: 130px; }
-.travel-gallery img:first-child { grid-row: 1 / 3; }
-@media (max-width: 720px) { .travel-gallery { grid-template-columns: 1fr 1fr; } .travel-gallery img:first-child { grid-column: 1 / -1; grid-row: auto; } }
+/* Each thumb is a positioned button cell so next/image (fill) sizes into it. */
+.travel-gallery .tg-cell { position: relative; min-height: 130px; padding: 0; border: 0; background: var(--cream-200, #f0ebdd); cursor: zoom-in; overflow: hidden; }
+.travel-gallery .tg-cell img { object-fit: cover; }
+.travel-gallery > .tg-cell:first-child { grid-row: 1 / 3; }
+@media (max-width: 720px) { .travel-gallery { grid-template-columns: 1fr 1fr; } .travel-gallery > .tg-cell:first-child { grid-column: 1 / -1; grid-row: auto; } }
 
 .hotel-detail-grid { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
 @media (max-width: 900px) { .hotel-detail-grid { grid-template-columns: 1fr; } .reserve-box { order: -1; } }
