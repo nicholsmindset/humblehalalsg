@@ -25,6 +25,51 @@
 }
 .hs-pill .hs-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 
+/* expandable Halal Confidence badge (components/halal-confidence-badge) */
+.hc-badge { margin: 14px 0; }
+.hc-chip {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 12px 7px 7px; border-radius: var(--r-pill);
+  background: var(--white); border: 1.5px solid var(--line-strong);
+  cursor: pointer; font: inherit; color: var(--ink); text-align: left;
+  transition: box-shadow .15s, border-color .15s;
+}
+.hc-chip:hover { box-shadow: var(--sh-sm); }
+.hc-chip .hc-score {
+  width: 34px; height: 34px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  color: #fff; font-weight: 800; font-size: .9rem; font-family: var(--sans);
+}
+.hc-chip .hc-label { font-weight: 700; font-size: .92rem; line-height: 1.1; }
+.hc-chip .hc-sub {
+  font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-faint); margin-left: 2px;
+}
+.hc-chip .hc-caret { color: var(--ink-faint); transition: transform .2s; flex: none; }
+.hc-chip .hc-caret.up { transform: rotate(180deg); }
+.hc-panel {
+  margin-top: 10px; padding: 14px 16px; border-radius: var(--r-md);
+  background: var(--cream-100, var(--emerald-50)); border: 1px solid var(--line);
+  animation: prayerdrop .2s ease;
+}
+.hc-panel .hc-blurb { font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
+.hc-reasons { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 7px; }
+.hc-reasons li { display: flex; align-items: flex-start; gap: 8px; font-size: .88rem; color: var(--ink-soft); line-height: 1.45; }
+.hc-reasons li svg { color: var(--emerald); flex: none; margin-top: 2px; }
+
+/* premium offers & promotions block (DetailOverview, offers_block gate) */
+.offers-block {
+  margin: 16px 0; padding: 16px 18px; border-radius: var(--r-md);
+  background: linear-gradient(180deg, var(--gold-50, #FBF4E4), var(--white));
+  border: 1px solid var(--gold-200, #EBD9A8);
+}
+.offers-block .offers-head {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 800; font-size: .95rem; color: var(--gold-700);
+}
+.offers-block .offers-head svg { color: var(--gold-700); flex: none; }
+.offers-block .offers-body { margin-top: 8px; font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
+
 /* ===================== PRAYER STRIP ===================== */
 .prayer-strip {
   position: sticky; top: var(--nav-h); z-index: 45;

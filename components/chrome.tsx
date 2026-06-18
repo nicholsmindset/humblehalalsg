@@ -369,6 +369,7 @@ export function TopNav() {
     { id: "ask", label: "Ask AI" },
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
+    { id: "tools", label: "Tools" },
     { id: "for-business", label: t("nav.forBusiness") },
     { id: "pricing", label: t("nav.pricing") },
   ];
@@ -447,6 +448,7 @@ export function MobileBar() {
     ["pricing", t("nav.pricing"), "tag"],
   ];
   const more: [string, string, string][] = [
+    ["tools", "Islamic tools", "sparkles"],
     ["mosques", "Mosques near me", "mosque"],
     ["request-quote", "Request a quote", "doc"],
     ["advertise", "Advertise with us", "megaphone"],
@@ -621,6 +623,7 @@ export function Footer() {
         ["Flights", "travel-flights"],
         ["My trips", "travel-trips"],
         ["Events", "events"],
+        ["Islamic tools", "tools"],
         ["Map view", "map"],
         ["Saved places", "saved"],
         ["Mosques in Singapore", "mosques"],

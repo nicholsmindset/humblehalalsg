@@ -1,5 +1,5 @@
 import "server-only";
-import { cityPriceIndex, getHotel, getHotelReviews, getHotelsByCity, liteapiConfigured, searchRates } from "./liteapi";
+import { cityPriceIndex, getHotel, getHotelReviews, getHotelsByCity, liteapiConfigured, minRates, searchRates, semanticSearch } from "./liteapi";
 import { getSupabaseAdmin } from "./supabase/server";
 import {
   activeFlagLabels,
@@ -103,12 +103,39 @@ export interface RunHotelSearchParams {
   rooms?: number;
   hotelIds?: string[];
   limit?: number;
+  /** Stable per-session id for search→prebook price consistency. */
+  sessionId?: string;
+  /** Native LiteAPI rate filters (passed through to /hotels/rates). */
+  filters?: Pick<RatesSearchBody, "refundableRatesOnly" | "starRating" | "minRating" | "boardType" | "facilities" | "hotelTypeIds" | "chainIds">;
   /** Exact LiteAPI occupancies passthrough (preserves child ages / per-room blocks).
    *  When provided it wins over adults/children/rooms (used by the search route to
    *  keep its request byte-identical). */
   occupancies?: { adults: number; children?: number[] }[];
   /** Muslim-friendly post-filter: only keep hotels whose overlay flags satisfy ALL. */
   constraints?: (keyof HotelFlags)[];
+}
+
+/** Parse + sanitize native LiteAPI rate filters from a request body. Shared by the
+ *  search and ai-search routes so both narrow the rate query identically. Returns
+ *  undefined when nothing valid is present (so the request stays clean). */
+export function parseRateFilters(body: Record<string, unknown>): RunHotelSearchParams["filters"] {
+  const toIntArray = (v: unknown): number[] =>
+    (Array.isArray(v) ? v : []).map((x) => Math.round(Number(x))).filter((n) => Number.isInteger(n) && n > 0).slice(0, 30);
+  const f: NonNullable<RunHotelSearchParams["filters"]> = {};
+  if (body.refundableRatesOnly === true || body.refundableRatesOnly === "true") f.refundableRatesOnly = true;
+  const star = Number(body.starRating);
+  if (Number.isFinite(star) && star >= 1 && star <= 5) f.starRating = Math.round(star);
+  const minR = Number(body.minRating);
+  if (Number.isFinite(minR) && minR >= 0 && minR <= 10) f.minRating = minR;
+  const board = String(body.boardType || "").trim().toUpperCase();
+  if (/^[A-Z_]{2,20}$/.test(board)) f.boardType = board;
+  const facilities = toIntArray(body.facilities);
+  if (facilities.length) f.facilities = facilities;
+  const hotelTypeIds = toIntArray(body.hotelTypeIds);
+  if (hotelTypeIds.length) f.hotelTypeIds = hotelTypeIds;
+  const chainIds = toIntArray(body.chainIds);
+  if (chainIds.length) f.chainIds = chainIds;
+  return Object.keys(f).length ? f : undefined;
 }
 
 /** Run the canonical hotel search. Mirrors app/api/travel/search/route.ts exactly
@@ -149,6 +176,8 @@ export async function runHotelSearch(
     ...(!placeId && countryCode ? { countryCode } : {}),
     ...(hotelIds ? { hotelIds } : {}),
     limit: Math.min(50, Math.max(1, params.limit || 30)),
+    ...(params.sessionId ? { sessionId: params.sessionId } : {}),
+    ...(params.filters || {}),
   };
 
   let hits: LiteApiRatesHotel[];
@@ -166,6 +195,49 @@ export async function runHotelSearch(
   const constraints = (params.constraints || []).filter(Boolean) as (keyof HotelFlags)[];
   if (constraints.length) hotels = hotels.filter((h) => constraints.every((c) => h.flags[c]));
 
+  return { simulated: false, hotels };
+}
+
+/* ── Semantic discovery (LiteAPI beta) ──────────────────────────────────────
+   Natural-language "describe your ideal stay" search. The semantic endpoint returns
+   content + relevance but NO price, so we overlay-join our halal flags, add a "from $X"
+   via min-rates for a default future stay window, and rank by halalScore. Graceful. */
+export async function runSemanticDiscovery(
+  query: string,
+  opts: { limit?: number; minRating?: number; currency?: string; guestNationality?: string } = {},
+): Promise<{ simulated: boolean; hotels: Hotel[] }> {
+  if (!query.trim()) return { simulated: true, hotels: [] };
+  if (!liteapiConfigured()) return { simulated: true, hotels: [] };
+
+  let raw;
+  try {
+    raw = await semanticSearch(query, Math.min(24, Math.max(1, opts.limit || 12)), opts.minRating);
+  } catch {
+    return { simulated: false, hotels: [] };
+  }
+  if (!raw.length) return { simulated: false, hotels: [] };
+
+  const ids = raw.map((h) => h.id);
+  const overlay = await overlayFor(ids);
+  let hotels = raw.map((h) =>
+    hotelFromRates(
+      { id: h.id, name: h.name, main_photo: h.main_photo, thumbnail: h.thumbnail, address: h.address, city_name: h.city, country_code: h.country, rating: h.rating, stars: h.stars, review_count: h.reviewCount },
+      overlay.get(h.id),
+    ),
+  );
+
+  // "from $X" labels (best-effort) for a default future window — semantic search is dateless.
+  try {
+    const { checkin, checkout } = defaultStayDates(2);
+    const currency = String(opts.currency || "USD").toUpperCase().slice(0, 3);
+    const nat = String(opts.guestNationality || "SG").toUpperCase().slice(0, 2);
+    const mins = await minRates(ids, checkin, checkout, nat, currency);
+    hotels = hotels.map((h) => (mins[h.id]?.price != null ? { ...h, priceFrom: { amount: mins[h.id].price, currency } } : h));
+  } catch {
+    /* price is best-effort */
+  }
+
+  hotels.sort((a, b) => b.halalScore - a.halalScore || (a.priceFrom?.amount ?? 1e9) - (b.priceFrom?.amount ?? 1e9));
   return { simulated: false, hotels };
 }
 

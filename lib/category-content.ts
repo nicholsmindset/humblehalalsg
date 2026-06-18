@@ -101,6 +101,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   health: {
+    h1: "Muslim-Friendly Health, Cupping (Bekam) & Clinics in Singapore",
     intro:
       "Find Muslim-friendly health and wellness in Singapore — clinics, dental, pharmacies, cupping (bekam), confinement care and women-friendly fitness. Discover Muslim-owned and trusted providers with prayer-friendly, modesty-aware care and halal-confidence scores.",
     lookFor: [
@@ -121,8 +122,9 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   fashion: {
+    h1: "Modest Fashion, Abaya & Baju Kurung in Singapore",
     intro:
-      "Shop modest fashion in Singapore — hijabs, abayas, jubah, baju kurung, tailoring, songkok and modest footwear from Muslim-owned and homegrown labels. Browse halal-conscious boutiques by area, with halal-confidence scores and community reviews.",
+      "Shop modest fashion in Singapore — abayas, hijabs (tudung), jubah, baju kurung, tailoring, songkok and modest footwear from Muslim-owned and homegrown labels. Browse halal-conscious boutiques by area, with halal-confidence scores and community reviews.",
     lookFor: [
       "Muslim-Owned modest fashion and hijab labels",
       "Tailoring and alteration services",
@@ -180,8 +182,9 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   weddings: {
+    h1: "Malay Wedding & Halal Wedding Vendors in Singapore",
     intro:
-      "Plan a halal wedding in Singapore — bridal and MUA, photography, kompang, hantaran and deco, florists and planners. Discover Muslim-owned wedding vendors, compare halal-confidence scores and reviews, and request quotes for your big day.",
+      "Plan a Malay or halal wedding in Singapore — bridal and MUA, photography, kompang, hantaran and deco, florists, catering and planners. Discover Muslim-owned wedding vendors, compare halal-confidence scores and reviews, and request quotes for your big day.",
     lookFor: [
       "Muslim-Owned bridal, MUA and deco specialists",
       "Photography and videography packages",
@@ -287,3 +290,39 @@ export function categoryContent(catId?: string): CategoryContent {
 
 /** Category ids that get a Singapore-wide landing page. */
 export const CATEGORY_PAGE_IDS = Object.keys(CATEGORY_CONTENT);
+
+/* ---- Cuisine / concept landing pages (/halal/halal-{cuisine}-singapore).
+   Keyword-rich, unique intros so each page stands on its own content. */
+const cuisineFaq = (label: string): QA[] => [
+  { q: `Where can I find halal ${label.toLowerCase()} in Singapore?`, a: `Browse this page or use the area and map filters to find halal ${label.toLowerCase()} near you — each listing shows its halal-confidence score, MUIS or Muslim-owned status, reviews and directions.` },
+  { q: `Is halal ${label.toLowerCase()} MUIS-certified?`, a: `Some spots are MUIS-certified and others are Muslim-owned or self-declared "no pork, no lard". We label each one and show a halal-confidence score — always confirm certification on the official MUIS HalalSG register.` },
+];
+
+export const CUISINE_CONTENT: Record<string, CategoryContent> = {
+  sushi: { intro: "Craving halal sushi in Singapore? Discover Muslim-friendly Japanese spots serving sushi, sashimi-style rolls, donburi and ramen without pork or alcohol — from casual conveyor-belt chains to sit-down restaurants. Browse by area with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("sushi") },
+  japanese: { intro: "Find halal Japanese food in Singapore — sushi, ramen, donburi, katsu and teppanyaki from Muslim-friendly kitchens with no pork and no alcohol. Compare halal-confidence scores, read reviews and find a spot near you.", lookFor: [], considerations: [], faq: cuisineFaq("Japanese food") },
+  korean: { intro: "Discover halal Korean food in Singapore — Korean fried chicken, army stew (budae jjigae), bibimbap and halal Korean BBQ from Muslim-friendly restaurants. Browse by area with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("Korean food") },
+  thai: { intro: "Find halal Thai food in Singapore — tom yum, green curry, basil chicken and mango sticky rice from Muslim-friendly Thai kitchens. Compare halal-confidence scores and find a spot near you.", lookFor: [], considerations: [], faq: cuisineFaq("Thai food") },
+  "dim-sum": { intro: "Looking for halal dim sum in Singapore? Discover Muslim-friendly Chinese restaurants serving siew mai, har gow, custard buns and more — no pork, fully halal. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("dim sum") },
+  steamboat: { intro: "Find halal steamboat and hotpot in Singapore — mookata, shabu-shabu and mala hotpot from Muslim-friendly restaurants. Gather the family around a halal pot with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("steamboat") },
+  "fine-dining": { intro: "Discover halal fine dining in Singapore — premium halal restaurants for special occasions, from wagyu grills to multi-course tasting menus, all Muslim-friendly. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("fine dining") },
+  "high-tea": { intro: "Find halal high tea in Singapore — Muslim-friendly afternoon-tea spreads, scones, pastries and brunch sets without alcohol or pork. Browse halal cafés and hotels with halal-confidence scores and reviews.", lookFor: [], considerations: [], faq: cuisineFaq("high tea") },
+  western: { intro: "Discover halal Western food in Singapore — burgers, steaks, pasta and grills from Muslim-friendly kitchens with no pork and no alcohol. Compare halal-confidence scores and find a spot near you.", lookFor: [], considerations: [], faq: cuisineFaq("Western food") },
+  steak: { intro: "Find halal steak in Singapore — halal wagyu, ribeye and grills from Muslim-friendly steakhouses. Browse with halal-confidence scores, reviews and directions for your next steak night.", lookFor: [], considerations: [], faq: cuisineFaq("steak") },
+  bbq: { intro: "Discover halal BBQ and grill in Singapore — Korean BBQ, charcoal grills and smokehouse spots that are Muslim-friendly. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("BBQ") },
+  seafood: { intro: "Find halal seafood in Singapore — chilli crab, grilled fish, prawns and seafood platters from Muslim-friendly restaurants. Compare halal-confidence scores and find a spot near you.", lookFor: [], considerations: [], faq: cuisineFaq("seafood") },
+  indian: { intro: "Discover halal Indian food in Singapore — biryani, tandoori, prata and North Indian curries from MUIS-certified and Muslim-owned kitchens. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("Indian food") },
+  "nasi-padang": { intro: "Find the best nasi padang in Singapore — rendang, ayam bakar, sambal goreng and gulai from heritage Malay and Minang kitchens, MUIS-certified and Muslim-owned. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("nasi padang") },
+  breakfast: { intro: "Find halal breakfast and brunch in Singapore — nasi lemak, big breakfasts, kaya toast and all-day brunch from Muslim-friendly cafés. Start the day with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("breakfast") },
+  dessert: { intro: "Discover halal desserts in Singapore — cakes, ice cream, kunafa, kueh and chocolate from Muslim-friendly bakeries and dessert bars. Browse with halal-confidence scores, reviews and directions.", lookFor: [], considerations: [], faq: cuisineFaq("dessert") },
+  buffet: { intro: "Find the best halal buffet in Singapore — international spreads, BBQ and steamboat buffets, and high-tea buffets that are MUIS-certified or Muslim-friendly. Browse by area with halal-confidence scores, reviews and directions for your next celebration.", lookFor: [], considerations: [], faq: cuisineFaq("buffet") },
+  catering: { intro: "Find halal catering in Singapore — mini buffets, wedding and event catering, corporate spreads and high-tea sets from MUIS-certified and Muslim-owned caterers. Compare options, request quotes and book with confidence.", lookFor: [], considerations: [], faq: [
+    { q: "How much does halal catering cost in Singapore?", a: "Halal catering in Singapore typically starts around $12–18 per person for mini buffets and rises for premium wedding or corporate spreads. Request quotes from several Muslim-owned caterers to compare inclusions." },
+    { q: "Is the catering MUIS halal-certified?", a: "Many caterers are MUIS-certified; others are Muslim-owned. We label each one with a halal-confidence score — always confirm certification on the official MUIS HalalSG register before booking." },
+  ] },
+};
+
+export function cuisineContent(id?: string): CategoryContent {
+  if (id && CUISINE_CONTENT[id]) return CUISINE_CONTENT[id];
+  return AREA_CONTENT;
+}

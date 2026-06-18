@@ -12,6 +12,8 @@ export interface Flags {
   paidHotels: boolean;
   paidFlights: boolean;
   paidTransfers: boolean;
+  certVault: boolean;
+  semanticSearch: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -25,7 +27,13 @@ export function getServerFlags(): Flags {
     paidHotels: truthy(process.env.PAID_HOTELS_ENABLED),
     paidFlights: truthy(process.env.PAID_FLIGHTS_ENABLED),
     paidTransfers: truthy(process.env.PAID_TRANSFERS_ENABLED),
+    // Halal Certificate Vault — owner upload + admin review. Default OFF for a
+    // flag-gated pilot before GA. Not a payment route; gates the feature surface.
+    certVault: truthy(process.env.CERT_VAULT_ENABLED),
+    // LiteAPI semantic + room search (both beta). Default OFF; gates the "Describe
+    // your stay" discovery surface. Not a payment route.
+    semanticSearch: truthy(process.env.SEMANTIC_SEARCH_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, paidTransfers: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, paidTransfers: false, certVault: false, semanticSearch: false };

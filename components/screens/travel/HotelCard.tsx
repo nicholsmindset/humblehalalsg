@@ -4,6 +4,7 @@
    Image with verified halal overlay · gold stars · name · location ·
    distance-from-centre · emerald RatingBadge · honest price line. */
 import Link from "next/link";
+import Image from "next/image";
 import { Icon } from "../../ui";
 import { RatingBadge, Stars } from "../../ota";
 import { activeFlagLabels, ratingWord, type Hotel } from "@/lib/halal-hotels";
@@ -15,8 +16,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
     <Link href={`/travel/hotel/${hotel.id}`} className="hotel-card">
       <div className="hotel-photo">
         {hotel.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={hotel.image} alt={hotel.name} loading="lazy" />
+          <Image src={hotel.image} alt={hotel.name} fill sizes="(max-width: 640px) 100vw, 290px" style={{ objectFit: "cover" }} />
         ) : (
           <div className="ph-empty" aria-hidden />
         )}

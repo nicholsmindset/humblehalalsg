@@ -6,7 +6,7 @@ export type ScreenName =
   | "home" | "explore" | "map" | "detail" | "ask"
   | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
-  | "mosques" | "verify" | "disclaimer" | "seo" | "404" | "success"
+  | "mosques" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "about" | "contact" | "faq"
   | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
   | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips" | "travel-flights";
@@ -32,6 +32,7 @@ const BASE_PATH: Record<string, string> = {
   report: "/report",
   "request-quote": "/quotes",
   mosques: "/mosques",
+  tools: "/tools",
   "is-halal": "/is-halal",
   about: "/about",
   contact: "/contact",

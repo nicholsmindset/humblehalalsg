@@ -80,6 +80,9 @@ export async function POST(req: Request) {
       // Commission can never exceed the retail total — drop tampered values.
       if (commission != null && retailTotal != null && commission > retailTotal) commission = null;
       const marginPct = toPct(body.marginPct);
+      // Promo voucher applied at prebook (sanitized like the validate route).
+      const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 32) || null;
+      const discountAmount = voucherCode ? toMoney(body.discountAmount) : null;
       const { data: bk } = await db
         .from("hotel_bookings")
         .insert({
@@ -98,6 +101,8 @@ export async function POST(req: Request) {
           retail_total: retailTotal,
           commission_amount: commission,
           refundable_tag: body.refundableTag ?? null,
+          voucher_code: voucherCode,
+          discount_amount: discountAmount,
           muslim_friendly_tags: Array.isArray(body.tags) ? body.tags : [],
           status: "confirmed",
         })

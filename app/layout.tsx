@@ -13,7 +13,9 @@ import "../styles/screens2.css";
 import "../styles/moat.css";
 import "../styles/events.css";
 import "../styles/travel.css";
+import "../styles/tools.css";
 import "../styles/mobile.css";
+import "../styles/mobile-a11y.css";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
@@ -71,7 +73,9 @@ export const viewport: Viewport = {
   themeColor: "#0F5C4A",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  // No maximumScale/user-scalable lock — pinch-zoom must stay enabled (WCAG 1.4.4).
+  // viewport-fit=cover lets safe-area-inset env() padding work on notched devices.
+  viewportFit: "cover",
 };
 
 /* Self-hosted via next/font (no render-blocking <link>). Exposed as CSS

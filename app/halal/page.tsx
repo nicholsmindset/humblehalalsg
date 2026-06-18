@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { areas, categories } from "@/lib/data";
+import { categories } from "@/lib/data";
 import { allSeoPages } from "@/lib/seo-pages";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMeta({
-  title: "Halal directory Singapore — browse by category & area",
+  title: "Halal Directory Singapore — Restaurants by Area",
   description:
-    "Browse Singapore’s halal & Muslim-owned business directory by category — restaurants, cafés, groceries, beauty, modest fashion, services, weddings, travel and more — or by neighbourhood.",
+    "Browse Singapore's halal & Muslim-owned directory by category and neighbourhood — restaurants, cafés, halal food in every mall and MRT area, weddings, travel and more.",
   path: "/halal",
+  absoluteTitle: true,
 });
 
 export default function Page() {
   const pages = allSeoPages();
   const catPages = pages.filter((p) => p.catId && !p.areaId);
+  const areaPages = pages.filter((p) => p.kind === "area");
+  const venuePages = pages.filter((p) => p.kind === "venue");
+  const cuisinePages = pages.filter((p) => p.kind === "cuisine");
   const catLabel = (catId?: string) => categories.find((c) => c.id === catId)?.label || "";
 
   const collection = {
@@ -65,11 +69,31 @@ export default function Page() {
             ))}
           </div>
 
+          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse by cuisine</h2>
+          <div className="hub-grid">
+            {cuisinePages.map((p) => (
+              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+                <span>{p.h1.replace(/ in Singapore$/, "")}</span>
+                <span className="hub-link-arr" aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </div>
+
           <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse by area</h2>
           <div className="hub-grid">
-            {areas.map((a) => (
-              <Link key={a.id} href={`/halal/halal-food-in-${a.id}`} className="hub-link">
-                <span>Halal food in {a.name}</span>
+            {areaPages.map((p) => (
+              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+                <span>Halal food in {p.areaName}</span>
+                <span className="hub-link-arr" aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </div>
+
+          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse halal food by mall</h2>
+          <div className="hub-grid">
+            {venuePages.map((p) => (
+              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+                <span>Halal food at {p.areaName}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>
             ))}

@@ -5,6 +5,7 @@
 import { Fragment, useEffect, useState } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
+import { canUse, planKey, PLAN_LIST } from "@/lib/plans";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
@@ -104,13 +105,19 @@ export function PricingScreen() {
     }
     navigate("add-listing");
   };
-  // SGD, SG-realistic. Yearly ≈ 2 months free (monthly × 10 / 12).
-  const tiers = [
-    { id: "free", name: "Free", price: 0, year: 0, tag: "Get listed", features: ["Basic profile", "1 category", "Up to 3 photos", "Map pin", "Customer reviews"], cta: "Start free", accent: false },
-    { id: "verified", name: "Verified", price: yearly ? 16 : 19, year: 190, tag: "Build trust", features: ["Everything in Free", "Admin Verified badge", "Halal status review", "Muslim-owned label", "Up to 15 photos", "Reply to reviews", "WhatsApp & directions buttons"], cta: "Choose Verified", accent: true, popular: true },
-    { id: "featured", name: "Featured", price: yearly ? 41 : 49, year: 490, tag: "Get seen", features: ["Everything in Verified", "Featured placement", "Top of category & area", "Homepage rotation", "Priority support"], cta: "Choose Featured", accent: false },
-    { id: "premium", name: "Premium", price: yearly ? 82 : 99, year: 990, tag: "Grow faster", features: ["Everything in Featured", "Multiple locations", "Advanced analytics", "Promo & ad credits", "Dedicated manager"], cta: "Contact sales", accent: false },
-  ];
+  // The plan catalog (lib/plans) is the single source of truth — no duplicated
+  // tier list here. Yearly shows the monthly-equivalent (yearly ÷ 12, ≈2 months free).
+  const tiers = PLAN_LIST.map((p) => ({
+    id: p.key,
+    name: p.name,
+    price: yearly && p.monthly > 0 ? Math.round(p.yearly / 12) : p.monthly,
+    year: p.yearly,
+    tag: p.tag,
+    features: p.bullets,
+    cta: p.cta,
+    accent: !!p.accent,
+    popular: !!p.popular,
+  }));
   return (
     <div className="screen-in hh-page">
       <section className="hh-wrap" style={{ paddingTop: 40, textAlign: "center" }}>
@@ -525,6 +532,11 @@ export function OwnerDashboardScreen() {
     return () => { alive = false; };
   }, []);
   const myBiz = biz && biz.length ? biz[0] : null;
+  // Current subscription tier (from the business `plan`). In mock/demo mode show
+  // "verified" so the header isn't bare; the upgrade CTA shows below premium.
+  const currentPlan = planKey(live ? myBiz : "verified");
+  const currentPlanLabel = currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1);
+  const canUpgrade = currentPlan !== "premium";
 
   // Open the Stripe Customer Portal so owners can self-serve manage their
   // subscription (update card, change plan, cancel). Degrades gracefully when
@@ -553,7 +565,7 @@ export function OwnerDashboardScreen() {
     } catch { toast("Couldn’t cancel — try again"); }
   };
 
-  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ["billing", "Billing", "settings"]];
+  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ["billing", "Billing", "settings"]];
 
   return (
     <div className="screen-in hh-page dash">
@@ -563,7 +575,13 @@ export function OwnerDashboardScreen() {
             <div><span className="eyebrow" style={{ color: "var(--gold)" }}>Business dashboard</span>
               <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{live ? (myBiz?.name || (biz === null ? "Loading…" : "Your business")) : "Warung Bumbu Rempah"}</h1>
               <div className="flex g8 center" style={{ marginTop: 8 }}>{live ? (myBiz ? <>{myBiz.halal_tier === "muis" && <Badge type="muis" />}{myBiz.halal_tier === "admin" && <Badge type="admin" />}</> : null) : <><Badge type="muis" /><Badge type="owned" /></>}</div></div>
-            <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
+            <div className="flex g10 center wrap" style={{ alignItems: "center" }}>
+              <div className="flex g8 center" style={{ flexWrap: "wrap" }}>
+                <span className="plan-chip"><Icon name="crescent" size={13} /> {currentPlanLabel} plan</span>
+                {canUpgrade && <button className="btn btn-soft btn-sm" onClick={() => navigate("pricing")}><Icon name="arrow" size={15} /> Upgrade</button>}
+              </div>
+              <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
+            </div>
           </div>
         </div>
       </div>
@@ -715,6 +733,8 @@ export function OwnerDashboardScreen() {
           </div>
         )}
 
+        {tab === "cert" && <CertVault toast={toast} navigate={navigate} live={live} certVaultEnabled={flags.certVault} biz={myBiz} />}
+
         {tab === "reviews" && <OwnerReviews toast={toast} />}
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
@@ -727,6 +747,196 @@ export function OwnerDashboardScreen() {
               <div className="flex between center wrap g12"><div><span className="eyebrow">Billing &amp; subscription</span><h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>Manage your plan</h3><p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to view your current plan, update your card, download invoices, change plan or cancel.</p></div>
                 <div className="flex g8 wrap"><button className="btn btn-gold" onClick={manageBilling}><Icon name="settings" size={16} /> Manage subscription</button><button className="btn btn-soft" onClick={() => navigate("pricing")}>View plans</button></div></div>
             </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Halal Certificate Vault — owner upload + status list.
+   Shows the upload form + the owner's certs when the business is Verified+ and the
+   vault flag is on; otherwise a soft upsell. Files are previewed via short-TTL
+   signed URLs minted by the server (never a public URL). */
+type OwnerCert = {
+  id: string;
+  business_id: string;
+  issuer: string | null;
+  scheme: string | null;
+  cert_no: string | null;
+  issued_on: string | null;
+  expires_on: string | null;
+  status: string;
+  review_note: string | null;
+  created_at: string;
+  url: string | null;
+};
+
+const CERT_STATUS: Record<string, [string, string]> = {
+  pending: ["Pending review", "amber"],
+  approved: ["Approved", "green"],
+  rejected: ["Rejected", "red"],
+  expired: ["Expired", "amber"],
+};
+
+function CertVault({
+  toast,
+  navigate,
+  live,
+  certVaultEnabled,
+  biz,
+}: {
+  toast: (m: string) => void;
+  navigate: ReturnType<typeof useApp>["navigate"];
+  live: boolean;
+  certVaultEnabled: boolean;
+  biz: OwnerBiz | null;
+}) {
+  const [certs, setCerts] = useState<OwnerCert[] | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [issuer, setIssuer] = useState("MUIS");
+  const [scheme, setScheme] = useState("");
+  const [certNo, setCertNo] = useState("");
+  const [issuedOn, setIssuedOn] = useState("");
+  const [expiresOn, setExpiresOn] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // Verified+ entitlement (cert_upload). In mock mode there's no plan, so we
+  // still show the form so the surface is explorable.
+  const entitled = !live || (!!biz && canUse(biz, "cert_upload"));
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/owner/cert");
+      const d = await r.json().catch(() => ({ ok: false }));
+      if (d.ok && Array.isArray(d.certs)) setCerts(d.certs as OwnerCert[]);
+      else setCerts([]);
+    } catch {
+      setCerts([]);
+    }
+  };
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!entitled) { if (alive) setCerts([]); return; }
+      try {
+        const r = await fetch("/api/owner/cert");
+        const d = await r.json().catch(() => ({ ok: false }));
+        if (alive) setCerts(d.ok && Array.isArray(d.certs) ? (d.certs as OwnerCert[]) : []);
+      } catch {
+        if (alive) setCerts([]);
+      }
+    })();
+    return () => { alive = false; };
+  }, [entitled]);
+
+  const submit = async () => {
+    if (!file) { toast("Choose a certificate file first"); return; }
+    if (live && !biz) { toast("Add or claim your business first"); return; }
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      if (biz) fd.set("businessId", biz.id);
+      fd.set("issuer", issuer);
+      fd.set("scheme", scheme);
+      fd.set("cert_no", certNo);
+      fd.set("issued_on", issuedOn);
+      fd.set("expires_on", expiresOn);
+      const r = await fetch("/api/owner/cert", { method: "POST", body: fd });
+      const d = await r.json().catch(() => ({ ok: false }));
+      if (!d.ok) {
+        const msg: Record<string, string> = {
+          cert_vault_disabled: "Certificate uploads aren’t open yet — check back soon.",
+          tier_locked: "Upgrade to Verified to upload your halal certificate.",
+          unauthenticated: "Please sign in to upload your certificate.",
+          not_owner: "You can only upload certificates for your own business.",
+        };
+        toast(msg[d.reason] || d.error || "Couldn’t upload — try again.");
+        return;
+      }
+      toast(d.simulated ? "Certificate received (demo mode)" : "Certificate uploaded — pending review");
+      setFile(null); setScheme(""); setCertNo(""); setIssuedOn(""); setExpiresOn("");
+      if (live) load();
+    } catch {
+      toast("Couldn’t upload — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Soft upsell when the business isn't Verified+.
+  if (!entitled) {
+    return (
+      <div className="dash-pane">
+        <div className="card" style={{ padding: 28, textAlign: "center" }}>
+          <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="shield-check" size={24} /></div>
+          <h3 style={{ fontSize: "1.2rem", marginBottom: 6 }}>Upload your halal certificate</h3>
+          <p className="faint" style={{ fontSize: ".92rem", maxWidth: 440, margin: "0 auto 14px" }}>Verify your business to upload your halal certificate to the vault. Our team reviews it and it powers your halal-confidence badge.</p>
+          <button className="btn btn-gold" onClick={() => navigate("pricing")}><Icon name="shield-check" size={16} /> Verify your business</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dash-pane stack g16">
+      {!certVaultEnabled && (
+        <div className="notice notice-warn">
+          <Icon name="info" size={18} />
+          <span>The Halal Certificate Vault is in <strong>pilot</strong>. You can prepare your details now — uploads go live the moment it’s switched on.</span>
+        </div>
+      )}
+
+      <div className="card" style={{ padding: 22 }}>
+        <span className="eyebrow">Halal certificate vault</span>
+        <h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>Add your halal certificate</h3>
+        <p className="faint" style={{ maxWidth: 480, marginTop: 4 }}>Upload your MUIS (or issuer) certificate as a PDF, JPG or PNG. Our team reviews it; once approved it strengthens your halal-confidence badge. Your file is private — only you and our reviewers can open it.</p>
+
+        <div className="stack g12" style={{ marginTop: 16 }}>
+          <div className="flex g10 wrap">
+            <div className="field" style={{ flex: 1, minWidth: 160 }}><label>Issuer</label><input className="input" value={issuer} onChange={(e) => setIssuer(e.target.value)} placeholder="e.g. MUIS" /></div>
+            <div className="field" style={{ flex: 1, minWidth: 160 }}><label>Scheme</label><input className="input" value={scheme} onChange={(e) => setScheme(e.target.value)} placeholder="e.g. Eating Establishment" /></div>
+          </div>
+          <div className="flex g10 wrap">
+            <div className="field" style={{ flex: 1, minWidth: 160 }}><label>Certificate no.</label><input className="input" value={certNo} onChange={(e) => setCertNo(e.target.value)} placeholder="From your certificate" /></div>
+            <div className="field" style={{ flex: 1, minWidth: 120 }}><label>Issued on</label><input type="date" className="input" value={issuedOn} onChange={(e) => setIssuedOn(e.target.value)} /></div>
+            <div className="field" style={{ flex: 1, minWidth: 120 }}><label>Expires on</label><input type="date" className="input" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} /></div>
+          </div>
+          <div className="field">
+            <label>Certificate file (PDF, JPG or PNG · max 8MB)</label>
+            <input className="input" type="file" accept="application/pdf,image/jpeg,image/png" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          </div>
+          <div className="flex g8">
+            <button className="btn btn-primary" disabled={busy || !file} onClick={submit}><Icon name="upload" size={16} /> {busy ? "Uploading…" : "Upload certificate"}</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: 20 }}>
+        <h3 style={{ fontSize: "1.1rem", marginBottom: 12 }}>Your certificates</h3>
+        {certs === null ? (
+          <div className="card" style={{ padding: 20, height: 60, opacity: 0.5 }} aria-busy="true" />
+        ) : certs.length === 0 ? (
+          <p className="faint" style={{ fontSize: ".9rem" }}>No certificates yet. Upload one above to get verified.</p>
+        ) : (
+          <div className="stack g10">
+            {certs.map((c) => {
+              const [label, tone] = CERT_STATUS[c.status] || [c.status, "amber"];
+              return (
+                <div key={c.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
+                  <div className="f1" style={{ minWidth: 160 }}>
+                    <div className="flex g8 center wrap"><span className={`pill-tag ${tone}`}>{label}</span></div>
+                    <div style={{ fontWeight: 700, marginTop: 5 }}>{[c.issuer, c.scheme].filter(Boolean).join(" · ") || "Certificate"}</div>
+                    <div className="faint" style={{ fontSize: ".82rem", marginTop: 2 }}>{[c.cert_no && `No. ${c.cert_no}`, c.expires_on && `Expires ${c.expires_on}`].filter(Boolean).join(" · ") || "—"}</div>
+                    {c.status === "rejected" && c.review_note && <div className="faint" style={{ fontSize: ".82rem", marginTop: 4, color: "var(--danger)" }}>Reason: {c.review_note}</div>}
+                  </div>
+                  {c.url && (
+                    <a className="btn btn-outline btn-sm" href={c.url} target="_blank" rel="noopener noreferrer"><Icon name="eye" size={15} /> View</a>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

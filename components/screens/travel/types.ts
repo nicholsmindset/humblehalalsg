@@ -45,6 +45,10 @@ export interface Prebook {
   price: number | null;
   sellingPrice: number | null;
   commission: number | null;
+  /** Discount the applied voucher took off this prebook (LiteAPI-computed). */
+  discount?: number | null;
+  /** The promo code actually applied to this prebook, echoed by the server. */
+  voucherCode?: string | null;
 }
 
 /** A saved hotel booking shown on the trips page. */

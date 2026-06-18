@@ -93,6 +93,45 @@ export interface RatesSearchBody {
   radius?: number;
   limit?: number;
   timeout?: number;
+  /** Stable id across a user's search session — keeps rate prices consistent from
+   *  search through prebook (LiteAPI dedupes/locks pricing per session). */
+  sessionId?: string;
+  /** Native LiteAPI filters (narrow the search server-side, before our halal sort). */
+  refundableRatesOnly?: boolean;
+  starRating?: number;
+  minRating?: number;
+  boardType?: string;
+  facilities?: number[];
+  hotelTypeIds?: number[];
+  chainIds?: number[];
+}
+
+/** A hotel hit from /data/hotels/semantic-search (beta) — content + relevance,
+ *  NO pricing (we add "from $X" separately via /hotels/min-rates). */
+export interface LiteApiSemanticHotel {
+  id: string;
+  name?: string;
+  main_photo?: string;
+  thumbnail?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  rating?: number;
+  stars?: number;
+  reviewCount?: number;
+  score?: number; // semantic relevance
+  tags?: string[];
+}
+
+/** A room hit from /data/hotels/room-search (beta) — rooms matched by image/text,
+ *  grouped under their hotel. */
+export interface LiteApiRoomHit {
+  hotelId: string;
+  hotelName?: string;
+  city?: string;
+  country?: string;
+  rating?: number;
+  rooms: { name?: string; image?: string; score?: number }[];
 }
 
 /** A place suggestion from /data/places. */

@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
+      // LiteAPI/Cupid hotel photo CDN — every hotel image (card + hero) is
+      // served from this single host. Required or next/image 500s on them.
+      { protocol: "https", hostname: "static.cupid.travel" },
     ],
   },
   async headers() {

@@ -2,6 +2,7 @@
 import { SITE } from "@/lib/seo";
 import type { EventItem, Listing } from "@/lib/types";
 import type { Hotel } from "@/lib/halal-hotels";
+import { scoreListing } from "@/lib/halal-score";
 
 export function JsonLd({ data }: { data: object | object[] }) {
   return (
@@ -81,6 +82,11 @@ const CAT_SCHEMA: Record<string, string> = {
 
 export function listingJsonLd(l: Listing) {
   const type = CAT_SCHEMA[l.catId] || "LocalBusiness";
+  // Halal Confidence (HalalRank) — a distinct trust signal (0–100) derived from
+  // certification provenance, recency and community confirmations. Emitted as a
+  // PropertyValue (additionalProperty) so it never collides with the review-based
+  // aggregateRating below, which Google requires to reflect actual reviews.
+  const halal = scoreListing(l);
   return {
     "@context": "https://schema.org",
     "@type": type,
@@ -102,6 +108,14 @@ export function listingJsonLd(l: Listing) {
       : {}),
     areaServed: { "@type": "City", name: "Singapore" },
     currenciesAccepted: "SGD",
+    additionalProperty: {
+      "@type": "PropertyValue",
+      name: "Halal Confidence",
+      value: halal.score,
+      maxValue: 100,
+      minValue: 0,
+      description: `${halal.label} — ${halal.blurb}`,
+    },
     ...(["restaurants", "cafes"].includes(l.catId)
       ? { servesCuisine: l.cuisine.split("·").map((s) => s.trim()) }
       : {}),

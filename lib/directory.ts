@@ -56,6 +56,7 @@ export function rowToListing(r: Row): Listing {
     prayer: tags.some((t) => /prayer/i.test(t)),
     delivery: tags.some((t) => /delivery/i.test(t)),
     featured: !!r.featured,
+    plan: str(r.plan) || "free",
     hours: "",
     phone: str(r.phone),
     wa: str(r.whatsapp || socials.whatsapp),
