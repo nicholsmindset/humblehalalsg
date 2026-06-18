@@ -30,6 +30,15 @@ export const DEFAULT_TWEAKS: Tweaks = {
   radius: 20,
 };
 
+/** A submitted quote/claim, kept client-side so the user can see what they've
+    sent (audit #14 — quotes/claims had no "my requests" view like My tickets). */
+export interface AppRequest {
+  id: string;
+  kind: "quote" | "claim";
+  label: string;
+  at: number;
+}
+
 interface AppState {
   saved: string[];
   wishlist: string[];
@@ -39,6 +48,7 @@ interface AppState {
   prefs: Prefs;
   savedEvents: string[];
   tickets: Ticket[];
+  requests: AppRequest[];
   collections: Collection[];
   hydrated: boolean;
 }
@@ -58,6 +68,7 @@ interface AppContextValue {
   toggleCertifiedOnly: () => void;
   toggleEventSave: (id: string) => void;
   bookEvent: (eventId: string, tier: string, qty: number) => void;
+  addRequest: (kind: AppRequest["kind"], label: string) => void;
   toastMsg: string;
   // collections
   createCollection: (name: string) => string;
@@ -126,6 +137,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   const [prefs, setPrefs] = useState<Prefs>({ onboarded: false, homeArea: "", certifiedOnly: false });
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [requests, setRequests] = useState<AppRequest[]>([]);
   const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS);
   const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
   const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);
@@ -145,6 +157,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     if (ls.prefs) setPrefs(ls.prefs);
     if (ls.savedEvents) setSavedEvents(ls.savedEvents);
     if (ls.tickets) setTickets(ls.tickets);
+    if (ls.requests) setRequests(ls.requests);
     if (ls.tweaks) setTweaks({ ...DEFAULT_TWEAKS, ...ls.tweaks });
     if (ls.collections) setCollections(ls.collections);
     if (ls.flags) setFlags({ ...DEFAULT_FLAGS, ...ls.flags });
@@ -192,12 +205,12 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     try {
       localStorage.setItem(
         LS,
-        JSON.stringify({ saved, wishlist, recent, user, prefs, savedEvents, tickets, tweaks, collections, flags }),
+        JSON.stringify({ saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections, flags }),
       );
     } catch {
       /* ignore */
     }
-  }, [saved, wishlist, recent, user, prefs, savedEvents, tickets, tweaks, collections, flags, hydrated]);
+  }, [saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections, flags, hydrated]);
 
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -255,6 +268,13 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       { eventId, tier, qty, ref, status: "upcoming" },
       ...t.filter((x) => x.eventId !== eventId),
     ]);
+  }, []);
+
+  const addRequest = useCallback((kind: AppRequest["kind"], label: string) => {
+    setRequests((r) => [
+      { id: `${kind}-${Date.now()}-${Math.floor(Math.random() * 1000)}`, kind, label, at: Date.now() },
+      ...r,
+    ].slice(0, 50));
   }, []);
 
   const setPref = useCallback((patch: Partial<Prefs>) => setPrefs((p) => ({ ...p, ...patch })), []);
@@ -360,7 +380,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       params,
       navigate,
       back,
-      state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, collections, hydrated },
+      state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, requests, collections, hydrated },
       setUser,
       toggleSave,
       toggleWish,
@@ -370,6 +390,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       toggleCertifiedOnly,
       toggleEventSave,
       bookEvent,
+      addRequest,
       toastMsg,
       createCollection,
       toggleInCollection,
@@ -385,8 +406,8 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     }),
     [
       screen, params, navigate, back, saved, wishlist, recent, user, tweaks, prefs,
-      savedEvents, tickets, collections, setUser, toggleSave, toggleWish, toast, setTweak, setPref,
-      toggleCertifiedOnly, toggleEventSave, bookEvent, toastMsg,
+      savedEvents, tickets, requests, collections, setUser, toggleSave, toggleWish, toast, setTweak, setPref,
+      toggleCertifiedOnly, toggleEventSave, bookEvent, addRequest, toastMsg,
       createCollection, toggleInCollection, lang, setLang, t, ramadan, toggleRamadan,
       ramadanModeEnabled, setRamadanModeEnabled, flags, setFlag, hydrated,
     ],

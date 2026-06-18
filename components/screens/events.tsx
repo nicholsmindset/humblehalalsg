@@ -354,7 +354,9 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
             </span>
           ) : (
             <span className="evt-left">
-              <Icon name="users" size={13} /> {ev.attendees} going
+              {/* Use ev.taken (same source as spotsLeft + the detail page) so the
+                  "going" count reconciles between the list and detail (audit #11). */}
+              <Icon name="users" size={13} /> {ev.taken} going{ev.capacity ? ` · ${left} left` : ""}
             </span>
           )}
         </div>
