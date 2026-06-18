@@ -343,6 +343,12 @@ export function TravelScreen({
           <span className="fcta-go">Search flights <Icon name="arrow" size={15} /></span>
         </Link>
 
+        <Link href="/travel/transfers" className="flights-cta">
+          <span className="fcta-ico"><Icon name="arrow" size={20} /></span>
+          <span className="fcta-text"><strong>Need an airport transfer?</strong> Book a private door-to-door ride for your Umrah or family trip.</span>
+          <span className="fcta-go">Search transfers <Icon name="arrow" size={15} /></span>
+        </Link>
+
         <h2 style={{ fontSize: "1.35rem", marginBottom: 4 }}>Browse destinations</h2>
         <p className="muted" style={{ marginBottom: 18 }}>Curated halal-travel guides with Muslim-friendly hotels in each city.</p>
         <div className="dest-grid">{cities.map((c) => <DestinationCard key={c.slug} c={c} />)}</div>
