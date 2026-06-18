@@ -172,7 +172,7 @@ export function LoginScreen() {
             <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : (supabaseConfigured ? 'Email me a sign-in link' : (mode==='login'?'Log in':'Create account'))}</button>
           </form>
           )}
-          <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our Terms &amp; Privacy Policy.</p>
+          <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our <a href="/terms" className="link-inline">Terms</a> &amp; <a href="/privacy" className="link-inline">Privacy Policy</a>.</p>
         </div>
       </div>
     </div>

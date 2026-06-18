@@ -665,15 +665,9 @@ export function Footer() {
         ["Blog & guides", "blog"],
       ],
     ],
-    [
-      "Demo views",
-      [
-        ["User dashboard", "user-dashboard"],
-        ["Owner dashboard", "owner-dashboard"],
-        ["Admin console", "admin"],
-        ["404 page", "404"],
-      ],
-    ],
+    // (Removed the "Demo views" column — it exposed the Admin console + demo
+    // dashboards/404 in the public footer and, as a 6th item in the 5-column
+    // grid, broke the footer spacing site-wide.)
   ];
   return (
     <footer className="hh-footer">
