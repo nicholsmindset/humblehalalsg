@@ -38,6 +38,12 @@ export interface Plan {
 
 // Cumulative feature sets, built bottom-up so each tier inherits the one below.
 const FREE_FEATURES: Feature[] = [];
+// NOTE (audit #3): a plan NEVER confers a public trust badge. The "Verified by
+// MUIS" / "Admin Verified" badge + halal-confidence tier are derived purely from
+// verification DATA (admin review of submitted evidence — see lib/verify-grant
+// `tierAndScore` and lib/halal-score). `verified_badge` here only unlocks the
+// owner-side workflow (cert vault upload + eligibility for review), not the badge
+// itself. Payment buys access to the review process, never the verdict.
 const VERIFIED_FEATURES: Feature[] = [
   ...FREE_FEATURES,
   "verified_badge",
@@ -84,8 +90,8 @@ export const PLANS: Record<PlanKey, Plan> = {
     features: VERIFIED_FEATURES,
     bullets: [
       "Everything in Free",
-      "Admin Verified badge",
-      "Halal status review",
+      "Halal-status review by our team",
+      "Eligibility for the Admin-Verified badge (earned after review, not automatic)",
       "Halal certificate vault",
       "Up to 15 photos",
       "Reply to reviews",

@@ -203,6 +203,7 @@
 .notice svg { flex:none; margin-top:1px; }
 .notice-warn { background: var(--gold-50); border:1px solid var(--gold-100); color:#6B5A2E; }
 .notice-info { background: var(--emerald-50); border:1px solid var(--emerald-100,#cfe6dc); color: var(--emerald-700,#1f5c45); }
+.notice-ok { background: var(--emerald-50); border:1px solid var(--emerald-100,#cfe6dc); color: var(--emerald-700,#1f5c45); }
 .link-inline { color: var(--emerald); font-weight:700; cursor:pointer; }
 
 .contact-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap:10px; margin-top:18px; }

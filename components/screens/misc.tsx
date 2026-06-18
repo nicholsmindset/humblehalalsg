@@ -2,7 +2,7 @@
 
 /* Humble Halal — Misc screens: Auth, User dashboard, Suggest, Claim, Report, Trust, SEO, States
    (ported from screens-misc.jsx). */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { HHData } from "@/lib/data";
 import type { BadgeKey } from "@/lib/types";
@@ -28,6 +28,9 @@ export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [touched, setTouched] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
+  const [authErr, setAuthErr] = useState("");
 
   const emailErr = !email
     ? "Enter your email"
@@ -51,11 +54,32 @@ export function LoginScreen() {
     if (supabaseConfigured) {
       const sb = getSupabaseBrowser();
       if (sb) {
-        const { error } = await sb.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-        });
-        toast(error ? "Couldn’t send the link — try again" : "Check your email for a magic login link ✉️");
+        // Always surface a pending → success/error state so the first submit is
+        // never silent (audit #7). Map the Supabase rate-limit (HTTP 429) to a
+        // specific message instead of a generic "try again".
+        setAuthErr("");
+        setSending(true);
+        try {
+          const { error } = await sb.auth.signInWithOtp({
+            email,
+            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          });
+          if (error) {
+            const status = (error as { status?: number }).status;
+            const msg = status === 429
+              ? "Too many requests — please wait a minute and try again."
+              : "Couldn’t send the link — please try again.";
+            setAuthErr(msg);
+            toast(msg);
+          } else {
+            setLinkSent(true);
+            toast("Check your inbox ✉️");
+          }
+        } catch {
+          setAuthErr("Couldn’t send the link — please check your connection and try again.");
+        } finally {
+          setSending(false);
+        }
         return;
       }
     }
@@ -105,11 +129,23 @@ export function LoginScreen() {
           <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={googleSignIn}><Icon name="google" size={20}/> Continue with Google</button>
           <div className="auth-or"><span>or</span></div>
 
+          {linkSent ? (
+            <div className="notice notice-ok" role="status" style={{ alignItems: "flex-start" }}>
+              <Icon name="check" size={20} />
+              <div>
+                <div style={{ fontWeight: 700 }}>Check your inbox ✉️</div>
+                <p className="muted" style={{ fontSize: ".88rem", marginTop: 4, lineHeight: 1.5 }}>
+                  We emailed a secure sign-in link to <strong>{email}</strong>. It expires in a few minutes — open it on this device to finish signing in.
+                </p>
+                <button type="button" className="link-inline" style={{ marginTop: 8 }} onClick={() => { setLinkSent(false); setAuthErr(""); }}>Use a different email</button>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={submit} className="stack g14" noValidate>
             <div className="field">
               <label htmlFor="login-email">Email</label>
-              <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}
-                aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "login-email-err" : undefined} />
+              <input id="login-email" className="input" type="email" autoComplete="email" placeholder="you@email.com" value={email} onChange={e=>{ setEmail(e.target.value); if (authErr) setAuthErr(""); }}
+                aria-invalid={touched && (!!emailErr || !!authErr)} aria-describedby={touched && emailErr ? "login-email-err" : undefined} />
               {touched && emailErr && <span id="login-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
             </div>
             {!supabaseConfigured && (
@@ -132,8 +168,10 @@ export function LoginScreen() {
                 </div>
               </div>
             )}
-            <button className="btn btn-primary btn-block btn-lg" type="submit">{supabaseConfigured ? 'Email me a sign-in link' : (mode==='login'?'Log in':'Create account')}</button>
+            {authErr && <div className="notice notice-warn" role="alert"><Icon name="warning" size={16}/> <span>{authErr}</span></div>}
+            <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : (supabaseConfigured ? 'Email me a sign-in link' : (mode==='login'?'Log in':'Create account'))}</button>
           </form>
+          )}
           <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our Terms &amp; Privacy Policy.</p>
         </div>
       </div>
@@ -456,11 +494,26 @@ export function RequestQuoteScreen() {
    CLAIM BUSINESS
 ============================================================= */
 export function ClaimScreen() {
-  const { navigate, params } = useApp();
+  const { navigate, params, toast } = useApp();
   const dir = useDirectory();
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState(params.id ? dir.get(String(params.id)) || null : null);
+  const [role, setRole] = useState("Owner");
+  const [message, setMessage] = useState("");
+  const [proof, setProof] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const results = q ? dir.listings.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())) : dir.listings.slice(0,4);
+
+  // Proof of ownership is REQUIRED — a claim can't be submitted without a
+  // document (audit #2: the platform's trust positioning forbids accepting
+  // ownership with zero proof). Max 8MB, common doc/image types.
+  const MAX_PROOF_BYTES = 8 * 1024 * 1024;
+  function onPickFile(f: File | null) {
+    if (!f) { setProof(null); return; }
+    if (f.size > MAX_PROOF_BYTES) { toast("That file is over 8MB — please choose a smaller one"); return; }
+    setProof(f);
+  }
 
   return (
     <div className="screen-in hh-page">
@@ -490,10 +543,36 @@ export function ClaimScreen() {
               <button className="btn btn-ghost btn-sm" onClick={()=>setPicked(null)}>Change</button>
             </div>
             <div className="stack g16 mt16">
-              <div className="field"><label>Your role</label><select className="select"><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
-              <div className="field"><label>Proof of ownership</label><div className="upload-zone"><Icon name="upload" size={24}/><div style={{fontWeight:700,marginTop:6}}>Upload document</div><p className="faint" style={{fontSize:'.8rem'}}>Business registration, utility bill, or MUIS cert</p><button className="btn btn-soft btn-sm mt8">Choose file</button></div></div>
-              <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" /></div>
-              <button className="btn btn-primary btn-lg" onClick={async ()=>{ try { await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name }) }); } catch { /* graceful */ } navigate('success',{type:'claim'}); }}>Submit claim</button>
+              <div className="field"><label>Your role</label><select className="select" value={role} onChange={e=>setRole(e.target.value)}><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
+              <div className="field">
+                <label>Proof of ownership <span className="hint">(required)</span></label>
+                <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic" hidden onChange={e=>onPickFile(e.target.files?.[0] ?? null)} />
+                <div className={`upload-zone ${proof ? "has-file" : ""}`} role="button" tabIndex={0} onClick={()=>fileRef.current?.click()} onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileRef.current?.click(); } }}>
+                  <Icon name={proof ? "check" : "upload"} size={24}/>
+                  {proof ? (
+                    <>
+                      <div style={{fontWeight:700,marginTop:6}}>{proof.name}</div>
+                      <p className="faint" style={{fontSize:'.8rem'}}>{(proof.size/1024).toFixed(0)} KB · <span className="link-inline" onClick={(e)=>{ e.stopPropagation(); setProof(null); if(fileRef.current) fileRef.current.value=''; }}>Remove</span></p>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{fontWeight:700,marginTop:6}}>Upload document</div>
+                      <p className="faint" style={{fontSize:'.8rem'}}>Business registration, utility bill, or MUIS cert (PDF/JPG/PNG, max 8MB)</p>
+                      <span className="btn btn-soft btn-sm mt8">Choose file</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" value={message} onChange={e=>setMessage(e.target.value)} /></div>
+              <button className="btn btn-primary btn-lg" disabled={!proof || submitting} onClick={async ()=>{
+                if (!proof) { toast("Please attach a proof-of-ownership document"); return; }
+                setSubmitting(true);
+                try {
+                  await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name, role, message, proofFileName: proof.name, proofType: proof.type, proofSize: proof.size }) });
+                } catch { /* graceful */ }
+                navigate('success',{type:'claim'});
+              }}>{submitting ? "Submitting…" : "Submit claim"}</button>
+              {!proof && <p className="faint tc" style={{fontSize:'.8rem'}}>Attach a proof-of-ownership document to submit your claim.</p>}
             </div>
           </div>
         )}
@@ -775,7 +854,7 @@ export function SuccessScreen() {
   const { navigate, params } = useApp();
   const map: Record<string, { t: string; d: string; cta: string; go: string }> = {
     listing: { t:'Listing submitted!', d:'Your business has been submitted for review. We’ll verify your details and let you know within 1–2 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
-    claim: { t:'Claim submitted!', d:'We’ve received your ownership claim. Our team will review your documents and email you within 3–5 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
+    claim: { t:'Claim submitted!', d:'We’ve received your ownership claim and proof document. Our team will review it and email you within 3–5 business days.', cta:'Go to dashboard', go:'owner-dashboard' },
     suggest: { t:'Thank you!', d:'Your suggestion has been sent to our team. We usually review and add new places within a few business days to help the community discover them.', cta:'Back home', go:'home' },
     quote: { t:'Request sent! 🎉', d:'We’ve received your request and will match you with relevant Muslim-owned & halal-friendly providers, who typically reach out within 1–2 business days. Quotes are no-obligation, and you’re never charged by Humble Halal.', cta:'Browse the directory', go:'explore' },
     report: { t:'Report received', d:'Thanks for helping us stay accurate. We aim to review reports within 3 business days and update the listing if needed.', cta:'Back home', go:'home' },

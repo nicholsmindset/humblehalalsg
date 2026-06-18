@@ -12,7 +12,7 @@ import {
 } from "react";
 import { badgeMeta, HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
-import { scoreListing, scoreTone } from "@/lib/halal-score";
+import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { screenToPath } from "@/lib/routes";
 import { useApp } from "./app-context";
 
@@ -296,7 +296,7 @@ export function ListingCard({
                 </span>
               );
             })()}
-            {item.badges.slice(0, 2).map((b) => (
+            {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).slice(0, 2).map((b) => (
               <Badge key={b} type={b} />
             ))}
           </div>
@@ -351,7 +351,7 @@ export function ListingCard({
               </span>
             );
           })()}
-          {item.badges.slice(0, 3).map((b) => (
+          {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).slice(0, 3).map((b) => (
             <Badge key={b} type={b} />
           ))}
           {item.franchise && (

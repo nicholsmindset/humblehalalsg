@@ -19,7 +19,15 @@ export function halalSgSearchUrl(name?: string): string {
   return q ? `${HALALSG_BASE}?keyword=${encodeURIComponent(q)}` : HALALSG_BASE;
 }
 
+/** Deep-link to the official register prefilled with the certificate number
+    when we have one on file (the strongest lookup), falling back to the business
+    name. Cert numbers are searchable on the public register's keyword field. */
+export function halalSgVerifyUrl(certNo?: string | null, name?: string): string {
+  const cert = normalizeCertNo(certNo);
+  return cert ? `${HALALSG_BASE}?keyword=${encodeURIComponent(cert)}` : halalSgSearchUrl(name);
+}
+
 /** Normalise a MUIS cert number for storage/display (trim + uppercase). */
-export function normalizeCertNo(certNo?: string): string {
+export function normalizeCertNo(certNo?: string | null): string {
   return (certNo || "").trim().toUpperCase();
 }
