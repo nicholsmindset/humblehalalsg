@@ -45,7 +45,9 @@ export function rowToListing(r: Row): Listing {
     cuisine: str(r.cuisine || r.subcategory_id),
     area: str(r.area),
     price: str(r.price_level) || "$$",
-    rating: num(r.rating, 4.5),
+    // Default to 0 (not a fabricated 4.5) so unreviewed listings render an
+    // honest "New" state instead of a fake star score (audit #4/#9).
+    rating: num(r.rating, 0),
     reviews: num(r.review_count, 0),
     badges,
     blurb: str(r.description),

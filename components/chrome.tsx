@@ -441,14 +441,18 @@ export function MobileBar() {
     navigate(screen);
   };
 
+  // Mobile primary nav — keep parity with desktop TopNav (audit #2: Ask AI,
+  // Travel and Tools were missing from the drawer).
   const links: [string, string, string][] = [
     ["explore", t("nav.explore"), "search"],
+    ["ask", "Ask AI", "sparkles"],
+    ["travel", "Travel", "globe"],
     ["events", t("nav.events"), "calendar"],
+    ["tools", "Tools", "grid"],
     ["for-business", t("nav.forBusiness"), "store"],
     ["pricing", t("nav.pricing"), "tag"],
   ];
   const more: [string, string, string][] = [
-    ["tools", "Islamic tools", "sparkles"],
     ["mosques", "Mosques near me", "mosque"],
     ["request-quote", "Request a quote", "doc"],
     ["advertise", "Advertise with us", "megaphone"],

@@ -380,6 +380,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .rating { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: .86rem; color: var(--ink); }
 .rating svg { width: 15px; height: 15px; color: var(--gold); }
 .rating .count { color: var(--ink-faint); font-weight: 500; }
+/* "New" state for listings with no reviews yet (audit #4/#9 — no fake 4.5). */
+.rating-new { color: var(--emerald); font-size: .8rem; }
+.rating-new svg { color: var(--emerald); width: 13px; height: 13px; }
 
 /* ============================================================
    FORM CONTROLS

@@ -56,6 +56,10 @@
   display: inline-flex; align-items: center; min-height: 44px;
 }
 
+/* ---- Directory/home tap targets the OTA pass didn't cover (audit #7) ---- */
+.discover-all { min-height: 44px; display: inline-flex; align-items: center; }
+.save-fab { min-width: 44px; min-height: 44px; }
+
 /* ---- Legible text: ≥12px floor (Lighthouse "legible font sizes") ---- */
 .hh-tab span { font-size: 0.78rem; } /* tab labels were ~10.5px */
 .eyebrow { font-size: 0.8rem; }       /* was ~11.5px */

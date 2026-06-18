@@ -13,6 +13,7 @@ import {
 import { badgeMeta, HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
+import { joinParts } from "@/lib/format";
 import { screenToPath } from "@/lib/routes";
 import { useApp } from "./app-context";
 
@@ -179,6 +180,15 @@ export function Rating({
   count?: number;
   showCount?: boolean;
 }) {
+  // No reviews yet → show an honest "New" state, never a fabricated star score
+  // (audit #4/#9). Only when count is explicitly 0; undefined means "unknown".
+  if (count === 0) {
+    return (
+      <span className="rating rating-new">
+        <Icon name="sparkles" size={13} /> New
+      </span>
+    );
+  }
   return (
     <span className="rating">
       <Icon name="starf" size={15} />
@@ -266,7 +276,7 @@ export function ListingCard({
     <a
       className="card-stretch"
       href={href}
-      aria-label={`${item.name} — ${item.cuisine}, ${item.area}`}
+      aria-label={joinParts([item.name, joinParts([item.cuisine, item.area], ", ")], " — ")}
       onClick={go}
     />
   );
@@ -281,10 +291,10 @@ export function ListingCard({
             <span className="lc-name" style={{ fontSize: "1rem" }}>
               {item.name}
             </span>
-            <Rating value={item.rating} showCount={false} />
+            <Rating value={item.rating} count={item.reviews} showCount={false} />
           </div>
           <div className="lc-meta">
-            {item.cuisine} · {item.area}
+            {joinParts([item.cuisine, item.area])}
           </div>
           <div className="lc-badges" style={{ marginTop: 2 }}>
             {(() => {
@@ -319,7 +329,7 @@ export function ListingCard({
             toggleSave(item.id);
           }}
           style={{
-            position: "absolute", top: 10, right: 10, width: 36, height: 36, borderRadius: "50%",
+            position: "absolute", top: 10, right: 10, width: 44, height: 44, borderRadius: "50%",
             border: "none", background: "rgba(255,255,255,.92)", display: "grid", placeItems: "center",
             boxShadow: "var(--sh-sm)", color: saved ? "var(--danger)" : "var(--ink-soft)",
           }}
@@ -365,8 +375,8 @@ export function ListingCard({
           <span className="lc-meta" style={{ gap: 4 }}>
             <Icon name="pin" size={14} />{" "}
             {item.franchise
-              ? `${item.outletCount} locations · nearest ${item.distance}`
-              : `${item.area} · ${item.distance}`}
+              ? joinParts([`${item.outletCount} locations`, item.distance ? `nearest ${item.distance}` : ""])
+              : joinParts([item.area, item.distance])}
           </span>
           <span className={item.open ? "status-open" : "status-closed"} style={{ fontSize: ".8rem" }}>
             <span className={`status-dot ${item.open ? "open" : "closed"}`}></span>
