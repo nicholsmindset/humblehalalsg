@@ -10,10 +10,10 @@ import type { BadgeKey, LatLng, Listing } from "@/lib/types";
 import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
-import { scoreListing, scoreTone } from "@/lib/halal-score";
+import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { canUse, galleryMax } from "@/lib/plans";
 import { HalalConfidenceBadge } from "../halal-confidence-badge";
-import { halalSgSearchUrl } from "@/lib/muis";
+import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
@@ -341,8 +341,35 @@ export function ExploreScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sort]);
 
-  // Keep the URL in sync so searches/filters are shareable, bookmarkable and crawlable.
+  // Hydrate filters FROM the URL whenever the query params change — covers a
+  // direct/bookmarked load (the SearchParamsBridge populates `params` after
+  // mount) AND browser back/forward (audit #4 + #5). `setFilters` returns the
+  // same reference when nothing changed, so this never loops with the write
+  // effect below.
+  const paramsKey = JSON.stringify(params);
   useEffect(() => {
+    const wantQ = (params.q as string) || "";
+    const wantSort = (params.sort as string) || "featured";
+    const wantF: ExploreFilters = {
+      cat: (params.cat as string) || "", area: (params.area as string) || "", price: (params.price as string) || "", halal: (params.halal as string) || "", owned: !!params.owned,
+      prayer: !!params.prayer, family: !!params.family, delivery: !!params.delivery, open: !!params.open,
+    };
+    setQ((cur) => (cur === wantQ ? cur : wantQ));
+    setSort((cur) => (cur === wantSort ? cur : wantSort));
+    setFilters((cur) => {
+      const same = cur.cat === wantF.cat && cur.area === wantF.area && cur.price === wantF.price && cur.halal === wantF.halal
+        && cur.owned === wantF.owned && cur.prayer === wantF.prayer && cur.family === wantF.family && cur.delivery === wantF.delivery && cur.open === wantF.open;
+      return same ? cur : wantF;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramsKey]);
+
+  // Keep the URL in sync so searches/filters are shareable, bookmarkable and
+  // crawlable. Skip the FIRST run (mount) so it never strips the params we're
+  // still hydrating from above.
+  const firstUrlSync = useRef(true);
+  useEffect(() => {
+    if (firstUrlSync.current) { firstUrlSync.current = false; return; }
     const sp = new URLSearchParams();
     if (q) sp.set("q", q);
     if (sort && sort !== "featured") sp.set("sort", sort);
@@ -359,7 +386,15 @@ export function ExploreScreen() {
   const results = useMemo(() => {
     let r = dir.listings.slice();
     if (state.prefs && state.prefs.certifiedOnly) r = r.filter((l) => l.certified);
-    if (q) { const s = q.toLowerCase(); r = r.filter((l) => (l.name + l.cuisine + l.area + l.blurb).toLowerCase().includes(s)); }
+    if (q) {
+      const s = q.toLowerCase();
+      // Match the category label too (audit #8: searching "restaurant"/"cafe"
+      // should surface that category, not just name/cuisine/area/blurb matches).
+      r = r.filter((l) => {
+        const catLabel = HHData.categories.find((c) => c.id === l.catId)?.label || "";
+        return (l.name + " " + l.cuisine + " " + l.area + " " + l.blurb + " " + catLabel + " " + l.catId).toLowerCase().includes(s);
+      });
+    }
     if (filters.cat) r = r.filter((l) => l.catId === filters.cat);
     if (filters.area) r = r.filter((l) => l.area.toLowerCase().includes(filters.area));
     if (filters.price) r = r.filter((l) => l.price === filters.price);
@@ -1132,7 +1167,10 @@ export function VerificationCard({ item, navigate, toast }: {
   const [confirmed, setConfirmed] = useState(false);
   const confirms = (v.confirms || 0) + (confirmed ? 1 : 0);
 
-  if (item.certified) {
+  // A MUIS claim with no certificate number on file is NOT presented as
+  // officially certified — it falls through to the downgraded card below, in
+  // step with the halal-score tier gate (lib/halal-score muisUnbacked).
+  if (item.certified && !muisUnbacked(item)) {
     const isMuis = item.badges.includes("muis");
     return (
       <div className="verif-card certified" style={{ marginTop: 16 }}>
@@ -1155,7 +1193,7 @@ export function VerificationCard({ item, navigate, toast }: {
         </div>
         <div className="verif-card-foot">
           {isMuis
-            ? <a className="btn btn-soft btn-sm" href={halalSgSearchUrl(item.name)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Verify on HalalSG</a>
+            ? <a className="btn btn-soft btn-sm" href={halalSgVerifyUrl(v.certNo, item.name)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Verify on HalalSG</a>
             : <button className="btn btn-soft btn-sm" onClick={() => navigate("verify")}><Icon name="doc" size={15} /> View verification</button>}
           <span className="verif-confirm-count"><Icon name="crescent" size={14} /> <strong>{confirms}</strong> Muslims confirmed halal here</span>
         </div>
@@ -1163,25 +1201,38 @@ export function VerificationCard({ item, navigate, toast }: {
     );
   }
 
-  // Self-declared / pending
+  // Self-declared / pending — and the MUIS-claimed-but-unbacked case (a business
+  // that lists itself as MUIS-certified but has no certificate number on file).
   const pending = item.badges.includes("pending");
+  const muisClaim = item.badges.includes("muis"); // only reaches here when unbacked
+  const heading = muisClaim
+    ? "MUIS certificate not yet on file"
+    : pending
+      ? "Verification under review"
+      : "Self-declared — not certified";
+  const body = muisClaim
+    ? "This business lists itself as MUIS-certified, but we haven’t recorded its certificate number yet — so we don’t show a verified badge. We only display official certification once the certificate is on file. Please confirm on the official HalalSG register."
+    : pending
+      ? "This business has submitted documents. We haven’t confirmed its halal status yet."
+      : "This place describes itself as halal-friendly. We have not verified this — please confirm with the business directly.";
   return (
     <div className={`verif-card ${pending ? "pending" : "declared"}`} style={{ marginTop: 16 }}>
       <HalalScoreBar item={item} />
       <div className="verif-card-main">
         <div className="verif-seal warn"><Icon name={pending ? "clock" : "info"} size={22} /></div>
         <div className="f1">
-          <div style={{ fontWeight: 700 }}>{pending ? "Verification under review" : "Self-declared — not certified"}</div>
+          <div style={{ fontWeight: 700 }}>{heading}</div>
           <p className="muted" style={{ fontSize: ".88rem", marginTop: 4, lineHeight: 1.5 }}>
-            {pending
-              ? "This business has submitted documents. We haven’t confirmed its halal status yet."
-              : "This place describes itself as halal-friendly. We have not verified this — please confirm with the business directly."}
+            {body}
             <span className="link-inline" onClick={() => navigate("verify")}> How we verify →</span>
           </p>
           {item.statusChanged && <div className="verif-changed"><Icon name="warning" size={13} /> Halal status recently changed — verify before visiting</div>}
         </div>
       </div>
       <div className="verif-card-foot">
+        {muisClaim && (
+          <a className="btn btn-soft btn-sm" href={halalSgVerifyUrl(undefined, item.name)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Check HalalSG register</a>
+        )}
         <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={async () => {
           if (confirmed) return;
           setConfirmed(true); // optimistic
@@ -1500,7 +1551,7 @@ export function DetailInfo({ item, navigate }: {
       <div className="info-row"><Icon name="clock" size={18} /><div><div style={{ fontWeight: 700 }}>Hours</div><span className="muted">{item.hours}</span></div></div>
       <div className="info-row"><Icon name="phone" size={18} /><div><div style={{ fontWeight: 700 }}>Phone</div><span className="muted">{item.phone || "—"}</span></div></div>
       <div className="info-row"><Icon name="shield-check" size={18} /><div><div style={{ fontWeight: 700 }}>Halal status</div>
-        <span className="muted">{item.badges.includes("muis") ? "MUIS certified — verify on HalalSG" : item.badges.includes("admin") ? "Admin verified by Humble Halal" : "Self-declared — not certified"}</span>
+        <span className="muted">{item.badges.includes("muis") && !muisUnbacked(item) ? "MUIS certified — verify on HalalSG" : item.badges.includes("admin") ? "Admin verified by Humble Halal" : item.badges.includes("muis") ? "MUIS certificate not yet on file" : "Self-declared — not certified"}</span>
         <div className="link-inline" style={{ marginTop: 4 }} onClick={() => navigate("verify")}>Learn how we verify →</div></div></div>
     </div>
   );

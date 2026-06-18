@@ -38,7 +38,11 @@ interface ScoreInput {
 
 function resolveTier(i: ScoreInput): HalalTier {
   if (i.statusChanged) return "reported";
-  if (i.badges.includes("muis")) return "muis";
+  // A MUIS claim only counts as official certification when it is backed by a
+  // recorded certificate number (the owner-asserted evidence /verify promises).
+  // Without it we must NOT present "MUIS Certified" — fall through to admin /
+  // community / self-declared rather than asserting unbacked certification.
+  if (i.badges.includes("muis") && i.verify?.certNo) return "muis";
   if (i.badges.includes("admin")) return "admin";
   if (i.badges.includes("pending")) return "pending";
   const confirms = i.verify?.confirms ?? 0;
@@ -87,6 +91,14 @@ export function scoreListing(l: Listing): HalalScore {
     verify: l.verify,
     statusChanged: l.statusChanged,
   });
+}
+
+/** A listing that CLAIMS MUIS certification but has no certificate number on
+    file. We never present a definitive "Verified by MUIS" badge or the official
+    confidence score for these — the on-page evidence /verify promises is absent.
+    (Admin/own-assertion verification is unaffected — it doesn't claim a MUIS cert.) */
+export function muisUnbacked(l: Pick<Listing, "badges" | "verify">): boolean {
+  return l.badges.includes("muis") && !l.verify?.certNo;
 }
 
 /** Colour token for the score ring/badge by tier. */

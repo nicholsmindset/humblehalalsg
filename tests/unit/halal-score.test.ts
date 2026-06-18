@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { halalScore, scoreTone } from "../../lib/halal-score";
+import { halalScore, scoreTone, muisUnbacked } from "../../lib/halal-score";
+import { halalSgVerifyUrl } from "../../lib/muis";
 import type { BadgeKey } from "../../lib/types";
 
 const b = (...x: BadgeKey[]) => x;
@@ -45,5 +46,36 @@ describe("halalScore — the trust signal", () => {
   it("scoreTone maps tiers to colour tokens", () => {
     expect(scoreTone("muis")).toContain("emerald");
     expect(scoreTone("reported")).toContain("danger");
+  });
+
+  // Audit #1 — a MUIS claim with no certificate number on file must NOT be
+  // presented as officially certified (no evidence = no definitive badge/score).
+  it("MUIS claim WITHOUT a cert number is downgraded (not the muis tier)", () => {
+    const r = halalScore({ badges: b("muis") });
+    expect(r.tier).not.toBe("muis");
+    expect(r.tier).toBe("declared");
+    expect(r.score).toBeLessThan(90);
+  });
+
+  it("an admin-backed MUIS claim with no cert still resolves to admin (own assertion)", () => {
+    expect(halalScore({ badges: b("muis", "admin") }).tier).toBe("admin");
+  });
+});
+
+describe("muisUnbacked — evidence gate", () => {
+  it("true only for a MUIS claim with no cert number", () => {
+    expect(muisUnbacked({ badges: b("muis"), verify: undefined })).toBe(true);
+    expect(muisUnbacked({ badges: b("muis"), verify: { certNo: "MUIS-1" } as never })).toBe(false);
+    expect(muisUnbacked({ badges: b("admin"), verify: undefined })).toBe(false);
+    expect(muisUnbacked({ badges: b("friendly"), verify: undefined })).toBe(false);
+  });
+});
+
+describe("halalSgVerifyUrl — register deep-link", () => {
+  it("prefers the certificate number when present", () => {
+    expect(halalSgVerifyUrl("muis-abc-1", "Some Cafe")).toContain("keyword=MUIS-ABC-1");
+  });
+  it("falls back to the business name when no cert", () => {
+    expect(halalSgVerifyUrl(null, "Some Cafe")).toContain("keyword=Some%20Cafe");
   });
 });
