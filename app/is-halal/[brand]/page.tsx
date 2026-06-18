@@ -22,6 +22,7 @@ export async function generateMetadata({
     title: `Is ${b.brand} Halal in Singapore? (2026)`,
     description: b.answer.length > 155 ? b.answer.slice(0, 152) + "…" : b.answer,
     path: `/is-halal/${b.slug}`,
+    absoluteTitle: true,
   });
 }
 

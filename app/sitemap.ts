@@ -20,6 +20,8 @@ const PUBLIC_STATIC = [
   "/travel",
   "/blog",
   "/events",
+  "/ramadan",
+  "/hari-raya",
   "/for-business",
   "/advertise",
   "/pricing",

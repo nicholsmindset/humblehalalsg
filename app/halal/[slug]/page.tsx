@@ -17,9 +17,10 @@ export async function generateMetadata({
   const p = getSeoPage(slug);
   if (!p) return pageMeta({ title: "Halal in Singapore", path: `/halal/${slug}` });
   return pageMeta({
-    title: p.h1,
+    title: p.title || p.h1,
     description: p.intro,
     path: `/halal/${p.slug}`,
+    absoluteTitle: true,
   });
 }
 
