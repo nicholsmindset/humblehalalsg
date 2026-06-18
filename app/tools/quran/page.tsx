@@ -6,10 +6,11 @@ import { QuranSearchBox } from "@/components/tools/quran-search-box";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMeta({
-  title: "Read the Quran — all 114 surahs with English & recitation",
+  title: "Quran Online — Read All 114 Surahs (Arabic & English)",
   description:
-    "Read the Holy Quran online: all 114 surahs in Arabic with the Saheeh International English translation and audio recitation. Search the Quran for any word. Free, no sign-up.",
+    "Read the Quran online: all 114 surahs in Arabic with the Saheeh International English translation and audio recitation — including Mulk, Kahf, Yaseen and Ar-Rahman. Free, no sign-up.",
   path: "/tools/quran",
+  absoluteTitle: true,
 });
 
 export default function Page() {
