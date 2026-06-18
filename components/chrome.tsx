@@ -395,7 +395,7 @@ export function TopNav() {
         </nav>
         <div className="spacer" />
         <div className="flex g10 center">
-          <CertifiedToggle />
+          <LangToggle />
           {user.loggedIn ? (
             <>
               <button
@@ -466,7 +466,7 @@ export function MobileBar() {
       <div className="hh-mobilebar">
         <Logo onClick={() => navigate("home")} />
         <div className="flex g8 center">
-          <CertifiedToggle compact />
+          <LangToggle />
           <button
             className="mobilebar-burger"
             onClick={() => setOpen(true)}
@@ -618,22 +618,26 @@ function LangToggle() {
 
 export function Footer() {
   const { navigate } = useApp();
+  // Five balanced columns (≤6 links each) so the footer reads short + organised
+  // — the old single "Discover" column had 12 items and made it very tall.
   const cols: [string, [string, string][]][] = [
     [
       "Discover",
       [
         ["Explore", "explore"],
-        ["Halal travel & hotels", "travel"],
-        ["Flights", "travel-flights"],
-        ["My trips", "travel-trips"],
         ["Events", "events"],
         ["Islamic tools", "tools"],
         ["Map view", "map"],
-        ["Saved places", "saved"],
         ["Mosques in Singapore", "mosques"],
-        ["Blog & guides", "blog"],
-        ["Request a quote", "request-quote"],
-        ["Halal in Tampines", "seo"],
+        ["Saved places", "saved"],
+      ],
+    ],
+    [
+      "Travel",
+      [
+        ["Halal travel & hotels", "travel"],
+        ["Flights", "travel-flights"],
+        ["My trips", "travel-trips"],
       ],
     ],
     [
@@ -644,6 +648,7 @@ export function Footer() {
         ["Host an event", "host-event"],
         ["Pricing", "pricing"],
         ["Claim a listing", "claim"],
+        ["Request a quote", "request-quote"],
       ],
     ],
     [
@@ -665,9 +670,6 @@ export function Footer() {
         ["Blog & guides", "blog"],
       ],
     ],
-    // (Removed the "Demo views" column — it exposed the Admin console + demo
-    // dashboards/404 in the public footer and, as a 6th item in the 5-column
-    // grid, broke the footer spacing site-wide.)
   ];
   return (
     <footer className="hh-footer">

@@ -319,9 +319,10 @@
 
 /* =========================== FOOTER =========================== */
 .hh-footer { background: var(--emerald-700); color: #CFE0DA; margin-top: 8px; }
-.hh-footer-grid { display:grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr; gap: 28px; padding: 44px 20px 28px; }
-@media (max-width: 860px){ .hh-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; } }
-@media (max-width: 480px){ .hh-footer-grid { grid-template-columns: 1fr; } }
+.hh-footer-grid { display:grid; grid-template-columns: 1.5fr repeat(5, 1fr); gap: 24px 28px; padding: 44px 20px 28px; align-items: start; }
+@media (max-width: 1080px){ .hh-footer-grid { grid-template-columns: 1.4fr repeat(3, 1fr); } }
+@media (max-width: 700px){ .hh-footer-grid { grid-template-columns: 1fr 1fr; gap: 24px 20px; } }
+@media (max-width: 460px){ .hh-footer-grid { grid-template-columns: 1fr; } }
 .hh-footer-brand p { font-size:.88rem; line-height:1.6; margin-top:14px; max-width: 280px; color:#B7CEC6; }
 .hh-footer-addr { margin-top:16px; font-style:normal; font-size:.8rem; line-height:1.55; color:#9FBDB3; }
 .hh-footer-addr strong { color:#CFE0DA; font-weight:700; }
