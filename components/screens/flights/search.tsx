@@ -211,6 +211,31 @@ export function FlightsScreen({ bookingEnabled, embedded = false }: { bookingEna
     runSearch(s.date, s.from, s.to);
   };
 
+  // Deep link: /travel/flights?to=JED[&from=SIN][&date=YYYY-MM-DD] pre-fills the
+  // route and runs the search once on mount (used by the landing's "Fly there"
+  // promo cards). Reads window.location to avoid a Suspense boundary; a no-op when
+  // there's no valid ?to= (e.g. the embedded unified /travel URL).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const toIata = (sp.get("to") || "").trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(toIata)) return;
+    const fromIata = (sp.get("from") || "").trim().toUpperCase();
+    const qDate = (sp.get("date") || "").trim();
+    const lookup = (code: string): Airport => {
+      const r = POPULAR_ROUTES.find((p) => p.iata === code);
+      if (r) return { iata: r.iata, name: r.name, city: r.city, country: r.country };
+      if (code === SG_ORIGIN.iata) return SG_ORIGIN;
+      return { iata: code, name: code, city: "", country: "" };
+    };
+    const o = /^[A-Z]{3}$/.test(fromIata) ? lookup(fromIata) : SG_ORIGIN;
+    const dst = lookup(toIata);
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(qDate) ? qDate : date;
+    setTab("search"); setFrom(o); setTo(dst);
+    if (d) { setDate(d); runSearch(d, o, dst); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const nearby = searched ? { from: nearbyAirports(searched.origin), to: nearbyAirports(searched.destination) } : { from: [], to: [] };
   const cheapestDay = calendar ? calendar.reduce((m, d) => (d.price != null && (m == null || d.price < m) ? d.price : m), null as number | null) : null;
 
