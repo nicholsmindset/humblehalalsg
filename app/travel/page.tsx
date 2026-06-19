@@ -1,14 +1,15 @@
-import { TravelScreen } from "@/components/screens/travel";
+import { UnifiedTravelScreen } from "@/components/screens/travel";
 import { allTravelHubs, getTravelHub } from "@/lib/travel-hubs";
 import { cityHotels } from "@/lib/travel-data";
+import { curatedFlightDeals } from "@/lib/flights-data";
 import { getServerFlags } from "@/lib/flags";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata = pageMeta({
-  title: "Halal Travel — Muslim-Friendly Hotels Worldwide",
+  title: "Halal Travel — Muslim-Friendly Hotels & Flights Worldwide",
   description:
-    "Find Muslim-friendly hotels with prayer rooms, halal dining nearby and alcohol-free options — from Umrah stays near the Haramain to family trips across Asia.",
+    "Muslim-friendly hotels with prayer rooms, halal dining nearby and alcohol-free options — plus prayer-aware flights for Umrah, Hajj and Muslim travel, in one place.",
   path: "/travel",
 });
 
@@ -29,12 +30,20 @@ export default async function Page() {
     "@type": "CollectionPage",
     name: "Halal Travel",
     url: `${SITE.url}/travel`,
-    description: "Muslim-friendly hotel guides for Umrah and Muslim travel destinations.",
+    description: "Muslim-friendly hotels and flights for Umrah, Hajj and Muslim travel destinations.",
   };
+  const flags = getServerFlags();
   return (
     <>
       <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }])]} />
-      <TravelScreen cities={cities} recommended={recommended} nearby={nearby} semanticEnabled={getServerFlags().semanticSearch} />
+      <UnifiedTravelScreen
+        cities={cities}
+        recommended={recommended}
+        nearby={nearby}
+        flightDeals={curatedFlightDeals()}
+        semanticEnabled={flags.semanticSearch}
+        flightsBookingEnabled={flags.paidFlights}
+      />
     </>
   );
 }

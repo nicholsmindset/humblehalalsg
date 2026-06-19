@@ -16,20 +16,37 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("hotels landing: hero, tabbed search widget, carousels", async ({ page }) => {
+test("unified travel landing: Stays|Flights switcher + Stays search + shared promo", async ({ page }) => {
   await page.goto("/travel");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/stays/i);
-  // Tabbed Search / Ask AI widget
-  const tabs = page.getByRole("tablist", { name: /search mode/i });
-  await expect(tabs.getByRole("tab", { name: "Search" })).toBeVisible();
-  await expect(tabs.getByRole("tab", { name: /Ask AI/ })).toBeVisible();
-  // Search segments
-  await expect(page.getByText("Where", { exact: true })).toBeVisible();
-  await expect(page.getByText("Guests", { exact: true })).toBeVisible();
-  // Carousels
-  await expect(page.getByRole("heading", { name: "Recommended stays" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Nearby stays" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Browse destinations" })).toBeVisible();
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { level: 1 })).toContainText(/stays/i);
+  // Top-level vertical switcher (distinct from the Search/Ask-AI sub-tabs)
+  const top = main.getByRole("tablist", { name: /travel type/i });
+  await expect(top.getByRole("tab", { name: "Stays" })).toBeVisible();
+  await expect(top.getByRole("tab", { name: "Flights" })).toBeVisible();
+  // Default Stays vertical: Search / Ask AI sub-tabs + the stays search segments
+  const sub = main.getByRole("tablist", { name: /search mode/i });
+  await expect(sub.getByRole("tab", { name: "Search" })).toBeVisible();
+  await expect(sub.getByRole("tab", { name: /Ask AI/ })).toBeVisible();
+  await expect(main.getByText("Where", { exact: true })).toBeVisible();
+  await expect(main.getByText("Guests", { exact: true })).toBeVisible();
+  // Shared promo sections (static — no LiteAPI/AI keys needed)
+  await expect(main.getByRole("heading", { name: "Plan by purpose" })).toBeVisible();
+  await expect(main.getByRole("heading", { name: /Popular halal-friendly destinations/ })).toBeVisible();
+  await expect(main.getByRole("heading", { name: /Why book your halal travel/ })).toBeVisible();
+});
+
+test("unified travel landing: switching to Flights reveals flight search in /travel", async ({ page }) => {
+  await page.goto("/travel");
+  const main = page.locator("#main-content");
+  await main.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Flights" }).click();
+  // Flights search controls now render in place (no navigation)
+  await expect(main.getByRole("tab", { name: "Round trip" })).toBeVisible();
+  await expect(main.getByText("Non-stop only")).toBeVisible();
+  await expect(main.getByRole("button", { name: /Jeddah \(JED\)/ })).toBeVisible();
+  // Switch back to Stays restores the stays search
+  await main.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Stays" }).click();
+  await expect(main.getByText("Where", { exact: true })).toBeVisible();
 });
 
 test("hotels landing: Ask-AI tab reveals a natural-language search", async ({ page }) => {
