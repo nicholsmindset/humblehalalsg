@@ -85,6 +85,14 @@ test("flights landing: Ask-AI tab reveals a natural-language search", async ({ p
   await expect(page.getByRole("button", { name: "Find flights" })).toBeVisible();
 });
 
+test("flights deep link: ?to=JED pre-fills the destination (from a landing promo card)", async ({ page }) => {
+  await page.goto("/travel/flights?to=JED");
+  const main = page.locator("#main-content");
+  // The "To" field is auto-filled from the deep link and the search runs on mount.
+  // (exact label match — a substring "To" also hits the "Non-stop only" checkbox.)
+  await expect(main.getByLabel("To", { exact: true }).first()).toHaveValue(/Jeddah \(JED\)/i);
+});
+
 test("API: ai-search returns a grounded, structured response", async ({ request }) => {
   const res = await request.post("/api/travel/ai-search", {
     data: { query: "hotel near a mosque in Mecca, alcohol free" },
