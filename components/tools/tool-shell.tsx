@@ -3,6 +3,7 @@
    structure used across the app (see app/mosques/page.tsx). */
 import Link from "next/link";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { ToolCta } from "@/components/tool-cta";
 
 export function ToolShell({
   title,
@@ -48,6 +49,7 @@ export function ToolShell({
         <div className="hh-wrap hh-section">
           <div className="tool-stage">{children}</div>
           {foot}
+          <ToolCta slug={slug} />
         </div>
       </div>
     </>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { pathToScreen, CHROMELESS_SCREENS } from "@/lib/routes";
 import { useApp } from "./app-context";
 import { BottomNav, Footer, MobileBar, Onboarding, PrayerStrip, TopNav } from "./chrome";
+import { NewsletterPopup } from "./newsletter-popup";
 import { HHTweaks } from "./tweaks-panel";
 import { Toast } from "./ui";
 
@@ -37,6 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isChromeless && !isMapFull && <Footer />}
       <Toast msg={toastMsg} />
       {state.hydrated && !state.prefs.onboarded && <Onboarding />}
+      {state.hydrated && state.prefs.onboarded && !isChromeless && <NewsletterPopup />}
       <HHTweaks />
     </div>
   );

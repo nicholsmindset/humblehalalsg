@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { allPosts, getPost, relatedPosts, postWordCount } from "@/lib/blog";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, blogPostingJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 export function generateStaticParams() {
   return allPosts().map((p) => ({ slug: p.slug }));
@@ -115,6 +116,16 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               <Link className="btn btn-outline btn-sm" href="/is-halal">Is it halal? brand checker</Link>
             </div>
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 8 }}>
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 HumbleHalal newsletter</span>
+            <strong style={{ display: "block", fontSize: "1.15rem", marginTop: 8 }}>Get the free Ultimate Halal Food Guide by MRT</strong>
+            <p className="muted" style={{ margin: "6px 0 12px" }}>
+              Subscribe for weekly MUIS-verified food finds, mosque events &amp; deals across Singapore — and
+              we&apos;ll email you the guide.
+            </p>
+            <Newsletter source="blog" cta="Send me the guide" />
+          </section>
 
           {related.length > 0 && (
             <section className="blog-section">
