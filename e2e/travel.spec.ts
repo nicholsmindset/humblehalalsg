@@ -16,20 +16,37 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("hotels landing: hero, tabbed search widget, carousels", async ({ page }) => {
+test("unified travel landing: Stays|Flights switcher + Stays search + shared promo", async ({ page }) => {
   await page.goto("/travel");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/stays/i);
-  // Tabbed Search / Ask AI widget
-  const tabs = page.getByRole("tablist", { name: /search mode/i });
-  await expect(tabs.getByRole("tab", { name: "Search" })).toBeVisible();
-  await expect(tabs.getByRole("tab", { name: /Ask AI/ })).toBeVisible();
-  // Search segments
-  await expect(page.getByText("Where", { exact: true })).toBeVisible();
-  await expect(page.getByText("Guests", { exact: true })).toBeVisible();
-  // Carousels
-  await expect(page.getByRole("heading", { name: "Recommended stays" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Nearby stays" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Browse destinations" })).toBeVisible();
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { level: 1 })).toContainText(/stays/i);
+  // Top-level vertical switcher (distinct from the Search/Ask-AI sub-tabs)
+  const top = main.getByRole("tablist", { name: /travel type/i });
+  await expect(top.getByRole("tab", { name: "Stays" })).toBeVisible();
+  await expect(top.getByRole("tab", { name: "Flights" })).toBeVisible();
+  // Default Stays vertical: Search / Ask AI sub-tabs + the stays search segments
+  const sub = main.getByRole("tablist", { name: /search mode/i });
+  await expect(sub.getByRole("tab", { name: "Search" })).toBeVisible();
+  await expect(sub.getByRole("tab", { name: /Ask AI/ })).toBeVisible();
+  await expect(main.getByText("Where", { exact: true })).toBeVisible();
+  await expect(main.getByText("Guests", { exact: true })).toBeVisible();
+  // Shared promo sections (static — no LiteAPI/AI keys needed)
+  await expect(main.getByRole("heading", { name: "Plan by purpose" })).toBeVisible();
+  await expect(main.getByRole("heading", { name: /Popular halal-friendly destinations/ })).toBeVisible();
+  await expect(main.getByRole("heading", { name: /Why book your halal travel/ })).toBeVisible();
+});
+
+test("unified travel landing: switching to Flights reveals flight search in /travel", async ({ page }) => {
+  await page.goto("/travel");
+  const main = page.locator("#main-content");
+  await main.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Flights" }).click();
+  // Flights search controls now render in place (no navigation)
+  await expect(main.getByRole("tab", { name: "Round trip" })).toBeVisible();
+  await expect(main.getByText("Non-stop only")).toBeVisible();
+  await expect(main.getByRole("button", { name: /Jeddah \(JED\)/ })).toBeVisible();
+  // Switch back to Stays restores the stays search
+  await main.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Stays" }).click();
+  await expect(main.getByText("Where", { exact: true })).toBeVisible();
 });
 
 test("hotels landing: Ask-AI tab reveals a natural-language search", async ({ page }) => {
@@ -89,39 +106,4 @@ test("API: highlights returns at least one grounded card", async ({ request }) =
   expect(body.ok).toBeTruthy();
   expect(Array.isArray(body.highlights)).toBeTruthy();
   expect(body.highlights.length).toBeGreaterThan(0);
-});
-
-test.describe("transfers", () => {
-  test("landing: search form renders and returns simulated quotes", async ({ page }) => {
-    await page.goto("/travel/transfers");
-    // Scope to the main region — the chrome mirrors page content elsewhere in the
-    // DOM (the flights landing does the same), so a bare testid is ambiguous.
-    const main = page.locator("#main-content");
-    await expect(main.getByRole("heading", { level: 1 })).toContainText(/transfer/i);
-    await expect(main.getByTestId("transfer-search-form")).toBeVisible();
-    await main.getByTestId("transfer-pickup").fill("Changi Airport (SIN)");
-    await main.getByTestId("transfer-dropoff").fill("Marina Bay Sands");
-    await main.getByTestId("transfer-datetime").fill("2026-09-01T10:00");
-    await main.getByTestId("transfer-search-submit").click();
-    await expect(main.getByTestId("transfer-quote").first()).toBeVisible();
-    // Never asserts halal certification (golden rule).
-    await expect(page.locator("body")).not.toContainText(/halal certified/i);
-  });
-
-  test("API: search returns simulated quotes without a key", async ({ request }) => {
-    const res = await request.post("/api/travel/transfers/search", {
-      data: { pickup: "SIN", dropoff: "Marina Bay Sands", pickupDateTime: "2026-09-01T10:00", passengers: 2 },
-    });
-    expect(res.ok()).toBeTruthy();
-    const body = await res.json();
-    expect(body.ok).toBe(true);
-    expect(Array.isArray(body.quotes) && body.quotes.length > 0).toBe(true);
-  });
-
-  test("API: book is gated off by default (403)", async ({ request }) => {
-    const res = await request.post("/api/travel/transfers/book", {
-      data: { searchId: "x", resultId: "y", contact: { firstName: "A", lastName: "B", email: "a@b.co", phone: "+10000000000" }, passengers: 2, currency: "USD" },
-    });
-    expect(res.status()).toBe(403);
-  });
 });

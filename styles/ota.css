@@ -205,3 +205,17 @@
 .ota-recent .ota-recent-ico { width: 42px; height: 42px; border-radius: 11px; background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; flex: none; }
 .ota-recent .ota-recent-main p:first-child { font-weight: 700; font-size: .92rem; color: var(--ink); }
 .ota-recent .ota-recent-main p { font-size: .8rem; color: var(--ink-soft); }
+
+/* ── unified /travel landing (Stays | Flights) ────────────────────────────── */
+.trv-trust { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: center; margin-top: 14px; }
+.trv-trust-pill { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); padding: 5px 11px; border-radius: var(--r-pill); }
+/* top-level vertical switcher — larger + centered, distinct from the Search/Ask-AI sub-tabs */
+.ota-segtabs--top { gap: 8px; margin-top: 18px; justify-content: center; }
+.ota-segtabs--top .ota-segtab { font-size: 1rem; padding: 11px 22px; }
+/* embedded vertical: search card sits just below the shared hero */
+.trv-embedded > .hh-wrap, .flt-embedded > .hh-wrap { position: relative; margin-top: 18px; }
+/* plan-by-purpose cards (links built on .flt-benefit) */
+.trv-purpose { display: block; text-decoration: none; color: inherit; transition: box-shadow .12s, transform .12s; }
+.trv-purpose:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+.trv-purpose-cta { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: .82rem; font-weight: 700; color: var(--emerald); }
+@media (max-width: 640px) { .trv-trust { gap: 6px 10px; } .trv-trust-pill { font-size: .74rem; padding: 4px 9px; } }

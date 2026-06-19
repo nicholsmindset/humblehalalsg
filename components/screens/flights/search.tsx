@@ -3,7 +3,12 @@
 /* Humble Halal — flights search + results (zzzello-grade, emerald brand).
    Image hero + tabbed search (Search / ✦ Ask AI) overlaid on the banner, then a
    filter rail, flexible-date calendar, Best/Cheapest/Fastest sort and rich
-   itinerary cards. Booking is gated downstream by PAID_FLIGHTS_ENABLED. */
+   itinerary cards. Booking is gated downstream by PAID_FLIGHTS_ENABLED.
+
+   `embedded` = rendered inside the unified /travel landing under a shared hero +
+   top-level Stays|Flights switcher: skips its own hero/Crumbs/landing and renders
+   just the search card + results in normal flow. Standalone (/travel/flights)
+   keeps the overlaid hero + FlightsLanding below. */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -104,7 +109,7 @@ function pushRecent(input: RecentInput): RecentSearch[] {
 }
 
 /* ── search + results ─────────────────────────────────────────────────────── */
-export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
+export function FlightsScreen({ bookingEnabled, embedded = false }: { bookingEnabled: boolean; embedded?: boolean }) {
   const today = useMemo(() => new Date(), []);
   const iso = (d: Date) => isoOf(d);
   const [tab, setTab] = useState<"search" | "ai">("search");
@@ -216,11 +221,204 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
     return top ? `${top.currency} ${Math.round(top.price ?? 0)} · ${fmtDuration(top.durationMin)}` : "";
   };
 
+  /* The search card (Search/Ask-AI sub-tabs + the search box). Rendered overlaid
+     inside the hero when standalone, or in normal flow when embedded. */
+  const searchCard = (
+    <>
+      <div className="ota-segtabs" role="tablist" aria-label="Search mode">
+        <button type="button" role="tab" aria-selected={tab === "search"} className={`ota-segtab ${tab === "search" ? "on" : ""}`} onClick={() => setTab("search")}>
+          <Icon name="search" size={15} /> Search
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "ai"} className={`ota-segtab ai-spark ${tab === "ai" ? "on" : ""}`} onClick={() => setTab("ai")}>
+          <Icon name="sparkles" size={15} /> Ask AI
+        </button>
+      </div>
+
+      <div className="ota-searchbox tabbed">
+        {tab === "search" ? (
+          <form onSubmit={submit}>
+            <div className="ota-optrow">
+              <div className="ota-pill-group" role="tablist" aria-label="Trip type">
+                <button type="button" role="tab" aria-selected={tripType === "round"} className={`ota-pill ${tripType === "round" ? "on" : ""}`} onClick={() => setTripType("round")}>Round trip</button>
+                <button type="button" role="tab" aria-selected={tripType === "one"} className={`ota-pill ${tripType === "one" ? "on" : ""}`} onClick={() => setTripType("one")}>One way</button>
+              </div>
+              <label className="ota-check"><input type="checkbox" checked={nonStop} onChange={(e) => setNonStop(e.target.checked)} /> Non-stop only</label>
+              <span className="flt-hijri-inline">{formatHijri(date || iso(today))}{hijriSeason(date || iso(today)) ? <em className="flt-season"> · {hijriSeason(date || iso(today))!.label}</em> : null}</span>
+            </div>
+
+            <div className="ota-search-row">
+              <div className="ota-seg ota-seg-where">
+                <span className="ota-seg-label">From</span>
+                <AirportInput value={from} onPick={setFrom} placeholder="City or airport (e.g. SIN)" label="From" plain />
+              </div>
+              <button type="button" className="ota-swap" onClick={swap} aria-label="Swap origin and destination"><Icon name="refresh" size={16} /></button>
+              <div className="ota-seg ota-seg-where">
+                <span className="ota-seg-label">To</span>
+                <AirportInput value={to} onPick={setTo} placeholder="City or airport (e.g. JED)" label="To" plain />
+              </div>
+              <DateRangeField
+                checkin={date}
+                checkout={tripType === "round" ? returnDate : null}
+                onChange={(ci, co) => { setDate(ci); if (tripType === "round") setReturnDate(co); }}
+                startLabel={tripType === "round" ? "Dates" : "Departure"}
+                singleDate={tripType !== "round"}
+              />
+              <PassengersField value={pax} cabin={cabin} onChange={setPax} onCabin={setCabin} />
+              <button className="ota-search-go btn btn-primary" type="submit" disabled={loading}>
+                {loading ? "Searching…" : <><Icon name="search" size={17} /> Search</>}
+              </button>
+            </div>
+
+            <div className="flt-umrah">
+              <span className="flt-umrah-label"><Icon name="moon" size={13} /> Umrah &amp; Hajj</span>
+              <button type="button" onClick={() => setTo({ iata: "JED", city: "Jeddah", name: "King Abdulaziz Intl", country: "Saudi Arabia" })}>Jeddah (JED)</button>
+              <button type="button" onClick={() => setTo({ iata: "MED", city: "Madinah", name: "Prince Mohammad bin Abdulaziz", country: "Saudi Arabia" })}>Madinah (MED)</button>
+            </div>
+          </form>
+        ) : (
+          <form className="ota-ai-row" onSubmit={askAi}>
+            <div className="ota-ai-input">
+              <Icon name="sparkles" size={18} className="ai-spark" />
+              <input
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                placeholder="e.g. Cheapest Umrah flights from Singapore to Jeddah next month, 2 adults"
+                aria-label="Describe the flights you're looking for"
+              />
+            </div>
+            <button className="ota-search-go btn btn-primary" type="submit" disabled={aiLoading}>{aiLoading ? "Finding…" : "Find flights"}</button>
+          </form>
+        )}
+      </div>
+    </>
+  );
+
+  /* Results + pre-search content (the part below the hero). `withLanding` adds the
+     standalone FlightsLanding (omitted when embedded — shared promo handles it). */
+  const resultsRegion = (withLanding: boolean) => (
+    <div className="hh-wrap hh-section">
+      {/* ── AI answer + results ── */}
+      {tab === "ai" && (aiLoading || aiAnswer) && (
+        <section className="flt-ai-results" style={{ marginBottom: 36 }}>
+          {aiAnswer && <AiAnswer>{aiAnswer}</AiAnswer>}
+          {aiSimulated && <p className="muted" style={{ fontSize: ".84rem", marginTop: 8 }}>Preview — live fares aren&apos;t connected yet, so the flights below are illustrative.</p>}
+          {aiLoading ? (
+            <div className="flt-list" style={{ marginTop: 16 }}>{Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}</div>
+          ) : aiItins && aiItins.length > 0 ? (
+            <div className="flt-list" style={{ marginTop: 16 }}>{aiItins.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
+          ) : aiItins ? (
+            <p className="muted" style={{ marginTop: 12 }}>No flights to show yet — add a route to your request, or try the Search tab.</p>
+          ) : null}
+        </section>
+      )}
+
+      {note && tab === "search" ? <p className="muted" style={{ marginBottom: 14 }}>{note}</p> : null}
+      {loading && tab === "search" && (
+        <div className="flt-list" style={{ marginBottom: 40 }}>{Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}</div>
+      )}
+
+      {tab === "search" && items && items.length > 0 ? (
+        <div className="flt-layout">
+          <FilterRail all={items} f={f} setF={setF} airlines={airlines} />
+          <div>
+            {calendar && calendar.length > 1 && (
+              <div className="flt-cal" role="group" aria-label="Flexible dates">
+                {calendar.map((c) => (
+                  <button key={c.date} type="button" className={`flt-cal-day ${searched?.date === c.date ? "on" : ""} ${c.price != null && c.price === cheapestDay ? "cheap" : ""}`} onClick={() => pickDay(c.date)}>
+                    <span className="flt-cal-d">{parseISO(c.date).toLocaleDateString("en", { weekday: "short", day: "numeric" })}</span>
+                    <span className="flt-cal-p">{c.price != null ? `SGD ${c.price}` : "—"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searched && (
+              <div className="flt-track">
+                {track.msg ? (
+                  <span className="flt-track-msg"><Icon name="check" size={14} /> {track.msg}</span>
+                ) : (
+                  <button type="button" className="flt-track-btn" onClick={setAlert}><Icon name="clock" size={14} /> Track this price — get emailed if {searched.origin}→{searched.destination} drops</button>
+                )}
+              </div>
+            )}
+            <div className="flt-sort-tabs">
+              {(["best", "cheapest", "fastest"] as const).map((m) => (
+                <button key={m} className={sort === m ? "on" : ""} onClick={() => setSort(m)}>
+                  <span className="flt-sort-label">{m === "best" ? "Best" : m === "cheapest" ? "Cheapest" : "Fastest"}</span>
+                  <span className="flt-sort-sub">{headline(m)}</span>
+                </button>
+              ))}
+            </div>
+            <p className="flt-count">{filtered.length} of {items.length} flights</p>
+            {to && (
+              <Link href="/travel" className="hotel-cta">
+                <span className="hcta-ico"><Icon name="bed" size={20} /></span>
+                <span className="hcta-text"><strong>Complete your trip</strong> — find a Muslim-friendly hotel in {to.city || to.iata} with prayer rooms and halal dining nearby.</span>
+                <span className="hcta-go">Find a stay <Icon name="arrow" size={15} /></span>
+              </Link>
+            )}
+            <div className="flt-list">{filtered.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
+            {filtered.length === 0 && <Empty icon="plane" title="No flights match your filters" body="Try widening the stops, time or duration filters." />}
+            {(nearby.from.length > 0 || nearby.to.length > 0) && (
+              <div className="flt-nearby">
+                <span className="flt-nearby-label">Nearby airports — try a cheaper option:</span>
+                {nearby.from.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`f${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setFrom(ap); if (date) runSearch(date, ap); }}>From {a.city} ({a.iata})</button>; })}
+                {nearby.to.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`t${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setTo(ap); if (date) runSearch(date, undefined, ap); }}>To {a.city} ({a.iata})</button>; })}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : tab === "search" && !items ? (
+        <>
+          {/* trending destinations */}
+          <Carousel title="Trending destinations" ariaLabel="Trending halal-travel destinations">
+            {POPULAR_ROUTES.map((d) => (
+              <button key={d.iata} type="button" className="ota-citem flt-trend" onClick={() => { const dst = { iata: d.iata, name: d.name, city: d.city, country: d.country }; setFrom(SG_ORIGIN); setTo(dst); if (date) runSearch(date, SG_ORIGIN, dst); }}>
+                <span className="flt-trend-ico"><Icon name="plane" size={18} /></span>
+                <span className="flt-trend-main">
+                  <span className="flt-trend-route">Singapore <Icon name="arrow" size={12} /> {d.city}</span>
+                  <span className="flt-trend-sub">{d.name}{d.tag ? ` · ${d.tag}` : ""}</span>
+                </span>
+                {d.tag ? <span className="frc-tag">{d.tag}</span> : null}
+              </button>
+            ))}
+          </Carousel>
+
+          {recent.length > 0 && (
+            <Carousel title="Your recent searches" ariaLabel="Your recent flight searches">
+              {recent.map((s, i) => (
+                <button key={`${s.from.iata}-${s.to.iata}-${s.ts}-${i}`} type="button" className="ota-citem ota-recent" onClick={() => replayRecent(s)}>
+                  <span className="ota-recent-ico"><Icon name="clock" size={18} /></span>
+                  <span className="ota-recent-main">
+                    <p>{s.from.city || s.from.iata} → {s.to.city || s.to.iata}</p>
+                    <p>{parseISO(s.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{s.tripType === "round" && s.returnDate ? ` – ${parseISO(s.returnDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""} · {s.pax.adults + s.pax.children + s.pax.infants} traveller{s.pax.adults + s.pax.children + s.pax.infants === 1 ? "" : "s"}</p>
+                  </span>
+                </button>
+              ))}
+            </Carousel>
+          )}
+
+          {withLanding && <FlightsLanding onRoute={(o, d) => { setFrom(o); setTo(d); if (date) runSearch(date, o, d); }} />}
+        </>
+      ) : null}
+
+      {items && tab === "search" ? <p className="travel-disclaimer" style={{ marginTop: 24 }}>Flights are provided via our travel partner. Confirm baggage allowance, times and fare rules before booking.</p> : null}
+    </div>
+  );
+
+  // Embedded in the unified /travel landing: no own hero/Crumbs/landing.
+  if (embedded) {
+    return (
+      <div className="flt-embedded">
+        <div className="hh-wrap">{searchCard}</div>
+        {resultsRegion(false)}
+      </div>
+    );
+  }
+
+  // Standalone /travel/flights: overlaid hero + FlightsLanding below.
   return (
     <div className="screen-in hh-page">
       <Crumbs trail={[{ label: "Home", href: "/" }, { label: "Travel", href: "/travel" }, { label: "Flights" }]} />
-
-      {/* ── hero ── */}
       <section className="ota-hero flt-hero">
         <Image className="ota-hero-media" src={HERO_IMG} alt="" aria-hidden fill priority sizes="100vw" style={{ objectFit: "cover" }} />
         <div className="ota-hero-scrim pattern" />
@@ -230,182 +428,10 @@ export function FlightsScreen({ bookingEnabled }: { bookingEnabled: boolean }) {
             <h1>Search hundreds of airlines at once</h1>
             <p className="sub">Find the best fares for Umrah, Hajj and Muslim travel — flagged for Muslim meals, prayer-room layovers and the qibla at your destination.</p>
           </div>
-
-          <div className="ota-segtabs" role="tablist" aria-label="Search mode">
-            <button type="button" role="tab" aria-selected={tab === "search"} className={`ota-segtab ${tab === "search" ? "on" : ""}`} onClick={() => setTab("search")}>
-              <Icon name="search" size={15} /> Search
-            </button>
-            <button type="button" role="tab" aria-selected={tab === "ai"} className={`ota-segtab ai-spark ${tab === "ai" ? "on" : ""}`} onClick={() => setTab("ai")}>
-              <Icon name="sparkles" size={15} /> Ask AI
-            </button>
-          </div>
-
-          <div className="ota-searchbox tabbed">
-            {tab === "search" ? (
-              <form onSubmit={submit}>
-                <div className="ota-optrow">
-                  <div className="ota-pill-group" role="tablist" aria-label="Trip type">
-                    <button type="button" role="tab" aria-selected={tripType === "round"} className={`ota-pill ${tripType === "round" ? "on" : ""}`} onClick={() => setTripType("round")}>Round trip</button>
-                    <button type="button" role="tab" aria-selected={tripType === "one"} className={`ota-pill ${tripType === "one" ? "on" : ""}`} onClick={() => setTripType("one")}>One way</button>
-                  </div>
-                  <label className="ota-check"><input type="checkbox" checked={nonStop} onChange={(e) => setNonStop(e.target.checked)} /> Non-stop only</label>
-                  <span className="flt-hijri-inline">{formatHijri(date || iso(today))}{hijriSeason(date || iso(today)) ? <em className="flt-season"> · {hijriSeason(date || iso(today))!.label}</em> : null}</span>
-                </div>
-
-                <div className="ota-search-row">
-                  <div className="ota-seg ota-seg-where">
-                    <span className="ota-seg-label">From</span>
-                    <AirportInput value={from} onPick={setFrom} placeholder="City or airport (e.g. SIN)" label="From" plain />
-                  </div>
-                  <button type="button" className="ota-swap" onClick={swap} aria-label="Swap origin and destination"><Icon name="refresh" size={16} /></button>
-                  <div className="ota-seg ota-seg-where">
-                    <span className="ota-seg-label">To</span>
-                    <AirportInput value={to} onPick={setTo} placeholder="City or airport (e.g. JED)" label="To" plain />
-                  </div>
-                  <DateRangeField
-                    checkin={date}
-                    checkout={tripType === "round" ? returnDate : null}
-                    onChange={(ci, co) => { setDate(ci); if (tripType === "round") setReturnDate(co); }}
-                    startLabel={tripType === "round" ? "Dates" : "Departure"}
-                    singleDate={tripType !== "round"}
-                  />
-                  <PassengersField value={pax} cabin={cabin} onChange={setPax} onCabin={setCabin} />
-                  <button className="ota-search-go btn btn-primary" type="submit" disabled={loading}>
-                    {loading ? "Searching…" : <><Icon name="search" size={17} /> Search</>}
-                  </button>
-                </div>
-
-                <div className="flt-umrah">
-                  <span className="flt-umrah-label"><Icon name="moon" size={13} /> Umrah &amp; Hajj</span>
-                  <button type="button" onClick={() => setTo({ iata: "JED", city: "Jeddah", name: "King Abdulaziz Intl", country: "Saudi Arabia" })}>Jeddah (JED)</button>
-                  <button type="button" onClick={() => setTo({ iata: "MED", city: "Madinah", name: "Prince Mohammad bin Abdulaziz", country: "Saudi Arabia" })}>Madinah (MED)</button>
-                </div>
-              </form>
-            ) : (
-              <form className="ota-ai-row" onSubmit={askAi}>
-                <div className="ota-ai-input">
-                  <Icon name="sparkles" size={18} className="ai-spark" />
-                  <input
-                    value={aiQuery}
-                    onChange={(e) => setAiQuery(e.target.value)}
-                    placeholder="e.g. Cheapest Umrah flights from Singapore to Jeddah next month, 2 adults"
-                    aria-label="Describe the flights you're looking for"
-                  />
-                </div>
-                <button className="ota-search-go btn btn-primary" type="submit" disabled={aiLoading}>{aiLoading ? "Finding…" : "Find flights"}</button>
-              </form>
-            )}
-          </div>
+          {searchCard}
         </div>
       </section>
-
-      <div className="hh-wrap hh-section">
-        {/* ── AI answer + results ── */}
-        {tab === "ai" && (aiLoading || aiAnswer) && (
-          <section className="flt-ai-results" style={{ marginBottom: 36 }}>
-            {aiAnswer && <AiAnswer>{aiAnswer}</AiAnswer>}
-            {aiSimulated && <p className="muted" style={{ fontSize: ".84rem", marginTop: 8 }}>Preview — live fares aren&apos;t connected yet, so the flights below are illustrative.</p>}
-            {aiLoading ? (
-              <div className="flt-list" style={{ marginTop: 16 }}>{Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}</div>
-            ) : aiItins && aiItins.length > 0 ? (
-              <div className="flt-list" style={{ marginTop: 16 }}>{aiItins.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
-            ) : aiItins ? (
-              <p className="muted" style={{ marginTop: 12 }}>No flights to show yet — add a route to your request, or try the Search tab.</p>
-            ) : null}
-          </section>
-        )}
-
-        {note && tab === "search" ? <p className="muted" style={{ marginBottom: 14 }}>{note}</p> : null}
-        {loading && tab === "search" && (
-          <div className="flt-list" style={{ marginBottom: 40 }}>{Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}</div>
-        )}
-
-        {tab === "search" && items && items.length > 0 ? (
-          <div className="flt-layout">
-            <FilterRail all={items} f={f} setF={setF} airlines={airlines} />
-            <div>
-              {calendar && calendar.length > 1 && (
-                <div className="flt-cal" role="group" aria-label="Flexible dates">
-                  {calendar.map((c) => (
-                    <button key={c.date} type="button" className={`flt-cal-day ${searched?.date === c.date ? "on" : ""} ${c.price != null && c.price === cheapestDay ? "cheap" : ""}`} onClick={() => pickDay(c.date)}>
-                      <span className="flt-cal-d">{parseISO(c.date).toLocaleDateString("en", { weekday: "short", day: "numeric" })}</span>
-                      <span className="flt-cal-p">{c.price != null ? `SGD ${c.price}` : "—"}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {searched && (
-                <div className="flt-track">
-                  {track.msg ? (
-                    <span className="flt-track-msg"><Icon name="check" size={14} /> {track.msg}</span>
-                  ) : (
-                    <button type="button" className="flt-track-btn" onClick={setAlert}><Icon name="clock" size={14} /> Track this price — get emailed if {searched.origin}→{searched.destination} drops</button>
-                  )}
-                </div>
-              )}
-              <div className="flt-sort-tabs">
-                {(["best", "cheapest", "fastest"] as const).map((m) => (
-                  <button key={m} className={sort === m ? "on" : ""} onClick={() => setSort(m)}>
-                    <span className="flt-sort-label">{m === "best" ? "Best" : m === "cheapest" ? "Cheapest" : "Fastest"}</span>
-                    <span className="flt-sort-sub">{headline(m)}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="flt-count">{filtered.length} of {items.length} flights</p>
-              {to && (
-                <Link href="/travel" className="hotel-cta">
-                  <span className="hcta-ico"><Icon name="bed" size={20} /></span>
-                  <span className="hcta-text"><strong>Complete your trip</strong> — find a Muslim-friendly hotel in {to.city || to.iata} with prayer rooms and halal dining nearby.</span>
-                  <span className="hcta-go">Find a stay <Icon name="arrow" size={15} /></span>
-                </Link>
-              )}
-              <div className="flt-list">{filtered.map((it, i) => <ItineraryCard key={it.offerId || i} it={it} bookingEnabled={bookingEnabled} adults={adults} />)}</div>
-              {filtered.length === 0 && <Empty icon="plane" title="No flights match your filters" body="Try widening the stops, time or duration filters." />}
-              {(nearby.from.length > 0 || nearby.to.length > 0) && (
-                <div className="flt-nearby">
-                  <span className="flt-nearby-label">Nearby airports — try a cheaper option:</span>
-                  {nearby.from.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`f${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setFrom(ap); if (date) runSearch(date, ap); }}>From {a.city} ({a.iata})</button>; })}
-                  {nearby.to.map((a) => { const ap = { iata: a.iata, name: a.name, city: a.city, country: a.country }; return <button key={`t${a.iata}`} type="button" className="flt-nearby-chip" onClick={() => { setTo(ap); if (date) runSearch(date, undefined, ap); }}>To {a.city} ({a.iata})</button>; })}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : tab === "search" && !items ? (
-          <>
-            {/* trending destinations */}
-            <Carousel title="Trending destinations" ariaLabel="Trending halal-travel destinations">
-              {POPULAR_ROUTES.map((d) => (
-                <button key={d.iata} type="button" className="ota-citem flt-trend" onClick={() => { const dst = { iata: d.iata, name: d.name, city: d.city, country: d.country }; setFrom(SG_ORIGIN); setTo(dst); if (date) runSearch(date, SG_ORIGIN, dst); }}>
-                  <span className="flt-trend-ico"><Icon name="plane" size={18} /></span>
-                  <span className="flt-trend-main">
-                    <span className="flt-trend-route">Singapore <Icon name="arrow" size={12} /> {d.city}</span>
-                    <span className="flt-trend-sub">{d.name}{d.tag ? ` · ${d.tag}` : ""}</span>
-                  </span>
-                  {d.tag ? <span className="frc-tag">{d.tag}</span> : null}
-                </button>
-              ))}
-            </Carousel>
-
-            {recent.length > 0 && (
-              <Carousel title="Your recent searches" ariaLabel="Your recent flight searches">
-                {recent.map((s, i) => (
-                  <button key={`${s.from.iata}-${s.to.iata}-${s.ts}-${i}`} type="button" className="ota-citem ota-recent" onClick={() => replayRecent(s)}>
-                    <span className="ota-recent-ico"><Icon name="clock" size={18} /></span>
-                    <span className="ota-recent-main">
-                      <p>{s.from.city || s.from.iata} → {s.to.city || s.to.iata}</p>
-                      <p>{parseISO(s.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{s.tripType === "round" && s.returnDate ? ` – ${parseISO(s.returnDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""} · {s.pax.adults + s.pax.children + s.pax.infants} traveller{s.pax.adults + s.pax.children + s.pax.infants === 1 ? "" : "s"}</p>
-                    </span>
-                  </button>
-                ))}
-              </Carousel>
-            )}
-
-            <FlightsLanding onRoute={(o, d) => { setFrom(o); setTo(d); if (date) runSearch(date, o, d); }} />
-          </>
-        ) : null}
-
-        {items && tab === "search" ? <p className="travel-disclaimer" style={{ marginTop: 24 }}>Flights are provided via our travel partner. Confirm baggage allowance, times and fare rules before booking.</p> : null}
-      </div>
+      {resultsRegion(true)}
     </div>
   );
 }
