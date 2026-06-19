@@ -10,8 +10,12 @@ import { Popover, Stepper } from "../../ota";
 import { fmtDuration, type FlightLeg } from "@/lib/flights";
 import { searchLocalAirports } from "@/lib/airports";
 import { airportAmenity, type AirportAmenity } from "@/lib/airport-amenities";
+import { type Airport, SG_ORIGIN, POPULAR_ROUTES } from "@/lib/flights-data";
 
-export interface Airport { iata: string; name: string; city: string; country: string }
+// Airport type + landing data now live in the pure (server-importable) lib/flights-data.
+// Re-exported here so existing client imports of these names keep working.
+export type { Airport };
+export { SG_ORIGIN, POPULAR_ROUTES };
 
 /* layover stops within a leg (connection airports + how long the wait is) */
 export function legLayovers(leg: FlightLeg): { iata: string; durationMin: number; amenity?: AirportAmenity }[] {
@@ -141,18 +145,7 @@ export function PassengersField({ value, cabin, onChange, onCabin, label = "Trav
 
 export { fmtDuration };
 
-/* ── pre-search landing constants (routes, benefits, FAQ) ─────────────────── */
-export const SG_ORIGIN: Airport = { iata: "SIN", name: "Changi", city: "Singapore", country: "Singapore" };
-export const POPULAR_ROUTES: (Airport & { tag?: string })[] = [
-  { iata: "JED", city: "Jeddah", name: "King Abdulaziz Intl", country: "Saudi Arabia", tag: "Umrah" },
-  { iata: "MED", city: "Madinah", name: "Prince Mohammad bin Abdulaziz", country: "Saudi Arabia", tag: "Umrah" },
-  { iata: "IST", city: "Istanbul", name: "Istanbul Airport", country: "Türkiye" },
-  { iata: "DXB", city: "Dubai", name: "Dubai Intl", country: "United Arab Emirates" },
-  { iata: "CAI", city: "Cairo", name: "Cairo Intl", country: "Egypt" },
-  { iata: "KUL", city: "Kuala Lumpur", name: "KLIA", country: "Malaysia" },
-  { iata: "CGK", city: "Jakarta", name: "Soekarno-Hatta", country: "Indonesia" },
-  { iata: "DOH", city: "Doha", name: "Hamad Intl", country: "Qatar" },
-];
+/* ── pre-search landing constants (benefits, FAQ) ─────────────────────────── */
 export const FLT_BENEFITS: [string, string, string][] = [
   ["moon", "Muslim meals, flagged", "See at a glance which airlines serve a Muslim meal (MOML) on request, and which cabins are alcohol-free — before you book."],
   ["mosque", "Prayer-aware layovers", "We highlight connecting airports with a prayer room and tell you whether your layover is long enough to pray, plus the qibla at your destination."],
