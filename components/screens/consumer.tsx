@@ -24,6 +24,7 @@ import { CertifiedToggle } from "../chrome";
 import { EventsStrip } from "./events";
 import { MapView, type MapPoint } from "../map/map-view";
 import { Faq } from "../faq";
+import { HomeSeoContent } from "./home-seo";
 import { HOME_FAQ } from "@/lib/faq";
 import { Breadcrumbs } from "../breadcrumbs";
 
@@ -150,6 +151,9 @@ export function HomeScreen() {
           </div>
         </div>
       </section>
+
+      {/* Long-form SEO content (collapsible) — targets the halal-food head cluster */}
+      <HomeSeoContent />
 
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
       <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />

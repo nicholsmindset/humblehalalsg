@@ -7,7 +7,8 @@ import Link from "next/link";
 import { Icon } from "../../ui";
 import { Carousel } from "../../ota";
 import { DestinationCard } from "./shared";
-import { FLT_BENEFITS, FLT_FAQS } from "../flights/shared";
+import { FLT_BENEFITS } from "../flights/shared";
+import { TRAVEL_LANDING_FAQ } from "@/lib/travel-content";
 import type { TravelHub } from "@/lib/travel-hubs";
 import type { FlightDeal } from "@/lib/flights-data";
 
@@ -108,15 +109,10 @@ function WhyBookAndFaq() {
     ["moon", "Muslim meals & alcohol-free cabins, flagged", "On flights, see which airlines serve a Muslim meal (MOML) on request and which cabins are alcohol-free — before you book."],
     ["plane", "Prayer-aware flights, planned with your stay", "Flights flagged for prayer-room layovers and the qibla at your destination — paired with a Muslim-friendly hotel in one place."],
   ];
-  // Merge FAQs; the hotels + flights lists share a "book together" item — keep one.
-  const faqs: [string, string][] = [
-    ["What makes a hotel or flight “Muslim-friendly”?", "For stays we surface prayer rooms, halal dining on-site or nearby, alcohol-free options, women-only facilities and mosque proximity, plus prayer times and qibla. For flights we flag Muslim meals (MOML) on request, alcohol-free cabins and prayer-room layovers. All from the provider's own information — always confirm with the hotel or airline."],
-    ["Are these halal-certified?", "No — Humble Halal is a discovery platform, not a certifier. We never assert a hotel or flight is “halal”. Where you see a Verified badge, our team has reviewed the information; everything else is the provider's own declaration, which you should confirm directly."],
-    ["Can I filter for prayer rooms or alcohol-free stays?", "Yes. After you search stays, filter by prayer room, halal food (on-site or nearby), alcohol-free, women-only facilities and near-a-mosque to find a fit."],
-    ["Can I book flights and a hotel together?", "Yes. Search flights for your Umrah, Hajj or Muslim-travel journey and pair them with a Muslim-friendly stay, so your whole trip is planned in one place."],
-    [FLT_FAQS[1][0], FLT_FAQS[1][1]],
-  ];
-  // benefits/faqs above are authored; FLT_BENEFITS is referenced so the import stays
+  // Visible FAQ is the SAME source the server page emits as FAQPage JSON-LD
+  // (lib/travel-content) so structured data matches what users see.
+  const faqs = TRAVEL_LANDING_FAQ;
+  // benefits above are authored; FLT_BENEFITS is referenced so the import stays
   // meaningful and future copy can pull from it.
   void FLT_BENEFITS;
   return (
@@ -134,7 +130,7 @@ function WhyBookAndFaq() {
       <section style={{ marginTop: 40 }}>
         <h2 style={{ fontSize: "1.5rem", marginBottom: 14 }}>Halal travel — your questions</h2>
         <div className="flt-faq">
-          {faqs.map(([q, a]) => (
+          {faqs.map(({ q, a }) => (
             <details key={q} className="flt-faq-item"><summary>{q}<span className="faq-chevron" aria-hidden="true" /></summary><p>{a}</p></details>
           ))}
         </div>
@@ -148,6 +144,50 @@ function WhyBookAndFaq() {
   );
 }
 
+/* ── long-form SEO content (collapsible, internally linked) ───────────────── */
+function HalalTravelGuide() {
+  return (
+    <section className="trv-guide" style={{ marginTop: 44, maxWidth: 820 }}>
+      <h2 style={{ fontSize: "1.5rem", marginBottom: 6 }}>Halal travel from Singapore: a quick guide</h2>
+      <p className="muted" style={{ marginBottom: 16 }}>Everything a Muslim traveller weighs — prayer, halal food, alcohol-free stays and getting there — in one place.</p>
+      <div className="trv-guide-list">
+        <details className="flt-faq-item" name="trv-guide" open>
+          <summary>Finding Muslim-friendly hotels<span className="faq-chevron" aria-hidden="true" /></summary>
+          <p>
+            A “Muslim-friendly” hotel is one where the details that matter to Muslim travellers are easy to confirm — a prayer
+            room or musalla, the qibla direction, halal dining on-site or close by, and alcohol-free options. Humble Halal
+            surfaces those facts from each property and, where you see a Verified badge, our team has reviewed the listing.
+            Browse our city guides for <Link href="/travel/kuala-lumpur">Kuala Lumpur</Link>,{" "}
+            <Link href="/travel/bangkok">Bangkok</Link>, <Link href="/travel/tokyo">Tokyo</Link>,{" "}
+            <Link href="/travel/seoul">Seoul</Link>, <Link href="/travel/istanbul">Istanbul</Link> and{" "}
+            <Link href="/travel/dubai">Dubai</Link> to see Muslim-friendly hotels in each.
+          </p>
+        </details>
+        <details className="flt-faq-item" name="trv-guide">
+          <summary>Umrah &amp; Hajj travel<span className="faq-chevron" aria-hidden="true" /></summary>
+          <p>
+            For Umrah, the two biggest choices are your flight dates and how close your hotel sits to the Haramain. Our{" "}
+            <Link href="/travel/umrah">Umrah hub</Link> gathers Muslim-friendly hotels near{" "}
+            <Link href="/travel/mecca">Masjid al-Haram in Mecca</Link> and{" "}
+            <Link href="/travel/medina">Al-Masjid an-Nabawi in Medina</Link>, plus live flights from Singapore to{" "}
+            <Link href="/travel/flights?to=JED">Jeddah</Link> and <Link href="/travel/flights?to=MED">Medina</Link>, with an
+            answer-first guide to visas, vaccinations and the rituals. We help you find and book the parts — we are not a
+            licensed Umrah agent.
+          </p>
+        </details>
+        <details className="flt-faq-item" name="trv-guide">
+          <summary>Flights for Muslim travellers<span className="faq-chevron" aria-hidden="true" /></summary>
+          <p>
+            <Link href="/travel/flights">Search live flight fares</Link> across hundreds of airlines from Singapore. We flag
+            Muslim meals (MOML) available on request, alcohol-free cabins and prayer-room layovers, so you can plan a journey
+            that fits — then pair it with a Muslim-friendly stay so the whole trip sits in one place.
+          </p>
+        </details>
+      </div>
+    </section>
+  );
+}
+
 /* Single shared-promo block rendered below the active vertical's widget. */
 export function SharedTravelPromo({ cities, flightDeals, vertical }: { cities: TravelHub[]; flightDeals: FlightDeal[]; vertical: "stays" | "flights" }) {
   return (
@@ -156,6 +196,7 @@ export function SharedTravelPromo({ cities, flightDeals, vertical }: { cities: T
       <PopularDestinations cities={cities} flightDeals={flightDeals} />
       <CrossSell vertical={vertical} />
       <WhyBookAndFaq />
+      <HalalTravelGuide />
     </div>
   );
 }

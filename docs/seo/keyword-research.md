@@ -371,3 +371,50 @@ Rules: **title ≤ 60 chars**, **description ≤ 155 chars**, exactly one **H1**
 - Descriptions: lead with the primary keyword + a differentiator (MUIS-certified, Muslim-owned, reviews, directions, prayer info); end with a soft CTA where natural.
 - One H1 per page; H1 ≈ primary keyword in natural language (may differ slightly from title to avoid exact dupe).
 - FAQ blocks reuse validated **question keywords** (§3L) for PAA + AI-Overview capture.
+
+---
+
+## Travel vertical — keyword research (Ahrefs, Singapore, 2026-06-20)
+
+The `/travel` head terms are thin in SG (`muslim friendly hotels` 0–40/mo; `halal travel` KD **39**), so the landing page's SEO value is as a **hub** that links to the money pages. The real low-difficulty volume is in two programmatic clusters, both built this pass:
+
+### Cluster 1 — Destinations (KD ~0): `muslim friendly hotel in {city}`
+Surface: `/travel/[city]` hubs (H1 already "Muslim-Friendly Hotels in {City}"). Added 10 cities → Seoul, Tokyo, Osaka, Hong Kong, Taipei, Phuket, Krabi, Hat Yai, Bali, Ho Chi Minh City (Bangkok/KL/Singapore/Jakarta/Istanbul/Dubai/London already live).
+
+| Keyword | Vol | KD |
+|---|---|---|
+| muslim friendly hotel in bangkok | 30 | 0 |
+| muslim friendly hotel in seoul | 30 | 0 |
+| muslim friendly hotel in tokyo | 20 | — |
+| muslim friendly hotel hong kong | 20 | — |
+| muslim friendly hotel krabi / phuket / taipei / shanghai / osaka / kuala lumpur / bali | 10–20 | 0 |
+
+### Cluster 2 — Umrah (biggest single opportunity): new `/travel/umrah` hub
+Commercial CTAs → hotels near the Haramain (`/travel/mecca`, `/travel/medina`) + flights to Jeddah/Medina. Informational FAQ targets the KD-0 long-tail. Discovery/booking-aid framing only (not a licensed operator).
+
+| Keyword | Vol | KD |
+|---|---|---|
+| umrah | 1,400 | 11 |
+| umrah package | 400 | 0 |
+| umrah package singapore | 250 | 3 |
+| umrah vaccination singapore | 200 | 0 |
+| umrah visa singapore | 100 | 0 |
+| what is umrah | 100 | 2 |
+| rukun umrah / umrah vs hajj / badal umrah / niat umrah | 50–60 | 0 |
+
+### Head / brand cluster (landing content block + FAQPage)
+`halal travel` (60, KD 39), `halal hotels` (30), `muslim friendly hotels` (0–40), `halal travel agency singapore` (40, KD 6, TP 500). Targeted via the new collapsible "Halal travel from Singapore" guide + an expanded FAQ with matching FAQPage JSON-LD on `/travel`.
+
+## Home (food) — head cluster grounding the new home SEO block
+
+| Keyword | Vol | KD | TP |
+|---|---|---|---|
+| halal food near me | 15,000 | 19 | 1,500 |
+| halal food | 3,600 | 0 | 5,000 |
+| halal buffet singapore | 5,100 | 38 | 100 |
+| halal restaurant singapore | 3,200 | 14 | 5,900 |
+| halal food singapore | 2,900 | 9 | 6,500 |
+| halal cafe singapore | 1,600 | 24 | 6,300 |
+| halal restaurants singapore | 1,500 | 13 | 5,900 |
+
+Added a collapsible "Halal food in Singapore — the full picture" block on the home page (internal links to `/halal`, `/map`, cuisine pages, `/tools`, `/travel`) + two head-term Q&As to `HOME_FAQ`.

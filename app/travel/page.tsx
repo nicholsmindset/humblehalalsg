@@ -3,8 +3,9 @@ import { allTravelHubs, getTravelHub } from "@/lib/travel-hubs";
 import { cityHotels } from "@/lib/travel-data";
 import { curatedFlightDeals } from "@/lib/flights-data";
 import { getServerFlags } from "@/lib/flags";
+import { TRAVEL_LANDING_FAQ } from "@/lib/travel-content";
 import { pageMeta, SITE } from "@/lib/seo";
-import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 
 export const metadata = pageMeta({
   title: "Halal Travel — Muslim-Friendly Hotels & Flights Worldwide",
@@ -35,7 +36,7 @@ export default async function Page() {
   const flags = getServerFlags();
   return (
     <>
-      <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }])]} />
+      <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }]), faqJsonLd(TRAVEL_LANDING_FAQ)]} />
       <UnifiedTravelScreen
         cities={cities}
         recommended={recommended}

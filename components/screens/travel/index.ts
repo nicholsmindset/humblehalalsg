@@ -3,6 +3,7 @@
 export { TravelScreen } from "./landing";
 export { UnifiedTravelScreen } from "./UnifiedTravelScreen";
 export { TravelCityScreen } from "./city";
+export { UmrahHubScreen, UMRAH_FAQ } from "./umrah";
 export { TravelHotelScreen } from "./hotel";
 export { TravelBookingScreen, TravelConfirmationScreen, TravelTripsScreen } from "./booking";
 export { HotelCard } from "./HotelCard";
