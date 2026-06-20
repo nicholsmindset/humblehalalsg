@@ -39,6 +39,14 @@ export function TravelCityScreen({ hub, hotels, faq, related, priceTip }: { hub:
           </div>
         )}
 
+        {hub.iata && (
+          <a className="flights-cta" href={`/travel/flights?to=${hub.iata}`} style={{ marginBottom: 24 }}>
+            <span className="fcta-ico"><Icon name="plane" size={20} /></span>
+            <span className="fcta-text"><strong>Flying to {hub.name}?</strong> Search live fares from Singapore and pair them with your stay.</span>
+            <span className="fcta-go">Search flights <Icon name="arrow" size={15} /></span>
+          </a>
+        )}
+
         {topPicks.length >= 4 && (
           <Carousel title={`Top picks in ${hub.name}`} ariaLabel={`Top Muslim-friendly picks in ${hub.name}`}>
             {topPicks.map((h) => <div key={h.id} className="ota-citem"><HotelCard hotel={h} /></div>)}

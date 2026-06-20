@@ -93,6 +93,34 @@ test("flights deep link: ?to=JED pre-fills the destination (from a landing promo
   await expect(main.getByLabel("To", { exact: true }).first()).toHaveValue(/Jeddah \(JED\)/i);
 });
 
+test("travel landing: long-form halal-travel SEO guide renders", async ({ page }) => {
+  await page.goto("/travel");
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { name: /Halal travel from Singapore/ })).toBeVisible();
+});
+
+test("umrah hub: commercial tiles + Umrah guide, no certification claims", async ({ page }) => {
+  await page.goto("/travel/umrah");
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { level: 1 })).toContainText(/umrah/i);
+  await expect(main.getByRole("link", { name: /Browse Mecca hotels/ })).toBeVisible();
+  await expect(main.getByRole("link", { name: /Search Jeddah flights/ })).toBeVisible();
+  await expect(main.getByText("What is Umrah?")).toBeVisible();
+  await expect(main).not.toContainText(/halal[- ]certified/i);
+});
+
+test("new destination hub: Muslim-friendly hotels in Seoul + fly-there CTA", async ({ page }) => {
+  await page.goto("/travel/seoul");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/Muslim-Friendly Hotels in Seoul/i);
+  await expect(page.locator("#main-content").getByRole("link", { name: /Search flights/ })).toBeVisible();
+});
+
+test("home: collapsible halal-food SEO block renders", async ({ page }) => {
+  await page.goto("/");
+  const main = page.locator("#main-content");
+  await expect(main.getByRole("heading", { name: /Halal food in Singapore — the full picture/ })).toBeVisible();
+});
+
 test("API: ai-search returns a grounded, structured response", async ({ request }) => {
   const res = await request.post("/api/travel/ai-search", {
     data: { query: "hotel near a mosque in Mecca, alcohol free" },

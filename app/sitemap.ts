@@ -18,6 +18,7 @@ const PUBLIC_STATIC = [
   "/halal",
   "/is-halal",
   "/travel",
+  "/travel/umrah",
   "/blog",
   "/events",
   "/ramadan",

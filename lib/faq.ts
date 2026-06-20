@@ -26,6 +26,14 @@ export const HOME_FAQ: QA[] = [
     q: "Do these places have prayer spaces?",
     a: "Many do. Listings with a prayer space show details such as gender arrangement, wudhu (ablution) facilities, capacity and whether mats or telekung are provided. The prayer-times strip also shows the nearest mosque.",
   },
+  {
+    q: "Where can I find the best halal food in Singapore?",
+    a: "Start with the map to see halal spots near you, or browse by area (Tampines, Bugis, Geylang Serai, Bedok, Jurong and more) and by cuisine — halal buffet, sushi, Korean, fine dining, high tea and Thai all have their own guides. Sort by halal-confidence score and rating to find the best-reviewed options.",
+  },
+  {
+    q: "Does Humble Halal cover halal restaurants and cafés across all of Singapore?",
+    a: "Yes. We list MUIS-certified and Muslim-owned restaurants, cafés, groceries and services across the island, from the heartlands to the city — each with halal status, reviews, prayer-space info and directions. New places are added regularly.",
+  },
 ];
 
 export const VERIFY_FAQ: QA[] = [
