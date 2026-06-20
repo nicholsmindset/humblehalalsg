@@ -10,6 +10,30 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    and a retry job re-calls the idempotent book endpoint. Gated + graceful. */
 const CONFIRMED = new Set(["CONFIRMED", "TICKETED"]);
 
+/* Inline fast-path retry. bookFlight is idempotent, so re-calling it resolves the
+   common transient case (provider not yet confirmed) WITHIN the request — the
+   customer almost never lands in 'confirming'. This keeps flights safe on Vercel
+   Hobby (daily cron) since the cron/external scheduler becomes a rare backstop,
+   not the primary path. We only retry plausibly-transient outcomes so a hard
+   validation error fails fast to 'confirming' (the retry job will keep trying). */
+const RETRYABLE = new Set([55004, 55029, 45035]); // idempotent-retry codes (see lib/liteapi)
+const TRANSIENT_STATUS = new Set(["PENDING", "PROCESSING", "PENDING_CONFIRMATION"]);
+type BookOutcome = Awaited<ReturnType<typeof bookFlight>>;
+function isTransient(o: BookOutcome): boolean {
+  if (o.booking && CONFIRMED.has(o.booking.status || "")) return false; // already done
+  if (o.httpStatus === 0 || o.httpStatus >= 500) return true;            // network / server
+  if (o.errorCode && RETRYABLE.has(o.errorCode)) return true;            // known retryable
+  return TRANSIENT_STATUS.has(o.booking?.status || "");
+}
+async function bookWithRetry(prebookId: string, transactionId: string): Promise<BookOutcome> {
+  let outcome = await bookFlight(prebookId, transactionId);
+  for (let attempt = 1; attempt < 3 && isTransient(outcome); attempt++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    outcome = await bookFlight(prebookId, transactionId);
+  }
+  return outcome;
+}
+
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "flight-book", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
@@ -26,7 +50,7 @@ export async function POST(req: Request) {
     if (server) userId = (await server.auth.getUser()).data.user?.id ?? null;
   } catch { /* anonymous ok */ }
 
-  const outcome = await bookFlight(prebookId, transactionId);
+  const outcome = await bookWithRetry(prebookId, transactionId);
 
   // Map to our state machine. Any non-confirmed result after payment is 'confirming'
   // (retry-safe), never a payment failure shown to the user.
