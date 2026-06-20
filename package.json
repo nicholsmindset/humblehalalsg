@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test": "vitest run",
-    "deploy:prod": "bash scripts/deploy-prod.sh"
+    "deploy:prod": "bash scripts/deploy-prod.sh",
+    "flight:check": "tsx scripts/flight-sandbox-check.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

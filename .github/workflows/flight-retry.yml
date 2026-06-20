@@ -1,0 +1,38 @@
+name: Flight retry backstop
+
+# Reconciles flight bookings stuck in 'confirming' (payment captured, provider not
+# yet confirmed) by hitting the idempotent cron endpoint every 10 minutes. This is
+# the Hobby-plan-safe alternative to a sub-daily Vercel cron (Vercel Hobby rejects
+# */10 crons). The daily Vercel cron in vercel.json remains as a fallback.
+#
+# Requires repo secret CRON_SECRET = the value set in Vercel env. lib/cron.ts
+# authorizeCron() checks `Authorization: Bearer <CRON_SECRET>`.
+# Note: GitHub-scheduled runs can drift a few minutes under load — fine for a backstop.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # manual trigger for verification
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flight-retry
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit flight-retry cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET secret is not set in this repo."
+            exit 1
+          fi
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://www.humblehalal.com/api/cron/flight-retry
