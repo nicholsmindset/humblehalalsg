@@ -16,6 +16,7 @@ import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
+import { Newsletter } from "../newsletter";
 import { VERIFY_FAQ } from "@/lib/faq";
 
 /* =============================================================
@@ -806,6 +807,18 @@ export function SeoScreen() {
               )}
             </div>
           </div>
+
+          <section className="newsletter-card mt24">
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free guide</span>
+            <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>Get the Ultimate Halal Food Guide by MRT</h2>
+            <p className="muted" style={{ marginTop: 6 }}>
+              New {noun} {placeLabel} land in our weekly newsletter first. Subscribe and we&apos;ll email you
+              the free guide — MUIS-verified spots sorted by MRT station.
+            </p>
+            <div style={{ marginTop: 14 }}>
+              <Newsletter source="directory" cta="Send me the guide" />
+            </div>
+          </section>
 
           <Faq items={content.faq} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
         </div>

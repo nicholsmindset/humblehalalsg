@@ -88,4 +88,9 @@ export const track = {
       p_category: category ?? null,
     });
   },
+  // Newsletter opt-in. `source` (footer, hero, popup, tool:<slug>, …) rides in
+  // p_category so each capture surface gets its own conversion attribution.
+  newsletterSignup(source: string) {
+    emit({ p_event_type: "newsletter_signup", p_category: source });
+  },
 };

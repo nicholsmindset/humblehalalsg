@@ -76,18 +76,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Could not submit request" }, { status: 502 });
   }
 
-  // Best-effort: also capture the email for follow-up (non-blocking).
-  const mlKey = process.env.MAILERLITE_API_KEY;
-  if (mlKey && email) {
+  // Best-effort: also capture the email in beehiiv for follow-up (non-blocking).
+  const bhKey = process.env.BEEHIIV_API_KEY;
+  const bhPub = process.env.BEEHIIV_PUBLICATION_ID;
+  if (bhKey && bhPub && email) {
     try {
-      await fetch("https://connect.mailerlite.com/api/subscribers", {
+      await fetch(`https://api.beehiiv.com/v2/publications/${bhPub}/subscriptions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Authorization: `Bearer ${mlKey}`,
+          Authorization: `Bearer ${bhKey}`,
         },
-        body: JSON.stringify({ email, fields: { source: "lead", category } }),
+        body: JSON.stringify({
+          email,
+          reactivate_existing: true,
+          send_welcome_email: false,
+          utm_source: "lead",
+          custom_fields: [
+            { name: "source", value: "lead" },
+            ...(category ? [{ name: "category", value: String(category) }] : []),
+          ],
+        }),
       });
     } catch {
       /* ignore — lead is already stored */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 export const metadata: Metadata = pageMeta({
   title: "Hari Raya 2026 Singapore — Dates, Bazaars & Raya Guide",
@@ -55,6 +56,18 @@ export default function Page() {
             <Link href="/tools/islamic-calendar" className="hub-link"><span>Islamic calendar 2026</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/ramadan" className="hub-link"><span>Ramadan 2026 guide</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
+
+          <section className="newsletter-card mt24" style={{ maxWidth: 640 }}>
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free Hari Raya checklist</span>
+            <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Get the Hari Raya 2026 planning checklist</h2>
+            <p className="muted" style={{ marginTop: 8 }}>
+              Catering, baju, open-house prep and a Raya countdown — plus our weekly halal guide for Singapore.
+              We&apos;ll email it to you.
+            </p>
+            <div style={{ marginTop: 14 }}>
+              <Newsletter source="hari-raya" cta="Send me the checklist" />
+            </div>
+          </section>
 
           <div className="seo-prose mt24" style={{ maxWidth: 720 }}>
             <h2 style={{ fontSize: "1.4rem", margin: "8px 0 12px" }}>Frequently asked</h2>

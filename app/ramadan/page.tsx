@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 export const metadata: Metadata = pageMeta({
   title: "Ramadan 2026 Singapore — Dates, Bazaars & Iftar Guide",
@@ -57,6 +58,18 @@ export default function Page() {
             <Link href="/mosques" className="hub-link"><span>Mosques for tarawih</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/hari-raya" className="hub-link"><span>Hari Raya 2026 guide</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
+
+          <section className="newsletter-card mt24" style={{ maxWidth: 640 }}>
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free Ramadan 2026 Planner</span>
+            <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Get the Ramadan 2026 Planner</h2>
+            <p className="muted" style={{ marginTop: 8 }}>
+              A 30-day fasting tracker, iftar spots, sahur &amp; iftar times and a zakat checklist — plus our
+              weekly halal guide for Singapore. We&apos;ll email it to you.
+            </p>
+            <div style={{ marginTop: 14 }}>
+              <Newsletter source="ramadan" cta="Send me the planner" />
+            </div>
+          </section>
 
           <div className="seo-prose mt24" style={{ maxWidth: 720 }}>
             <h2 style={{ fontSize: "1.4rem", margin: "8px 0 12px" }}>Frequently asked</h2>

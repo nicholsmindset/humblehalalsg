@@ -27,6 +27,7 @@ import { Faq } from "../faq";
 import { HomeSeoContent } from "./home-seo";
 import { HOME_FAQ } from "@/lib/faq";
 import { Breadcrumbs } from "../breadcrumbs";
+import { Newsletter } from "../newsletter";
 
 /* =============================================================
    HOME
@@ -43,6 +44,17 @@ export function HomeScreen() {
     <div className="screen-in hh-page">
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
+
+      {/* NEWSLETTER — low-friction weekly-guide capture, below the hero search */}
+      <section className="hh-wrap" style={{ marginTop: 22 }}>
+        <div className="home-nl-band">
+          <div className="home-nl-copy">
+            <strong>🌙 Get the weekly halal guide</strong>
+            <span className="muted">New MUIS-verified spots, mosque events &amp; deals — free, every week.</span>
+          </div>
+          <Newsletter source="hero" cta="Subscribe" />
+        </div>
+      </section>
 
       {/* CATEGORIES — top 8 + view all */}
       <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
