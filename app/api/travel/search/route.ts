@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runHotelSearch, parseRateFilters } from "@/lib/travel-data";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Hotel search → LiteAPI POST /hotels/rates, then left-join our Muslim-friendly
    overlay and re-rank by halal_score. Graceful: without a LiteAPI key it returns
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
   }
   if (body.website) return NextResponse.json({ ok: true, simulated: true, hotels: [] }); // honeypot
+  // Throttle the paid LiteAPI /hotels/rates fan-out per IP (mirrors min-rates).
+  const rl = await rateLimit(req, "hotel-search", 30, 60); if (!rl.ok) return tooMany(rl.retryAfter);
 
   const checkin = String(body.checkin || "");
   const checkout = String(body.checkout || "");
