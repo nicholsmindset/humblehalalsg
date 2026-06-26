@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { badgeMeta, HHData } from "@/lib/data";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { joinParts } from "@/lib/format";
@@ -245,6 +246,7 @@ export function ImagePh({
           fill
           sizes={sizes}
           priority={priority}
+          unoptimized={isUnoptimizedImageSrc(src)}
           style={{ objectFit: "cover", opacity: loaded ? 1 : 0, transition: "opacity .35s ease" }}
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
