@@ -57,14 +57,19 @@ async function once(url: string, init: RequestInit, key: string): Promise<Respon
   }
 }
 
-/** Core request with one retry on 5xx. Throws LiteApiError on non-2xx. `base`
- *  defaults to the search/booking host; pass DA_BASE for analytics/voucher CRUD. */
+/** Core request with one retry on 5xx for IDEMPOTENT GETs only. Throws
+ *  LiteApiError on non-2xx. `base` defaults to the search/booking host; pass
+ *  DA_BASE for analytics/voucher CRUD. */
 async function request<T>(path: string, init: RequestInit = {}, base: string = BASE): Promise<T> {
   const key = apiKey();
   if (!key) throw new LiteApiError(0, "liteapi_not_configured");
   const url = `${base}${path}`;
+  const method = (init.method || "GET").toUpperCase();
   let res = await once(url, init, key);
-  if (res.status >= 500) res = await once(url, init, key); // retry once
+  // Retry 5xx ONLY for idempotent GETs. Non-idempotent POSTs (esp. /rates/book
+  // and /rates/prebook) must NEVER be auto-retried — a retried booking can
+  // double-book / double-charge (CP1 audit). Failures surface as LiteApiError.
+  if (res.status >= 500 && method === "GET") res = await once(url, init, key);
   if (!res.ok) throw new LiteApiError(res.status, `liteapi_${res.status}`);
   return (await res.json()) as T;
 }
