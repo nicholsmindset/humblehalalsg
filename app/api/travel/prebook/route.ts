@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, prebook } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 1 of booking — confirm price/availability and open a payment intent.
    Returns the pricing + the LiteAPI Payment SDK handles (transactionId +
@@ -11,6 +12,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
   }
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
+  // Throttle the paid LiteAPI /rates/prebook call per IP (mirrors /book at 10/600).
+  const rl = await rateLimit(req, "hotel-prebook", 20, 60); if (!rl.ok) return tooMany(rl.retryAfter);
 
   const body = (await req.json().catch(() => ({}))) as {
     offerId?: string;
