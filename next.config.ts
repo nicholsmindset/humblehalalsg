@@ -28,10 +28,19 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
-      // LiteAPI/Cupid hotel photo CDN — every hotel image (card + hero) is
-      // served from this single host. Required or next/image 500s on them.
+      // LiteAPI/Cupid hotel photo CDN. Hotel images are served UNOPTIMIZED
+      // (see lib/img.ts) to stay under Vercel's image quota — they bypass the
+      // optimizer — but the pattern is kept for safety / any optimized use.
       { protocol: "https", hostname: "static.cupid.travel" },
     ],
+    // Cost controls for Vercel Image Optimization (Hobby quota). A long cache TTL
+    // avoids re-optimizing the same image (fewer cache writes); trimmed size lists
+    // cut the width variants generated per optimized image; webp-only avoids
+    // avif's heavier transforms. Bulk hotel images skip all this (unoptimized).
+    minimumCacheTTL: 2678400, // 31 days
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [96, 200, 400],
+    formats: ["image/webp"],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

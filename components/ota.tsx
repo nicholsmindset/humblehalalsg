@@ -14,6 +14,7 @@ import {
   type ReactNode,
 } from "react";
 import Image from "next/image";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 import { Icon } from "./ui";
 
 /* ---------------------------------------------------------------
@@ -484,7 +485,7 @@ export function ImageGallery({ images, alt = "" }: { images: string[]; alt?: str
       <div className="travel-gallery">
         {shown.map((src, i) => (
           <button key={i} type="button" className="tg-cell" onClick={() => setBox(i)} aria-label={`View ${alt} photo ${i + 1}`}>
-            <Image src={src} alt={`${alt} photo ${i + 1}`} fill priority={i === 0} sizes="(max-width: 720px) 100vw, 50vw" style={{ objectFit: "cover" }} />
+            <Image src={src} alt={`${alt} photo ${i + 1}`} fill priority={i === 0} sizes="(max-width: 720px) 100vw, 50vw" unoptimized={isUnoptimizedImageSrc(src)} style={{ objectFit: "cover" }} />
           </button>
         ))}
         {list.length > 1 && (

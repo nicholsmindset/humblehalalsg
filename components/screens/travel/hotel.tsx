@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 import { Icon } from "../../ui";
 import { ImageGallery, StickyTabs, RatingBadge, Stars, AiAnswer, Skeleton } from "../../ota";
 import { MapView } from "../../map/map-view";
@@ -201,7 +202,7 @@ function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hot
       <div className="room-media">
         {photos.length > 0 ? (
           <div className="room-photo">
-            <Image src={photos[pi % photos.length]} alt={group.name} fill sizes="(max-width: 720px) 100vw, 360px" onClick={() => setZoom(true)} style={{ objectFit: "cover", cursor: "zoom-in" }} />
+            <Image src={photos[pi % photos.length]} alt={group.name} fill sizes="(max-width: 720px) 100vw, 360px" unoptimized={isUnoptimizedImageSrc(photos[pi % photos.length])} onClick={() => setZoom(true)} style={{ objectFit: "cover", cursor: "zoom-in" }} />
             {photos.length > 1 && (
               <>
                 <button type="button" className="rm-nav prev" onClick={() => setPi((p) => (p - 1 + photos.length) % photos.length)} aria-label="Previous photo">‹</button>

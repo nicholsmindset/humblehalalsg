@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Icon } from "../../ui";
 import { RatingBadge, Stars } from "../../ota";
 import { activeFlagLabels, ratingWord, type Hotel } from "@/lib/halal-hotels";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 import { HalalChip, countryLabel } from "./shared";
 
 export function HotelCard({ hotel }: { hotel: Hotel }) {
@@ -16,7 +17,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
     <Link href={`/travel/hotel/${hotel.id}`} className="hotel-card">
       <div className="hotel-photo">
         {hotel.image ? (
-          <Image src={hotel.image} alt={hotel.name} fill sizes="(max-width: 640px) 100vw, 290px" style={{ objectFit: "cover" }} />
+          <Image src={hotel.image} alt={hotel.name} fill sizes="(max-width: 640px) 100vw, 290px" unoptimized={isUnoptimizedImageSrc(hotel.image)} style={{ objectFit: "cover" }} />
         ) : (
           <div className="ph-empty" aria-hidden />
         )}

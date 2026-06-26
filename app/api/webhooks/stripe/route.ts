@@ -30,7 +30,9 @@ export async function POST(req: Request) {
   // idempotency: process each event id once. ONLY a unique-violation (23505)
   // means "already processed" → ack. Any other insert error is transient (DB
   // hiccup) and must 500 so Stripe retries, otherwise a paid event could be
-  // dropped without fulfillment (security audit M4).
+  // dropped without fulfillment (security audit M4). NOTE: this claim is RELEASED
+  // (deleted) if fulfillment later throws (see the catch), so a transient error
+  // mid-fulfillment doesn't get masked as a "duplicate" on Stripe's retry.
   const supa = getSupabaseAdmin();
   if (supa) {
     const { error } = await supa.from("webhook_events").insert({ stripe_event_id: event.id });
@@ -229,6 +231,14 @@ export async function POST(req: Request) {
         break;
     }
   } catch {
+    // Fulfillment failed AFTER we claimed the idempotency key above. Release the
+    // claim so Stripe's retry REPROCESSES this event instead of hitting the 23505
+    // guard and being acked as a "duplicate" (which would silently drop a paid
+    // order/ticket/donation). Fulfillment is upserts + atomic RPCs, so a clean
+    // reprocess on retry is safe.
+    if (supa) {
+      try { await supa.from("webhook_events").delete().eq("stripe_event_id", event.id); } catch { /* best-effort */ }
+    }
     return NextResponse.json({ ok: false }, { status: 500 }); // Stripe will retry
   }
 
