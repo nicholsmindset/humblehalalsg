@@ -1,0 +1,79 @@
+name: Deploy to Vercel (production)
+
+# Deploys the production site (the onnifyworks/humblehalalsg Vercel project →
+# www.humblehalal.com) on every push to master, and via a manual "Run workflow"
+# button. This runs from GitHub (which the repo owner controls), so it does NOT
+# depend on anyone's local Vercel CLI login.
+#
+# ONE-TIME SETUP — add a single repo secret:
+#   Settings → Secrets and variables → Actions → New repository secret
+#     name:  VERCEL_TOKEN
+#     value: a Vercel token created from the account/team that OWNS the project
+#            (vercel.com → onnifyworks → Account Settings → Tokens → Create)
+# The org/project IDs below are public identifiers (they appear in every Vercel
+# deployment URL), not secrets — hardcoded so you only need the one token.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: team_lc0Uxbmt0CUJ5w9GIyEIT7zh
+  VERCEL_PROJECT_ID: prj_ODTTJiLTHPfgtvhSv9XmZRrQGEI0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify VERCEL_TOKEN is configured
+        id: gate
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN secret is not set — skipping deploy. Add it in Settings → Secrets and variables → Actions, then re-run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.gate.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Vercel CLI
+        if: steps.gate.outputs.ok == 'true'
+        run: npm i -g vercel@latest
+
+      - name: Pull production environment
+        if: steps.gate.outputs.ok == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build (production)
+        if: steps.gate.outputs.ok == 'true'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy prebuilt to production
+        if: steps.gate.outputs.ok == 'true'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
