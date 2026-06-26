@@ -155,8 +155,12 @@ export interface FlightSearchBody {
   legs: { origin: string; destination: string; date: string; direction?: string }[];
   adults: number;
   children?: number;
+  infants?: number;
+  childrenAges?: number[];
+  infantAges?: number[];
   cabin?: string; // ECONOMY | PREMIUM_ECONOMY | BUSINESS | FIRST
   currency: string;
+  country?: string; // ISO 3166-1 alpha-2 point-of-sale market (drives carriers/fares)
   sort?: string;
 }
 

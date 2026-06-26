@@ -32,12 +32,18 @@ export async function POST(req: Request) {
   const cabin = CABINS.includes(String(body.cabin || "").toUpperCase()) ? String(body.cabin).toUpperCase() : undefined;
 
   try {
+    // Point-of-sale market (LiteAPI `country`) drives which carriers/fares appear;
+    // default to our home market SG. And pass `infants` — the client collects them
+    // but they were previously dropped here (family searches booked adults only).
+    const country = /^[A-Z]{2}$/.test(String(body.country || "").toUpperCase()) ? String(body.country).toUpperCase() : "SG";
     const data = await searchFlights({
       legs,
       adults: Math.min(9, Math.max(1, Number(body.adults) || 1)),
       children: Math.min(8, Math.max(0, Number(body.children) || 0)),
+      infants: Math.min(8, Math.max(0, Number(body.infants) || 0)),
       cabin,
-      currency: String(body.currency || "USD").toUpperCase().slice(0, 3),
+      currency: String(body.currency || "SGD").toUpperCase().slice(0, 3),
+      country,
     });
     return NextResponse.json({ ok: true, roundTrip, itineraries: normalizeItineraries(data).slice(0, 60) });
   } catch {
