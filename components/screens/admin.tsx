@@ -351,36 +351,53 @@ export function AdminRollout() {
     catch { setFlags({}); }
   })(); }, []);
 
+  const liveCount = ROLLOUT_STAGES.filter((s) => s.flags.every((f) => flags?.[f])).length;
+
   return (
-    <div className="stack g16" style={{ maxWidth: 820 }}>
-      <div className="notice notice-warn">
-        <Icon name="info" size={18} />
-        <span>Recommended go-live order, easiest→hardest. Each flag is enabled in <strong>Vercel env</strong> (<code>PAID_*_ENABLED</code>); the toggles on the Monetization tab are client-side demo only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
+    <div className="stack g16" style={{ maxWidth: 740 }}>
+      <div>
+        <div className="flex between center wrap g10" style={{ marginBottom: 6 }}>
+          <h2 style={{ fontSize: "1.25rem" }}>Monetisation roadmap</h2>
+          <span className="pill-tag" style={{ background: "var(--cream-200)", color: "var(--ink-soft)" }}>{liveCount} of {ROLLOUT_STAGES.length} live</span>
+        </div>
+        <p className="muted" style={{ fontSize: ".88rem", lineHeight: 1.55 }}>
+          Switch on revenue streams in order of operational risk — easiest first. Each goes live with a <strong>Vercel env</strong> flag (<code>PAID_*_ENABLED</code>); the Monetization toggles are demo-only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.
+        </p>
       </div>
 
-      <div className="stack g12">
-        {ROLLOUT_STAGES.map((s) => {
-          const live = s.flags.some((f) => flags?.[f]);
+      <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+        {ROLLOUT_STAGES.map((s, i) => {
           const allLive = s.flags.every((f) => flags?.[f]);
+          const partLive = !allLive && s.flags.some((f) => flags?.[f]);
+          const accent = allLive ? "var(--emerald)" : partLive ? "#b8860b" : "var(--cream-300, #e4ddcd)";
+          const last = i === ROLLOUT_STAGES.length - 1;
           return (
-            <div key={s.n} className="card" style={{ padding: 18 }}>
-              <div className="flex between center wrap g10" style={{ marginBottom: 6 }}>
-                <h3 style={{ fontSize: "1.08rem", display: "flex", alignItems: "center", gap: 10 }}>
-                  <span className="attn-ico" style={{ fontWeight: 700 }}>{s.n}</span>{s.title}
-                </h3>
-                <span className="pill-tag" style={{ background: live ? "var(--emerald-50)" : "var(--cream-200)", color: live ? "var(--emerald)" : "var(--ink-soft)" }}>
-                  {allLive ? "Live" : live ? "Partly live" : "Off"}
+            <li key={s.n} style={{ display: "flex", gap: 14 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none" }}>
+                <span aria-hidden style={{ width: 34, height: 34, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 700, fontSize: ".95rem", flex: "none", background: allLive || partLive ? accent : "var(--cream-100, #f6f1e7)", color: allLive || partLive ? "#fff" : "var(--ink-soft)", border: `2px solid ${accent}` }}>
+                  {allLive ? <Icon name="check" size={16} /> : s.n}
                 </span>
+                {!last && <span aria-hidden style={{ flex: 1, width: 2, background: "var(--cream-300, #e4ddcd)", minHeight: 18, margin: "4px 0" }} />}
               </div>
-              <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5, marginBottom: 10 }}>{s.why}</p>
-              <div className="flex g8 wrap" style={{ marginBottom: 8 }}>
-                {s.prereqs.map((p) => <span key={p} className="tag"><Icon name="check" size={13} /> {p}</span>)}
+
+              <div className="card" style={{ padding: 16, marginBottom: 14, flex: 1, borderLeft: `3px solid ${accent}` }}>
+                <div className="flex between center wrap g10" style={{ marginBottom: 6 }}>
+                  <h3 style={{ fontSize: "1.05rem" }}>{s.title}</h3>
+                  <span className="pill-tag" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: allLive ? "var(--emerald-50)" : partLive ? "rgba(184,134,11,.13)" : "var(--cream-200)", color: allLive ? "var(--emerald)" : partLive ? "#8a6610" : "var(--ink-soft)" }}>
+                    <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: accent }} />
+                    {allLive ? "Live" : partLive ? "Partly live" : "Off"}
+                  </span>
+                </div>
+                <p className="muted" style={{ fontSize: ".88rem", lineHeight: 1.5, marginBottom: 12 }}>{s.why}</p>
+                <div className="flex g8 wrap" style={{ marginBottom: 12 }}>
+                  {s.prereqs.map((p) => <span key={p} className="tag" style={{ fontSize: ".78rem" }}><Icon name="check" size={12} /> {p}</span>)}
+                </div>
+                <code className="faint" style={{ fontSize: ".76rem", background: "var(--cream-100, #f6f1e7)", padding: "3px 8px", borderRadius: 6 }}>{s.env}</code>
               </div>
-              <code className="faint" style={{ fontSize: ".8rem" }}>{s.env}</code>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }
