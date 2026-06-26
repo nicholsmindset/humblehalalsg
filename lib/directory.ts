@@ -4,6 +4,7 @@
    not configured OR returns no published rows (so the site is never empty during
    early seeding). Server-only. */
 import "server-only";
+import { cache } from "react";
 import { listings as mockListings, categories } from "./data";
 import type { Listing, BadgeKey } from "./types";
 import type { WeekHours } from "./hours";
@@ -102,7 +103,9 @@ async function ratingsBySlug(
 /** All published listings — from Supabase when configured, else the mock seed.
  *  Real review ratings are overlaid by slug regardless of base source, so cards
  *  show live numbers as soon as reviews exist (mock rating is the fallback). */
-export async function getDirectory(): Promise<Listing[]> {
+// Memoized per request (React cache): getDirectory is called several times per
+// render (layout + pages + getListingBySlug) — dedupe the Supabase round-trips.
+export const getDirectory = cache(async (): Promise<Listing[]> => {
   if (!supabaseConfigured) return mockListings;
   try {
     const sb = getSupabaseAdmin();
@@ -122,7 +125,7 @@ export async function getDirectory(): Promise<Listing[]> {
   } catch {
     return mockListings;
   }
-}
+});
 
 export async function getListingBySlug(slug: string): Promise<Listing | undefined> {
   const all = await getDirectory();

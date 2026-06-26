@@ -121,9 +121,8 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   // Directory snapshot — Supabase when configured, else the mock seed (keeps
   // static rendering when there are no keys, so no regression).
-  const directory = await getDirectory();
-  const events = await getEvents();
-  const ramadanMode = await getRamadanMode();
+  // Independent reads — run in parallel to cut server-render TTFB.
+  const [directory, events, ramadanMode] = await Promise.all([getDirectory(), getEvents(), getRamadanMode()]);
   return (
     <html lang="en" className={fontVars}>
       <body>
