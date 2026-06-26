@@ -2,7 +2,7 @@
 
 /* Humble Halal — Consumer screens: Home, Explore, Map, Detail
    (ported from screens-consumer.jsx). */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
 import { useDirectory } from "../directory-context";
@@ -496,6 +496,9 @@ export function ExploreScreen() {
             </p>
           </div>
 
+          {/* SPONSORED — Category Sponsorship; renders only when a campaign is active */}
+          <SponsoredSlot placement="category_featured" />
+
           {view === "map" ? (
             <MapPreview results={results} navigate={navigate} />
           ) : results.length === 0 ? (
@@ -505,7 +508,12 @@ export function ExploreScreen() {
           ) : (
             <>
               <div className="grid-cards">
-                {results.slice(0, visible).map((l) => <ListingCard key={l.id} item={l} />)}
+                {results.slice(0, visible).map((l, i) => (
+                  <Fragment key={l.id}>
+                    <ListingCard item={l} />
+                    {i === 5 && <SponsoredSlot placement="directory_inline" />}
+                  </Fragment>
+                ))}
               </div>
               {results.length > visible && (
                 <div className="flex center" style={{ justifyContent: "center", marginTop: 22 }}>

@@ -16,6 +16,7 @@ import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
+import { SponsoredSlot } from "../sponsored-slot";
 
 /* ---------- Islamic-layer helpers ---------- */
 const GENDER_LABELS: Record<string, string> = {
@@ -466,6 +467,9 @@ export function EventsScreen() {
             <Icon name="plus" size={16} /> Host an event
           </button>
         </div>
+
+        {/* SPONSORED — Event Promotion; renders only when a campaign is active */}
+        <SponsoredSlot placement="event_featured" />
 
         {!cat && !price && !area && !gender && !q && (
           <section className="hh-section" style={{ paddingBottom: 8 }}>
