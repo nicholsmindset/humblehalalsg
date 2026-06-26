@@ -13,6 +13,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       hotelName={String(sp.hotel || "your hotel")}
       city={String(sp.city || "")}
       bookingEnabled={getServerFlags().paidHotels}
+      paymentMode={process.env.LITEAPI_ENV === "prod" ? "live" : "sandbox"}
     />
   );
 }
