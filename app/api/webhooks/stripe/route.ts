@@ -195,7 +195,13 @@ export async function POST(req: Request) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : undefined;
-        if (supa && pi) {
+        // Stripe fires charge.refunded for PARTIAL refunds too. `charge.refunded`
+        // is true ONLY when the charge is FULLY refunded — gate the full reversal
+        // on it so a partial refund (e.g. one of three tickets, or just the booking
+        // fee) does NOT void all tickets, flip the whole order to refunded, release
+        // full event capacity, or reverse the full donation total. Partial refunds
+        // are a no-op here (handle proportional reversal separately if ever needed).
+        if (supa && pi && charge.refunded) {
           // Read first so we only reverse once (avoids double-decrementing the
           // event's taken counter if charge.refunded fires for the same order).
           const { data: ord } = await supa.from("orders").select("id, status, event_id, qty").eq("stripe_payment_intent", pi).maybeSingle();
