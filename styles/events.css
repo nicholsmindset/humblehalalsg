@@ -149,6 +149,12 @@
 .ticket-void-note p { font-weight:600; }
 .ticket-actions { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
 
+/* ── Halal / Muslim-friendly attribute chips ──────────────────────────────── */
+.halal-tag { background:var(--emerald-50); color:var(--emerald-700); border-color:var(--emerald-100); }
+.halal-tag svg { color:var(--emerald-600); }
+.ticket-pass-mf { margin-top:14px; }
+.tpb-label { display:block; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:7px; }
+
 /* ---------- owner mini-stats ---------- */
 .evt-mini-stats { display:flex; gap:18px; flex:none; }
 .evt-mini-stats > div { text-align:center; }

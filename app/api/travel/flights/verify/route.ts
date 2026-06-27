@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, verifyFlight } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 1 of flight booking — re-price/validate the offer right before payment.
    Surfaces `changes` so the UI can ask the user to accept a price move. Gated by
    PAID_FLIGHTS_ENABLED; graceful without a key. */
 export async function POST(req: Request) {
+  const rl = await rateLimit(req, "flight-verify", 30, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 

@@ -104,8 +104,11 @@ export async function getHotelsByCity(
 }
 
 export async function getHotelReviews(hotelId: string, limit = 50): Promise<unknown[]> {
-  const r = await request<{ data?: unknown[] }>(`/data/reviews${qs({ hotelId, limit, timeout: 4 })}`);
-  return Array.isArray(r.data) ? r.data : [];
+  // Reviews are static content (never affect the live price) — cache 7d like /data/hotel.
+  return withCache(`liteapi:reviews:${hotelId}:${limit}`, 604_800, async () => {
+    const r = await request<{ data?: unknown[] }>(`/data/reviews${qs({ hotelId, limit, timeout: 4 })}`);
+    return Array.isArray(r.data) ? r.data : [];
+  });
 }
 
 export async function getCountries(): Promise<{ code: string; name: string }[]> {

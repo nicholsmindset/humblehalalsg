@@ -267,6 +267,21 @@ export function EventDateChip({ ev }: { ev: EventItem }) {
   );
 }
 
+/* Halal / Muslim-friendly attribute chips — our differentiator vs generic
+   ticketing. Renders nothing for a plain mixed-seating event with no halal
+   food or prayer space, so it only shows when there's something to flag. */
+export function EventBadges({ ev, compact = false }: { ev: Pick<EventItem, "halalCatering" | "prayerNearby" | "genderArrangement">; compact?: boolean }) {
+  const sz = compact ? 12 : 13;
+  const g = ev.genderArrangement;
+  return (
+    <>
+      {ev.halalCatering && <span className="tag halal-tag"><Icon name="utensils" size={sz} /> Halal food</span>}
+      {ev.prayerNearby && <span className="tag halal-tag"><Icon name="mosque" size={sz} /> Prayer space</span>}
+      {g && g !== "mixed" && <span className="tag"><Icon name="users" size={sz} /> {GENDER_LABELS[g]}</span>}
+    </>
+  );
+}
+
 /* ========================= EVENT CARD ========================= */
 export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
   const { navigate, toggleEventSave, state, flags } = useApp();
@@ -337,12 +352,12 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
         </div>
         {(() => {
           const s = ev.dateISO ? hijriSeason(ev.dateISO) : null;
-          const g = ev.genderArrangement && ev.genderArrangement !== "mixed" ? GENDER_LABELS[ev.genderArrangement] : "";
-          if (!s && !g) return null;
+          const hasMF = ev.halalCatering || ev.prayerNearby || (ev.genderArrangement && ev.genderArrangement !== "mixed");
+          if (!s && !hasMF) return null;
           return (
             <div className="flex g6 wrap" style={{ marginTop: 6 }}>
               {s && <span className="tag" style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}><Icon name="moon" size={12} /> {s.label}</span>}
-              {g && <span className="tag"><Icon name="users" size={12} /> {g}</span>}
+              <EventBadges ev={ev} compact />
             </div>
           );
         })()}

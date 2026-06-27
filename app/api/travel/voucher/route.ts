@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getVoucher, liteapiConfigured } from "@/lib/liteapi";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Validate a promo / voucher code. Graceful: when vouchers aren't enabled on the
    LiteAPI account (or no key), returns enabled:false so the UI shows a friendly
    "not active yet" rather than an error. */
 export async function GET(req: Request) {
+  const rl = await rateLimit(req, "travel-voucher", 15, 60); if (!rl.ok) return tooMany(rl.retryAfter); // brute-force guard
   const code = (new URL(req.url).searchParams.get("code") || "").trim().toUpperCase().slice(0, 32);
   if (!code) return NextResponse.json({ ok: false, error: "Enter a code" }, { status: 422 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: true, enabled: false });
