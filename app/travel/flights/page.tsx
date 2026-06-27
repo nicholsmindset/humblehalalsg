@@ -9,6 +9,10 @@ export const metadata = pageMeta({
   path: "/travel/flights",
 });
 
+// Revalidate hourly so flag flips (paidFlights) apply without a redeploy — was a
+// static page that baked the flag at build time and never updated.
+export const revalidate = 3600;
+
 const service = {
   "@context": "https://schema.org",
   "@type": "Service",
