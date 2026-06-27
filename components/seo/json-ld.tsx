@@ -210,6 +210,7 @@ export function blogPostingJsonLd(p: {
   author: string;
   wordCount?: number;
   section?: string;
+  image?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -218,6 +219,7 @@ export function blogPostingJsonLd(p: {
     description: p.description,
     url: `${SITE.url}${p.path}`,
     mainEntityOfPage: `${SITE.url}${p.path}`,
+    ...(p.image ? { image: [p.image] } : {}),
     datePublished: p.datePublished,
     dateModified: p.dateModified || p.datePublished,
     author: { "@type": "Organization", name: p.author, url: SITE.url },
@@ -229,6 +231,32 @@ export function blogPostingJsonLd(p: {
     ...(p.wordCount ? { wordCount: p.wordCount } : {}),
     ...(p.section ? { articleSection: p.section } : {}),
     inLanguage: "en-SG",
+  };
+}
+
+/** CollectionPage + nested ItemList for a blog category hub. */
+export function blogCollectionJsonLd(
+  cat: { slug: string; name: string; description: string },
+  posts: { slug: string; title: string }[],
+) {
+  const url = `${SITE.url}/blog/category/${cat.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: cat.name,
+    description: cat.description,
+    url,
+    isPartOf: { "@type": "Blog", name: "Humble Halal Blog", url: `${SITE.url}/blog` },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: posts.length,
+      itemListElement: posts.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `${SITE.url}/blog/${p.slug}`,
+        name: p.title,
+      })),
+    },
   };
 }
 

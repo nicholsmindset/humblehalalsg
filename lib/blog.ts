@@ -2,6 +2,8 @@
    server HTML with BlogPosting + FAQPage schema. Each post leads with an
    answer-first TL;DR (AI-Overview unit) and links into the directory. */
 
+import { bimg, type BlogCategorySlug } from "./blog-categories";
+
 export interface BlogSection {
   h2: string;
   body?: string[];
@@ -19,6 +21,14 @@ export interface BlogPost {
   author: string;
   readMins: number;
   tags: string[];
+  /** Primary category — exactly one (see lib/blog-categories.ts). */
+  category: BlogCategorySlug;
+  /** Curated Unsplash feature image (absolute URL). */
+  image: string;
+  /** Descriptive alt text for the feature image (a11y + SEO). */
+  imageAlt: string;
+  /** Optional photo credit, e.g. "Photo: Name / Unsplash". */
+  imageCredit?: string;
   sections: BlogSection[];
   faq: { q: string; a: string }[];
   related?: string[];
@@ -26,7 +36,12 @@ export interface BlogPost {
 
 const AUTHOR = "The Humble Halal Team";
 
-export const posts: BlogPost[] = [
+/* The post literals carry the prose; the feature image + category live in META
+   below (slug-keyed) and are merged in, keeping the big array clean. A missing
+   META entry throws at module load so no post can ship un-migrated. */
+type RawPost = Omit<BlogPost, "category" | "image" | "imageAlt" | "imageCredit">;
+
+const rawPosts: RawPost[] = [
   {
     slug: "what-is-halal-singapore",
     title: "What Is Halal? A Simple Guide for Singapore",
@@ -623,6 +638,44 @@ export const posts: BlogPost[] = [
   },
 ];
 
+/* ---- Feature image + category, keyed by slug ----
+   Unsplash IDs are confirmed-loading (verified over HTTP). */
+interface BlogMeta {
+  category: BlogCategorySlug;
+  image: string;
+  imageAlt: string;
+  imageCredit?: string;
+}
+
+const META: Record<string, BlogMeta> = {
+  "what-is-halal-singapore": { category: "halal-basics", image: bimg("1591604129939-f1efa4d9f7fa"), imageAlt: "An open Quran — understanding what halal means" },
+  "how-to-check-muis-halal-certification": { category: "halal-basics", image: bimg("1555992336-fb0d29498b13"), imageAlt: "A Singapore food court where you can check halal certification" },
+  "is-it-halal-how-to-tell-singapore": { category: "halal-basics", image: bimg("1466637574441-749b8f19452f"), imageAlt: "Reading ingredients to tell whether food is halal" },
+  "best-halal-restaurants-singapore-2026": { category: "restaurants-cafes", image: bimg("1551218808-94e220e084d2"), imageAlt: "A spread of dishes at a halal restaurant in Singapore" },
+  "halal-buffet-guide-singapore": { category: "restaurants-cafes", image: bimg("1600628421055-4d30de868b8f"), imageAlt: "A halal buffet line with multiple dishes" },
+  "best-halal-cafes-singapore": { category: "restaurants-cafes", image: bimg("1517248135467-4c7edcad34c4"), imageAlt: "Latte art at a halal-friendly café in Singapore" },
+  "halal-high-tea-singapore": { category: "restaurants-cafes", image: bimg("1525351484163-7529414344d8"), imageAlt: "A tiered afternoon high-tea stand with pastries" },
+  "best-halal-breakfast-singapore": { category: "restaurants-cafes", image: bimg("1533089860892-a7c6f0a88666"), imageAlt: "A traditional halal breakfast plate in Singapore" },
+  "halal-steamboat-hotpot-singapore": { category: "cuisines", image: bimg("1519817650390-64a93db51149"), imageAlt: "A bubbling steamboat hotpot with fresh ingredients" },
+  "halal-sushi-japanese-singapore": { category: "cuisines", image: bimg("1553621042-f6e147245754"), imageAlt: "A platter of sushi and sashimi" },
+  "halal-korean-food-singapore": { category: "cuisines", image: bimg("1577219491135-ce391730fb2c"), imageAlt: "A Korean BBQ grill with side dishes" },
+  "halal-fine-dining-singapore": { category: "cuisines", image: bimg("1559847844-5315695dadae"), imageAlt: "A plated fine-dining course" },
+  "halal-steak-singapore": { category: "cuisines", image: bimg("1546964124-0cce460f38ef"), imageAlt: "A grilled steak with sear marks" },
+  "halal-cakes-bakeries-singapore": { category: "cuisines", image: bimg("1578985545062-69928b1d9587"), imageAlt: "Cakes and pastries at a bakery" },
+  "halal-dim-sum-singapore": { category: "cuisines", image: bimg("1496116218417-1a781b1c416c"), imageAlt: "Dim sum dumplings in a steamer" },
+  "halal-food-jewel-changi-airport": { category: "areas-malls", image: bimg("1570126618953-d437176e8c79"), imageAlt: "The interior of Changi Airport in Singapore" },
+  "halal-food-bugis-arab-street": { category: "areas-malls", image: bimg("1565967511849-76a60a516170"), imageAlt: "A street in the Bugis and Arab Street area of Singapore" },
+  "halal-catering-singapore-guide": { category: "seasonal-events", image: bimg("1555244162-803834f70033"), imageAlt: "A catering buffet line at an event" },
+  "ramadan-singapore-2026-guide": { category: "seasonal-events", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and a meal for breaking fast during Ramadan" },
+  "muslim-owned-businesses-singapore": { category: "community-business", image: bimg("1604719312566-8912e9227c6a"), imageAlt: "A small Muslim-owned business storefront" },
+};
+
+export const posts: BlogPost[] = rawPosts.map((p) => {
+  const m = META[p.slug];
+  if (!m) throw new Error(`blog: missing category/image meta for "${p.slug}" — add it to META in lib/blog.ts`);
+  return { ...p, ...m };
+});
+
 const BY_SLUG = new Map(posts.map((p) => [p.slug, p]));
 
 export function allPosts(): BlogPost[] {
@@ -644,4 +697,19 @@ export function relatedPosts(post: BlogPost, limit = 3): BlogPost[] {
 export function postWordCount(p: BlogPost): number {
   const parts = [p.answer, p.dek, ...p.sections.flatMap((s) => [s.h2, ...(s.body || []), ...(s.bullets || [])]), ...p.faq.flatMap((f) => [f.q, f.a])];
   return parts.join(" ").split(/\s+/).filter(Boolean).length;
+}
+
+/** Posts in a category, newest-first. */
+export function postsByCategory(slug: BlogCategorySlug): BlogPost[] {
+  return allPosts().filter((p) => p.category === slug);
+}
+
+/** The newest post — featured/hero on the index. */
+export function featuredPost(): BlogPost {
+  return allPosts()[0];
+}
+
+/** How many posts a category holds (for chip badges). */
+export function categoryPostCount(slug: BlogCategorySlug): number {
+  return posts.reduce((n, p) => (p.category === slug ? n + 1 : n), 0);
 }

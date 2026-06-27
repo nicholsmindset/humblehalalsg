@@ -7,10 +7,11 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon, Empty, RewardsNote, PromoCode } from "../../ui";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
+import { launchLiteApiPayment } from "@/lib/liteapi-payment-client";
 
 interface Pax { firstName: string; middleName: string; lastName: string; dobD: string; dobM: string; dobY: string; gender: string; nationality: string; docType: string; docNumber: string; docExpD: string; docExpM: string; docExpY: string; docCountry: string }
 const blankPax = (): Pax => ({ firstName: "", middleName: "", lastName: "", dobD: "", dobM: "", dobY: "", gender: "M", nationality: "SG", docType: "passport", docNumber: "", docExpD: "", docExpM: "", docExpY: "", docCountry: "SG" });
-interface Prebook { prebookId: string; transactionId: string | null; publishableKey: string | null; price: number | null; currency: string; expiration?: string | null; servicesAttachable?: unknown }
+interface Prebook { prebookId: string; transactionId: string | null; secretKey: string | null; publishableKey: string | null; price: number | null; currency: string; expiration?: string | null; servicesAttachable?: unknown }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function isoDate(d: string, m: string, y: string): string {
@@ -63,7 +64,7 @@ function useCountdown(expiration?: string | null, active?: boolean) {
   return left;
 }
 
-export function FlightBookingScreen({ offerId, from, to, date, price, currency, adults, roundTrip, returnDate, bookingEnabled }: { offerId: string; from: string; to: string; date: string; price: string; currency: string; adults: number; roundTrip: boolean; returnDate: string; bookingEnabled: boolean }) {
+export function FlightBookingScreen({ offerId, from, to, date, price, currency, adults, roundTrip, returnDate, bookingEnabled, paymentMode }: { offerId: string; from: string; to: string; date: string; price: string; currency: string; adults: number; roundTrip: boolean; returnDate: string; bookingEnabled: boolean; paymentMode: "sandbox" | "live" }) {
   const [pax, setPax] = useState<Pax[]>(() => Array.from({ length: Math.max(1, adults) }, blankPax));
   const [contact, setContact] = useState({ email: "", phoneCc: "65", phone: "" });
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -71,6 +72,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
   const [pb, setPb] = useState<Prebook | null>(null);
   const [err, setErr] = useState("");
   const [priceNote, setPriceNote] = useState("");
+  const [settle, setSettle] = useState<"idle" | "returning" | "followup">("idle");
   const countdown = useCountdown(pb?.expiration, step >= 2 && !!pb);
 
   const setP = (i: number, k: keyof Pax, v: string) => setPax((arr) => arr.map((p, idx) => (idx === i ? { ...p, [k]: v } : p)));
@@ -78,6 +80,56 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
     const s = pb?.servicesAttachable;
     return Array.isArray(s) ? (s as Record<string, unknown>[]) : [];
   }, [pb]);
+
+  // Payment RETURN (?paid=1&pid&tid): the SDK charged the card and redirected here.
+  // Finalise via /flights/book using the context we stashed before paying.
+  useEffect(() => {
+    let on = true;
+    const sp = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const pid = sp?.get("pid"); const tid = sp?.get("tid"); const paid = sp?.get("paid");
+    if (!(paid && pid && tid)) return;
+    setSettle("returning");
+    (async () => {
+      try {
+        const raw = sessionStorage.getItem("hh_flight_book_" + pid);
+        const ctx = raw ? JSON.parse(raw) : {};
+        const r = await fetch("/api/travel/flights/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prebookId: pid, transactionId: tid, ...ctx }) });
+        const d = await r.json();
+        if (!on) return;
+        if (d.ok) {
+          sessionStorage.removeItem("hh_flight_book_" + pid);
+          const p = new URLSearchParams({ ref: String(d.bookingRef || d.id || ""), status: String(d.status || ""), from: String(ctx.origin || ""), to: String(ctx.destination || ""), date: String(ctx.date || "") });
+          window.location.href = `/travel/flights/confirmation?${p.toString()}`;
+        } else setSettle("followup"); // card charged — never show a payment error
+      } catch { if (on) setSettle("followup"); }
+    })();
+    return () => { on = false; };
+  }, []);
+
+  // When Review & Pay opens, stash context and mount the hosted card form. The SDK
+  // charges the card then redirects to returnUrl (?paid=1) where the effect above books.
+  useEffect(() => {
+    if (settle !== "idle" || step !== 3 || !pb) return;
+    if (!pb.secretKey) { setErr("Secure payment isn't available for this fare — please search again."); return; }
+    const expiredAt = pb.expiration ? Date.parse(pb.expiration) : null;
+    if (expiredAt && Date.now() > expiredAt) return;
+    const cur = pb.currency || currency || "USD";
+    const ctx = { origin: from, destination: to, date, currency: cur, total: pb.price, contactEmail: contact.email, passengers: pax.map((p) => ({ firstName: p.firstName, lastName: p.lastName })) };
+    try { sessionStorage.setItem("hh_flight_book_" + pb.prebookId, JSON.stringify(ctx)); } catch { /* private mode */ }
+    let cancelled = false;
+    (async () => {
+      try {
+        await launchLiteApiPayment({
+          mode: paymentMode,
+          secretKey: pb.secretKey!,
+          targetSelector: "#liteapi-flight-payment",
+          returnUrl: `${window.location.origin}/travel/flights/booking?tid=${encodeURIComponent(pb.transactionId || "")}&pid=${encodeURIComponent(pb.prebookId)}&paid=1`,
+        });
+      } catch { if (!cancelled) setErr("Couldn't load secure payment. Please refresh and try again."); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settle, step, pb, paymentMode]);
 
   const crumbs = (
     <nav className="travel-breadcrumbs" aria-label="Breadcrumb"><div className="hh-wrap">
@@ -87,6 +139,27 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
     </div></nav>
   );
 
+  if (settle === "returning") {
+    return (
+      <div className="screen-in hh-page">{crumbs}
+        <div className="hh-wrap hh-section" style={{ maxWidth: 640 }}>
+          <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Confirming your booking…</span></div>
+        </div>
+      </div>
+    );
+  }
+  if (settle === "followup") {
+    return (
+      <div className="screen-in hh-page">{crumbs}
+        <div className="hh-wrap hh-section" style={{ maxWidth: 620, textAlign: "center" }}>
+          <div className="empty-ico" style={{ margin: "0 auto", background: "var(--gold-50, #fff7ed)", color: "var(--gold-700, #b45309)" }}><Icon name="clock" size={28} /></div>
+          <h1 style={{ fontSize: "1.5rem", marginTop: 14 }}>Payment received — confirming your flight</h1>
+          <p className="muted" style={{ marginTop: 8 }}>Your payment went through and we&apos;re finalising your ticket with the airline. You&apos;ll get an email shortly — there&apos;s no need to pay again.</p>
+          <div className="flex g10 center" style={{ justifyContent: "center", marginTop: 16 }}><Link className="btn btn-primary" href="/travel/trips">View my trips</Link></div>
+        </div>
+      </div>
+    );
+  }
   if (!bookingEnabled || !offerId) {
     return (
       <div className="screen-in hh-page">{crumbs}
@@ -134,18 +207,6 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
       if (!d.ok) { setErr(d.error || d.reason || "Could not start booking."); setBusy(""); return; }
       setPb(d as Prebook); setStep(2); setBusy("");
     } catch { setErr("Could not start booking."); setBusy(""); }
-  };
-
-  const confirm = async () => {
-    if (!pb) return;
-    setBusy("book"); setErr("");
-    try {
-      const r = await fetch("/api/travel/flights/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prebookId: pb.prebookId, transactionId: pb.transactionId, origin: from, destination: to, date, currency: pb.currency, total: pb.price, contactEmail: contact.email, passengers: pax.map((p) => ({ firstName: p.firstName, lastName: p.lastName })) }) });
-      const d = await r.json();
-      if (!d.ok) { setErr(d.error || "Booking failed."); setBusy(""); return; }
-      const p = new URLSearchParams({ ref: String(d.bookingRef || d.id || ""), status: String(d.status || ""), from, to, date });
-      window.location.href = `/travel/flights/confirmation?${p.toString()}`;
-    } catch { setErr("Booking failed."); setBusy(""); }
   };
 
   const stepper = (
@@ -234,19 +295,38 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
 
             {step === 3 && pb && (
               <div>
-                <h1 style={{ fontSize: "1.5rem", marginBottom: 4 }}>Review &amp; pay</h1>
-                <p className="muted" style={{ marginBottom: 16 }}>Confirm your details and pay securely. You're never charged without a confirmed booking.</p>
+                <div className="checkout-head">
+                  <h1 style={{ fontSize: "1.5rem" }}>Review &amp; pay</h1>
+                  <span className="secure-pill"><Icon name="shield-check" size={13} /> Secure checkout</span>
+                </div>
+                <p className="muted" style={{ marginBottom: 16 }}>Pay securely with your card. You&apos;re never charged without a confirmed booking.</p>
                 <div className="card pax-card">
                   <h2>Payment</h2>
-                  {pb.publishableKey
-                    ? <div id="liteapi-flight-payment" className="pay-mount"><p className="muted" style={{ fontSize: ".86rem" }}>Secure card payment by our travel partner.</p></div>
-                    : <div className="notice notice-warn"><Icon name="info" size={16} /><span>Sandbox test mode — confirm a test booking (no card needed). The live card form appears once the partner public key is set.</span></div>}
-                  {countdown === 0 && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 10 }}>This held price has expired — please search again.</p>}
+                  <div className="checkout-secure">
+                    <span className="cs-lead"><Icon name="shield-check" size={15} /> 256-bit encrypted payment</span>
+                    <span className="card-brands"><i>VISA</i><i>Mastercard</i><i>Amex</i></span>
+                  </div>
+                  {countdown === 0 ? (
+                    <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>This held price has expired — please search again.</p>
+                  ) : (
+                    <div className="pay-panel">
+                      <div className="pay-panel-head"><Icon name="shield-check" size={15} /> Card details <span className="pp-enc"><Icon name="check" size={12} /> Encrypted</span></div>
+                      <div className="pay-panel-body">
+                        <div id="liteapi-flight-payment">
+                          <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 10 }}>{err}</p>}
-                  <button className="btn btn-primary btn-block btn-lg" style={{ marginTop: 14 }} onClick={confirm} disabled={busy === "book" || countdown === 0}>{busy === "book" ? "Confirming…" : total != null ? `Pay ${cur} ${Math.round(total)} & confirm` : "Confirm booking"}</button>
-                  <p className="muted" style={{ fontSize: ".78rem", marginTop: 10, textAlign: "center" }}>If payment succeeds we confirm your ticket — you're never charged without a booking.</p>
+                  {paymentMode === "sandbox" && countdown !== 0 && <p className="muted" style={{ fontSize: ".78rem", margin: "8px 0 0" }}>Sandbox: card 4242 4242 4242 4242, any future expiry &amp; CVV.</p>}
+                  <ul className="checkout-trust">
+                    <li><Icon name="check" size={15} /> No charge until your ticket is confirmed</li>
+                    <li><Icon name="shield-check" size={15} /> Secure payment via our travel partner</li>
+                    <li><Icon name="mail" size={15} /> E-ticket emailed the moment it&apos;s confirmed</li>
+                  </ul>
                 </div>
-                <div className="flt-book-foot"><button className="btn btn-soft" onClick={() => setStep(2)}><Icon name="back" size={16} /> Back</button></div>
+                <div className="flt-book-foot"><button className="btn btn-soft" onClick={() => { setErr(""); setStep(2); }}><Icon name="back" size={16} /> Back</button></div>
               </div>
             )}
           </div>

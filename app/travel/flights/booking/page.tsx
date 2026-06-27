@@ -18,6 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       roundTrip={sp.rt === "1"}
       returnDate={String(sp.rdate || "")}
       bookingEnabled={getServerFlags().paidFlights}
+      paymentMode={process.env.LITEAPI_ENV === "prod" ? "live" : "sandbox"}
     />
   );
 }
