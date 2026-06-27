@@ -749,6 +749,17 @@ export function EventDetailScreen() {
             >
               <Icon name="share" size={17} /> Share
             </button>
+            <button
+              className="btn btn-outline wa-share"
+              onClick={() => {
+                const url = `${window.location.origin}/events/${ev.slug}`;
+                const text = `${ev.title} — ${ev.dateLabel}, ${ev.venue}.\n${url}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+              }}
+              aria-label="Share this event on WhatsApp"
+            >
+              <Icon name="whatsapp" size={17} /> WhatsApp
+            </button>
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: ev.id })}>
               <Icon name="flag" size={17} /> Report
             </button>
