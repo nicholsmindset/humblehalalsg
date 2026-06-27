@@ -772,3 +772,88 @@
 .cncg-input input:focus { outline:none; border-color:var(--emerald,#0f5c4a); box-shadow:0 0 0 3px var(--emerald-50,#edf4f1); }
 .cncg-input .btn { flex:none; width:46px; height:46px; padding:0; border-radius:50%; display:grid; place-items:center; }
 .cncg-disc { font-size:.7rem; color:var(--ink-faint,#8a93a0); text-align:center; padding:0 14px 10px; margin:0; }
+
+/* ── distance to the Haram (the Umrah signal) ────────────────────────────── */
+.haram-distance {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  font-size: .9rem; font-weight: 700; color: var(--emerald, #0f5c4a);
+  background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df);
+  border-radius: var(--r-pill, 999px); padding: 5px 12px;
+}
+.haram-distance strong { font-weight: 800; }
+.haram-distance-note { font-weight: 500; color: var(--ink-soft, #5a6470); font-size: .8rem; }
+/* on the result card: compact pill under the location line */
+.hotel-card .card-haram {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;
+  font-size: .76rem; font-weight: 700; color: var(--emerald, #0f5c4a);
+}
+
+/* ── "Why this score?" explainer (legible halal score) ───────────────────── */
+.score-why {
+  margin: 14px 0; border: 1px solid var(--emerald-100, #d3e6df);
+  border-radius: var(--r-md, 14px); background: var(--emerald-50, #e8f1ee);
+  overflow: hidden;
+}
+.score-why > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  list-style: none; cursor: pointer; padding: 11px 14px;
+  font-weight: 700; color: var(--emerald, #0f5c4a); font-size: .9rem;
+}
+.score-why > summary::-webkit-details-marker { display: none; }
+.score-why-q { display: inline-flex; align-items: center; gap: 7px; }
+.score-why-num { font-weight: 800; font-size: 1.05rem; }
+.score-why-num small { font-weight: 600; font-size: .72rem; opacity: .7; }
+.score-why[open] > summary { border-bottom: 1px solid var(--emerald-100, #d3e6df); }
+.score-why-body { padding: 12px 14px; background: #fff; }
+.score-why-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 0; font-size: .88rem; color: var(--ink, #1c2530);
+  border-bottom: 1px dashed var(--line, #e7e1d4);
+}
+.score-why-row span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.score-why-row span:first-child svg { color: var(--emerald, #0f5c4a); }
+.score-why-row.total { font-weight: 800; border-bottom: none; color: var(--emerald, #0f5c4a); }
+.score-why-body .muted { font-size: .78rem; margin: 8px 0 0; line-height: 1.45; }
+
+/* ── deep city / Umrah guide (long-form SEO content) ─────────────────────── */
+.city-guide { max-width: 760px; }
+.city-guide .cg-title { font-size: 1.45rem; margin-bottom: 6px; }
+.city-guide .cg-intro { font-size: 1rem; color: var(--ink-soft, #5a6470); line-height: 1.6; margin: 0 0 20px; }
+.city-guide .cg-section { margin-bottom: 22px; }
+.city-guide .cg-section h3 {
+  font-size: 1.1rem; color: var(--emerald, #0f5c4a); margin: 0 0 8px;
+  padding-left: 12px; border-left: 3px solid var(--gold, #d6a84f);
+}
+.city-guide .cg-section p { font-size: .94rem; line-height: 1.7; color: var(--ink, #1c2530); margin: 0 0 10px; }
+.city-guide .cg-disclaimer {
+  display: flex; align-items: flex-start; gap: 7px; margin-top: 18px; padding: 12px 14px;
+  font-size: .82rem; line-height: 1.5; color: var(--ink-soft, #5a6470);
+  background: var(--cream, #faf7ef); border: 1px solid var(--line, #e7e1d4); border-radius: var(--r-md, 14px);
+}
+.city-guide .cg-disclaimer svg { color: var(--gold-700, #a9802f); flex: none; margin-top: 2px; }
+
+/* ── save / wishlist (heart on the result card) ──────────────────────────── */
+.hotel-card-wrap { position: relative; display: flex; }
+.hotel-card-wrap > .hotel-card { flex: 1 1 auto; min-width: 0; }
+.save-fab {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(255,255,255,.92); border: 1px solid var(--line, #e7e1d4);
+  color: var(--ink-faint, #8b94a0); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.14);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  transition: color .15s, transform .15s, background .15s, border-color .15s;
+}
+.save-fab:hover { transform: scale(1.08); color: var(--emerald, #0f5c4a); border-color: var(--emerald-100, #d3e6df); }
+.save-fab.on { color: var(--emerald, #0f5c4a); background: var(--emerald-50, #e8f1ee); border-color: var(--emerald-100, #d3e6df); }
+.save-fab.on svg { fill: currentColor; }
+/* hero entry point to the saved list */
+.trv-unified-hero { position: relative; }
+.trv-saved-link {
+  position: absolute; top: 14px; right: 16px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: var(--r-pill, 999px);
+  background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.32); color: #fff;
+  font-weight: 700; font-size: .82rem; text-decoration: none;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: background .15s;
+}
+.trv-saved-link:hover { background: rgba(255,255,255,.28); }

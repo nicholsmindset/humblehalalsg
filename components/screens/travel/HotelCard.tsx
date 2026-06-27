@@ -9,13 +9,17 @@ import { Icon } from "../../ui";
 import { RatingBadge, Stars } from "../../ota";
 import { activeFlagLabels, ratingWord, type Hotel } from "@/lib/halal-hotels";
 import { isUnoptimizedImageSrc } from "@/lib/img";
-import { HalalChip, countryLabel } from "./shared";
+import { HalalChip, SaveButton, countryLabel, dist } from "./shared";
 
 export function HotelCard({ hotel }: { hotel: Hotel }) {
   const flags = activeFlagLabels(hotel.flags).slice(0, 3);
+  // overlay distance to nearest mosque; in the holy cities that mosque is the Haram
+  const haramCity = /mak+ah|mecca|mad[iī]nah|medina/i.test(hotel.city || "");
   return (
-    <Link href={`/travel/hotel/${hotel.id}`} className="hotel-card">
-      <div className="hotel-photo">
+    <div className="hotel-card-wrap">
+      <SaveButton hotel={hotel} />
+      <Link href={`/travel/hotel/${hotel.id}`} className="hotel-card">
+        <div className="hotel-photo">
         {hotel.image ? (
           <Image src={hotel.image} alt={hotel.name} fill sizes="(max-width: 640px) 100vw, 290px" unoptimized={isUnoptimizedImageSrc(hotel.image)} style={{ objectFit: "cover" }} />
         ) : (
@@ -29,6 +33,9 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         <div className="loc">
           <Icon name="pin" size={13} /> {hotel.city || ""}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}
         </div>
+        {hotel.nearMosqueM != null && (
+          <div className="card-haram"><Icon name="crescent" size={11} /> {dist(hotel.nearMosqueM)} {haramCity ? "to the Haram" : "to nearest mosque"}</div>
+        )}
         {flags.length > 0 && (
           <div className="halal-flags">{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={11} /> {l}</span>)}</div>
         )}
@@ -44,6 +51,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
           ) : null}
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

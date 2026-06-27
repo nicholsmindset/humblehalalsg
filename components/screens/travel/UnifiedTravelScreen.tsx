@@ -7,6 +7,7 @@
    their proven logic is reused. Hotels are the default + primary (SEO). */
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Icon } from "../../ui";
 import { Crumbs } from "./shared";
 import { TravelScreen } from "./landing";
@@ -54,6 +55,7 @@ export function UnifiedTravelScreen({
             <p className="sub">Prayer rooms, halal dining nearby and alcohol-free stays — plus prayer-aware flights for Umrah, Hajj and Muslim travel, planned in one place.</p>
             <HeroTrustPills />
           </div>
+          <Link href="/travel/saved" className="trv-saved-link"><Icon name="heart" size={14} /> Saved stays</Link>
 
           {/* top-level vertical switcher — distinct aria-label from the Search/Ask-AI sub-tabs */}
           <div className="ota-segtabs ota-segtabs--top" role="tablist" aria-label="Travel type">

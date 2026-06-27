@@ -6,5 +6,6 @@ export { TravelCityScreen } from "./city";
 export { UmrahHubScreen, UMRAH_FAQ } from "./umrah";
 export { TravelHotelScreen } from "./hotel";
 export { TravelBookingScreen, TravelConfirmationScreen, TravelTripsScreen } from "./booking";
+export { TravelSavedScreen } from "./saved";
 export { HotelCard } from "./HotelCard";
 export type { TripBooking } from "./types";

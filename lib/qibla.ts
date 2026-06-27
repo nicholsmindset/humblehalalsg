@@ -1,7 +1,7 @@
 /* Humble Halal — Qibla direction. Pure great-circle bearing from any point to the
    Kaaba (Masjid al-Haram, Makkah). Factual geometry — no API, no key. */
 
-const KAABA = { lat: 21.4225, lng: 39.8262 };
+export const KAABA = { lat: 21.4225, lng: 39.8262 };
 
 /** Initial compass bearing (0–360°, clockwise from true north) toward the Kaaba. */
 export function qiblaBearing(lat: number, lng: number): number {

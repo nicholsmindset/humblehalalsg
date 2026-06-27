@@ -14,6 +14,7 @@ import { MapView } from "../../map/map-view";
 import {
   activeFlagLabels,
   ratingWord,
+  scoreBreakdown,
   type Hotel,
   type HotelReview,
   type HotelSentiment,
@@ -21,8 +22,9 @@ import {
   type RoomGroup,
 } from "@/lib/halal-hotels";
 import { compassLabel } from "@/lib/qibla";
+import { nearestHaram } from "@/lib/haversine";
 import type { PrayerTimesResult } from "@/lib/prayer";
-import { Crumbs, HalalChip, countryLabel, dist } from "./shared";
+import { Crumbs, HalalChip, SaveButton, countryLabel, dist } from "./shared";
 import type { Highlight, NearPlace, WxDay } from "./types";
 
 /* ── Ask AI about this hotel (gold beta + emerald callout) ─────────────────── */
@@ -167,6 +169,33 @@ function SentimentBlock({ sentiment }: { sentiment: HotelSentiment }) {
   );
 }
 
+/* ── "Why this score?" — make the halal score legible (base + each flag) ──── */
+
+function ScoreExplainer({ hotel }: { hotel: Hotel }) {
+  const b = scoreBreakdown(hotel.flags);
+  if (b.items.length === 0) return null; // nothing to break down → don't tease an empty score
+  return (
+    <details className="score-why">
+      <summary>
+        <span className="score-why-q"><Icon name="crescent" size={13} /> Why this Muslim-friendly score?</span>
+        <span className="score-why-num">{hotel.halalScore}<small>/100</small></span>
+      </summary>
+      <div className="score-why-body">
+        <div className="score-why-row"><span>Starting score</span><span>+{b.base}</span></div>
+        {b.items.map((it) => (
+          <div key={it.label} className="score-why-row"><span><Icon name="check" size={12} /> {it.label}</span><span>+{it.points}</span></div>
+        ))}
+        <div className="score-why-row total"><span>Total</span><span>{b.total}/100</span></div>
+        <p className="muted">
+          {hotel.verified
+            ? "Verified by the Humble Halal team."
+            : "Provisional — derived from the property’s own information and not yet verified by our team. We never assert halal certification automatically."}
+        </p>
+      </div>
+    </details>
+  );
+}
+
 /* ── room group with photo lightbox ──────────────────────────────────────── */
 
 function Lightbox({ photos, index, setIndex, title, onClose }: { photos: string[]; index: number; setIndex: (n: number) => void; title: string; onClose: () => void }) {
@@ -244,8 +273,8 @@ function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hot
 /* ── hotel detail screen ─────────────────────────────────────────────────── */
 
 export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, mosques, halalFood, prayer, sentiment, qibla, bookingEnabled }: { hotel: Hotel; images: string[]; offers: RateOffer[]; roomGroups: RoomGroup[]; reviews: HotelReview[]; mosques: NearPlace[]; halalFood: NearPlace[]; prayer: PrayerTimesResult | null; sentiment: HotelSentiment | null; qibla: number | null; bookingEnabled: boolean }) {
-  const [saved, setSaved] = useState(false);
   const flags = activeFlagLabels(hotel.flags);
+  const haram = hotel.coords ? nearestHaram(hotel.coords) : null; // live "X to the Haram" for Umrah stays
   const allOptionPrices = roomGroups.flatMap((g) => g.options).filter((o) => o.price != null);
   const cheapestOpt = allOptionPrices.sort((a, b) => a.price! - b.price!)[0];
   const cheapestFlat = offers.filter((o) => o.price != null).sort((a, b) => a.price! - b.price!)[0];
@@ -292,10 +321,14 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
               <Icon name="pin" size={14} /> {hotel.address || hotel.city}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}
               {hotel.coords ? <> · <a href="#location" className="link">Show map</a></> : null}
             </div>
+            {haram && (
+              <div className="haram-distance" title={`Straight-line distance to ${haram.haram.name}`}>
+                <Icon name="crescent" size={14} /> <strong>{dist(haram.distanceM)}</strong> to {haram.haram.name}
+                <span className="haram-distance-note">· walking distance varies</span>
+              </div>
+            )}
           </div>
-          <button type="button" className={`hotel-save ${saved ? "on" : ""}`} aria-pressed={saved} onClick={() => setSaved((s) => !s)}>
-            <Icon name="heart" size={16} /> {saved ? "Saved" : "Save"}
-          </button>
+          <SaveButton hotel={hotel} variant="full" />
         </div>
 
         {images.length > 0 && <div style={{ marginTop: 14 }}><ImageGallery images={images} alt={hotel.name} /></div>}
@@ -317,6 +350,8 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
               {flags.length > 0 && (
                 <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={13} /> {l}</span>)}</div>
               )}
+
+              <ScoreExplainer hotel={hotel} />
 
               {flags.length > 0 && (
                 <p className="muslim-note">

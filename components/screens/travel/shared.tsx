@@ -2,7 +2,7 @@
 
 /* Humble Halal — travel-screen shared bits: helpers, halal filters, destination
    autocomplete, breadcrumbs, halal chip, destination card. Pure/props-driven. */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { Icon } from "../../ui";
 import {
@@ -12,6 +12,7 @@ import {
   type HotelFlags,
 } from "@/lib/halal-hotels";
 import type { TravelHub } from "@/lib/travel-hubs";
+import { useSavedHotels } from "./use-saved-hotels";
 import type { Dest } from "./types";
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
@@ -44,6 +45,37 @@ export function HalalChip({ hotel, compact }: { hotel: Hotel; compact?: boolean 
     >
       <Icon name="crescent" size={12} /> {hotel.verified ? "Verified " : ""}Muslim-friendly{compact ? "" : ` · ${hotel.halalScore}`}
     </span>
+  );
+}
+
+/* ── save / wishlist button ───────────────────────────────────────────────── */
+
+export function SaveButton({ hotel, variant = "card" }: { hotel: Hotel; variant?: "card" | "full" }) {
+  const { isSaved, toggle, ready } = useSavedHotels();
+  const on = ready && isSaved(hotel.id);
+  const click = (e: MouseEvent) => {
+    e.preventDefault(); // never navigate the parent card link
+    e.stopPropagation();
+    toggle(hotel);
+  };
+  if (variant === "full") {
+    return (
+      <button type="button" className={`hotel-save ${on ? "on" : ""}`} aria-pressed={on} onClick={click}>
+        <Icon name="heart" size={16} /> {on ? "Saved" : "Save"}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={`save-fab ${on ? "on" : ""}`}
+      aria-pressed={on}
+      aria-label={on ? "Remove from saved" : "Save for later"}
+      title={on ? "Saved" : "Save for later"}
+      onClick={click}
+    >
+      <Icon name="heart" size={15} />
+    </button>
   );
 }
 

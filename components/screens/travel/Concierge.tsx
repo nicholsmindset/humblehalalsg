@@ -112,6 +112,10 @@ export function TravelConcierge() {
                 if (part.type === "tool-searchFlights") return part.state === "output-available"
                   ? <FlightResults key={i} out={part.output} />
                   : <p key={i} className="cncg-note"><span className="cncg-dot" /> Searching flights…</p>;
+                if (part.type === "tool-askHotel" || part.type === "tool-hotelHalalProfile")
+                  return part.state === "output-available"
+                    ? null // the assistant summarises the answer in its text reply
+                    : <p key={i} className="cncg-note"><span className="cncg-dot" /> Checking the hotel&apos;s details…</p>;
                 return null;
               })}
             </div>
