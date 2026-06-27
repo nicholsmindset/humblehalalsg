@@ -7,9 +7,11 @@ import "server-only";
 import { tool } from "ai";
 import { z } from "zod";
 import { runHotelSearch, defaultStayDates } from "@/lib/travel-data";
-import { liteapiConfigured, searchPlaces, searchAirports, searchFlights as searchFlightsApi } from "@/lib/liteapi";
+import { liteapiConfigured, searchPlaces, searchAirports, searchFlights as searchFlightsApi, getHotel, askHotel as askHotelApi } from "@/lib/liteapi";
 import { normalizeItineraries } from "@/lib/flights";
-import { activeFlagLabels, type HotelFlags } from "@/lib/halal-hotels";
+import { activeFlagLabels, hotelFromContent, type HotelFlags } from "@/lib/halal-hotels";
+import { nearestHaram } from "@/lib/haversine";
+import { nearbyPlaces } from "@/lib/mosques-nearby";
 import { travelCities } from "@/lib/travel-locations";
 
 const FLAG_KEYS = ["has_prayer_room", "halal_food_onsite", "halal_food_nearby", "alcohol_free", "women_only_facilities", "qibla_direction", "prayer_mat_available", "near_mosque"] as const;
@@ -116,6 +118,54 @@ export const searchFlights = tool({
           bookUrl: `/travel/flights/booking?offerId=${encodeURIComponent(it.offerId)}&from=${o.iata}&to=${d.iata}&date=${date}&adults=${adults ?? 1}${returnDate ? `&rt=1&rdate=${returnDate}` : ""}`,
         };
       }),
+    };
+  },
+});
+
+export const askHotel = tool({
+  description:
+    "Answer a specific question about ONE hotel — prayer room, alcohol policy, halal dining, check-in time, parking, family rooms, etc. — using only that hotel's own information. Pass the hotel `id` from a prior searchHotels result. Grounded: if the property's data doesn't say, it returns that honestly rather than guessing.",
+  inputSchema: z.object({
+    hotelId: z.string().describe("LiteAPI hotel id from a prior searchHotels result"),
+    question: z.string().describe("The traveller's question about this hotel"),
+  }),
+  execute: async ({ hotelId, question }) => {
+    const res = await askHotelApi(hotelId, question);
+    if (!res?.answer) {
+      return { ok: false as const, message: "I don't have that detail for this hotel — best to confirm with the property directly." };
+    }
+    return { ok: true as const, answer: res.answer };
+  },
+});
+
+export const hotelHalalProfile = tool({
+  description:
+    "Get the Muslim-friendly profile of ONE hotel by id: the halal facilities it declares + its Muslim-friendly score, how far it is from the Haram (for Makkah/Madinah stays, straight-line), and the nearest mosques. Use the hotel `id` from searchHotels when the traveller asks 'how far is it from the Haram?', 'what halal facilities does it have?', or about nearby mosques. Discovery only — never asserts halal certification.",
+  inputSchema: z.object({
+    hotelId: z.string().describe("LiteAPI hotel id from a prior searchHotels result"),
+  }),
+  execute: async ({ hotelId }) => {
+    const content = await getHotel(hotelId);
+    if (!content) return { ok: false as const, message: "I couldn't load that hotel's details right now." };
+    const hotel = hotelFromContent(content);
+    const haram = hotel.coords ? nearestHaram(hotel.coords) : null;
+    let nearestMosques: { name: string; distanceM: number }[] = [];
+    if (hotel.coords) {
+      try {
+        const np = await nearbyPlaces(hotel.coords.lat, hotel.coords.lng, 2500);
+        nearestMosques = np.mosques.slice(0, 3).map((m) => ({ name: m.name, distanceM: Math.round(m.distanceM) }));
+      } catch {
+        /* best-effort — distance + facilities still useful */
+      }
+    }
+    return {
+      ok: true as const,
+      name: hotel.name,
+      halalScore: hotel.halalScore,
+      verified: hotel.verified,
+      facilities: activeFlagLabels(hotel.flags),
+      haram: haram ? { name: haram.haram.name, distanceM: Math.round(haram.distanceM) } : null,
+      nearestMosques,
     };
   },
 });

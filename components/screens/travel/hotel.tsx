@@ -24,7 +24,7 @@ import {
 import { compassLabel } from "@/lib/qibla";
 import { nearestHaram } from "@/lib/haversine";
 import type { PrayerTimesResult } from "@/lib/prayer";
-import { Crumbs, HalalChip, countryLabel, dist } from "./shared";
+import { Crumbs, HalalChip, SaveButton, countryLabel, dist } from "./shared";
 import type { Highlight, NearPlace, WxDay } from "./types";
 
 /* ── Ask AI about this hotel (gold beta + emerald callout) ─────────────────── */
@@ -273,7 +273,6 @@ function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hot
 /* ── hotel detail screen ─────────────────────────────────────────────────── */
 
 export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, mosques, halalFood, prayer, sentiment, qibla, bookingEnabled }: { hotel: Hotel; images: string[]; offers: RateOffer[]; roomGroups: RoomGroup[]; reviews: HotelReview[]; mosques: NearPlace[]; halalFood: NearPlace[]; prayer: PrayerTimesResult | null; sentiment: HotelSentiment | null; qibla: number | null; bookingEnabled: boolean }) {
-  const [saved, setSaved] = useState(false);
   const flags = activeFlagLabels(hotel.flags);
   const haram = hotel.coords ? nearestHaram(hotel.coords) : null; // live "X to the Haram" for Umrah stays
   const allOptionPrices = roomGroups.flatMap((g) => g.options).filter((o) => o.price != null);
@@ -329,9 +328,7 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
               </div>
             )}
           </div>
-          <button type="button" className={`hotel-save ${saved ? "on" : ""}`} aria-pressed={saved} onClick={() => setSaved((s) => !s)}>
-            <Icon name="heart" size={16} /> {saved ? "Saved" : "Save"}
-          </button>
+          <SaveButton hotel={hotel} variant="full" />
         </div>
 
         {images.length > 0 && <div style={{ marginTop: 14 }}><ImageGallery images={images} alt={hotel.name} /></div>}
