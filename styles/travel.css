@@ -443,7 +443,9 @@
 .pax-card .field label { font-size:.78rem; font-weight:700; color:var(--ink-soft); margin-bottom:5px; }
 .pax-card input, .pax-card select { width:100%; box-sizing:border-box; border:1px solid var(--line-strong); border-radius:var(--r-sm); padding:11px 12px; font-size:.92rem; background:var(--cream); color:var(--ink); }
 .pax-card input:focus, .pax-card select:focus { outline:none; border-color:var(--emerald); box-shadow:0 0 0 3px var(--emerald-50); }
-.dob-grid { display:grid; grid-template-columns: 1fr 1.3fr 1.1fr; gap:8px; }
+.date-input { min-height:46px; cursor:text; }
+.date-input::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.55; }
+.date-input:hover::-webkit-calendar-picker-indicator { opacity:.9; }
 .phone-grid { display:grid; grid-template-columns: 70px 1fr; gap:8px; }
 .phone-cc { text-align:center; }
 .flt-book-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
@@ -707,3 +709,58 @@
 /* Sticky summary/rail on desktop so the total + reassurance follow the guest. */
 @media (min-width: 821px) { .booking-summary { position:sticky; top:88px; } }
 @media (min-width: 901px) { .flt-book-rail { position:sticky; top:88px; } }
+
+/* ── AI travel concierge (chat) ──────────────────────────────────────────────
+   Streaming halal-travel chat with live hotel/flight result cards inline. */
+.cncg { display:flex; flex-direction:column; min-height:420px; max-height:74vh; border:1px solid var(--line,#e7e1d4); border-radius:var(--r-lg,18px); background:#fff; overflow:hidden; }
+.cncg-stream { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:16px; scroll-behavior:smooth; }
+.cncg-empty { margin:auto; text-align:center; max-width:440px; padding:18px 0; }
+.cncg-empty-ico { width:48px; height:48px; border-radius:14px; display:grid; place-items:center; margin:0 auto 12px; background:var(--emerald-50,#edf4f1); color:var(--emerald,#0f5c4a); }
+.cncg-empty h3 { font-size:1.15rem; margin-bottom:4px; }
+.cncg-starters { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.cncg-starter { text-align:left; border:1px solid var(--line-strong,#d8d0bf); background:var(--cream,#faf7ef); border-radius:12px; padding:10px 13px; font-size:.88rem; color:var(--ink,#1f2937); cursor:pointer; transition:border-color .15s, background .15s; }
+.cncg-starter:hover { border-color:var(--emerald,#0f5c4a); background:var(--emerald-50,#edf4f1); }
+
+.cncg-msg { display:flex; gap:9px; max-width:100%; }
+.cncg-msg.user { justify-content:flex-end; }
+.cncg-avatar { width:28px; height:28px; border-radius:50%; flex:none; display:grid; place-items:center; background:var(--emerald,#0f5c4a); color:#fff; }
+.cncg-bubble { max-width:88%; }
+.cncg-msg.user .cncg-bubble { background:var(--emerald,#0f5c4a); color:#fff; padding:10px 14px; border-radius:16px 16px 4px 16px; }
+.cncg-msg.assistant .cncg-bubble { background:transparent; }
+.cncg-text { font-size:.93rem; line-height:1.55; margin:0 0 6px; white-space:pre-wrap; }
+.cncg-msg.user .cncg-text { margin:0; }
+.cncg-note { font-size:.86rem; color:var(--ink-soft,#5a6470); display:flex; align-items:center; gap:7px; margin:6px 0; }
+.cncg-dot { width:8px; height:8px; border-radius:50%; background:var(--emerald,#0f5c4a); animation:cncg-pulse 1s infinite ease-in-out; }
+@keyframes cncg-pulse { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+
+.cncg-cards { display:grid; gap:10px; margin:8px 0; }
+@media (min-width:560px){ .cncg-cards { grid-template-columns:1fr 1fr; } }
+.cncg-card { display:flex; gap:10px; border:1px solid var(--line,#e7e1d4); border-radius:14px; overflow:hidden; background:var(--cream,#faf7ef); text-decoration:none; color:inherit; transition:border-color .15s, box-shadow .15s; }
+.cncg-card:hover { border-color:var(--emerald-300,#6fa697); box-shadow:0 4px 14px rgba(0,0,0,.07); }
+.cncg-card-img { width:84px; flex:none; object-fit:cover; align-self:stretch; min-height:96px; }
+.cncg-card-img.cncg-ph { display:grid; place-items:center; background:var(--emerald-50,#edf4f1); color:var(--emerald,#0f5c4a); }
+.cncg-card-body { flex:1; min-width:0; padding:9px 11px 9px 0; display:flex; flex-direction:column; gap:3px; }
+.cncg-card-name { font-size:.9rem; line-height:1.25; }
+.cncg-card-meta { font-size:.76rem; color:var(--ink-soft,#5a6470); }
+.cncg-tags { display:flex; flex-wrap:wrap; gap:4px; margin:2px 0; }
+.cncg-tag { font-size:.66rem; font-weight:600; color:var(--emerald-700,#0c4a3c); background:var(--emerald-50,#edf4f1); border-radius:5px; padding:2px 5px; display:inline-flex; align-items:center; gap:3px; }
+.cncg-card-foot { margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.cncg-score { font-size:.7rem; font-weight:800; color:#fff; background:var(--emerald,#0f5c4a); border-radius:6px; padding:2px 7px; }
+.cncg-price { font-size:.82rem; color:var(--ink-soft,#5a6470); }
+.cncg-price strong { color:var(--ink,#1f2937); }
+
+.cncg-flights { display:grid; gap:8px; margin:8px 0; }
+.cncg-flt { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid var(--line,#e7e1d4); border-radius:12px; padding:11px 13px; background:var(--cream,#faf7ef); text-decoration:none; color:inherit; transition:border-color .15s; }
+.cncg-flt:hover { border-color:var(--emerald-300,#6fa697); }
+.cncg-flt-main { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.cncg-flt-main strong { font-size:.95rem; }
+.cncg-flt-sub { font-size:.74rem; color:var(--ink-soft,#5a6470); }
+.cncg-flt-price { text-align:right; flex:none; }
+.cncg-flt-price strong { font-size:.98rem; display:block; }
+.cncg-flt-go { font-size:.72rem; font-weight:700; color:var(--emerald,#0f5c4a); display:inline-flex; align-items:center; gap:3px; }
+
+.cncg-input { display:flex; gap:8px; padding:12px; border-top:1px solid var(--line,#e7e1d4); background:#fff; }
+.cncg-input input { flex:1; min-width:0; border:1px solid var(--line-strong,#d8d0bf); border-radius:999px; padding:11px 16px; font-size:.92rem; background:var(--cream,#faf7ef); }
+.cncg-input input:focus { outline:none; border-color:var(--emerald,#0f5c4a); box-shadow:0 0 0 3px var(--emerald-50,#edf4f1); }
+.cncg-input .btn { flex:none; width:46px; height:46px; padding:0; border-radius:50%; display:grid; place-items:center; }
+.cncg-disc { font-size:.7rem; color:var(--ink-faint,#8a93a0); text-align:center; padding:0 14px 10px; margin:0; }

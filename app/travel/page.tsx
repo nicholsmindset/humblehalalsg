@@ -44,6 +44,7 @@ export default async function Page() {
         flightDeals={curatedFlightDeals()}
         semanticEnabled={flags.semanticSearch}
         flightsBookingEnabled={flags.paidFlights}
+        conciergeEnabled={flags.aiConcierge}
       />
     </>
   );

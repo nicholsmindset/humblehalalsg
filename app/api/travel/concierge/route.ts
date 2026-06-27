@@ -1,0 +1,34 @@
+import { createAgentUIStreamResponse } from "ai";
+import { getServerFlags } from "@/lib/flags";
+import { aiConfigured } from "@/lib/ai";
+import { buildTravelConcierge } from "@/lib/travel-agent/agent";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
+
+/* AI travel concierge — agentic chat (Vercel AI SDK ToolLoopAgent) that searches
+   Muslim-friendly hotels + flights and hands off to the secure booking flow.
+   Search/advise only — no payment in chat. Flag-gated + rate-limited; graceful
+   when AI isn't configured. */
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
+  if (!getServerFlags().aiConcierge) {
+    return Response.json({ error: "concierge_disabled" }, { status: 403 });
+  }
+  // Paid LLM + LiteAPI calls — throttle per IP (unauthenticated public chat).
+  const rl = await rateLimit(req, "travel-concierge", 20, 60);
+  if (!rl.ok) return tooMany(rl.retryAfter);
+  if (!aiConfigured) return Response.json({ error: "ai_not_configured" }, { status: 503 });
+
+  let messages: unknown;
+  try {
+    ({ messages } = (await req.json()) as { messages: unknown });
+  } catch {
+    return Response.json({ error: "bad_request" }, { status: 400 });
+  }
+  if (!Array.isArray(messages)) return Response.json({ error: "bad_request" }, { status: 400 });
+
+  const today = new Date().toISOString().slice(0, 10);
+  const agent = buildTravelConcierge(today);
+  return createAgentUIStreamResponse({ agent, uiMessages: messages });
+}

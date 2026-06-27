@@ -13,7 +13,6 @@ interface Pax { firstName: string; middleName: string; lastName: string; dobD: s
 const blankPax = (): Pax => ({ firstName: "", middleName: "", lastName: "", dobD: "", dobM: "", dobY: "", gender: "M", nationality: "SG", docType: "passport", docNumber: "", docExpD: "", docExpM: "", docExpY: "", docCountry: "SG" });
 interface Prebook { prebookId: string; transactionId: string | null; secretKey: string | null; publishableKey: string | null; price: number | null; currency: string; expiration?: string | null; servicesAttachable?: unknown }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function isoDate(d: string, m: string, y: string): string {
   if (!d || !m || !y) return "";
   const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
@@ -22,19 +21,31 @@ function isoDate(d: string, m: string, y: string): string {
   return dt.getUTCFullYear() === Number(y) && dt.getUTCMonth() + 1 === Number(m) && dt.getUTCDate() === Number(d) ? iso : "";
 }
 
-function DOBSelect({ label, d, m, y, set, yearsBack, future }: { label: string; d: string; m: string; y: string; set: (k: "d" | "m" | "y", v: string) => void; yearsBack: number; future?: boolean }) {
-  const now = new Date().getFullYear();
-  const years = future
-    ? Array.from({ length: 15 }, (_, i) => now + i)
-    : Array.from({ length: yearsBack }, (_, i) => now - i);
+/* Single native date field — one tap, typeable, no 100-year scroll. Bounds keep
+   DOB in the past and document expiry in the future. Keeps the d/m/y state shape
+   so validation (isoDate) and the passenger payload are unchanged. */
+function DateField({ label, d, m, y, set, future }: { label: string; d: string; m: string; y: string; set: (k: "d" | "m" | "y", v: string) => void; future?: boolean }) {
+  const today = new Date();
+  const isoLocal = (dt: Date) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  const value = d && m && y ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : "";
+  const min = future ? isoLocal(today) : `${today.getFullYear() - 120}-01-01`;
+  const max = future ? `${today.getFullYear() + 20}-12-31` : isoLocal(today);
   return (
     <div className="field">
       <label>{label} <span className="req">*</span></label>
-      <div className="dob-grid">
-        <select value={d} onChange={(e) => set("d", e.target.value)}><option value="">DD</option>{Array.from({ length: 31 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}</select>
-        <select value={m} onChange={(e) => set("m", e.target.value)}><option value="">Month</option>{MONTHS.map((mo, i) => <option key={mo} value={i + 1}>{mo}</option>)}</select>
-        <select value={y} onChange={(e) => set("y", e.target.value)}><option value="">YYYY</option>{years.map((yr) => <option key={yr} value={yr}>{yr}</option>)}</select>
-      </div>
+      <input
+        type="date"
+        className="date-input"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (!v) { set("y", ""); set("m", ""); set("d", ""); return; }
+          const [yy, mm, dd] = v.split("-");
+          set("y", yy); set("m", String(Number(mm))); set("d", String(Number(dd)));
+        }}
+      />
     </div>
   );
 }
@@ -242,7 +253,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                       <CountrySelect label="Nationality" value={p.nationality} onChange={(v) => setP(i, "nationality", v)} />
                       <div className="field"><label>Gender <span className="req">*</span></label><select value={p.gender} onChange={(e) => setP(i, "gender", e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></div>
                     </div>
-                    <DOBSelect label="Date of birth" d={p.dobD} m={p.dobM} y={p.dobY} yearsBack={100} set={(k, v) => setP(i, k === "d" ? "dobD" : k === "m" ? "dobM" : "dobY", v)} />
+                    <DateField label="Date of birth" d={p.dobD} m={p.dobM} y={p.dobY} set={(k, v) => setP(i, k === "d" ? "dobD" : k === "m" ? "dobM" : "dobY", v)} />
                     <h3 className="pax-sub">Document details</h3>
                     <div className="form-row">
                       <div className="field"><label>Document type <span className="req">*</span></label><select value={p.docType} onChange={(e) => setP(i, "docType", e.target.value)}><option value="passport">Passport</option><option value="national_id">National ID</option></select></div>
@@ -250,7 +261,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                     </div>
                     <div className="form-row">
                       <div className="field"><label>Document number <span className="req">*</span></label><input required value={p.docNumber} onChange={(e) => setP(i, "docNumber", e.target.value)} placeholder="Enter document number" /></div>
-                      <DOBSelect label="Expiry date" d={p.docExpD} m={p.docExpM} y={p.docExpY} yearsBack={0} future set={(k, v) => setP(i, k === "d" ? "docExpD" : k === "m" ? "docExpM" : "docExpY", v)} />
+                      <DateField label="Expiry date" d={p.docExpD} m={p.docExpM} y={p.docExpY} future set={(k, v) => setP(i, k === "d" ? "docExpD" : k === "m" ? "docExpM" : "docExpY", v)} />
                     </div>
                   </div>
                 ))}
