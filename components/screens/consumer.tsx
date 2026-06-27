@@ -42,6 +42,34 @@ export function HomeScreen() {
 
   return (
     <div className="screen-in hh-page">
+      {/* PRE-LAUNCH NOTICE — set env NEXT_PUBLIC_PRELAUNCH="0" (Vercel → Settings → Env)
+          and redeploy to hide this at launch. Content stays public + indexed; this only
+          sets visitor expectations. */}
+      {process.env.NEXT_PUBLIC_PRELAUNCH !== "0" && (
+        <div style={{ background: "var(--emerald)", color: "#fff" }}>
+          <div
+            className="hh-wrap"
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              padding: "9px 16px",
+              textAlign: "center",
+              fontSize: ".9rem",
+              lineHeight: 1.45,
+            }}
+          >
+            <strong style={{ fontWeight: 800 }}>🌙 Early preview</strong>
+            <span style={{ opacity: 0.92 }}>
+              Humble Halal is launching soon — we&apos;re still adding listings &amp; features. Have a
+              look around, and subscribe below for launch updates.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
 
