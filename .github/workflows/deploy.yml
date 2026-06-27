@@ -74,6 +74,8 @@ jobs:
 
       - name: Deploy prebuilt to production
         if: steps.gate.outputs.ok == 'true'
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        # --archive=tgz uploads one archive instead of thousands of files,
+        # avoiding the free-plan "api-upload-free" 5,000-file/24h upload cap.
+        run: vercel deploy --prebuilt --prod --archive=tgz --token="$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
