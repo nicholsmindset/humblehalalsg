@@ -652,7 +652,18 @@ export function RewardsNote({ amount, currency }: { amount: number | null; curre
   return (
     <div className="rewards-note">
       <Icon name="starf" size={15} />
-      <span>Earn approx. {currency} {back} cashback with <strong>Humble Halal Rewards</strong> on this booking, subject to Rewards terms.</span>
+      <div className="rewards-body">
+        <span>Earn approx. {currency} {back} cashback with <strong>Humble Halal Rewards</strong> on this booking.</span>
+        <details className="rewards-how">
+          <summary>How Humble Halal Rewards works</summary>
+          <ul>
+            <li>Earn cashback on eligible hotel &amp; flight bookings — the amount above is what this booking earns.</li>
+            <li>It&apos;s credited to your Rewards balance once your trip is completed.</li>
+            <li>Apply your balance towards future Humble Halal travel bookings.</li>
+            <li>The figure is indicative until your booking is confirmed, and is subject to Rewards terms.</li>
+          </ul>
+        </details>
+      </div>
     </div>
   );
 }

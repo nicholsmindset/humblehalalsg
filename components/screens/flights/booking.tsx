@@ -83,6 +83,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
   const [pb, setPb] = useState<Prebook | null>(null);
   const [err, setErr] = useState("");
   const [priceNote, setPriceNote] = useState("");
+  const [cardMounted, setCardMounted] = useState(false);
   const [settle, setSettle] = useState<"idle" | "returning" | "followup">("idle");
   const countdown = useCountdown(pb?.expiration, step >= 2 && !!pb);
 
@@ -127,7 +128,12 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
     const cur = pb.currency || currency || "USD";
     const ctx = { origin: from, destination: to, date, currency: cur, total: pb.price, contactEmail: contact.email, passengers: pax.map((p) => ({ firstName: p.firstName, lastName: p.lastName })) };
     try { sessionStorage.setItem("hh_flight_book_" + pb.prebookId, JSON.stringify(ctx)); } catch { /* private mode */ }
+    setCardMounted(false);
     let cancelled = false;
+    // Clear our loading note once the SDK injects its hosted form (avoids a tall gap).
+    const target = document.getElementById("liteapi-flight-payment");
+    const obs = target ? new MutationObserver((_m, observer) => { if (target.childElementCount > 0) { setCardMounted(true); observer.disconnect(); } }) : null;
+    if (target && obs) obs.observe(target, { childList: true, subtree: true });
     (async () => {
       try {
         await launchLiteApiPayment({
@@ -138,7 +144,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
         });
       } catch { if (!cancelled) setErr("Couldn't load secure payment. Please refresh and try again."); }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; obs?.disconnect(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settle, step, pb, paymentMode]);
 
@@ -323,9 +329,8 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                     <div className="pay-panel">
                       <div className="pay-panel-head"><Icon name="shield-check" size={15} /> Card details <span className="pp-enc"><Icon name="check" size={12} /> Encrypted</span></div>
                       <div className="pay-panel-body">
-                        <div id="liteapi-flight-payment">
-                          <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
-                        </div>
+                        {!cardMounted && <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>}
+                        <div id="liteapi-flight-payment" />
                       </div>
                     </div>
                   )}

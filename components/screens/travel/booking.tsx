@@ -34,6 +34,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
   const [err, setErr] = useState("");
   const [holder, setHolder] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [promoBusy, setPromoBusy] = useState(false);
+  const [cardMounted, setCardMounted] = useState(false);
 
   // On mount: detect a payment RETURN (?paid=1&pid&tid) and finalise the booking;
   // otherwise open the prebook (confirm rate + open the payment intent).
@@ -119,7 +120,13 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
   useEffect(() => {
     if (stage !== "paying" || !pb) return;
     if (!pb.secretKey) { setErr("Secure payment isn't available for this rate — please try another."); return; }
+    setCardMounted(false);
     let cancelled = false;
+    // Hide our loading note the moment the SDK injects its hosted form (otherwise the
+    // placeholder + the iframe both render → a tall empty gap).
+    const target = document.getElementById("liteapi-payment");
+    const obs = target ? new MutationObserver((_m, observer) => { if (target.childElementCount > 0) { setCardMounted(true); observer.disconnect(); } }) : null;
+    if (target && obs) obs.observe(target, { childList: true, subtree: true });
     (async () => {
       try {
         await launchLiteApiPayment({
@@ -130,7 +137,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
         });
       } catch { if (!cancelled) setErr("Couldn't load secure payment. Please refresh and try again."); }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; obs?.disconnect(); };
   }, [stage, pb, paymentMode]);
 
   const stepStage = stage === "paying" ? "payment" : stage === "loading" || stage === "returning" ? "rate" : "details";
@@ -187,9 +194,8 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
                 <div className="pay-panel">
                   <div className="pay-panel-head"><Icon name="shield-check" size={15} /> Card details <span className="pp-enc"><Icon name="check" size={12} /> Encrypted</span></div>
                   <div className="pay-panel-body">
-                    <div id="liteapi-payment">
-                      <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
-                    </div>
+                    {!cardMounted && <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>}
+                    <div id="liteapi-payment" />
                   </div>
                 </div>
                 <p className="muted" style={{ fontSize: ".78rem", margin: "8px 0 0" }}>Booking as {holder.firstName} {holder.lastName} · {holder.email}{paymentMode === "sandbox" ? " · Sandbox: card 4242 4242 4242 4242" : ""}</p>

@@ -524,6 +524,14 @@
 .rewards-note { display:flex; align-items:flex-start; gap:8px; margin-top:12px; padding:10px 12px; background:var(--gold-50, #fbf5e7); border:1px solid var(--gold-100, #f6ecd5); border-radius:var(--r-md, 14px); font-size:.82rem; color:var(--ink-soft, #5a6470); }
 .rewards-note svg { color:var(--gold, #d6a84f); flex:none; margin-top:1px; }
 .rewards-note strong { color:var(--gold-700, #b98b36); }
+.rewards-body { flex:1; min-width:0; }
+.rewards-how { margin-top:6px; }
+.rewards-how summary { cursor:pointer; font-weight:700; color:var(--gold-700, #b98b36); font-size:.78rem; list-style:none; display:inline-flex; align-items:center; gap:4px; }
+.rewards-how summary::-webkit-details-marker { display:none; }
+.rewards-how summary::after { content:"›"; transition:transform .15s; display:inline-block; }
+.rewards-how[open] summary::after { transform:rotate(90deg); }
+.rewards-how ul { margin:8px 0 2px; padding-left:16px; display:grid; gap:5px; }
+.rewards-how li { font-size:.78rem; line-height:1.45; }
 .promo-toggle { margin-top:10px; border:0; background:none; color:var(--emerald, #0f5c4a); font-weight:700; font-size:.82rem; cursor:pointer; text-decoration:underline; }
 .promo-box { margin-top:10px; }
 .promo-row { display:flex; gap:7px; }
