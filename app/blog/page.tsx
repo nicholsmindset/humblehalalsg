@@ -9,6 +9,7 @@ import { BlogCard } from "@/components/blog/blog-card";
 import { CategoryChips } from "@/components/blog/category-chips";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { SponsoredSlot } from "@/components/sponsored-slot";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 
 const featured = featuredPost();
 
@@ -71,6 +72,7 @@ export default function Page() {
                 fill
                 sizes="(max-width:760px) 100vw, 640px"
                 priority
+                unoptimized={isUnoptimizedImageSrc(featured.image)}
                 style={{ objectFit: "cover" }}
               />
             </div>

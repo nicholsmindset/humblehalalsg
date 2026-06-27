@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/lib/blog";
 import { getCategory } from "@/lib/blog-categories";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 
 type CardPost = Pick<
   BlogPost,
@@ -38,6 +39,7 @@ export function BlogCard({
             fill
             sizes="(max-width:560px) 100vw, (max-width:860px) 50vw, 360px"
             priority={priority}
+            unoptimized={isUnoptimizedImageSrc(post.image)}
             style={{ objectFit: "cover" }}
           />
         ) : (

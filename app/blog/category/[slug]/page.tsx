@@ -10,6 +10,7 @@ import { BlogCard } from "@/components/blog/blog-card";
 import { CategoryChips } from "@/components/blog/category-chips";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { SponsoredSlot } from "@/components/sponsored-slot";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 
 export function generateStaticParams() {
   return allCategories().map((c) => ({ slug: c.slug }));
@@ -60,7 +61,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                 <p className="muted" style={{ maxWidth: 600, marginTop: 10, fontSize: "1.05rem" }}>{cat.description}</p>
               </div>
               <div className="blog-cat-hero-media">
-                <Image src={cat.heroImage} alt={cat.heroAlt} fill sizes="(max-width:760px) 100vw, 420px" priority style={{ objectFit: "cover" }} />
+                <Image src={cat.heroImage} alt={cat.heroAlt} fill sizes="(max-width:760px) 100vw, 420px" priority unoptimized={isUnoptimizedImageSrc(cat.heroImage)} style={{ objectFit: "cover" }} />
               </div>
             </div>
           </div>
