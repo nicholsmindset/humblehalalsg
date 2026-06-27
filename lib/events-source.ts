@@ -68,6 +68,7 @@ export function rowToEvent(r: Row): EventItem {
     donationEnabled: bool(d.donationEnabled),
     donationRaisedCents: d.donationRaisedCents != null ? num(d.donationRaisedCents) : undefined,
     refundPolicy: d.refundPolicy ? str(d.refundPolicy) : undefined,
+    requiresApproval: bool(d.requiresApproval),
   };
 }
 

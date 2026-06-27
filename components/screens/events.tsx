@@ -794,7 +794,7 @@ export function EventDetailScreen() {
               </div>
             )}
             <button className="btn btn-primary btn-block btn-lg mt12" disabled={ev.soldOut} onClick={book}>
-              {ev.soldOut ? "Sold out" : effFree ? "RSVP — it’s free" : "Get tickets"}
+              {ev.soldOut ? "Sold out" : effFree ? (ev.requiresApproval ? "Request to join" : "RSVP — it’s free") : "Get tickets"}
             </button>
             <button
               className="evt-addcal"
@@ -819,7 +819,7 @@ export function EventDetailScreen() {
           )}
         </div>
         <button className="btn btn-primary" style={{ flex: 1 }} disabled={ev.soldOut} onClick={book}>
-          {ev.soldOut ? "Sold out" : effFree ? "RSVP free" : "Get tickets"}
+          {ev.soldOut ? "Sold out" : effFree ? (ev.requiresApproval ? "Request to join" : "RSVP free") : "Get tickets"}
         </button>
       </div>
     </div>
@@ -834,6 +834,7 @@ export function CheckoutScreen() {
   const [tier, setTier] = useState(ev.tiers ? 0 : -1);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState(state.user.loggedIn ? state.user.name : "");
+  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
 
   // Free unless the event is priced AND paid ticketing is enabled.
@@ -846,6 +847,18 @@ export function CheckoutScreen() {
 
   const confirm = async () => {
     if (free) {
+      if (ev.requiresApproval) {
+        setBusy(true);
+        try {
+          await fetch(`/api/events/${ev.id}/join-request`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, qty }),
+          });
+        } catch { /* graceful — still confirm the request was submitted */ }
+        finally { setBusy(false); }
+        navigate("success", { type: "join-request", eventId: ev.id });
+        return;
+      }
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "rsvp", eventId: ev.id });
       return;
@@ -925,7 +938,7 @@ export function CheckoutScreen() {
                 </div>
                 <div className="field">
                   <label>Email</label>
-                  <input className="input" type="email" placeholder="you@email.com" defaultValue={state.user.loggedIn ? "aisyah@email.com" : ""} />
+                  <input className="input" type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="field">
                   <label>Mobile</label>
@@ -977,7 +990,7 @@ export function CheckoutScreen() {
                 </span>
               </div>
               <button className="btn btn-primary btn-block btn-lg mt16" onClick={confirm} disabled={!name || busy}>
-                {busy ? "Redirecting…" : free ? "Confirm RSVP" : `Pay $${(total + fee).toFixed(2)}`}
+                {busy ? "Redirecting…" : free ? (ev.requiresApproval ? "Request to join" : "Confirm RSVP") : `Pay $${(total + fee).toFixed(2)}`}
               </button>
               <p className="faint tc" style={{ fontSize: ".76rem", marginTop: 10 }}>
                 {free ? "You can cancel your RSVP any time." : "Secure checkout via Stripe · refundable up to 48h before."}
@@ -997,6 +1010,7 @@ interface HostForm {
   free: boolean; price: string; tierName: string; cap: string;
   photos: number; prayer: boolean; halal: boolean; prayerNote: string;
   gender: "" | GenderArrangement; seating: string; refundPolicy: string; donation: boolean;
+  requiresApproval: boolean;
 }
 const REFUND_POLICIES = [
   { id: "", label: "No refunds" },
@@ -1011,6 +1025,7 @@ export function HostEventScreen() {
     lat: null, lng: null, coverUrl: "",
     free: true, price: "", tierName: "Standard", cap: "", photos: 0,
     prayer: false, halal: false, prayerNote: "", gender: "", seating: "", refundPolicy: "", donation: false,
+    requiresApproval: false,
   });
   const set = <K extends keyof HostForm>(k: K, v: HostForm[K]) => setD((s) => ({ ...s, [k]: v }));
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
@@ -1051,7 +1066,7 @@ export function HostEventScreen() {
           free: d.free, price: Number(d.price) || 0,
           tiers: !d.free ? [{ name: d.tierName || "Standard", price: Number(d.price) || 0 }] : undefined,
           capacity: Number(d.cap) || 0,
-          prayerNearby: d.prayer, halalCatering: d.halal,
+          prayerNearby: d.prayer, halalCatering: d.halal, requiresApproval: d.requiresApproval,
           prayerSlotNote: d.prayerNote || undefined,
           genderArrangement: d.gender || undefined, seatingNote: d.seating || undefined,
           refundPolicy: REFUND_POLICIES.find((r) => r.id === d.refundPolicy)?.label || undefined,
@@ -1168,6 +1183,12 @@ export function HostEventScreen() {
                   <input type="checkbox" checked={d.halal} onChange={(e) => set("halal", e.target.checked)} />{" "}
                   <span>
                     <Icon name="utensils" size={15} /> Halal catering
+                  </span>
+                </label>
+                <label className="evt-check">
+                  <input type="checkbox" checked={d.requiresApproval} onChange={(e) => set("requiresApproval", e.target.checked)} />{" "}
+                  <span>
+                    <Icon name="shield-check" size={15} /> Require approval to join
                   </span>
                 </label>
               </div>
@@ -1297,6 +1318,7 @@ export function HostEventScreen() {
                     ["Prayer space", d.prayer ? "Yes" : "—"],
                     ["Halal catering", d.halal ? "Yes" : "—"],
                     ["Gender arrangement", d.gender ? d.gender : "Not specified"],
+                    ["Joining", d.requiresApproval ? "Approval required" : "Instant RSVP"],
                     ...(isCharity && d.donation ? [["Donations", "Zakat / sadaqah enabled"]] as [string, string][] : []),
                   ] as [string, string][]
                 ).map(([k, v]) => (

@@ -501,7 +501,7 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
 }
 
 type OwnerBiz = { id: string; slug: string; name: string; area: string | null; cat_id: string | null; plan: string; featured: boolean; halal_tier: string | null; last_verified_at: string | null };
-type OwnerEvent = { id: string; slug: string; title: string; status: string; taken: number; capacity: number; is_free: boolean; date_iso: string | null; display: { cat?: string; area?: string; priceFrom?: number } | null };
+type OwnerEvent = { id: string; slug: string; title: string; status: string; taken: number; capacity: number; is_free: boolean; date_iso: string | null; display: { cat?: string; area?: string; priceFrom?: number; requiresApproval?: boolean } | null };
 
 export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
@@ -716,6 +716,7 @@ export function OwnerDashboardScreen() {
                         <button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { slug: ev.slug })}><Icon name="eye" size={15} /> View</button>
                         {ev.status === "published" && (
                           <>
+                            {ev.display?.requiresApproval && <a className="btn btn-soft btn-sm" href={`/events/${ev.slug}/requests`}><Icon name="shield-check" size={15} /> Requests</a>}
                             <a className="btn btn-soft btn-sm" href={`/events/${ev.slug}/checkin`}><Icon name="check" size={15} /> Check in</a>
                             <a className="btn btn-soft btn-sm" href={`/api/events/${ev.id}/attendees?format=csv`}><Icon name="users" size={15} /> Roster</a>
                           </>
