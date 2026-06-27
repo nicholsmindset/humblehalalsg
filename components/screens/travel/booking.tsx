@@ -139,7 +139,10 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
     <div className="screen-in hh-page">
       <Crumbs trail={[{ label: "Home", href: "/" }, { label: "Travel", href: "/travel" }, { label: "Book" }]} />
       <div className="hh-wrap hh-section booking-wrap">
-        <h1 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Complete your booking</h1>
+        <div className="checkout-head">
+          <h1 style={{ fontSize: "1.6rem" }}>Complete your booking</h1>
+          <span className="secure-pill"><Icon name="shield-check" size={13} /> Secure checkout</span>
+        </div>
         <p className="muted" style={{ marginBottom: 22 }}>{hotelName}{city ? ` · ${city}` : ""}</p>
 
         {stage !== "error" && stage !== "followup" && <BookingStepper stage={stepStage} />}
@@ -176,14 +179,27 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
               </form>
             ) : (
               <div className="booking-form card" style={{ padding: 20 }}>
-                <h2 style={{ fontSize: "1.1rem", marginBottom: 6 }}>Payment</h2>
-                <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>Booking as {holder.firstName} {holder.lastName} · {holder.email}</p>
-                <div id="liteapi-payment" className="pay-mount">
-                  <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                <h2 style={{ fontSize: "1.1rem", marginBottom: 12 }}>Payment</h2>
+                <div className="checkout-secure">
+                  <span className="cs-lead"><Icon name="shield-check" size={15} /> 256-bit encrypted payment</span>
+                  <span className="card-brands"><i>VISA</i><i>Mastercard</i><i>Amex</i></span>
                 </div>
+                <div className="pay-panel">
+                  <div className="pay-panel-head"><Icon name="shield-check" size={15} /> Card details <span className="pp-enc"><Icon name="check" size={12} /> Encrypted</span></div>
+                  <div className="pay-panel-body">
+                    <div id="liteapi-payment">
+                      <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                    </div>
+                  </div>
+                </div>
+                <p className="muted" style={{ fontSize: ".78rem", margin: "8px 0 0" }}>Booking as {holder.firstName} {holder.lastName} · {holder.email}{paymentMode === "sandbox" ? " · Sandbox: card 4242 4242 4242 4242" : ""}</p>
                 {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 12 }}>{err}</p>}
-                <button type="button" className="btn btn-soft btn-sm" style={{ marginTop: 14 }} onClick={() => { setErr(""); setStage("details"); }}><Icon name="back" size={14} /> Edit details</button>
-                <p className="muted" style={{ fontSize: ".78rem", marginTop: 10 }}>Secure card payment by LiteAPI.{paymentMode === "sandbox" ? " Sandbox test mode — use card 4242 4242 4242 4242, any future expiry & CVV." : ""}</p>
+                <ul className="checkout-trust">
+                  <li><Icon name="check" size={15} /> No charge until your booking is confirmed</li>
+                  <li><Icon name="shield-check" size={15} /> Payment handled securely by LiteAPI</li>
+                  <li><Icon name="badge-check" size={15} /> Free cancellation where the rate allows</li>
+                </ul>
+                <button type="button" className="btn btn-soft btn-sm" style={{ marginTop: 16 }} onClick={() => { setErr(""); setStage("details"); }}><Icon name="back" size={14} /> Edit details</button>
               </div>
             )}
 

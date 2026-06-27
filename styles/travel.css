@@ -680,3 +680,30 @@
 .umrah-tile-title { font-size:1.08rem; }
 .umrah-tile-body { font-size:.9rem; color:var(--ink-600,#4b5563); line-height:1.5; }
 .umrah-tile-cta { margin-top:6px; display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:.9rem; color:var(--emerald,#0f5c4a); }
+
+/* ── Sleek checkout (hotels + flights) ───────────────────────────────────────
+   Trust-first payment UX: a confident secure-payment panel, a reassurance row and
+   a sticky summary. Cohesive with the emerald OTA system — restraint over flourish. */
+.checkout-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+.secure-pill { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:var(--emerald-700,#0c4a3c); background:var(--emerald-50,#edf4f1); border:1px solid var(--emerald-100,#ddeae4); border-radius:999px; padding:5px 11px; white-space:nowrap; }
+.secure-pill svg { color:var(--emerald,#0f5c4a); }
+
+.checkout-secure { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--emerald-50,#edf4f1); border:1px solid var(--emerald-100,#ddeae4); border-radius:var(--r-md,14px); padding:10px 14px; margin-bottom:14px; }
+.checkout-secure .cs-lead { display:inline-flex; align-items:center; gap:7px; font-size:.84rem; font-weight:700; color:var(--emerald-700,#0c4a3c); }
+.checkout-secure svg { color:var(--emerald,#0f5c4a); flex:none; }
+.card-brands { display:inline-flex; gap:5px; margin-left:auto; }
+.card-brands i { font-style:normal; font-size:.62rem; font-weight:800; letter-spacing:.04em; color:var(--ink-soft,#5a6470); background:#fff; border:1px solid var(--line,#e7e1d4); border-radius:5px; padding:3px 6px; line-height:1; }
+
+.pay-panel { border:1px solid var(--line-strong,#d8d0bf); border-radius:var(--r-md,14px); overflow:hidden; margin-bottom:4px; background:#fff; }
+.pay-panel-head { display:flex; align-items:center; gap:8px; padding:11px 14px; background:var(--cream-200,#f3eee1); border-bottom:1px solid var(--line,#e7e1d4); font-size:.84rem; font-weight:700; color:var(--ink,#1f2937); }
+.pay-panel-head svg { color:var(--emerald,#0f5c4a); }
+.pay-panel-head .pp-enc { margin-left:auto; font-size:.7rem; font-weight:700; color:var(--emerald-700,#0c4a3c); display:inline-flex; align-items:center; gap:4px; }
+.pay-panel-body { padding:16px; min-height:64px; }
+
+.checkout-trust { list-style:none; padding:0; margin:16px 0 0; display:grid; gap:8px; }
+.checkout-trust li { display:flex; align-items:center; gap:9px; font-size:.82rem; color:var(--ink-soft,#5a6470); }
+.checkout-trust li svg { color:var(--emerald,#0f5c4a); flex:none; }
+
+/* Sticky summary/rail on desktop so the total + reassurance follow the guest. */
+@media (min-width: 821px) { .booking-summary { position:sticky; top:88px; } }
+@media (min-width: 901px) { .flt-book-rail { position:sticky; top:88px; } }

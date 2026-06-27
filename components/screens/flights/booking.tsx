@@ -295,19 +295,36 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
 
             {step === 3 && pb && (
               <div>
-                <h1 style={{ fontSize: "1.5rem", marginBottom: 4 }}>Review &amp; pay</h1>
+                <div className="checkout-head">
+                  <h1 style={{ fontSize: "1.5rem" }}>Review &amp; pay</h1>
+                  <span className="secure-pill"><Icon name="shield-check" size={13} /> Secure checkout</span>
+                </div>
                 <p className="muted" style={{ marginBottom: 16 }}>Pay securely with your card. You&apos;re never charged without a confirmed booking.</p>
                 <div className="card pax-card">
                   <h2>Payment</h2>
+                  <div className="checkout-secure">
+                    <span className="cs-lead"><Icon name="shield-check" size={15} /> 256-bit encrypted payment</span>
+                    <span className="card-brands"><i>VISA</i><i>Mastercard</i><i>Amex</i></span>
+                  </div>
                   {countdown === 0 ? (
                     <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>This held price has expired — please search again.</p>
                   ) : (
-                    <div id="liteapi-flight-payment" className="pay-mount">
-                      <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                    <div className="pay-panel">
+                      <div className="pay-panel-head"><Icon name="shield-check" size={15} /> Card details <span className="pp-enc"><Icon name="check" size={12} /> Encrypted</span></div>
+                      <div className="pay-panel-body">
+                        <div id="liteapi-flight-payment">
+                          <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                        </div>
+                      </div>
                     </div>
                   )}
                   {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 10 }}>{err}</p>}
-                  <p className="muted" style={{ fontSize: ".78rem", marginTop: 10 }}>Secure card payment by our travel partner.{paymentMode === "sandbox" ? " Sandbox test mode — use card 4242 4242 4242 4242, any future expiry & CVV." : ""} If payment succeeds we confirm your ticket — you&apos;re never charged without a booking.</p>
+                  {paymentMode === "sandbox" && countdown !== 0 && <p className="muted" style={{ fontSize: ".78rem", margin: "8px 0 0" }}>Sandbox: card 4242 4242 4242 4242, any future expiry &amp; CVV.</p>}
+                  <ul className="checkout-trust">
+                    <li><Icon name="check" size={15} /> No charge until your ticket is confirmed</li>
+                    <li><Icon name="shield-check" size={15} /> Secure payment via our travel partner</li>
+                    <li><Icon name="mail" size={15} /> E-ticket emailed the moment it&apos;s confirmed</li>
+                  </ul>
                 </div>
                 <div className="flt-book-foot"><button className="btn btn-soft" onClick={() => { setErr(""); setStep(2); }}><Icon name="back" size={16} /> Back</button></div>
               </div>
