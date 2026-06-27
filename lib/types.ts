@@ -205,6 +205,8 @@ export interface EventItem {
   donationRaisedCents?: number;
   /** Organiser refund policy label, e.g. "Flexible — full refund up to 48h before". */
   refundPolicy?: string;
+  /** When true, RSVPs are join requests the organiser approves before confirming. */
+  requiresApproval?: boolean;
 }
 
 export interface Ticket {

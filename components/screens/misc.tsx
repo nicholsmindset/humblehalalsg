@@ -880,6 +880,7 @@ export function SuccessScreen() {
     rsvp: { t:'You’re going! 🎉', d:'Your free RSVP is confirmed. Find your ticket and QR code under “My tickets” — see you there.', cta:'View my tickets', go:'user-dashboard' },
     'payment-event': { t:'Tickets confirmed! 🎟️', d:'Payment received and your tickets are booked. Your QR code is ready under “My tickets”.', cta:'View my tickets', go:'user-dashboard' },
     'event-listing': { t:'Event submitted!', d:'Your event has been sent for review. Once approved (usually within a day) it goes live in the directory.', cta:'Go to dashboard', go:'owner-dashboard' },
+    'join-request': { t:'Request sent! 🙌', d:'The organiser will review your request. You’ll get an email — and your ticket appears under “My tickets” — once it’s approved.', cta:'Browse more events', go:'events' },
   };
   const s = map[params.type as string] || map.suggest;
   return (

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     free?: boolean; price?: number; capacity?: number; tiers?: { name: string; price: number; perks?: string }[];
     prayerNearby?: boolean; halalCatering?: boolean; prayerSlotNote?: string;
     genderArrangement?: string; seatingNote?: string; refundPolicy?: string;
-    donationEnabled?: boolean; venueCoords?: { lat: number; lng: number }; coverUrl?: string;
+    donationEnabled?: boolean; requiresApproval?: boolean; venueCoords?: { lat: number; lng: number }; coverUrl?: string;
   };
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
 
@@ -69,6 +69,7 @@ export async function POST(req: Request) {
     seatingNote: b.seatingNote ? String(b.seatingNote).slice(0, 200) : undefined,
     refundPolicy: b.refundPolicy ? String(b.refundPolicy).slice(0, 200) : undefined,
     donationEnabled: b.catId === "charity" && b.donationEnabled === true,
+    requiresApproval: b.requiresApproval === true,
     venueCoords: coords,
   };
 
