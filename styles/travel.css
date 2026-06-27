@@ -814,3 +814,20 @@
 .score-why-row span:first-child svg { color: var(--emerald, #0f5c4a); }
 .score-why-row.total { font-weight: 800; border-bottom: none; color: var(--emerald, #0f5c4a); }
 .score-why-body .muted { font-size: .78rem; margin: 8px 0 0; line-height: 1.45; }
+
+/* ── deep city / Umrah guide (long-form SEO content) ─────────────────────── */
+.city-guide { max-width: 760px; }
+.city-guide .cg-title { font-size: 1.45rem; margin-bottom: 6px; }
+.city-guide .cg-intro { font-size: 1rem; color: var(--ink-soft, #5a6470); line-height: 1.6; margin: 0 0 20px; }
+.city-guide .cg-section { margin-bottom: 22px; }
+.city-guide .cg-section h3 {
+  font-size: 1.1rem; color: var(--emerald, #0f5c4a); margin: 0 0 8px;
+  padding-left: 12px; border-left: 3px solid var(--gold, #d6a84f);
+}
+.city-guide .cg-section p { font-size: .94rem; line-height: 1.7; color: var(--ink, #1c2530); margin: 0 0 10px; }
+.city-guide .cg-disclaimer {
+  display: flex; align-items: flex-start; gap: 7px; margin-top: 18px; padding: 12px 14px;
+  font-size: .82rem; line-height: 1.5; color: var(--ink-soft, #5a6470);
+  background: var(--cream, #faf7ef); border: 1px solid var(--line, #e7e1d4); border-radius: var(--r-md, 14px);
+}
+.city-guide .cg-disclaimer svg { color: var(--gold-700, #a9802f); flex: none; margin-top: 2px; }

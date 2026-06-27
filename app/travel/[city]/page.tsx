@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TravelCityScreen } from "@/components/screens/travel";
 import { allTravelHubs, getTravelHub, travelHubFaq, relatedHubs } from "@/lib/travel-hubs";
+import { getCityGuide } from "@/lib/travel-guides";
 import { cityHotels, cityPriceTip } from "@/lib/travel-data";
 import { pageMeta, SITE } from "@/lib/seo";
-import { JsonLd, breadcrumbJsonLd, faqJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
+import { JsonLd, articleJsonLd, breadcrumbJsonLd, faqJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
 
 export const revalidate = 3600;
 
@@ -26,6 +27,7 @@ export default async function Page({ params }: { params: Promise<{ city: string 
 
   const [hotels, priceTip] = await Promise.all([cityHotels(hub), cityPriceTip(hub.countryCode, hub.cityName)]);
   const faq = travelHubFaq(hub);
+  const guide = getCityGuide(hub.slug);
 
   const itemList = {
     "@context": "https://schema.org",
@@ -51,10 +53,21 @@ export default async function Page({ params }: { params: Promise<{ city: string 
             { name: hub.name, path: `/travel/${hub.slug}` },
           ]),
           faqJsonLd(faq),
+          ...(guide
+            ? [
+                articleJsonLd({
+                  headline: hub.umrah ? `Umrah travel guide: ${hub.name}` : `Travelling to ${hub.name}`,
+                  description: guide.intro,
+                  path: `/travel/${hub.slug}`,
+                  datePublished: guide.updated,
+                  dateModified: guide.updated,
+                }),
+              ]
+            : []),
           ...hotels.slice(0, 3).map((h) => hotelJsonLd(h)),
         ]}
       />
-      <TravelCityScreen hub={hub} hotels={hotels} faq={faq} related={relatedHubs(hub.slug)} priceTip={priceTip} />
+      <TravelCityScreen hub={hub} hotels={hotels} faq={faq} related={relatedHubs(hub.slug)} priceTip={priceTip} guide={guide} />
     </>
   );
 }

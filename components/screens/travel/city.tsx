@@ -8,12 +8,13 @@ import { Carousel } from "../../ota";
 import { MapView } from "../../map/map-view";
 import type { Hotel } from "@/lib/halal-hotels";
 import type { TravelHub } from "@/lib/travel-hubs";
+import type { CityGuide } from "@/lib/travel-guides";
 import type { QA } from "@/lib/faq";
 import { HotelCard } from "./HotelCard";
 import { Crumbs, DestinationCard, FilterBar, availableFilters, matchesFilters, niceDate } from "./shared";
 import type { CityPrice } from "./types";
 
-export function TravelCityScreen({ hub, hotels, faq, related, priceTip }: { hub: TravelHub; hotels: Hotel[]; faq: QA[]; related: TravelHub[]; priceTip?: CityPrice | null }) {
+export function TravelCityScreen({ hub, hotels, faq, related, priceTip, guide }: { hub: TravelHub; hotels: Hotel[]; faq: QA[]; related: TravelHub[]; priceTip?: CityPrice | null; guide?: CityGuide | null }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [open, setOpen] = useState<number | null>(0);
   const [filters, setFilters] = useState<string[]>([]);
@@ -72,6 +73,23 @@ export function TravelCityScreen({ hub, hotels, faq, related, priceTip }: { hub:
           <div className="travel-map"><MapView center={hub.coords} zoom={12} points={points} /></div>
         ) : (
           <div className="hotel-grid">{shown.map((h) => <HotelCard key={h.id} hotel={h} />)}</div>
+        )}
+
+        {guide && (
+          <section className="city-guide" style={{ marginTop: 48 }}>
+            <h2 className="cg-title">{hub.umrah ? `Umrah travel guide: ${hub.name}` : `Travelling to ${hub.name}`}</h2>
+            <p className="cg-intro">{guide.intro}</p>
+            {guide.sections.map((s) => (
+              <div key={s.heading} className="cg-section">
+                <h3>{s.heading}</h3>
+                {s.body.map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+            ))}
+            <p className="cg-disclaimer">
+              <Icon name="info" size={13} /> Humble Halal is a discovery platform, not a certifier or a travel agent.
+              Visa, permit and pricing details change — always confirm with official Saudi channels and your operator before you book.
+            </p>
+          </section>
         )}
 
         {faq.length > 0 && (

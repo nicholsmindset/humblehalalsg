@@ -3,6 +3,7 @@
    pages with internal links. Pure data — the live hotel grid is fetched in the
    server page via lib/liteapi. */
 import { allTravelCities, getTravelCity, type TravelCity } from "./travel-locations";
+import { cityGuideFaq } from "./travel-guides";
 import type { QA } from "./faq";
 
 export interface TravelHub extends TravelCity {
@@ -32,7 +33,8 @@ export function getTravelHub(slug: string): TravelHub | undefined {
   return c ? toHub(c) : undefined;
 }
 
-/** FAQ items for a hub (drives the on-page FAQ + FAQPage schema / GEO answers). */
+/** FAQ items for a hub (drives the on-page FAQ + FAQPage schema / GEO answers).
+ *  General hub questions first, then any deep city-specific Q&A (Makkah/Madinah). */
 export function travelHubFaq(c: TravelCity): QA[] {
   const near = c.landmark ? `near ${c.landmark}` : `in ${c.name}`;
   return [
@@ -52,6 +54,7 @@ export function travelHubFaq(c: TravelCity): QA[] {
         ? `Use the map and the "near ${c.landmark}" filter to find the closest stays. Walking distance to the Mosque is the main consideration for most pilgrims, alongside prayer facilities and halal dining.`
         : `Look for areas with halal dining and mosques close by. Filter by prayer room, halal food nearby and alcohol-free to match your needs, and check the map for proximity to what matters to you.`,
     },
+    ...cityGuideFaq(c.slug),
   ];
 }
 
