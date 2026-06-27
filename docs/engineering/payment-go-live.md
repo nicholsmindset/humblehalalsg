@@ -69,6 +69,26 @@ Set `LITEAPI_ENV=prod` + `LITEAPI_PROD_KEY`, redeploy, do **one small real booki
 a personal card, confirm it in Admin → Travel revenue and the LiteAPI dashboard, then
 **cancel/refund** it. Watch the first day's bookings.
 
+## Step 7 — Light up the halal moat (depth, not just payments)
+
+Taking payments makes hotels *bookable*; these two levers make them *worth booking here*.
+Neither blocks go-live, but both are what differentiate us.
+
+- **AI concierge** — set `AI_CONCIERGE_ENABLED=1` and `AI_GATEWAY_API_KEY` (Vercel AI
+  Gateway). The concierge now goes beyond search: `askHotel` answers grounded questions
+  about a specific property (prayer room, alcohol, halal food…) and `hotelHalalProfile`
+  returns a hotel's facilities + **distance to the Haram** + nearest mosques. Gated by the
+  `aiConcierge` flag (static page — **redeploy** after flipping).
+- **Seed the overlay** — until `muslim_friendly_hotels` has rows, every result shows the
+  `28` default with no flags, so the distance-to-Haram card pill, the "Why this score?"
+  explainer and the Verified badge stay dormant. Populate it (human-verified, never
+  scraped) via the admin marking panel or the bulk CSV — see
+  [muslim-friendly-overlay-seeding.md](./muslim-friendly-overlay-seeding.md). Set
+  `near_mosque_m` on Makkah/Madinah rows to power the card's "X to the Haram" pill. The
+  hotel **detail** page already shows a live distance-to-Haram from coordinates with no
+  overlay needed.
+- **Saved stays** (`/travel/saved`) needs no config — it's device-local (localStorage).
+
 ## Rollback
 
 Set `PAID_HOTELS_ENABLED` / `PAID_FLIGHTS_ENABLED` to empty (or `0`) and redeploy — both
