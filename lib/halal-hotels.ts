@@ -53,7 +53,7 @@ export function deriveHotelFlags(facilities: string[], description = ""): HotelF
   };
 }
 
-const POINTS: Record<keyof HotelFlags, number> = {
+export const POINTS: Record<keyof HotelFlags, number> = {
   halal_food_onsite: 22,
   has_prayer_room: 16,
   alcohol_free: 15,
@@ -101,6 +101,7 @@ export interface Hotel {
   halalScore: number;
   verified: boolean; // human-verified overlay
   verifiedBy: VerifiedBy;
+  nearMosqueM?: number; // overlay distance to nearest mosque/Haram (metres)
   priceFrom?: { amount: number; currency: string };
 }
 
@@ -188,6 +189,7 @@ export function hotelFromContent(c: LiteApiHotelContent, overlay?: OverlayRow): 
     halalScore: overlay?.halal_score ?? hotelHalalScore(flags),
     verified: verifiedBy !== "auto",
     verifiedBy,
+    nearMosqueM: overlay?.near_mosque_m ?? undefined,
   };
 }
 
@@ -210,6 +212,7 @@ export function hotelFromRates(h: LiteApiRatesHotel, overlay?: OverlayRow): Hote
     halalScore: overlay?.halal_score ?? hotelHalalScore(autoFlags),
     verified: verifiedBy !== "auto",
     verifiedBy,
+    nearMosqueM: overlay?.near_mosque_m ?? undefined,
     priceFrom:
       first?.amount != null ? { amount: Number(first.amount), currency: String(first.currency || "USD") } : undefined,
   };
@@ -374,6 +377,23 @@ export const FLAG_LABELS: Record<keyof HotelFlags, string> = {
 
 export function activeFlagLabels(flags: HotelFlags): string[] {
   return (Object.keys(FLAG_LABELS) as (keyof HotelFlags)[]).filter((k) => flags[k]).map((k) => FLAG_LABELS[k]);
+}
+
+export interface ScoreBreakdown {
+  base: number;
+  items: { label: string; points: number }[];
+  total: number;
+}
+
+/** Explain a hotel's provisional Muslim-friendly score: the base plus each active
+ *  flag's contribution (highest-weighted first). Powers the "Why this score?"
+ *  explainer so a number like 53 becomes legible instead of arbitrary. */
+export function scoreBreakdown(flags: HotelFlags): ScoreBreakdown {
+  const items = (Object.keys(POINTS) as (keyof HotelFlags)[])
+    .filter((k) => flags[k])
+    .sort((a, b) => POINTS[b] - POINTS[a])
+    .map((k) => ({ label: FLAG_LABELS[k], points: POINTS[k] }));
+  return { base: 28, items, total: hotelHalalScore(flags) };
 }
 
 function stripHtml(s?: string): string {

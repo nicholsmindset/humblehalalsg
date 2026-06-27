@@ -772,3 +772,45 @@
 .cncg-input input:focus { outline:none; border-color:var(--emerald,#0f5c4a); box-shadow:0 0 0 3px var(--emerald-50,#edf4f1); }
 .cncg-input .btn { flex:none; width:46px; height:46px; padding:0; border-radius:50%; display:grid; place-items:center; }
 .cncg-disc { font-size:.7rem; color:var(--ink-faint,#8a93a0); text-align:center; padding:0 14px 10px; margin:0; }
+
+/* ── distance to the Haram (the Umrah signal) ────────────────────────────── */
+.haram-distance {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  font-size: .9rem; font-weight: 700; color: var(--emerald, #0f5c4a);
+  background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df);
+  border-radius: var(--r-pill, 999px); padding: 5px 12px;
+}
+.haram-distance strong { font-weight: 800; }
+.haram-distance-note { font-weight: 500; color: var(--ink-soft, #5a6470); font-size: .8rem; }
+/* on the result card: compact pill under the location line */
+.hotel-card .card-haram {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 3px;
+  font-size: .76rem; font-weight: 700; color: var(--emerald, #0f5c4a);
+}
+
+/* ── "Why this score?" explainer (legible halal score) ───────────────────── */
+.score-why {
+  margin: 14px 0; border: 1px solid var(--emerald-100, #d3e6df);
+  border-radius: var(--r-md, 14px); background: var(--emerald-50, #e8f1ee);
+  overflow: hidden;
+}
+.score-why > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  list-style: none; cursor: pointer; padding: 11px 14px;
+  font-weight: 700; color: var(--emerald, #0f5c4a); font-size: .9rem;
+}
+.score-why > summary::-webkit-details-marker { display: none; }
+.score-why-q { display: inline-flex; align-items: center; gap: 7px; }
+.score-why-num { font-weight: 800; font-size: 1.05rem; }
+.score-why-num small { font-weight: 600; font-size: .72rem; opacity: .7; }
+.score-why[open] > summary { border-bottom: 1px solid var(--emerald-100, #d3e6df); }
+.score-why-body { padding: 12px 14px; background: #fff; }
+.score-why-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 6px 0; font-size: .88rem; color: var(--ink, #1c2530);
+  border-bottom: 1px dashed var(--line, #e7e1d4);
+}
+.score-why-row span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.score-why-row span:first-child svg { color: var(--emerald, #0f5c4a); }
+.score-why-row.total { font-weight: 800; border-bottom: none; color: var(--emerald, #0f5c4a); }
+.score-why-body .muted { font-size: .78rem; margin: 8px 0 0; line-height: 1.45; }
