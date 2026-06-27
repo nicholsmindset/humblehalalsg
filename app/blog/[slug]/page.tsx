@@ -11,6 +11,7 @@ import { Newsletter } from "@/components/newsletter";
 import { BlogCard } from "@/components/blog/blog-card";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { SponsoredSlot } from "@/components/sponsored-slot";
+import { isUnoptimizedImageSrc } from "@/lib/img";
 
 export function generateStaticParams() {
   return allPosts().map((p) => ({ slug: p.slug }));
@@ -96,6 +97,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               fill
               sizes="(max-width:800px) 100vw, 800px"
               priority
+              unoptimized={isUnoptimizedImageSrc(p.image)}
               style={{ objectFit: "cover" }}
             />
             {p.imageCredit && <figcaption className="blog-hero-credit">{p.imageCredit}</figcaption>}
