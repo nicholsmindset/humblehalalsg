@@ -684,7 +684,7 @@ export function OwnerDashboardScreen() {
                         <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
                         <div><div className="ems-v">{ev.free ? "Free" : "$" + ev.priceFrom}</div><div className="ems-l">price</div></div>
                       </div>
-                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="eye" size={15} /> View</button><button className="btn btn-soft btn-sm"><Icon name="edit" size={15} /> Manage</button></div>
+                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="eye" size={15} /> View</button><button className="btn btn-soft btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="edit" size={15} /> Manage</button></div>
                     </div>
                   );
                 })
@@ -714,13 +714,7 @@ export function OwnerDashboardScreen() {
                       </div>
                       <div className="flex g8 wrap">
                         <button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { slug: ev.slug })}><Icon name="eye" size={15} /> View</button>
-                        {ev.status === "published" && (
-                          <>
-                            {ev.display?.requiresApproval && <a className="btn btn-soft btn-sm" href={`/events/${ev.slug}/requests`}><Icon name="shield-check" size={15} /> Requests</a>}
-                            <a className="btn btn-soft btn-sm" href={`/events/${ev.slug}/checkin`}><Icon name="check" size={15} /> Check in</a>
-                            <a className="btn btn-soft btn-sm" href={`/api/events/${ev.id}/attendees?format=csv`}><Icon name="users" size={15} /> Roster</a>
-                          </>
-                        )}
+                        <a className="btn btn-gold btn-sm" href={`/events/${ev.slug}/manage`}><Icon name="settings" size={15} /> Manage</a>
                         {ev.status !== "cancelled" && (
                           <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => cancelEvent(ev.id)}><Icon name="x" size={15} /> Cancel</button>
                         )}

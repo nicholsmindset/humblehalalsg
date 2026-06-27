@@ -40,18 +40,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const { data: tix } = await admin
     .from("tickets").select("order_id, tier, status, checked_in_at").eq("event_id", id);
-  const byOrder = new Map<string, { total: number; used: number; tier: string }>();
+  const byOrder = new Map<string, { total: number; used: number; tier: string; checkedInAt: string | null }>();
   for (const t of tix || []) {
     const k = String(t.order_id);
-    const cur = byOrder.get(k) || { total: 0, used: 0, tier: t.tier || "" };
+    const cur = byOrder.get(k) || { total: 0, used: 0, tier: (t.tier as string) || "", checkedInAt: null };
     cur.total += 1;
     if (t.status === "used") cur.used += 1;
-    cur.tier = t.tier || cur.tier;
+    cur.tier = (t.tier as string) || cur.tier;
+    const ci = t.checked_in_at ? String(t.checked_in_at) : null;
+    if (ci && (!cur.checkedInAt || ci > cur.checkedInAt)) cur.checkedInAt = ci; // latest scan in the order
     byOrder.set(k, cur);
   }
 
   const rows = (orders || []).map((o) => {
-    const tk = byOrder.get(String(o.id)) || { total: o.qty || 0, used: 0, tier: "" };
+    const tk = byOrder.get(String(o.id)) || { total: o.qty || 0, used: 0, tier: "", checkedInAt: null };
     return {
       name: o.buyer_name || "Guest",
       email: o.buyer_email || "",
@@ -59,6 +61,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       tier: tk.tier || (o.amount_cents ? "Paid" : "RSVP"),
       orderStatus: o.status,
       checkedIn: `${tk.used}/${tk.total || o.qty || 1}`,
+      checkedInAt: tk.checkedInAt,
       amount: ((o.amount_cents || 0) / 100).toFixed(2),
       bookedAt: o.created_at,
     };
@@ -66,8 +69,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const url = new URL(req.url);
   if (url.searchParams.get("format") === "csv") {
-    const header = ["Name", "Email", "Qty", "Tier", "Order status", "Checked in", "Amount (SGD)", "Booked at"];
-    const body = rows.map((r) => [r.name, r.email, r.qty, r.tier, r.orderStatus, r.checkedIn, r.amount, r.bookedAt].map(csvCell).join(","));
+    const header = ["Name", "Email", "Qty", "Tier", "Order status", "Checked in", "Checked in at", "Amount (SGD)", "Booked at"];
+    const body = rows.map((r) => [r.name, r.email, r.qty, r.tier, r.orderStatus, r.checkedIn, r.checkedInAt || "", r.amount, r.bookedAt].map(csvCell).join(","));
     const csv = [header.map(csvCell).join(","), ...body].join("\n");
     const fname = `attendees-${String(ev.title || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.csv`;
     return new NextResponse(csv, {
