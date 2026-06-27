@@ -8,7 +8,7 @@ export type ScreenName =
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "about" | "contact" | "faq"
-  | "events" | "event-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
+  | "events" | "event-detail" | "ticket-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
   | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips" | "travel-flights";
 
 export type Params = Record<string, unknown>;
@@ -70,6 +70,8 @@ export function screenToPath(screen: string, params: Params = {}): string {
       return `/business/${slugForListing(String(params.id ?? ""))}${qs(params, ["id"])}`;
     case "event-detail":
       return `/events/${slugForEvent(String(params.id ?? ""))}${qs(params, ["id"])}`;
+    case "ticket-detail":
+      return `/tickets/${String(params.id ?? "")}${qs(params, ["id"])}`;
     case "seo":
       return `/halal/${String(params.slug ?? DEFAULT_SEO_SLUG)}${qs(params, ["slug"])}`;
     case "travel-city":
@@ -88,6 +90,7 @@ export function pathToScreen(pathname: string): ScreenName {
   if (pathname === "/") return "home";
   if (pathname.startsWith("/business")) return "detail";
   if (pathname.startsWith("/events/")) return "event-detail";
+  if (pathname.startsWith("/tickets/")) return "ticket-detail";
   if (pathname === "/events") return "events";
   if (pathname.startsWith("/halal")) return "seo";
   if (pathname.startsWith("/travel/hotel")) return "travel-hotel";

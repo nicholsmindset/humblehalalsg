@@ -11,6 +11,7 @@ import { Icon } from "../../ui";
 import { Crumbs } from "./shared";
 import { TravelScreen } from "./landing";
 import { FlightsScreen } from "../flights/search";
+import { TravelConcierge } from "./Concierge";
 import { HeroTrustPills, SharedTravelPromo } from "./promo";
 import type { Hotel } from "@/lib/halal-hotels";
 import type { TravelHub } from "@/lib/travel-hubs";
@@ -26,6 +27,7 @@ export function UnifiedTravelScreen({
   flightDeals,
   semanticEnabled = false,
   flightsBookingEnabled = false,
+  conciergeEnabled = false,
 }: {
   cities: TravelHub[];
   recommended?: Hotel[];
@@ -33,8 +35,9 @@ export function UnifiedTravelScreen({
   flightDeals: FlightDeal[];
   semanticEnabled?: boolean;
   flightsBookingEnabled?: boolean;
+  conciergeEnabled?: boolean;
 }) {
-  const [vertical, setVertical] = useState<"stays" | "flights">("stays");
+  const [vertical, setVertical] = useState<"stays" | "flights" | "concierge">("stays");
 
   return (
     <div className="screen-in hh-page">
@@ -60,6 +63,11 @@ export function UnifiedTravelScreen({
             <button type="button" role="tab" aria-selected={vertical === "flights"} className={`ota-segtab ${vertical === "flights" ? "on" : ""}`} onClick={() => setVertical("flights")}>
               <Icon name="plane" size={16} /> Flights
             </button>
+            {conciergeEnabled && (
+              <button type="button" role="tab" aria-selected={vertical === "concierge"} className={`ota-segtab ai-spark ${vertical === "concierge" ? "on" : ""}`} onClick={() => setVertical("concierge")}>
+                <Icon name="sparkles" size={16} /> AI Concierge
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -67,12 +75,16 @@ export function UnifiedTravelScreen({
       {/* ── active vertical's search + results (embedded) ── */}
       {vertical === "stays" ? (
         <TravelScreen cities={cities} recommended={recommended} nearby={nearby} semanticEnabled={semanticEnabled} embedded />
-      ) : (
+      ) : vertical === "flights" ? (
         <FlightsScreen bookingEnabled={flightsBookingEnabled} embedded />
+      ) : (
+        <section className="hh-wrap hh-section">
+          <TravelConcierge />
+        </section>
       )}
 
       {/* ── shared promo (promotes both verticals) ── */}
-      <SharedTravelPromo cities={cities} flightDeals={flightDeals} vertical={vertical} />
+      <SharedTravelPromo cities={cities} flightDeals={flightDeals} vertical={vertical === "concierge" ? "stays" : vertical} />
     </div>
   );
 }
