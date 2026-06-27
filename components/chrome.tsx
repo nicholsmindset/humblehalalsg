@@ -7,9 +7,11 @@ import { HHData } from "@/lib/data";
 import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
+import { allCategories } from "@/lib/blog-categories";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
+import Link from "next/link";
 
 /* ---------------- CERTIFIED-ONLY TOGGLE ---------------- */
 export function CertifiedToggle({ compact }: { compact?: boolean }) {
@@ -370,6 +372,7 @@ export function TopNav() {
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "tools", label: "Tools" },
+    { id: "blog", label: "Blog" },
     { id: "for-business", label: t("nav.forBusiness") },
     { id: "pricing", label: t("nav.pricing") },
   ];
@@ -449,6 +452,7 @@ export function MobileBar() {
     ["travel", "Travel", "globe"],
     ["events", t("nav.events"), "calendar"],
     ["tools", "Tools", "grid"],
+    ["blog", "Blog", "doc"],
     ["for-business", t("nav.forBusiness"), "store"],
     ["pricing", t("nav.pricing"), "tag"],
   ];
@@ -723,6 +727,15 @@ export function Footer() {
                 </a>
               );
             })}
+        </div>
+      </div>
+      <div className="hh-wrap hh-footer-cats">
+        <span className="hh-footer-title">Halal guides</span>
+        <div className="hh-footer-catlinks">
+          <Link href="/blog">All guides</Link>
+          {allCategories().map((c) => (
+            <Link key={c.slug} href={`/blog/category/${c.slug}`}>{c.name}</Link>
+          ))}
         </div>
       </div>
       <nav className="hh-wrap hh-footer-legal" aria-label="Legal">
