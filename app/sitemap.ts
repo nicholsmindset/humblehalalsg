@@ -4,6 +4,7 @@ import { getDirectory } from "@/lib/directory";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
+import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
@@ -84,6 +85,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(p.dateModified || p.datePublished),
     changeFrequency: "monthly",
     priority: 0.7,
+    images: p.image ? [p.image] : undefined,
+  }));
+
+  const blogCatEntries: MetadataRoute.Sitemap = allCategories().map((c) => ({
+    url: `${base}/blog/category/${c.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.6,
+    images: c.heroImage ? [c.heroImage] : undefined,
   }));
 
   const travelEntries: MetadataRoute.Sitemap = allTravelHubs().map((h) => ({
@@ -114,6 +124,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...seoEntries,
     ...brandEntries,
     ...blogEntries,
+    ...blogCatEntries,
     ...travelEntries,
     ...toolEntries,
     ...quranEntries,
