@@ -951,6 +951,27 @@ export function MyRequests({ navigate, state }: { navigate: ReturnType<typeof us
   );
 }
 
+/* Email the signed-in user their own tickets (links to each /tickets/[id]). */
+function ResendTicketsButton({ block = false }: { block?: boolean }) {
+  const { toast } = useApp();
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/tickets/resend", { method: "POST" });
+      const j = await r.json().catch(() => null);
+      if (j?.ok) toast?.(j.simulated ? "Email queued" : `Sent ${j.count} ticket${j.count === 1 ? "" : "s"} to your email`);
+      else toast?.(j?.reason === "not_signed_in" ? "Sign in to email your tickets" : "Couldn’t send — please try again");
+    } catch { toast?.("Couldn’t send — please try again"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <button type="button" className={`btn btn-ghost${block ? " btn-block" : " btn-sm"}`} onClick={send} disabled={busy}>
+      <Icon name="mail" size={block ? 17 : 15} /> {busy ? "Sending…" : "Email me my tickets"}
+    </button>
+  );
+}
+
 export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof useApp>["navigate"]; state: ReturnType<typeof useApp>["state"] }) {
   const localTickets = state.tickets || [];
   const savedEvs = (state.savedEvents||[]).map(id=>HHData.events.find(e=>e.id===id)).filter(Boolean) as typeof HHData.events;
@@ -978,7 +999,10 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
     <div className="stack g20">
       {hasDb ? (
         <div>
-          <h3 style={{fontSize:'1.15rem', marginBottom:12}}>Your tickets</h3>
+          <div className="flex between center" style={{marginBottom:12}}>
+            <h3 style={{fontSize:'1.15rem', margin:0}}>Your tickets</h3>
+            <ResendTicketsButton />
+          </div>
           <div className="stack g12">
             {dbTickets!.map((t)=>{
               const ev = t.event;
@@ -1157,6 +1181,7 @@ export function TicketDetailScreen({ ticketId }: { ticketId: string }) {
           {evFull && !voided && <button type="button" className="btn btn-outline btn-block" onClick={() => downloadIcs(evFull)}><Icon name="calendar" size={17} /> Add to calendar</button>}
           {eventNav && <button type="button" className="btn btn-outline btn-block" onClick={() => navigate("event-detail", eventNav)}><Icon name="ticket" size={17} /> View event</button>}
           <button type="button" className="btn btn-ghost btn-block" onClick={share}><Icon name="share" size={17} /> Share ticket</button>
+          <ResendTicketsButton block />
         </div>
       </div>
     </div>
