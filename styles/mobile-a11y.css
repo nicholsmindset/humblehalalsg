@@ -31,7 +31,7 @@
 
 /* Form fields — text inputs/selects need a 44px tap height (the email
    subscribe field rendered ~20px tall). */
-.input, .select { min-height: 44px; }
+.input, .select, .sort-select { min-height: 44px; }
 
 /* Bare search inputs nested in the OTA search segments — the segment
    wrapper is the real 56px tap target, but fill the inner input too so
