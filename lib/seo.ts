@@ -41,7 +41,13 @@ export function pageMeta({
 }: PageMetaInput): Metadata {
   // Absolute canonical/OG URL (robust even if metadataBase is ever absent).
   const canonical = new URL(path, SITE.url).toString();
-  const images = image ? [{ url: image }] : undefined;
+  // Default to the branded site OG image (app/opengraph-image) when a page does
+  // not supply its own. Because pageMeta defines openGraph, Next's file-based
+  // opengraph-image convention is suppressed — so without this, pageMeta pages
+  // render NO og:image at all (breaks social/chat link previews). Per-page
+  // images (e.g. business/listing photos) still win when passed in.
+  const ogImage = image || `${SITE.url}/opengraph-image`;
+  const images = [{ url: ogImage }];
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
@@ -60,7 +66,7 @@ export function pageMeta({
       card: "summary_large_image",
       title,
       description,
-      images: image ? [image] : undefined,
+      images: [ogImage],
     },
   };
 }
