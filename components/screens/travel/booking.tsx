@@ -3,17 +3,12 @@
 /* Humble Halal — booking flow (prebook → guest → payment → book), confirmation
    and my-trips. Booking is gated by PAID_HOTELS_ENABLED; the prebook/book flow,
    LiteAPI payment mount and flag gating are unchanged from the original. */
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon, Empty, RewardsNote, PromoCode } from "../../ui";
 import { Crumbs } from "./shared";
+import { launchLiteApiPayment } from "@/lib/liteapi-payment-client";
 import type { Prebook, TripBooking } from "./types";
-
-declare global {
-  interface Window {
-    LiteAPIPayment?: new (cfg: Record<string, unknown>) => { handlePayment?: () => void; mountPaymentForm?: () => void };
-  }
-}
 
 /* ── booking ─────────────────────────────────────────────────────────────── */
 
@@ -33,23 +28,45 @@ function BookingStepper({ stage }: { stage: "rate" | "details" | "payment" }) {
   );
 }
 
-export function TravelBookingScreen({ offerId, hotelId, hotelName, city, bookingEnabled }: { offerId: string; hotelId: string; hotelName: string; city: string; bookingEnabled: boolean }) {
+export function TravelBookingScreen({ offerId, hotelId, hotelName, city, bookingEnabled, paymentMode }: { offerId: string; hotelId: string; hotelName: string; city: string; bookingEnabled: boolean; paymentMode: "sandbox" | "live" }) {
   const [pb, setPb] = useState<Prebook | null>(null);
-  const [stage, setStage] = useState<"loading" | "details" | "paying" | "error">("loading");
+  const [stage, setStage] = useState<"loading" | "details" | "paying" | "returning" | "followup" | "error">("loading");
   const [err, setErr] = useState("");
   const [holder, setHolder] = useState({ firstName: "", lastName: "", email: "", phone: "" });
-  const [booking, setBooking] = useState(false);
   const [promoBusy, setPromoBusy] = useState(false);
-  const payRef = useRef<HTMLDivElement>(null);
-  const publicKey = process.env.NEXT_PUBLIC_LITEAPI_PUBLIC_KEY;
 
+  // On mount: detect a payment RETURN (?paid=1&pid&tid) and finalise the booking;
+  // otherwise open the prebook (confirm rate + open the payment intent).
   useEffect(() => {
     let on = true;
+    const sp = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const pid = sp?.get("pid"); const tid = sp?.get("tid"); const paid = sp?.get("paid");
+    if (paid && pid && tid) {
+      setStage("returning");
+      (async () => {
+        try {
+          const raw = sessionStorage.getItem("hh_hotel_book_" + pid);
+          const ctx = raw ? JSON.parse(raw) : {};
+          const res = await fetch("/api/travel/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prebookId: pid, transactionId: tid, ...ctx }) });
+          const d = await res.json();
+          if (!on) return;
+          if (d.ok) {
+            sessionStorage.removeItem("hh_hotel_book_" + pid);
+            const p = new URLSearchParams({ ref: String(d.bookingId || ""), code: String(d.confirmationCode || ""), hotel: String(ctx.hotelName || hotelName || ""), city: String(ctx.city || city || "") });
+            window.location.href = `/travel/booking/confirmation?${p.toString()}`;
+          } else {
+            // The card is already charged — NEVER surface a payment error. Reassure + email follow-up.
+            setStage("followup");
+          }
+        } catch { if (on) setStage("followup"); }
+      })();
+      return () => { on = false; };
+    }
+    if (!bookingEnabled || !offerId) {
+      setStage("error"); setErr(bookingEnabled ? "Missing offer." : "Online booking isn't enabled yet.");
+      return () => { on = false; };
+    }
     (async () => {
-      if (!bookingEnabled || !offerId) {
-        if (on) { setStage("error"); setErr(bookingEnabled ? "Missing offer." : "Online booking isn't enabled yet."); }
-        return;
-      }
       try {
         const res = await fetch("/api/travel/prebook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ offerId }) });
         const d = await res.json();
@@ -60,7 +77,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
       } catch { if (on) { setStage("error"); setErr("Could not start booking."); } }
     })();
     return () => { on = false; };
-  }, [offerId, bookingEnabled]);
+  }, [offerId, bookingEnabled, hotelName, city]);
 
   // Applying a promo MUST re-prebook with the voucher: that's what produces a fresh
   // payment intent (transactionId) and prebookId for the *discounted* total, so the
@@ -80,33 +97,43 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
 
   const total = pb?.sellingPrice ?? pb?.price ?? null;
 
-  const confirm = async (e: FormEvent) => {
+  // Details submitted → persist the booking context (the SDK redirect leaves this
+  // page, so we re-read it on return) and hand off to the hosted card form.
+  const goToPayment = (e: FormEvent) => {
     e.preventDefault();
     if (!pb) return;
-    setBooking(true);
+    const ctx = {
+      holder,
+      guests: [{ occupancyNumber: 1, ...holder }],
+      hotelName, city, liteapiHotelId: hotelId,
+      currency: pb.currency, retailTotal: total, commissionAmount: pb.commission,
+      ...(pb.voucherCode ? { voucherCode: pb.voucherCode, discountAmount: pb.discount ?? null } : {}),
+    };
+    try { sessionStorage.setItem("hh_hotel_book_" + pb.prebookId, JSON.stringify(ctx)); } catch { /* private mode */ }
     setErr("");
-    try {
-      const res = await fetch("/api/travel/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prebookId: pb.prebookId,
-          transactionId: pb.transactionId,
-          holder,
-          guests: [{ occupancyNumber: 1, ...holder }],
-          hotelName, city, liteapiHotelId: hotelId,
-          currency: pb.currency, retailTotal: total, commissionAmount: pb.commission,
-          ...(pb.voucherCode ? { voucherCode: pb.voucherCode, discountAmount: pb.discount ?? null } : {}),
-        }),
-      });
-      const d = await res.json();
-      if (!d.ok) { setErr(d.error || "Payment/booking failed."); setBooking(false); return; }
-      const p = new URLSearchParams({ ref: String(d.bookingId || ""), code: String(d.confirmationCode || ""), hotel: hotelName, city });
-      window.location.href = `/travel/booking/confirmation?${p.toString()}`;
-    } catch { setErr("Payment/booking failed."); setBooking(false); }
+    setStage("paying");
   };
 
-  const stepStage = stage === "loading" ? "rate" : stage === "details" || stage === "paying" ? "details" : "rate";
+  // When the payment step opens, mount the hosted LiteAPI card form. It charges the
+  // card then redirects to returnUrl (?paid=1), where the mount effect above books.
+  useEffect(() => {
+    if (stage !== "paying" || !pb) return;
+    if (!pb.secretKey) { setErr("Secure payment isn't available for this rate — please try another."); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        await launchLiteApiPayment({
+          mode: paymentMode,
+          secretKey: pb.secretKey!,
+          targetSelector: "#liteapi-payment",
+          returnUrl: `${window.location.origin}/travel/booking?tid=${encodeURIComponent(pb.transactionId || "")}&pid=${encodeURIComponent(pb.prebookId)}&paid=1`,
+        });
+      } catch { if (!cancelled) setErr("Couldn't load secure payment. Please refresh and try again."); }
+    })();
+    return () => { cancelled = true; };
+  }, [stage, pb, paymentMode]);
+
+  const stepStage = stage === "paying" ? "payment" : stage === "loading" || stage === "returning" ? "rate" : "details";
 
   return (
     <div className="screen-in hh-page">
@@ -115,41 +142,50 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
         <h1 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Complete your booking</h1>
         <p className="muted" style={{ marginBottom: 22 }}>{hotelName}{city ? ` · ${city}` : ""}</p>
 
-        {stage !== "error" && <BookingStepper stage={stepStage} />}
+        {stage !== "error" && stage !== "followup" && <BookingStepper stage={stepStage} />}
 
-        {stage === "loading" && <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Confirming your rate…</span></div>}
+        {(stage === "loading" || stage === "returning") && <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">{stage === "returning" ? "Confirming your booking…" : "Confirming your rate…"}</span></div>}
         {stage === "error" && <Empty icon="alert" title="Couldn't start booking" body={err || "Please try another room or dates."} />}
+        {stage === "followup" && (
+          <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
+            <div className="empty-ico" style={{ margin: "0 auto", background: "var(--gold-50, #fff7ed)", color: "var(--gold-700, #b45309)" }}><Icon name="clock" size={28} /></div>
+            <h2 style={{ marginTop: 14, fontSize: "1.3rem" }}>Payment received — confirming your stay</h2>
+            <p className="muted" style={{ marginTop: 8 }}>Your payment went through and we&apos;re finalising your booking with the hotel. You&apos;ll get a confirmation email shortly — there&apos;s no need to pay again. If you don&apos;t hear from us within a few hours, please contact support.</p>
+            <div className="flex g10 center" style={{ justifyContent: "center", marginTop: 16 }}><Link className="btn btn-primary" href="/travel/trips">View my trips</Link></div>
+          </div>
+        )}
 
         {(stage === "details" || stage === "paying") && pb && (
           <div className="booking-grid">
-            <form className="booking-form card" style={{ padding: 20 }} onSubmit={confirm}>
-              <h2 style={{ fontSize: "1.1rem", marginBottom: 14 }}>Guest details</h2>
-              <div className="form-row">
-                <div className="field"><label>First name</label><input required value={holder.firstName} onChange={(e) => setHolder({ ...holder, firstName: e.target.value })} /></div>
-                <div className="field"><label>Last name</label><input required value={holder.lastName} onChange={(e) => setHolder({ ...holder, lastName: e.target.value })} /></div>
-              </div>
-              <div className="form-row">
-                <div className="field"><label>Email</label><input required type="email" value={holder.email} onChange={(e) => setHolder({ ...holder, email: e.target.value })} /></div>
-                <div className="field"><label>Phone</label><input value={holder.phone} onChange={(e) => setHolder({ ...holder, phone: e.target.value })} /></div>
-              </div>
-
-              <h2 style={{ fontSize: "1.1rem", margin: "18px 0 12px" }}>Payment</h2>
-              {publicKey ? (
-                <div id="liteapi-payment" ref={payRef} className="pay-mount">
-                  <p className="muted" style={{ fontSize: ".86rem" }}>Secure card payment by LiteAPI.</p>
+            {stage === "details" ? (
+              <form className="booking-form card" style={{ padding: 20 }} onSubmit={goToPayment}>
+                <h2 style={{ fontSize: "1.1rem", marginBottom: 14 }}>Guest details</h2>
+                <div className="form-row">
+                  <div className="field"><label>First name</label><input required value={holder.firstName} onChange={(e) => setHolder({ ...holder, firstName: e.target.value })} /></div>
+                  <div className="field"><label>Last name</label><input required value={holder.lastName} onChange={(e) => setHolder({ ...holder, lastName: e.target.value })} /></div>
                 </div>
-              ) : (
-                <div className="notice notice-warn" style={{ marginBottom: 14 }}>
-                  <Icon name="info" size={16} />
-                  <span>Sandbox test mode — use the button below to complete a test booking (no card needed). Add <code>NEXT_PUBLIC_LITEAPI_PUBLIC_KEY</code> to enable the live card form.</span>
+                <div className="form-row">
+                  <div className="field"><label>Email</label><input required type="email" value={holder.email} onChange={(e) => setHolder({ ...holder, email: e.target.value })} /></div>
+                  <div className="field"><label>Phone</label><input value={holder.phone} onChange={(e) => setHolder({ ...holder, phone: e.target.value })} /></div>
                 </div>
-              )}
-              {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginBottom: 10 }}>{err}</p>}
-              <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={booking || promoBusy}>
-                {booking ? "Confirming…" : promoBusy ? "Updating price…" : total != null ? `Pay ${pb.currency} ${Math.round(total)} & confirm` : "Confirm booking"}
-              </button>
-              <p className="muted" style={{ fontSize: ".78rem", marginTop: 10, textAlign: "center" }}>You won&apos;t be charged until your booking is confirmed.</p>
-            </form>
+                {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", margin: "10px 0" }}>{err}</p>}
+                <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={promoBusy}>
+                  {promoBusy ? "Updating price…" : "Continue to secure payment"}
+                </button>
+                <p className="muted" style={{ fontSize: ".78rem", marginTop: 10, textAlign: "center" }}>You won&apos;t be charged until you complete payment on the next step.</p>
+              </form>
+            ) : (
+              <div className="booking-form card" style={{ padding: 20 }}>
+                <h2 style={{ fontSize: "1.1rem", marginBottom: 6 }}>Payment</h2>
+                <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>Booking as {holder.firstName} {holder.lastName} · {holder.email}</p>
+                <div id="liteapi-payment" className="pay-mount">
+                  <div className="route-loading" role="status"><span className="spinner" /> <span className="faint">Loading secure card form…</span></div>
+                </div>
+                {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginTop: 12 }}>{err}</p>}
+                <button type="button" className="btn btn-soft btn-sm" style={{ marginTop: 14 }} onClick={() => { setErr(""); setStage("details"); }}><Icon name="back" size={14} /> Edit details</button>
+                <p className="muted" style={{ fontSize: ".78rem", marginTop: 10 }}>Secure card payment by LiteAPI.{paymentMode === "sandbox" ? " Sandbox test mode — use card 4242 4242 4242 4242, any future expiry & CVV." : ""}</p>
+              </div>
+            )}
 
             <aside className="card booking-summary" style={{ padding: 18 }}>
               <h2 style={{ fontSize: "1.05rem", marginBottom: 12 }}>Price summary</h2>
@@ -157,7 +193,7 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
               {pb.commission != null && <div className="sum-row faint"><span>Incl. our service</span><span>{pb.currency} {Math.round(pb.commission)}</span></div>}
               {pb.discount ? <div className="sum-row" style={{ color: "var(--emerald)" }}><span>Promo {pb.voucherCode}</span><span>−{pb.currency} {Math.round(pb.discount)}</span></div> : null}
               <div className="sum-row total"><span>Total</span><span>{pb.currency} {Math.round(total ?? 0)}</span></div>
-              <PromoCode amount={total} currency={pb.currency} onApply={applyPromo} />
+              {stage === "details" ? <PromoCode amount={total} currency={pb.currency} onApply={applyPromo} /> : null}
               <RewardsNote amount={total} currency={pb.currency} />
               <p className="muted" style={{ fontSize: ".78rem", marginTop: 12 }}>Booking handled securely by LiteAPI. Free cancellation where the rate allows.</p>
             </aside>
