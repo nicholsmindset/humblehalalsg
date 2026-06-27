@@ -50,7 +50,7 @@ const rawPosts: RawPost[] = [
       "Halal (Arabic for “permissible”) describes food and businesses that comply with Islamic law. In Singapore, the official authority is MUIS (Majlis Ugama Islam Singapura), which certifies halal eateries and products. A place is only officially halal if it holds a valid MUIS halal certificate — “no pork, no lard” is self-declared and is not the same thing.",
     datePublished: "2026-06-11",
     author: AUTHOR,
-    readMins: 5,
+    readMins: 8,
     tags: ["Halal basics", "MUIS", "Guides"],
     sections: [
       {
@@ -80,8 +80,38 @@ const rawPosts: RawPost[] = [
           "Because the real world is more nuanced than a yes/no, every listing on Humble Halal shows a halal-confidence score from 0–100. MUIS-certified places score highest, followed by admin-verified and Muslim-owned, then self-declared “halal-friendly” or “no pork no lard”. It’s a quick way to judge how confident you can be before you go — but the official MUIS register is always the final word.",
         ],
       },
+      {
+        h2: "Common haram ingredients to watch for",
+        body: [
+          "Beyond pork, a handful of everyday ingredients can quietly make a dish non-halal. The usual culprits are alcohol used in cooking, gelatine or rennet from non-halal sources, lard and animal shortening, and meat that simply wasn’t slaughtered the Islamic way. This is why “it looks meat-free” or “there’s no pork” isn’t the whole story.",
+        ],
+        bullets: [
+          "Pork and all derivatives — bacon, ham, lard, pork gelatine",
+          "Alcohol in cooking — mirin, Shaoxing/cooking wine, rum or liqueur in desserts",
+          "Gelatine & rennet — common in jelly, marshmallows, mousse and some cheeses",
+          "Non-halal beef or chicken — even at a “no pork” stall",
+          "Emulsifiers & enzymes (e.g. E471, L-cysteine) that can be animal-derived",
+        ],
+      },
+      {
+        h2: "Halal-certified, Muslim-owned or “halal-friendly”?",
+        body: [
+          "These three labels get used loosely but mean very different things. MUIS halal-certified is the only official verification — the kitchen, ingredients and supply chain have been audited. Muslim-owned tells you about the owner, not necessarily the certification. “Halal-friendly” or “no pork, no lard” is a self-declared courtesy that nobody has checked.",
+          "None of these are wrong to consider — they simply sit at different levels of confidence, which is exactly what the halal-confidence score is built to capture.",
+        ],
+      },
+      {
+        h2: "Is seafood or vegetarian food automatically halal?",
+        body: [
+          "Most seafood is considered halal by the majority of scholars, and plant-based food is halal in itself. But “the ingredient is halal” doesn’t always mean “the dish is halal”. A vegetarian plate can still be cooked with cooking wine, and seafood can share fryers or woks with non-halal items.",
+          "If certification matters to you, the safest move is still to check the specific outlet on HalalSG rather than assume from the menu category alone.",
+        ],
+      },
     ],
     faq: [
+      { q: "What does haram mean?", a: "Haram is Arabic for “forbidden” — the opposite of halal. For food, the main haram items are pork and its derivatives, alcohol, and meat not slaughtered according to Islamic rites, along with anything contaminated by them." },
+      { q: "Is alcohol in food haram?", a: "Yes. Alcohol is haram, and that includes alcohol used in cooking such as mirin, cooking wine or rum in desserts. A dish can contain no pork yet still be non-halal because of alcohol in the sauce or marinade — MUIS-certified kitchens are audited for this." },
+      { q: "Is seafood halal?", a: "Most seafood is considered halal by the majority of scholars. How it is prepared still matters, though — shared fryers, cooking wine or non-halal sides can affect a dish. When in doubt, check the outlet on MUIS HalalSG." },
       { q: "Is “no pork no lard” halal?", a: "No. “No pork, no lard” is self-declared and only means those two ingredients aren’t used. It is not MUIS halal certification, which verifies the whole kitchen, ingredients and supply chain. Always confirm on the MUIS HalalSG register." },
       { q: "How do I know if a restaurant is halal in Singapore?", a: "Look it up on the official MUIS HalalSG register at halal.muis.gov.sg, or check for a valid, current MUIS halal certificate displayed at the outlet. On Humble Halal, the halal-confidence score and badges summarise this at a glance." },
       { q: "Is Muslim-owned the same as halal-certified?", a: "Not necessarily. A Muslim-owned business may not hold a MUIS halal certificate. Muslim-owned is a trust signal; MUIS certification is the official verification." },
@@ -96,7 +126,7 @@ const rawPosts: RawPost[] = [
       "To check if a place is halal in Singapore, search for it on the official MUIS HalalSG register at halal.muis.gov.sg. A valid MUIS halal certificate names the company, the certified premises and an expiry date. If an outlet isn’t on the register — or the certificate has expired — it is not currently MUIS halal-certified.",
     datePublished: "2026-06-11",
     author: AUTHOR,
-    readMins: 6,
+    readMins: 8,
     tags: ["MUIS", "How-to", "Guides"],
     sections: [
       {
@@ -130,8 +160,43 @@ const rawPosts: RawPost[] = [
           "When something looks ambiguous, default to caution and verify at the source.",
         ],
       },
+      {
+        h2: "The MUIS certification schemes (what they cover)",
+        body: [
+          "MUIS doesn’t use a single one-size certificate — it certifies under different schemes depending on the type of operation. Knowing which scheme applies helps you read a certificate correctly.",
+        ],
+        bullets: [
+          "Eating Establishment — restaurants, cafés and stalls serving on-site",
+          "Food Preparation Area — central kitchens and prep facilities",
+          "Product — packaged food products and ingredients",
+          "Whole Plant / Endorsement — factory-level and supply endorsements",
+          "Storage Facility & Temporary Catering — warehousing and event catering",
+        ],
+      },
+      {
+        h2: "Red flags a “halal” claim is weak",
+        body: [
+          "Most disappointments come down to a few recurring patterns. Treat any of these as a prompt to verify before you order.",
+        ],
+        bullets: [
+          "Only a sign or sticker — no certificate, and nothing on HalalSG",
+          "An expired certificate still on display",
+          "A certificate from another country presented as if it covers Singapore",
+          "“The chain is halal” — but this specific branch isn’t listed",
+          "Vague social-media claims with no company name to search",
+        ],
+      },
+      {
+        h2: "How Humble Halal records certification",
+        body: [
+          "Humble Halal is a discovery platform, not a certifier. We deep-link to the official MUIS HalalSG listing as the source of truth and record our own verification status and date alongside it, then summarise everything as a 0–100 halal-confidence score. The official register is always the final word — we just make it faster to act on.",
+        ],
+      },
     ],
     faq: [
+      { q: "What is HalalSG?", a: "HalalSG (halal.muis.gov.sg) is MUIS’s official online register of halal-certified establishments and products in Singapore. It’s the authoritative place to confirm whether a specific outlet currently holds MUIS halal certification." },
+      { q: "Can I trust a halal certificate from another country?", a: "Not for Singapore outlets. Certification from another body (for example a Malaysian or overseas authority) does not mean the Singapore branch is MUIS-certified. Always verify the local outlet on MUIS HalalSG." },
+      { q: "What if a place lost or didn’t renew its certification?", a: "If a certificate has lapsed or been withdrawn, the outlet is not currently MUIS halal-certified — even if it was before and the old signage remains. The HalalSG register reflects the current status." },
       { q: "How do I check MUIS halal certification?", a: "Search the establishment on the official MUIS HalalSG register at halal.muis.gov.sg. A valid certificate shows the company, certified premises and an expiry date. If it’s not listed or has expired, it isn’t currently certified." },
       { q: "Does a MUIS certificate expire?", a: "Yes. MUIS halal certificates are valid for a fixed period and must be renewed. Always check the certificate is current, not just present." },
       { q: "Is every outlet of a halal-certified chain also halal?", a: "No. MUIS certification is outlet-specific. Confirm the exact branch you’re visiting on HalalSG, as some outlets of a brand may not be certified." },
@@ -146,7 +211,7 @@ const rawPosts: RawPost[] = [
       "The best halal restaurants in Singapore span Malay and Nasi Padang heritage, Indian-Muslim, Middle Eastern, halal Korean and Japanese, and modern Western and fine dining. To eat with confidence, prioritise MUIS-certified eateries, then sort by neighbourhood and the halal-confidence score on Humble Halal to find top-rated spots near you.",
     datePublished: "2026-06-11",
     author: AUTHOR,
-    readMins: 7,
+    readMins: 9,
     tags: ["Restaurants", "Food guides", "Best of"],
     sections: [
       {
@@ -179,8 +244,49 @@ const rawPosts: RawPost[] = [
           "Rather than a static list that goes stale, use the directory: browse by category and area, open the map to see what’s nearby, and sort by halal-confidence score. New certified places are added over time, so the “best near me” stays current.",
         ],
       },
+      {
+        h2: "Halal dining by occasion",
+        body: [
+          "The “best” restaurant depends on why you’re eating out. A quick certified lunch has different priorities to a birthday dinner or a big family gathering.",
+        ],
+        bullets: [
+          "Date night — halal fine dining, steakhouses and degustation menus",
+          "Family feasts — Nasi Padang, zi-char-style and large-table Malay spreads",
+          "Quick lunch — Indian-Muslim prata, biryani and economy rice",
+          "Groups — halal steamboat and Korean BBQ for cook-your-own fun",
+          "Catch-ups — halal cafés for brunch, coffee and dessert",
+        ],
+      },
+      {
+        h2: "Halal food by area",
+        body: [
+          "Halal options are spread across the island, but a few neighbourhoods are especially dense. Use these as starting points, then filter by certification and score.",
+        ],
+        bullets: [
+          "Kampong Glam & Arab Street — Middle Eastern grills, cafés and heritage Malay",
+          "Geylang Serai & the east (Tampines, Bedok) — Malay heartland classics",
+          "Town & Orchard — halal-certified hotel restaurants and mall dining",
+          "Jewel & Changi Airport — certified and Muslim-friendly options for travellers",
+          "Heartland malls islandwide — reliable certified chains close to home",
+        ],
+      },
+      {
+        h2: "Booking, prayer and Ramadan tips",
+        body: [
+          "A little planning makes halal dining smoother — especially for groups, special occasions and during the fasting month.",
+        ],
+        bullets: [
+          "Reconfirm the exact outlet on MUIS HalalSG before a big booking",
+          "Ask whether there’s a prayer space or a mosque/surau nearby",
+          "For Ramadan iftar, book early — popular buffets sell out fast",
+          "Weigh halal-confidence and recent reviews together, not just the star rating",
+        ],
+      },
     ],
     faq: [
+      { q: "Which area has the most halal food in Singapore?", a: "Kampong Glam/Arab Street and the Malay heartlands around Geylang Serai and the east (Tampines, Bedok) are especially dense with halal options, but certified restaurants are found islandwide. Filter by area and halal-confidence score to find the best near you." },
+      { q: "Are there halal restaurants in town or Orchard?", a: "Yes. Several hotel restaurants and mall eateries in the town and Orchard area are MUIS-certified. Filter by area and certification on Humble Halal, and confirm the specific outlet on MUIS HalalSG." },
+      { q: "Do halal restaurants in Singapore have prayer rooms?", a: "Some do, and many are near a mosque or surau. Prayer facilities aren’t guaranteed, so it’s worth checking the listing or calling ahead — especially for longer sittings like buffets." },
       { q: "Are all halal restaurants in Singapore MUIS-certified?", a: "No. Some are MUIS-certified, others are Muslim-owned or self-declared halal-friendly. Humble Halal labels each one and shows a halal-confidence score, and you should confirm certification on MUIS HalalSG." },
       { q: "How do I find the best halal restaurants near me?", a: "Use the area filters or the map on Humble Halal to see halal restaurants by neighbourhood, then sort by halal-confidence score or rating to surface the top-rated, certified options nearby." },
       { q: "Is there halal fine dining in Singapore?", a: "Yes. Singapore has a growing number of halal fine-dining and halal steak restaurants, alongside heritage Malay and Indian-Muslim kitchens. Filter by cuisine and certification to find them." },
