@@ -10,7 +10,7 @@ import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
 import { getSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
-import { EventCard } from "./events";
+import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
@@ -1130,6 +1130,12 @@ export function TicketDetailScreen({ ticketId }: { ticketId: string }) {
             {venue && <div className="evt-meta"><Icon name="pin" size={15} /> {venue}{area ? `, ${area}` : ""}</div>}
             {organiser && <div className="evt-meta"><Icon name="user" size={15} /> {organiser}</div>}
             <div className="ticket-pass-tags"><span className="tag">{tier}{qty > 1 ? ` × ${qty}` : ""}</span></div>
+            {evFull && (evFull.halalCatering || evFull.prayerNearby || (evFull.genderArrangement && evFull.genderArrangement !== "mixed")) && (
+              <div className="ticket-pass-mf">
+                <span className="tpb-label">Good to know</span>
+                <div className="flex g6 wrap"><EventBadges ev={evFull} compact /></div>
+              </div>
+            )}
           </div>
           <div className="ticket-tear" aria-hidden><span className="tear-line" /></div>
           <div className="ticket-pass-qr">
