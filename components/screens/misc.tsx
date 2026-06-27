@@ -11,6 +11,8 @@ import { useDirectory } from "../directory-context";
 import { getSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard } from "./events";
+import { useEvents } from "../events-context";
+import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
@@ -981,27 +983,19 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
             {dbTickets!.map((t)=>{
               const ev = t.event;
               return (
-                <div key={t.id} className="ticket-card" style={t.status !== "valid" ? { opacity: .6 } : undefined}>
-                  <div className="ticket-stub"><ImagePh label={(ev?.cat||"event").toLowerCase()} tone="emerald" src={ev?.img} style={{position:'absolute',inset:0}}/></div>
-                  <div className="ticket-perf" />
-                  <div className="ticket-body">
-                    <div className="flex between" style={{gap:12}}>
-                      <div className="f1">
-                        <span className="evt-cat">{ev?.cat || "Event"}</span>
-                        <div style={{fontWeight:700, fontFamily:'var(--serif)', fontSize:'1.1rem', marginTop:3}}>{ev?.title || "Event"}</div>
-                        {ev?.dateISO && <div className="evt-meta" style={{marginTop:6}}><Icon name="calendar" size={14}/> {ev.dateISO}</div>}
-                        <div className="flex g8 center" style={{marginTop:8}}>
-                          <span className="tag">{t.tier}</span>
-                          <span className={`tag ${t.status === "used" ? "green" : ""}`}>{STATUS_LABEL[t.status] || t.status}</span>
-                        </div>
-                      </div>
-                      <div className="flex col center g8">
-                        <TicketQR value={t.qrRef} />
-                        {ev?.slug && <button className="btn btn-ghost btn-sm" style={{padding:'4px 8px'}} onClick={()=>navigate('event-detail',{slug:ev.slug})}>View</button>}
-                      </div>
+                <button key={t.id} type="button" className={`ticket-row${t.status !== "valid" ? " is-dim" : ""}`} onClick={()=>navigate('ticket-detail',{id:t.id})}>
+                  <div className="ticket-row-thumb"><ImagePh label={(ev?.cat||"event").toLowerCase()} tone="emerald" src={ev?.img} style={{position:'absolute',inset:0}}/></div>
+                  <div className="ticket-row-main">
+                    <span className="evt-cat">{ev?.cat || "Event"}</span>
+                    <div className="ticket-row-title">{ev?.title || "Event"}</div>
+                    {ev?.dateISO && <div className="evt-meta"><Icon name="calendar" size={14}/> {ev.dateISO}</div>}
+                    <div className="ticket-row-tags">
+                      <span className="tag">{t.tier}</span>
+                      <span className={`tag ${t.status === "used" ? "green" : ""}`}>{STATUS_LABEL[t.status] || t.status}</span>
                     </div>
                   </div>
-                </div>
+                  <Icon name="chevron" size={18} className="ticket-row-go" />
+                </button>
               );
             })}
           </div>
@@ -1013,25 +1007,20 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
             {localTickets.map(t=>{
               const ev = HHData.events.find(e=>e.id===t.eventId); if(!ev) return null;
               return (
-                <div key={t.ref} className="ticket-card">
-                  <div className="ticket-stub"><ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{position:'absolute',inset:0}}/></div>
-                  <div className="ticket-perf" />
-                  <div className="ticket-body">
-                    <div className="flex between" style={{gap:12}}>
-                      <div className="f1">
-                        <span className="evt-cat">{ev.cat}</span>
-                        <div style={{fontWeight:700, fontFamily:'var(--serif)', fontSize:'1.1rem', marginTop:3}}>{ev.title}</div>
-                        <div className="evt-meta" style={{marginTop:6}}><Icon name="calendar" size={14}/> {ev.dateLabel} · {ev.timeLabel.split(' – ')[0]}</div>
-                        <div className="evt-meta"><Icon name="pin" size={14}/> {ev.venue}</div>
-                        <div className="flex g8 center" style={{marginTop:8}}>
-                          <span className="ticket-ref">{t.ref}</span>
-                          <span className="tag">{t.tier} × {t.qty}</span>
-                        </div>
-                      </div>
-                      <div className="flex col center g8"><TicketQR value={t.ref} /><button className="btn btn-ghost btn-sm" style={{padding:'4px 8px'}} onClick={()=>navigate('event-detail',{id:ev.id})}>View</button></div>
+                <button key={t.ref} type="button" className="ticket-row" onClick={()=>navigate('ticket-detail',{id:t.ref})}>
+                  <div className="ticket-row-thumb"><ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{position:'absolute',inset:0}}/></div>
+                  <div className="ticket-row-main">
+                    <span className="evt-cat">{ev.cat}</span>
+                    <div className="ticket-row-title">{ev.title}</div>
+                    <div className="evt-meta"><Icon name="calendar" size={14}/> {ev.dateLabel} · {ev.timeLabel.split(' – ')[0]}</div>
+                    <div className="evt-meta"><Icon name="pin" size={14}/> {ev.venue}</div>
+                    <div className="ticket-row-tags">
+                      <span className="ticket-ref">{t.ref}</span>
+                      <span className="tag">{t.tier} × {t.qty}</span>
                     </div>
                   </div>
-                </div>
+                  <Icon name="chevron" size={18} className="ticket-row-go" />
+                </button>
               );
             })}
           </div>
@@ -1043,6 +1032,127 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
           <div className="evt-grid">{savedEvs.map(e=><EventCard key={e.id} ev={e} />)}</div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------- Ticket detail (one ticket: full-screen QR for door entry) ---------- */
+export function TicketDetailScreen({ ticketId }: { ticketId: string }) {
+  const { navigate, state, toast } = useApp();
+  const { get: getEvent } = useEvents();
+  const [dbTickets, setDbTickets] = useState<DbTicket[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // A free-RSVP / signed-out ticket lives in client state, keyed by its ref.
+  const local = (state.tickets || []).find((t) => t.ref === ticketId);
+
+  useEffect(() => {
+    if (local) { setLoading(false); return; }
+    let alive = true;
+    fetch("/api/tickets/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive) setDbTickets(Array.isArray(j?.tickets) ? (j.tickets as DbTicket[]) : []); })
+      .catch(() => { if (alive) setDbTickets([]); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [ticketId, local]);
+
+  const db = !local && dbTickets ? dbTickets.find((t) => t.id === ticketId) : undefined;
+  const evFull = local ? getEvent(local.eventId) : (db?.event?.slug ? getEvent(db.event.slug) : undefined);
+
+  if (loading) {
+    return (
+      <div className="screen-in hh-page">
+        <MobileHeader title="Your ticket" onBack={() => navigate("user-dashboard")} />
+        <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}><p className="muted">Loading your ticket…</p></div>
+      </div>
+    );
+  }
+
+  if (!local && !db) {
+    return (
+      <div className="screen-in hh-page">
+        <MobileHeader title="Your ticket" onBack={() => navigate("user-dashboard")} />
+        <div className="hh-wrap"><Empty icon="ticket" title="Ticket not found" body="We couldn't find this ticket on your account — it may belong to a different login." action="My tickets" onAction={() => navigate("user-dashboard")} /></div>
+      </div>
+    );
+  }
+
+  const code = local ? local.ref : (db?.qrRef || "");
+  const tier = local ? local.tier : (db?.tier || "Ticket");
+  const qty = local ? local.qty : 1;
+  const status = (local ? local.status : db?.status) || "valid";
+  const voided = status === "refunded" || status === "cancelled";
+
+  const title = evFull?.title || db?.event?.title || "Event";
+  const cat = evFull?.cat || db?.event?.cat || "Event";
+  const img = evFull?.img || db?.event?.img || "";
+  const dateText = evFull?.dateLabel || db?.event?.dateISO || "";
+  const timeText = evFull?.timeLabel || "";
+  const venue = evFull?.venue || "";
+  const area = evFull?.area || "";
+  const organiser = evFull?.organiser || "";
+  const eventNav: Record<string, string> | null = local ? { id: local.eventId } : (db?.event?.slug ? { slug: db.event.slug } : null);
+
+  const ST: Record<string, { label: string; cls: string; icon: string }> = {
+    valid: { label: "Valid — ready to scan", cls: "ok", icon: "shield-check" },
+    used: { label: "Checked in", cls: "used", icon: "check" },
+    refunded: { label: "Refunded", cls: "void", icon: "x" },
+    cancelled: { label: "Cancelled", cls: "void", icon: "x" },
+  };
+  const st = ST[status] || ST.valid;
+
+  const copyCode = async () => {
+    try { await navigator.clipboard.writeText(code); setCopied(true); toast?.("Ticket code copied"); setTimeout(() => setCopied(false), 1800); } catch { /* ignore */ }
+  };
+  const share = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try { if (typeof navigator !== "undefined" && navigator.share) { await navigator.share({ title, url }); return; } } catch { return; }
+    try { await navigator.clipboard.writeText(url); toast?.("Ticket link copied"); } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="screen-in hh-page">
+      <MobileHeader title="Your ticket" onBack={() => navigate("user-dashboard")} />
+      <div className="hh-wrap ticket-detail-wrap">
+        <div className={`ticket-pass${voided ? " is-void" : ""}`}>
+          <div className="ticket-pass-top">
+            <ImagePh label={cat.toLowerCase()} tone="emerald" src={img} style={{ position: "absolute", inset: 0 }} />
+            <div className="ticket-pass-top-ov">
+              <span className="evt-cat light">{cat}</span>
+              <span className={`ticket-status ${st.cls}`}><Icon name={st.icon} size={13} /> {st.label}</span>
+            </div>
+          </div>
+          <div className="ticket-pass-info">
+            <h1 className="ticket-pass-title">{title}</h1>
+            {dateText && <div className="evt-meta"><Icon name="calendar" size={15} /> {dateText}{timeText ? ` · ${timeText}` : ""}</div>}
+            {venue && <div className="evt-meta"><Icon name="pin" size={15} /> {venue}{area ? `, ${area}` : ""}</div>}
+            {organiser && <div className="evt-meta"><Icon name="user" size={15} /> {organiser}</div>}
+            <div className="ticket-pass-tags"><span className="tag">{tier}{qty > 1 ? ` × ${qty}` : ""}</span></div>
+          </div>
+          <div className="ticket-tear" aria-hidden><span className="tear-line" /></div>
+          <div className="ticket-pass-qr">
+            {voided ? (
+              <div className="ticket-void-note"><Icon name="x" size={26} /><p>This ticket is no longer valid.</p></div>
+            ) : (
+              <>
+                <div className="ticket-qr-big"><TicketQR value={code} size={224} /></div>
+                <p className="ticket-qr-cap"><Icon name="shield-check" size={14} /> Show this QR at the door</p>
+                <button type="button" className="ticket-code-btn" onClick={copyCode}>
+                  <span className="ticket-code-val">{code}</span>
+                  <span className="ticket-code-hint">{copied ? "Copied ✓" : "Tap to copy"}</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="ticket-actions">
+          {evFull && !voided && <button type="button" className="btn btn-outline btn-block" onClick={() => downloadIcs(evFull)}><Icon name="calendar" size={17} /> Add to calendar</button>}
+          {eventNav && <button type="button" className="btn btn-outline btn-block" onClick={() => navigate("event-detail", eventNav)}><Icon name="ticket" size={17} /> View event</button>}
+          <button type="button" className="btn btn-ghost btn-block" onClick={share}><Icon name="share" size={17} /> Share ticket</button>
+        </div>
+      </div>
     </div>
   );
 }

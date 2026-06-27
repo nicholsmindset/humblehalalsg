@@ -5,6 +5,7 @@
    EventDateChip / EventsStrip used by other screen modules. */
 import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
+import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
 import type { EventItem, GenderArrangement } from "@/lib/types";
 import { formatHijri, hijriSeason } from "@/lib/hijri";
@@ -445,10 +446,12 @@ export function EventsScreen() {
               <Icon name="pin" size={15} style={{ color: "var(--ink-soft)" }} />
               <select className="sort-select" value={area} onChange={(e) => setArea(e.target.value)}>
                 <option value="">All areas</option>
-                {HHData.areas.map((a) => (
-                  <option key={a.id} value={a.name.toLowerCase()}>
-                    {a.name}
-                  </option>
+                {REGIONS.map((region) => (
+                  <optgroup key={region} label={region}>
+                    {towns.filter((t) => t.region === region).map((t) => (
+                      <option key={t.id} value={t.name.split(" / ")[0].toLowerCase()}>{t.name}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
@@ -1119,10 +1122,12 @@ export function HostEventScreen() {
                 <label>Area</label>
                 <select className="select" value={d.area} onChange={(e) => set("area", e.target.value)}>
                   <option value="">Select area</option>
-                  {HHData.areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
+                  {REGIONS.map((region) => (
+                    <optgroup key={region} label={region}>
+                      {towns.filter((t) => t.region === region).map((t) => (
+                        <option key={t.id} value={t.name.split(" / ")[0]}>{t.name}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
@@ -1260,7 +1265,7 @@ export function HostEventScreen() {
                     ["Category", HHData.eventCats.find((c) => c.id === d.cat)?.label || "—"],
                     ["Date", d.date ? `${d.date}${hijri ? ` · ${hijri}` : ""}` : "—"],
                     ["Time", d.time ? d.time + (d.endTime ? `–${d.endTime}` : "") : "—"],
-                    ["Area", HHData.areas.find((a) => a.id === d.area)?.name || "—"],
+                    ["Area", d.area || "—"],
                     ["Pricing", d.free ? "Free RSVP" : d.price ? `$${d.price}` : "Paid"],
                     ["Capacity", d.cap || "—"],
                     ["Prayer space", d.prayer ? "Yes" : "—"],
