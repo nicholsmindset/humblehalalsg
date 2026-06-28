@@ -23,13 +23,13 @@
 .ota-hero-scrim {
   position: absolute; inset: 0; z-index: -1;
   background:
-    linear-gradient(180deg, rgba(12,74,60,.18) 0%, rgba(12,74,60,.10) 38%, rgba(12,74,60,.62) 100%),
-    linear-gradient(90deg, rgba(15,92,74,.45), rgba(15,92,74,0) 60%);
+    linear-gradient(180deg, rgba(12,74,60,.42) 0%, rgba(12,74,60,.34) 38%, rgba(12,74,60,.72) 100%),
+    linear-gradient(90deg, rgba(15,92,74,.62), rgba(15,92,74,.12) 60%);
 }
-.ota-hero-scrim.pattern { opacity: .9; }
+.ota-hero-scrim.pattern { opacity: 1; }
 .ota-hero-head { text-align: center; margin-bottom: 22px; }
-.ota-hero-head h1 { color: #fff; font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.08; text-shadow: 0 2px 18px rgba(8,40,32,.35); }
-.ota-hero-head p { color: #eaf2ee; margin-top: 10px; font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 500; text-shadow: 0 1px 12px rgba(8,40,32,.35); }
+.ota-hero-head h1 { color: #fff; font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.08; text-shadow: 0 2px 18px rgba(8,40,32,.5); }
+.ota-hero-head p { color: #fff; margin-top: 10px; font-size: clamp(1rem, 1.6vw, 1.15rem); font-weight: 500; text-shadow: 0 2px 16px rgba(8,40,32,.6); }
 @media (max-width: 640px) { .ota-hero { min-height: 380px; padding: 18px 14px; } }
 
 /* ---------------------------------------------------------------

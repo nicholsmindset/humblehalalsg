@@ -82,8 +82,8 @@
 .prayer-ico { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.14); display:grid; place-items:center; color:var(--gold); flex:none; }
 .prayer-next { display:flex; flex-direction:column; line-height:1.05; text-align:left; }
 /* High-contrast next-prayer text on the emerald gradient (audit #9 — ≥4.5:1). */
-.prayer-next strong { font-size:.92rem; font-weight:700; color:#fff; }
-.prayer-sub { font-size:.66rem; color:#E6F1EC; text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+.prayer-next strong { font-size:.95rem; font-weight:800; color:#fff; text-shadow:0 1px 6px rgba(8,40,32,.5); }
+.prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
 .prayer-caret { transition: transform .2s; color:#A9C8BD; }
 .prayer-caret.up { transform: rotate(180deg); }
 .prayer-mosque { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:55%; }

@@ -61,11 +61,38 @@ export function ConciergeScreen() {
         <SearchBar value={q} onChange={setQ} onSubmit={(v: string) => ask(v)} placeholder="e.g. MUIS-certified nasi padang near Tampines with prayer space" />
 
         {!asked && (
-          <div className="flex g8 wrap" style={{ marginTop: 14 }}>
-            {EXAMPLES.map((ex) => (
-              <button key={ex} className="chip" onClick={() => ask(ex)}>{ex}</button>
-            ))}
-          </div>
+          <>
+            <p className="faint" style={{ fontSize: ".82rem", margin: "10px 0 8px" }}>Try one of these:</p>
+            <div className="flex g8 wrap">
+              {EXAMPLES.map((ex) => (
+                <button key={ex} className="chip" onClick={() => ask(ex)}>{ex}</button>
+              ))}
+            </div>
+
+            <h2 style={{ fontSize: "1.05rem", margin: "30px 0 12px" }}>How the concierge works</h2>
+            <div className="grid-cards">
+              {([
+                ["search", "Describe it in plain words", "Area, cuisine, prayer space, family-friendly, halal status — just type what you want, like you'd tell a friend."],
+                ["crescent", "We search verified data", "Grounded in our directory and the human-verified halal overlay — never AI guesswork on certification."],
+                ["heart", "Explore & confirm", "Get matching places and Muslim-friendly stays, each with a link to confirm on the official MUIS HalalSG register."],
+              ] as [string, string, string][]).map(([ic, h, b]) => (
+                <div key={h} className="card" style={{ padding: 16 }}>
+                  <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--emerald-50)", color: "var(--emerald)", display: "grid", placeItems: "center" }}>
+                    <Icon name={ic} size={18} />
+                  </span>
+                  <h3 style={{ fontSize: ".98rem", margin: "10px 0 4px" }}>{h}</h3>
+                  <p className="faint" style={{ fontSize: ".85rem", lineHeight: 1.5 }}>{b}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="card" style={{ marginTop: 18, padding: "14px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <Icon name="shield-check" size={18} style={{ color: "var(--emerald)", flex: "none", marginTop: 1 }} />
+              <p className="faint" style={{ fontSize: ".85rem", lineHeight: 1.5 }}>
+                Humble Halal is a discovery platform, not a certifier. We surface facts — MUIS-certified, Muslim-owned and self-declared badges — and always link to the official HalalSG register. The concierge never invents halal status.
+              </p>
+            </div>
+          </>
         )}
 
         {loading && (

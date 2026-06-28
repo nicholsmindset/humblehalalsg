@@ -556,8 +556,8 @@
 .flt-landing { display:flex; flex-direction:column; gap:40px; }
 .flt-landing h2 { font-size:1.5rem; margin-bottom:6px; }
 .flt-landing > section > .muted { margin-bottom:18px; max-width:640px; }
-.flt-benefit-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-@media (max-width:860px){ .flt-benefit-grid { grid-template-columns:1fr 1fr; } }
+/* 2×2 so the 4 benefit cards fill the row evenly (was repeat(3) → orphan 4th card). */
+.flt-benefit-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
 @media (max-width:560px){ .flt-benefit-grid { grid-template-columns:1fr; } }
 .flt-benefit { padding:20px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--white); }
 .flt-benefit .fi-ico { width:44px; height:44px; border-radius:12px; background:var(--emerald-50); color:var(--emerald); display:grid; place-items:center; margin-bottom:12px; }
