@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* The logged-in user's tickets (with the scannable qr_ref) for the My Tickets
    view. Scoped to the caller's own orders (by user id or verified email). Returns
    an empty list (not an error) for guests so the UI falls back to local tickets. */
 export async function GET() {
-  const server = await getSupabaseServer();
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: true, tickets: [] });
+
   const admin = getSupabaseAdmin();
-  if (!server || !admin) return NextResponse.json({ ok: true, tickets: [] });
+  if (!admin) return NextResponse.json({ ok: true, tickets: [] });
 
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: true, tickets: [] });
-
-  const email = user.email || "";
-  const orFilter = email ? `buyer_user_id.eq.${user.id},buyer_email.eq.${email}` : `buyer_user_id.eq.${user.id}`;
+  const cu = await currentUser();
+  const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
+  const orFilter = email ? `buyer_user_id.eq.${userId},buyer_email.eq.${email}` : `buyer_user_id.eq.${userId}`;
   const { data: orders } = await admin.from("orders").select("id, status").or(orFilter);
   const orderIds = (orders || []).map((o) => o.id as string);
   if (!orderIds.length) return NextResponse.json({ ok: true, tickets: [] });

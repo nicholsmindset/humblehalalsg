@@ -1,32 +1,41 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-/* Refreshes the Supabase auth session cookie on navigation. No-op when Supabase
-   isn't configured (mock-mode launch). (Next.js "proxy" = formerly middleware.) */
-export async function proxy(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  let response = NextResponse.next({ request });
-  if (!url || !anon) return response;
+/* Next.js 16: "proxy" is the renamed "middleware" file convention. Clerk's
+   clerkMiddleware() runs here so auth() is populated downstream. Do NOT set a
+   `runtime` key (Next 16 throws); proxy defaults to the Node.js runtime, which
+   Clerk supports. Only one proxy function is allowed per file. */
 
-  const supabase = createServerClient(url, anon, {
-    cookies: {
-      getAll: () => request.cookies.getAll(),
-      setAll: (cookiesToSet) => {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-      },
-    },
-  });
+// Routes that require a signed-in user. Everything else stays public — including
+// the self-authenticating endpoints (Stripe signature, Svix, CRON_SECRET):
+//   /api/webhooks/stripe, /api/webhooks/clerk, /api/cron/* are deliberately omitted.
+const isProtected = createRouteMatcher([
+  "/admin(.*)",
+  "/owner(.*)",
+  "/dashboard(.*)",
+  "/saved(.*)",
+  "/api/admin/(.*)",
+  "/api/owner/(.*)",
+  "/api/events/(.*)",
+  "/api/tickets/(.*)",
+  "/api/travel/(.*)",
+  "/api/connect/(.*)",
+  "/api/checkout/(.*)",
+  "/api/follow",
+  "/api/settings",
+  "/api/user/(.*)",
+  "/api/portal",
+  "/api/refunds",
+  "/api/confirm",
+]);
 
-  await supabase.auth.getUser();
-  return response;
-}
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtected(req)) await auth.protect();
+});
 
 export const config = {
-  // Skip static assets + the API; run on pages so the session stays fresh.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon|manifest.webmanifest|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Skip Next internals and static files unless found in search params; always run on API/trpc.
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
   ],
 };

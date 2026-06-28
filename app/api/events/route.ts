@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { slugify } from "@/lib/slug";
 
 /* Create an event from the host wizard. Persists to `events` as status='pending'
@@ -10,12 +11,11 @@ import { slugify } from "@/lib/slug";
    they have one (needed later for Connect ticket payouts). Degrades gracefully
    when Supabase/auth isn't configured so the demo wizard still completes. */
 export async function POST(req: Request) {
-  const supa = await getSupabaseServer();
-  const admin = getSupabaseAdmin();
-  if (!supa || !admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
 
   let b: {
     title?: string; catId?: string; catLabel?: string; desc?: string; dateISO?: string;
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ ok: false, reason: "title_required" }, { status: 422 });
 
   // Link to the host's business (for organiser payouts on paid events).
-  const { data: biz } = await admin.from("businesses").select("id, name").eq("owner_id", user.id).maybeSingle();
+  const { data: biz } = await admin.from("businesses").select("id, name").eq("owner_id", userId).maybeSingle();
 
   const free = b.free !== false;
   const priceFrom = free ? 0 : Math.max(0, Number(b.price) || 0);
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     taken: 0,
     status: "pending", // admin approves → published
     date_iso: b.dateISO || null,
-    submitted_by: user.id,
+    submitted_by: userId,
     source: "owner",
     display,
   });

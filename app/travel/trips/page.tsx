@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { TravelTripsScreen, type TripBooking } from "@/components/screens/travel";
 import { getSupabaseServer, supabaseConfigured } from "@/lib/supabase/server";
 import { pageMeta } from "@/lib/seo";
@@ -9,10 +10,10 @@ const COLS = "id, liteapi_booking_id, hotel_confirmation_code, liteapi_hotel_id,
 
 export default async function Page() {
   if (!supabaseConfigured) return <TravelTripsScreen loggedIn={false} bookings={[]} />;
+  const { userId } = await auth();
   const db = await getSupabaseServer();
-  const user = db ? (await db.auth.getUser()).data.user : null;
-  if (!db || !user) return <TravelTripsScreen loggedIn={false} bookings={[]} />;
+  if (!db || !userId) return <TravelTripsScreen loggedIn={false} bookings={[]} />;
 
-  const { data } = await db.from("hotel_bookings").select(COLS).eq("user_id", user.id).order("created_at", { ascending: false });
+  const { data } = await db.from("hotel_bookings").select(COLS).eq("user_id", userId).order("created_at", { ascending: false });
   return <TravelTripsScreen loggedIn bookings={(data as TripBooking[]) || []} />;
 }

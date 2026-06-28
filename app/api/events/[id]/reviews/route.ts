@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
 
@@ -53,9 +54,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!eventId) return NextResponse.json({ ok: true, simulated: true });
 
   // Capture the author id when signed in (optional).
-  let authorId: string | null = null;
-  const server = await getSupabaseServer();
-  if (server) { const { data: { user } } = await server.auth.getUser(); authorId = user?.id ?? null; }
+  const { userId } = await auth();
+  const authorId: string | null = userId;
 
   const { error } = await admin.from("event_reviews").insert({
     event_id: eventId,

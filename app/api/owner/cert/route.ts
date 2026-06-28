@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
@@ -81,17 +82,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Missing business" }, { status: 422 });
   }
 
-  const { getSupabaseServer, getSupabaseAdmin, supabaseConfigured } = await import("@/lib/supabase/server");
+  const { getSupabaseAdmin, supabaseConfigured } = await import("@/lib/supabase/server");
   // No backend configured (dev/demo) — accept gracefully so the UI works.
   if (!supabaseConfigured) {
     return NextResponse.json({ ok: true, simulated: true });
   }
 
-  // Identity from the cookie-scoped client; ownership + plan from the row.
-  const server = await getSupabaseServer();
-  if (!server) return NextResponse.json({ ok: false, error: "auth_not_configured" }, { status: 503 });
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  // Identity from Clerk; ownership + plan from the row.
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, error: "service_unavailable" }, { status: 503 });
@@ -102,7 +101,7 @@ export async function POST(req: Request) {
     .select("id, plan, owner_id, claimed_by")
     .eq("id", businessId)
     .maybeSingle();
-  const owns = !!biz && (biz.owner_id === user.id || biz.claimed_by === user.id);
+  const owns = !!biz && (biz.owner_id === userId || biz.claimed_by === userId);
   if (!owns) return NextResponse.json({ ok: false, reason: "not_owner" }, { status: 403 });
   if (!canUse(biz, "cert_upload")) {
     return NextResponse.json({ ok: false, reason: "tier_locked" }, { status: 403 });
@@ -140,13 +139,11 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const { getSupabaseServer, getSupabaseAdmin, supabaseConfigured } = await import("@/lib/supabase/server");
+  const { getSupabaseAdmin, supabaseConfigured } = await import("@/lib/supabase/server");
   if (!supabaseConfigured) return NextResponse.json({ ok: true, simulated: true, certs: [] });
 
-  const server = await getSupabaseServer();
-  if (!server) return NextResponse.json({ ok: false, error: "auth_not_configured" }, { status: 503 });
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, error: "service_unavailable" }, { status: 503 });
@@ -155,7 +152,7 @@ export async function GET() {
   const { data: owned } = await db
     .from("businesses")
     .select("id")
-    .or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`);
+    .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`);
   const ids = (owned || []).map((b) => b.id as string);
   if (!ids.length) return NextResponse.json({ ok: true, certs: [] });
 

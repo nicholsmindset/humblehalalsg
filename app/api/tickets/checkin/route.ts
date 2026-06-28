@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Check a ticket in at the door (QR scan). Flips a 'valid' ticket → 'used' and
@@ -9,12 +10,11 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "checkin", 600, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
 
-  const server = await getSupabaseServer();
-  const admin = getSupabaseAdmin();
-  if (!server || !admin) return NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 });
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 });
 
   let body: { qrRef?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   if (!t) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
 
   // Authorise: admin OR the owner of the event's business.
-  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
   const isAdmin = profile?.role === "admin";
   let authorised = isAdmin;
   if (!authorised && t.event_id) {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     if (ev?.business_id) {
       const { data: biz } = await admin
         .from("businesses").select("id").eq("id", ev.business_id)
-        .or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).maybeSingle();
+        .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
       authorised = !!biz;
     }
   }
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
   const { error } = await admin
     .from("tickets")
-    .update({ status: "used", checked_in_at: new Date().toISOString(), checked_in_by: user.id })
+    .update({ status: "used", checked_in_at: new Date().toISOString(), checked_in_by: userId })
     .eq("id", t.id)
     .eq("status", "valid"); // guard against a concurrent double-scan
   if (error) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });

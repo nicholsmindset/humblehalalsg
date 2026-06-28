@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Event cover-photo upload → Supabase Storage (public bucket "event-photos").
@@ -14,11 +15,10 @@ const BUCKET = "event-photos";
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "event-upload", 30, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
 
-  const server = await getSupabaseServer();
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
   const admin = getSupabaseAdmin();
-  if (!server || !admin) return NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 });
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  if (!admin) return NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 });
 
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   try { await admin.storage.createBucket(BUCKET, { public: true }); } catch { /* exists */ }
 
   const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-  const path = `${user.id}/${randomUUID()}.${ext}`;
+  const path = `${userId}/${randomUUID()}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
   const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: false });
   if (error) return NextResponse.json({ ok: false, reason: "upload_failed", detail: error.message }, { status: 500 });

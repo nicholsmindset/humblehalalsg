@@ -8,10 +8,15 @@ import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
+import { UserButton } from "@clerk/nextjs";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 import Link from "next/link";
+
+/* Clerk's account control (manage account, security/MFA, sessions, sign out) is
+   only shown when Clerk is configured; demo/mock mode keeps the custom buttons. */
+const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 /* ---------------- CERTIFIED-ONLY TOGGLE ---------------- */
 export function CertifiedToggle({ compact }: { compact?: boolean }) {
@@ -401,15 +406,27 @@ export function TopNav() {
           <LangToggle />
           {user.loggedIn ? (
             <>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
-              >
-                <span className="avatar" style={{ width: 30, height: 30, fontSize: ".78rem" }}>
-                  {(user.name || "U")[0]}
-                </span>{" "}
-                {user.name}
-              </button>
+              {clerkConfigured ? (
+                <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
+                  <UserButton.MenuItems>
+                    <UserButton.Action
+                      label="My dashboard"
+                      labelIcon={<Icon name="heart" size={15} />}
+                      onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+                    />
+                  </UserButton.MenuItems>
+                </UserButton>
+              ) : (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+                >
+                  <span className="avatar" style={{ width: 30, height: 30, fontSize: ".78rem" }}>
+                    {(user.name || "U")[0]}
+                  </span>{" "}
+                  {user.name}
+                </button>
+              )}
               <button className="btn btn-gold btn-sm" onClick={() => navigate("add-listing")}>
                 <Icon name="plus" size={17} /> Add listing
               </button>
@@ -471,6 +488,9 @@ export function MobileBar() {
         <Logo onClick={() => navigate("home")} />
         <div className="flex g8 center">
           <LangToggle />
+          {user.loggedIn && clerkConfigured && (
+            <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
+          )}
           <button
             className="mobilebar-burger"
             onClick={() => setOpen(true)}
