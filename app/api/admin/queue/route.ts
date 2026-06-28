@@ -152,6 +152,8 @@ async function actClaim(admin: ReturnType<typeof getSupabaseAdmin>, id: string, 
   await db.from("claims").update({ status: "approved" }).eq("id", id);
   if (c?.business_id && c.user_id) {
     await db.from("businesses").update({ owner_id: c.user_id, claimed_by: c.user_id }).eq("id", c.business_id);
+    // Claimant now owns a business → grant the owner role (no-op for admins).
+    await db.from("profiles").update({ role: "owner" }).eq("id", c.user_id).neq("role", "admin");
   }
   await logAudit(db, { actor, action: "Approved claim", target: id, meta: { business_id: c?.business_id } });
   return NextResponse.json({ ok: true, status: "approved" });

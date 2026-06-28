@@ -92,6 +92,10 @@ export async function POST(req: Request) {
   });
   if (error) return NextResponse.json({ ok: false, reason: "insert_failed" }, { status: 500 });
 
+  // Hosting an event makes the user an organiser → grant the owner role so the
+  // dashboard + nav recognise them (no-op for admins). Best-effort.
+  try { await admin.from("profiles").update({ role: "owner" }).eq("id", userId).neq("role", "admin"); } catch { /* role bump best-effort */ }
+
   // Persist paid tiers to ticket_tiers too (source of truth for pricing/capacity).
   if (tiers) {
     try {
