@@ -12,6 +12,8 @@
     "test:e2e": "playwright test",
     "test": "vitest run",
     "deploy:prod": "bash scripts/deploy-prod.sh",
+    "deploy:functions": "supabase functions deploy on-event-published on-cert-changed on-review-created --project-ref vzlcplizpkmvjspmqwns",
+    "functions:serve": "supabase functions serve --env-file supabase/functions/.env.local",
     "flight:check": "tsx scripts/flight-sandbox-check.ts"
   },
   "dependencies": {

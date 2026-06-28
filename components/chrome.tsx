@@ -9,6 +9,7 @@ import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
 import { UserButton } from "@clerk/nextjs";
+import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
@@ -406,6 +407,7 @@ export function TopNav() {
           <LangToggle />
           {user.loggedIn ? (
             <>
+              {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
                   <UserButton.MenuItems>
@@ -488,6 +490,7 @@ export function MobileBar() {
         <Logo onClick={() => navigate("home")} />
         <div className="flex g8 center">
           <LangToggle />
+          {user.loggedIn && clerkConfigured && <NotificationBell />}
           {user.loggedIn && clerkConfigured && (
             <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
           )}

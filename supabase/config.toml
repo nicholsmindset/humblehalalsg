@@ -1,0 +1,14 @@
+# Supabase project config (Edge Functions). The full schema lives in
+# supabase/migrations/*. These functions are DB-webhook-triggered (not
+# user-facing), so JWT verification is OFF — they authenticate the caller via a
+# shared-secret header (see supabase/functions/_shared/verify.ts).
+project_id = "vzlcplizpkmvjspmqwns"
+
+[functions.on-event-published]
+verify_jwt = false
+
+[functions.on-cert-changed]
+verify_jwt = false
+
+[functions.on-review-created]
+verify_jwt = false
