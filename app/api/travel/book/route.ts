@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, book } from "@/lib/liteapi";
-import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Sanitize client-reported ledger money (security audit M3). These figures come
@@ -62,13 +63,7 @@ export async function POST(req: Request) {
   }
 
   // Link the booking to the signed-in traveller (for My Trips), if any.
-  let userId: string | null = null;
-  try {
-    const server = await getSupabaseServer();
-    if (server) userId = (await server.auth.getUser()).data.user?.id ?? null;
-  } catch {
-    /* anonymous booking is fine */
-  }
+  const { userId } = await auth();
 
   // Persist outcome + commission (best-effort; never fail the booking on a DB hiccup).
   const db = getSupabaseAdmin();

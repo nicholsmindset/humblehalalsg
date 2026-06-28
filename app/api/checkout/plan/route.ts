@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { SITE } from "@/lib/seo";
 
 /* Listing-plan subscription checkout (Humble Halal is the seller — no Connect).
@@ -30,20 +31,19 @@ export async function POST(req: Request) {
   let customer: string | undefined;
   let businessId: string | undefined;
   try {
-    const supa = await getSupabaseServer();
+    const { userId } = await auth();
     const admin = getSupabaseAdmin();
-    if (supa && admin) {
-      const { data: { user } } = await supa.auth.getUser();
-      if (user) {
-        const { data: biz } = await admin.from("businesses").select("id, name, stripe_customer_id").eq("owner_id", user.id).maybeSingle();
-        if (biz) {
-          businessId = biz.id as string;
-          customer = (biz.stripe_customer_id as string) || undefined;
-          if (!customer) {
-            const created = await stripe.customers.create({ email: user.email || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
-            customer = created.id;
-            await admin.from("businesses").update({ stripe_customer_id: customer }).eq("id", businessId);
-          }
+    if (userId && admin) {
+      const { data: biz } = await admin.from("businesses").select("id, name, stripe_customer_id").eq("owner_id", userId).maybeSingle();
+      if (biz) {
+        businessId = biz.id as string;
+        customer = (biz.stripe_customer_id as string) || undefined;
+        if (!customer) {
+          const cu = await currentUser();
+          const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
+          const created = await stripe.customers.create({ email: email || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
+          customer = created.id;
+          await admin.from("businesses").update({ stripe_customer_id: customer }).eq("id", businessId);
         }
       }
     }

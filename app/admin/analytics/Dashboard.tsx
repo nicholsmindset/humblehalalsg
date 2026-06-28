@@ -6,8 +6,9 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
-  getSb, resolveRange, RANGE_LABELS, LEAD_LABELS, fmt, pct, type RangeKey,
+  resolveRange, RANGE_LABELS, LEAD_LABELS, fmt, pct, type RangeKey,
 } from "@/lib/analytics-dashboard";
+import { useSupabaseBrowser } from "@/lib/supabase/client";
 
 // Recharts is code-split into its own chunk (loaded only after the dashboard
 // shell paints, and only on this auth-gated route — never on public pages).
@@ -44,6 +45,7 @@ interface Journey {
 interface DailyRow { day: string; lead_action_type: string; category: string; actions: number }
 
 export default function Dashboard() {
+  const supabase = useSupabaseBrowser();
   const [range, setRange] = useState<RangeKey>("30d");
   const [cFrom, setCFrom] = useState("");
   const [cTo, setCTo] = useState("");
@@ -64,7 +66,7 @@ export default function Dashboard() {
   );
 
   const load = useCallback(async () => {
-    const sb = getSb();
+    const sb = supabase;
     if (!sb) {
       // Mock mode: no backend configured → show a zeroed, non-crashing dashboard.
       setSummary(null); setVendors([]); setDaily([]); setSearches([]); setJourneys([]);
@@ -92,7 +94,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [win]);
+  }, [win, supabase]);
 
   // Reload whenever the resolved window changes. load() drives its own loading
   // state; this is an external-fetch effect, not derived state.
@@ -263,13 +265,14 @@ function Vendors({ vendors, onOpen }: { vendors: VendorRow[]; onOpen: (v: Vendor
 }
 
 function VendorDetail({ v, onBack }: { v: VendorRow; onBack: () => void }) {
+  const supabase = useSupabaseBrowser();
   const [link, setLink] = useState<string | null>(null);
   const [minting, setMinting] = useState(false);
   const ctr = pct(v.listing_views, v.impressions);
   const viewToLead = pct(v.enquiries + v.whatsapp_clicks + v.calls, v.listing_views);
 
   const mintLink = async () => {
-    const sb = getSb();
+    const sb = supabase;
     if (!sb) { setLink("Error: backend not configured"); return; }
     setMinting(true);
     try {

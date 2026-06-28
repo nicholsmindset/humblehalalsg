@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { getStripe } from "@/lib/stripe";
 
@@ -8,22 +9,21 @@ import { getStripe } from "@/lib/stripe";
    and best-effort emails ticket holders. */
 
 async function authorize(eventId: string) {
-  const server = await getSupabaseServer();
+  const { userId } = await auth();
+  if (!userId) return { error: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
-  if (!server || !admin) return { error: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return { error: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
+  if (!admin) return { error: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
   const { data: ev } = await admin.from("events").select("id, business_id, status, display, slug").eq("id", eventId).maybeSingle();
   if (!ev) return { error: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
-  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
   let ok = profile?.role === "admin";
   if (!ok && ev.business_id) {
     const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id)
-      .or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).maybeSingle();
+      .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
     ok = !!biz;
   }
   if (!ok) return { error: NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 }) };
-  return { admin, ev, userId: user.id };
+  return { admin, ev, userId };
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

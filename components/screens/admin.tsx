@@ -6,7 +6,7 @@ import { HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { fmtSGD } from "@/lib/fees";
 
@@ -836,19 +836,20 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
 
 type AdminUserRow = { id: string; email: string; name: string | null; role: string; created_at: string };
 export function AdminUsers() {
+  const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<AdminUserRow[] | null>(null);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "user" | "owner">("all");
   useEffect(() => {
     let alive = true;
     (async () => {
-      const sb = getSupabaseBrowser();
+      const sb = supabase;
       if (!sb) { if (alive) setRows([]); return; }
       const { data, error } = await sb.rpc("admin_list_users", { p_limit: 200 });
       if (alive) setRows(!error && Array.isArray(data) ? (data as AdminUserRow[]) : []);
     })();
     return () => { alive = false; };
-  }, []);
+  }, [supabase]);
   const filtered = (rows || []).filter((u) =>
     (roleFilter === "all" || u.role === roleFilter) &&
     (!q || (u.name || "").toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase())));

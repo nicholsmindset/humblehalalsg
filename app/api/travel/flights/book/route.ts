@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, bookFlight } from "@/lib/liteapi";
-import { getSupabaseAdmin, getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Step 3 of flight booking — confirm with LiteAPI AFTER the card is charged.
@@ -44,11 +45,7 @@ export async function POST(req: Request) {
   const transactionId = String(body.transactionId || "").trim();
   if (!prebookId || !transactionId) return NextResponse.json({ ok: false, error: "Missing booking reference" }, { status: 422 });
 
-  let userId: string | null = null;
-  try {
-    const server = await getSupabaseServer();
-    if (server) userId = (await server.auth.getUser()).data.user?.id ?? null;
-  } catch { /* anonymous ok */ }
+  const { userId } = await auth();
 
   const outcome = await bookWithRetry(prebookId, transactionId);
 

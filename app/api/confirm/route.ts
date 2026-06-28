@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 /* Community "confirm it's halal" signal. Requires an authenticated user
    (community_confirmations.user_id under RLS). Graceful: accepts in simulated
@@ -19,11 +20,11 @@ export async function POST(req: Request) {
     const { getSupabaseServer } = await import("@/lib/supabase/server");
     const sb = await getSupabaseServer();
     if (sb) {
-      const { data } = await sb.auth.getUser();
-      if (data?.user) {
+      const { userId } = await auth();
+      if (userId) {
         const { error } = await sb
           .from("community_confirmations")
-          .insert({ business_id: businessId, user_id: data.user.id });
+          .insert({ business_id: businessId, user_id: userId });
         if (!error) return NextResponse.json({ ok: true, simulated: false });
       } else {
         return NextResponse.json({ ok: false, error: "Sign in to confirm" }, { status: 401 });

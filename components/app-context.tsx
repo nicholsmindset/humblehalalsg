@@ -11,6 +11,8 @@ import {
   useState,
 } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
@@ -128,6 +130,8 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   const router = useRouter();
   const pathname = usePathname();
   const routeParams = useParams();
+  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
+  const supabase = useSupabaseBrowser();
   const [query, setQuery] = useState<Params>({});
 
   const [saved, setSaved] = useState<string[]>([]);
@@ -164,40 +168,33 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     setHydrated(true);
   }, []);
 
-  // Sync a real Supabase auth session → user state (graceful: no-op without keys).
+  // Sync the Clerk session → user state. Role is read from profiles via the
+  // Clerk-token-scoped Supabase client (RLS passes since auth.jwt()->>'sub'
+  // matches). Graceful: stays "Guest" without keys / while signed out.
   useEffect(() => {
     let active = true;
-    let unsub: (() => void) | undefined;
     (async () => {
-      const { getSupabaseBrowser, supabaseConfigured } = await import("@/lib/supabase/client");
-      if (!supabaseConfigured) return;
-      const sb = getSupabaseBrowser();
-      if (!sb) return;
-      const apply = async (u: { id: string; email?: string } | null) => {
-        if (!u) {
-          if (active) setUserState({ loggedIn: false, role: "user", name: "Guest" });
-          return;
-        }
-        let role: "user" | "owner" = "user";
-        try {
-          const { data } = await sb.from("profiles").select("role").eq("id", u.id).single();
+      if (!isLoaded) return;
+      if (!isSignedIn || !clerkUser) {
+        if (active) setUserState({ loggedIn: false, role: "user", name: "Guest" });
+        return;
+      }
+      let role: "user" | "owner" = "user";
+      try {
+        if (supabase) {
+          const { data } = await supabase.from("profiles").select("role").eq("id", clerkUser.id).single();
           if (data?.role === "owner" || data?.role === "admin") role = "owner";
-        } catch {
-          /* ignore */
         }
-        const base = (u.email || "").split("@")[0] || "You";
-        if (active) setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
-      };
-      const { data } = await sb.auth.getUser();
-      apply(data.user as { id: string; email?: string } | null);
-      const { data: sub } = sb.auth.onAuthStateChange((_e, session) => apply((session?.user as { id: string; email?: string }) ?? null));
-      unsub = () => sub.subscription.unsubscribe();
+      } catch {
+        /* ignore */
+      }
+      const base = (clerkUser.primaryEmailAddress?.emailAddress || clerkUser.firstName || "You").split("@")[0] || "You";
+      if (active) setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
     })();
     return () => {
       active = false;
-      unsub?.();
     };
-  }, []);
+  }, [isLoaded, isSignedIn, clerkUser, supabase]);
 
   // persist
   useEffect(() => {

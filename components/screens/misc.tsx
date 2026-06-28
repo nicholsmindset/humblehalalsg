@@ -8,7 +8,11 @@ import { HHData } from "@/lib/data";
 import type { BadgeKey } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
-import { getSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
+import { useClerk } from "@clerk/nextjs";
+// Classic (resource-based) sign-in/up API: create → prepare → attempt → setActive.
+// v7's default useSignIn/useSignUp are the newer signals API; the legacy entry
+// keeps the resource API this custom flow is built on.
+import { useSignIn, useSignUp } from "@clerk/nextjs/legacy";
 import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
@@ -24,16 +28,29 @@ import { VERIFY_FAQ } from "@/lib/faq";
 /* =============================================================
    LOGIN / REGISTER
 ============================================================= */
+/** Pull a human message out of a Clerk error (ClerkAPIResponseError). */
+function clerkErr(err: unknown): string {
+  const e = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+  return e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || "";
+}
+
 export function LoginScreen() {
   const { navigate, setUser, toast } = useApp();
+  const { isLoaded: siLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
+  const { isLoaded: suLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
   const [mode, setMode] = useState("login");
   const [role, setRole] = useState<"user" | "owner">("user");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [code, setCode] = useState("");
   const [touched, setTouched] = useState(false);
   const [sending, setSending] = useState(false);
-  const [linkSent, setLinkSent] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
   const [authErr, setAuthErr] = useState("");
+
+  // Clerk drives real auth (email code + Google). Without a publishable key we
+  // fall back to the mock/demo password flow so dev/previews still work.
+  const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   const emailErr = !email
     ? "Enter your email"
@@ -41,6 +58,7 @@ export function LoginScreen() {
       ? "Enter a valid email address"
       : "";
   const pwErr = !pw ? "Enter your password" : pw.length < 6 ? "At least 6 characters" : "";
+  const codeErr = code.trim().length < 6 ? "Enter the 6-digit code" : "";
 
   const finish = () => {
     const first = email.split("@")[0];
@@ -49,59 +67,106 @@ export function LoginScreen() {
     navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
   };
 
+  // After Clerk activates the session, app-context (useUser) syncs the real
+  // user + role; we just route to the right dashboard.
+  const afterAuth = () => {
+    toast(mode === "login" ? "Welcome back" : "Account created");
+    navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
+  };
+
+  // Step 1 — email the 6-digit code (sign-in) or create the sign-up + send code.
+  const sendCode = async () => {
+    setAuthErr("");
+    setSending(true);
+    try {
+      if (mode === "login") {
+        if (!siLoaded || !signIn) throw new Error("not_ready");
+        const res = await signIn.create({ identifier: email });
+        const factor = res.supportedFirstFactors?.find((f) => f.strategy === "email_code") as
+          | { emailAddressId: string }
+          | undefined;
+        if (!factor) throw new Error("We couldn’t find an account for that email — try Sign up.");
+        await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
+      } else {
+        if (!suLoaded || !signUp) throw new Error("not_ready");
+        await signUp.create({ emailAddress: email });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      }
+      setCodeSent(true);
+      setTouched(false);
+      toast("Check your inbox ✉️");
+    } catch (err) {
+      const msg = clerkErr(err) || "Couldn’t send the code — please try again.";
+      setAuthErr(msg);
+      toast(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Step 2 — verify the code and activate the session.
+  const verifyCode = async () => {
+    setAuthErr("");
+    setSending(true);
+    try {
+      if (mode === "login") {
+        if (!signIn || !setActiveSignIn) throw new Error("not_ready");
+        const res = await signIn.attemptFirstFactor({ strategy: "email_code", code });
+        if (res.status === "complete" && res.createdSessionId) {
+          await setActiveSignIn({ session: res.createdSessionId });
+          afterAuth();
+        } else throw new Error("Incorrect or expired code.");
+      } else {
+        if (!signUp || !setActiveSignUp) throw new Error("not_ready");
+        const res = await signUp.attemptEmailAddressVerification({ code });
+        if (res.status === "complete" && res.createdSessionId) {
+          await setActiveSignUp({ session: res.createdSessionId });
+          afterAuth();
+        } else throw new Error("Incorrect or expired code.");
+      }
+    } catch (err) {
+      const msg = clerkErr(err) || "Incorrect or expired code.";
+      setAuthErr(msg);
+      toast(msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (emailErr) return;
-    // Real auth: passwordless magic link. Demo: keep the password flow.
-    if (supabaseConfigured) {
-      const sb = getSupabaseBrowser();
-      if (sb) {
-        // Always surface a pending → success/error state so the first submit is
-        // never silent (audit #7). Map the Supabase rate-limit (HTTP 429) to a
-        // specific message instead of a generic "try again".
-        setAuthErr("");
-        setSending(true);
-        try {
-          const { error } = await sb.auth.signInWithOtp({
-            email,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-          });
-          if (error) {
-            const status = (error as { status?: number }).status;
-            const msg = status === 429
-              ? "Too many requests — please wait a minute and try again."
-              : "Couldn’t send the link — please try again.";
-            setAuthErr(msg);
-            toast(msg);
-          } else {
-            setLinkSent(true);
-            toast("Check your inbox ✉️");
-          }
-        } catch {
-          setAuthErr("Couldn’t send the link — please check your connection and try again.");
-        } finally {
-          setSending(false);
-        }
-        return;
-      }
+    if (!clerkConfigured) {
+      if (emailErr || pwErr) return;
+      finish();
+      return;
     }
-    if (pwErr) return;
-    finish();
+    if (!codeSent) {
+      if (emailErr) return;
+      await sendCode();
+    } else {
+      if (codeErr) return;
+      await verifyCode();
+    }
   };
 
   const googleSignIn = async () => {
-    if (supabaseConfigured) {
-      const sb = getSupabaseBrowser();
-      if (sb) {
-        await sb.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
-        });
-        return;
-      }
+    if (!clerkConfigured) {
+      finish();
+      return;
     }
-    finish();
+    try {
+      if (!siLoaded || !signIn) return;
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
+        redirectUrlComplete: `${window.location.origin}/`,
+      });
+    } catch (err) {
+      const msg = clerkErr(err) || "Google sign-in failed — please try again.";
+      setAuthErr(msg);
+      toast(msg);
+    }
   };
 
   return (
@@ -127,22 +192,33 @@ export function LoginScreen() {
             <button className={mode==='register'?'on':''} onClick={()=>setMode('register')}>Sign up</button>
           </div>
           <h1 style={{fontSize:'1.6rem', marginTop:18}}>{mode==='login'?'Welcome back':'Create your account'}</h1>
-          <p className="muted" style={{marginTop:4}}>{supabaseConfigured ? "No password needed — continue with Google, or we’ll email you a secure sign-in link." : (mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.')}</p>
+          <p className="muted" style={{marginTop:4}}>{clerkConfigured ? "No password needed — continue with Google, or we’ll email you a 6-digit code." : (mode==='login'?'Log in to manage saved places and reviews.':'Join Humble Halal in a few seconds.')}</p>
 
           <button className="btn btn-outline btn-block" style={{marginTop:18}} onClick={googleSignIn}><Icon name="google" size={20}/> Continue with Google</button>
           <div className="auth-or"><span>or</span></div>
 
-          {linkSent ? (
+          {clerkConfigured && codeSent ? (
+          <form onSubmit={submit} className="stack g14" noValidate>
             <div className="notice notice-ok" role="status" style={{ alignItems: "flex-start" }}>
               <Icon name="check" size={20} />
               <div>
                 <div style={{ fontWeight: 700 }}>Check your inbox ✉️</div>
                 <p className="muted" style={{ fontSize: ".88rem", marginTop: 4, lineHeight: 1.5 }}>
-                  We emailed a secure sign-in link to <strong>{email}</strong>. It expires in a few minutes — open it on this device to finish signing in.
+                  We emailed a 6-digit code to <strong>{email}</strong>. Enter it below to finish — it expires in a few minutes.
                 </p>
-                <button type="button" className="link-inline" style={{ marginTop: 8 }} onClick={() => { setLinkSent(false); setAuthErr(""); }}>Use a different email</button>
               </div>
             </div>
+            <div className="field">
+              <label htmlFor="login-code">6-digit code</label>
+              <input id="login-code" className="input" inputMode="numeric" autoComplete="one-time-code" placeholder="123456" value={code}
+                onChange={e=>{ setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); if (authErr) setAuthErr(""); }}
+                aria-invalid={touched && (!!codeErr || !!authErr)} aria-describedby={touched && codeErr ? "login-code-err" : undefined} />
+              {touched && codeErr && <span id="login-code-err" className="field-error"><Icon name="warning" size={13}/> {codeErr}</span>}
+            </div>
+            {authErr && <div className="notice notice-warn" role="alert"><Icon name="warning" size={16}/> <span>{authErr}</span></div>}
+            <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Verifying…' : 'Verify & continue'}</button>
+            <button type="button" className="link-inline tc" onClick={() => { setCodeSent(false); setCode(""); setAuthErr(""); }}>Use a different email</button>
+          </form>
           ) : (
           <form onSubmit={submit} className="stack g14" noValidate>
             <div className="field">
@@ -151,7 +227,7 @@ export function LoginScreen() {
                 aria-invalid={touched && (!!emailErr || !!authErr)} aria-describedby={touched && emailErr ? "login-email-err" : undefined} />
               {touched && emailErr && <span id="login-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
             </div>
-            {!supabaseConfigured && (
+            {!clerkConfigured && (
               <div className="field">
                 <label htmlFor="login-pw">Password</label>
                 <input id="login-pw" className="input" type="password" autoComplete={mode==='login'?'current-password':'new-password'} placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)}
@@ -160,7 +236,7 @@ export function LoginScreen() {
               </div>
             )}
 
-            {mode==='register' && !supabaseConfigured && (
+            {mode==='register' && !clerkConfigured && (
               <div>
                 <label style={{fontWeight:600, fontSize:'.88rem'}}>I’m joining as</label>
                 <div className="role-grid mt8">
@@ -172,7 +248,7 @@ export function LoginScreen() {
               </div>
             )}
             {authErr && <div className="notice notice-warn" role="alert"><Icon name="warning" size={16}/> <span>{authErr}</span></div>}
-            <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : (supabaseConfigured ? 'Email me a sign-in link' : (mode==='login'?'Log in':'Create account'))}</button>
+            <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : (clerkConfigured ? 'Email me a code' : (mode==='login'?'Log in':'Create account'))}</button>
           </form>
           )}
           <p className="faint tc" style={{fontSize:'.8rem', marginTop:16}}>By continuing you agree to our <a href="/terms" className="link-inline">Terms</a> &amp; <a href="/privacy" className="link-inline">Privacy Policy</a>.</p>
@@ -188,6 +264,15 @@ export function LoginScreen() {
 export function UserDashboardScreen() {
   const { navigate, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
+  const { signOut } = useClerk();
+  const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const logOut = async () => {
+    if (clerkConfigured) {
+      try { await signOut(); } catch { /* ignore */ }
+    }
+    setUser({ loggedIn: false, role: "user", name: "Guest" });
+    navigate("home");
+  };
   const [tab, setTab] = useState("saved");
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
@@ -231,7 +316,7 @@ export function UserDashboardScreen() {
           </div>
           {!state.user.loggedIn
             ? <button className="btn btn-gold" onClick={()=>navigate('login')}>Log in</button>
-            : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={()=>{setUser({loggedIn:false,role:'user',name:'Aisyah'}); navigate('home');}}><Icon name="logout" size={17}/> Log out</button>}
+            : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={logOut}><Icon name="logout" size={17}/> Log out</button>}
         </div>
       </div>
 

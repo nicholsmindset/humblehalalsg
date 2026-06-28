@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
@@ -37,10 +38,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   let userId: string | null = null;
   let authEmail: string | null = null;
   try {
-    const server = await getSupabaseServer();
-    const res = server ? await server.auth.getUser() : { data: { user: null } };
-    userId = res.data.user?.id ?? null;
-    authEmail = res.data.user?.email ?? null;
+    const { userId: uid } = await auth();
+    userId = uid;
+    if (uid) {
+      const cu = await currentUser();
+      authEmail = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? null;
+    }
   } catch { /* anonymous is fine */ }
 
   const { error } = await admin.from("orders").insert({

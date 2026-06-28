@@ -6,7 +6,8 @@ import { Fragment, useEffect, useState } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
 import { canUse, planKey, PLAN_LIST } from "@/lib/plans";
-import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { useUser } from "@clerk/nextjs";
+import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
@@ -506,20 +507,21 @@ type OwnerEvent = { id: string; slug: string; title: string; status: string; tak
 export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
   const dir = useDirectory();
+  const { user } = useUser();
+  const supabase = useSupabaseBrowser();
   const [tab, setTab] = useState("overview");
   const demoListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
 
   // Real owner data when Supabase is live + the user is signed in; otherwise
   // mock-mode keeps the demo so the screen isn't bare in dev/previews.
-  const live = !!getSupabaseBrowser();
+  const live = supabaseConfigured;
   const [biz, setBiz] = useState<OwnerBiz[] | null>(null); // null = loading
   const [ownerEvents, setOwnerEvents] = useState<OwnerEvent[] | null>(null);
   useEffect(() => {
     let alive = true;
     (async () => {
-      const sb = getSupabaseBrowser();
+      const sb = supabase;
       if (!sb) return; // mock mode
-      const { data: { user } } = await sb.auth.getUser();
       if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); } return; }
       const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at").eq("owner_id", user.id);
       const list = (bd as OwnerBiz[]) || [];
@@ -530,7 +532,7 @@ export function OwnerDashboardScreen() {
       } else if (alive) setOwnerEvents([]);
     })();
     return () => { alive = false; };
-  }, []);
+  }, [supabase, user]);
   const myBiz = biz && biz.length ? biz[0] : null;
   // Current subscription tier (from the business `plan`). In mock/demo mode show
   // "verified" so the header isn't bare; the upgrade CTA shows below premium.
@@ -953,18 +955,19 @@ type OwnerCampaign = {
   rate_cents: number; starts_on: string | null; ends_on: string | null; impressions: number; clicks: number;
 };
 function OwnerAds({ navigate }: { navigate: ReturnType<typeof useApp>["navigate"] }) {
+  const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerCampaign[] | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let alive = true;
     (async () => {
-      const sb = getSupabaseBrowser();
+      const sb = supabase;
       if (!sb) { if (alive) setLoading(false); return; }
       const { data, error } = await sb.rpc("owner_campaign_performance");
       if (alive) { if (!error && Array.isArray(data)) setRows(data as OwnerCampaign[]); setLoading(false); }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [supabase]);
 
   if (loading) return <div className="dash-pane"><div className="card" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" /></div>;
 
@@ -1016,13 +1019,14 @@ type OwnerRow = {
   calls: number; directions: number; shortlists: number;
 };
 function OwnerInsights() {
+  const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerRow[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const sb = getSupabaseBrowser();
+      const sb = supabase;
       if (!sb) { if (alive) setLoading(false); return; }
       const { from, to } = resolveRange("30d");
       const { data, error } = await sb.rpc("owner_listing_analytics", { p_from: from, p_to: to });
@@ -1032,7 +1036,7 @@ function OwnerInsights() {
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [supabase]);
 
   if (loading) {
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;
@@ -1091,6 +1095,7 @@ type OwnerReviewRow = {
   reply: string | null; status: string; created_at: string;
 };
 function OwnerReviews({ toast }: { toast: (m: string) => void }) {
+  const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerReviewRow[] | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -1098,18 +1103,18 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const sb = getSupabaseBrowser();
+      const sb = supabase;
       if (!sb) { if (alive) setRows([]); return; }
       const { data, error } = await sb.rpc("owner_reviews");
       if (alive) setRows(!error && Array.isArray(data) ? (data as OwnerReviewRow[]) : []);
     })();
     return () => { alive = false; };
-  }, []);
+  }, [supabase]);
 
   const sendReply = async (id: string) => {
     const reply = (draft[id] || "").trim();
     if (reply.length < 2) return toast("Write a short reply");
-    const sb = getSupabaseBrowser();
+    const sb = supabase;
     if (!sb) { toast("Reply sent"); setOpen((o) => ({ ...o, [id]: false })); return; }
     const { error } = await sb.rpc("owner_reply_to_review", { p_review_id: id, p_reply: reply });
     if (error) return toast("Couldn’t send reply");
@@ -1124,7 +1129,7 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
       ? []
       : rows.length > 0
         ? rows
-        : getSupabaseBrowser()
+        : supabaseConfigured
           ? []
           : HHData.reviews.map((r) => ({ id: r.id, business_name: "Your listing", rating: r.rating, text: r.text, reply: null, status: "published", created_at: "" }));
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 
 /* Resend the signed-in user's tickets to their own email — each as a link to
@@ -11,18 +12,18 @@ const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 
 export async function POST() {
-  const server = await getSupabaseServer();
-  const admin = getSupabaseAdmin();
-  if (!server || !admin) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
+  const { userId } = await auth();
+  const cu = await currentUser();
+  const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
+  if (!userId || !email) return NextResponse.json({ ok: false, reason: "not_signed_in" }, { status: 401 });
 
-  const { data: { user } } = await server.auth.getUser();
-  if (!user?.email) return NextResponse.json({ ok: false, reason: "not_signed_in" }, { status: 401 });
-  const email = user.email;
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
 
   const { data: orders } = await admin
     .from("orders")
     .select("id")
-    .or(`buyer_user_id.eq.${user.id},buyer_email.eq.${email}`);
+    .or(`buyer_user_id.eq.${userId},buyer_email.eq.${email}`);
   const orderIds = (orders || []).map((o) => o.id as string);
   if (!orderIds.length) return NextResponse.json({ ok: false, reason: "no_tickets" }, { status: 404 });
 

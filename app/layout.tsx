@@ -16,6 +16,7 @@ import "../styles/travel.css";
 import "../styles/tools.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
@@ -126,16 +127,18 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVars}>
       <body>
-        <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-        <AppProviders ramadanModeEnabled={ramadanMode}>
-          <DirectoryProvider listings={directory}>
-            <EventsProvider events={events}>
-              <AppShell>{children}</AppShell>
-            </EventsProvider>
-          </DirectoryProvider>
-        </AppProviders>
-        <CookieConsent />
-        <AnalyticsPageView />
+        <ClerkProvider appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
+          <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
+          <AppProviders ramadanModeEnabled={ramadanMode}>
+            <DirectoryProvider listings={directory}>
+              <EventsProvider events={events}>
+                <AppShell>{children}</AppShell>
+              </EventsProvider>
+            </DirectoryProvider>
+          </AppProviders>
+          <CookieConsent />
+          <AnalyticsPageView />
+        </ClerkProvider>
       </body>
     </html>
   );

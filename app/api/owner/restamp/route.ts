@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 /* One-click "my details are current" link from the freshness email (B2).
    Re-stamps last_verified_at — RLS ensures only the owner can touch their own
@@ -11,13 +12,13 @@ export async function GET(req: Request) {
     const { getSupabaseServer } = await import("@/lib/supabase/server");
     const sb = await getSupabaseServer();
     if (sb && business) {
-      const { data } = await sb.auth.getUser();
-      if (!data?.user) return NextResponse.redirect(`${base}/login?next=/owner`);
+      const { userId } = await auth();
+      if (!userId) return NextResponse.redirect(`${base}/login?next=/owner`);
       await sb
         .from("businesses")
         .update({ last_verified_at: new Date().toISOString() })
         .eq("id", business)
-        .eq("claimed_by", data.user.id);
+        .eq("claimed_by", userId);
       return NextResponse.redirect(`${base}/owner?restamped=1`);
     }
   } catch {

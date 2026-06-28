@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { amendBooking, liteapiConfigured } from "@/lib/liteapi";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* Amend the lead guest name on the signed-in traveller's own hotel booking.
    Verifies ownership before calling LiteAPI. Gated by PAID_HOTELS_ENABLED. */
@@ -14,15 +15,14 @@ export async function POST(req: Request) {
   const lastName = String(body.lastName || "").trim();
   if (!id || !firstName || !lastName) return NextResponse.json({ ok: false, error: "Enter the corrected name" }, { status: 422 });
 
-  const server = await getSupabaseServer();
-  const admin = getSupabaseAdmin();
-  if (!server || !admin) return NextResponse.json({ ok: false, reason: "not_configured" });
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, error: "Please log in" }, { status: 401 });
 
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, error: "Please log in" }, { status: 401 });
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, reason: "not_configured" });
 
   const { data: bk } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
-  if (!bk || bk.user_id !== user.id) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
+  if (!bk || bk.user_id !== userId) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
 
   // LiteAPI is the source of truth for the guest name; we don't mirror it locally
   // (hotel_bookings has no guest_name column).

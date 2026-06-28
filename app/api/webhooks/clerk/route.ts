@@ -1,0 +1,71 @@
+import { Webhook } from "svix";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+
+/* Clerk user webhook → keep the Supabase `profiles` table in sync.
+   - PUBLIC route (excluded from auth.protect in proxy.ts): authenticated by the
+     Svix signature, not a Clerk session.
+   - `user.created` provisions the profile row (role defaults to 'user') BEFORE
+     the user hits any RLS-scoped query.
+   - Role is sourced from profiles.role (set via admin tooling), never overwritten
+     here — `user.updated` only refreshes email/name.
+   Configure in Clerk dashboard → Webhooks (subscribe user.created/updated/deleted)
+   and set CLERK_WEBHOOK_SIGNING_SECRET. */
+
+export const runtime = "nodejs";
+
+type ClerkUserEvent = {
+  type: string;
+  data: {
+    id: string;
+    email_addresses?: Array<{ id: string; email_address: string }>;
+    primary_email_address_id?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+  };
+};
+
+export async function POST(req: Request) {
+  const secret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+  if (!secret) return new Response("not_configured", { status: 503 });
+
+  const payload = await req.text();
+  const svixId = req.headers.get("svix-id");
+  const svixTimestamp = req.headers.get("svix-timestamp");
+  const svixSignature = req.headers.get("svix-signature");
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return new Response("missing_svix_headers", { status: 400 });
+  }
+
+  let evt: ClerkUserEvent;
+  try {
+    evt = new Webhook(secret).verify(payload, {
+      "svix-id": svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
+    }) as ClerkUserEvent;
+  } catch {
+    return new Response("invalid_signature", { status: 400 });
+  }
+
+  const admin = getSupabaseAdmin();
+  if (!admin) return new Response("db_not_configured", { status: 503 });
+
+  const d = evt.data;
+  if (evt.type === "user.created" || evt.type === "user.updated") {
+    const primary =
+      d.email_addresses?.find((e) => e.id === d.primary_email_address_id) ?? d.email_addresses?.[0];
+    const email = primary?.email_address ?? null;
+    const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || null;
+    if (evt.type === "user.created") {
+      // New user → provision profile with the default role.
+      await admin.from("profiles").upsert({ id: d.id, email, name, role: "user" }, { onConflict: "id" });
+    } else {
+      // Existing user → refresh contact fields only; never touch role.
+      await admin.from("profiles").update({ email, name }).eq("id", d.id);
+    }
+  } else if (evt.type === "user.deleted") {
+    if (d.id) await admin.from("profiles").delete().eq("id", d.id);
+  }
+
+  return new Response("ok", { status: 200 });
+}
