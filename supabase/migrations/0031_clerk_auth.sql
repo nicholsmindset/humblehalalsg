@@ -207,8 +207,8 @@ declare
   r record; v_roles text; v_using text; v_check text; v_sql text;
 begin
   for r in select * from _pol_backup loop
-    select string_agg(case when role = 'public' then 'public' else quote_ident(role) end, ', ')
-      into v_roles from unnest(r.roles) as role;
+    -- roles is name[] (public/anon/authenticated/...) — array_to_string avoids an aggregate
+    v_roles := nullif(array_to_string(r.roles, ', '), '');
     v_using := nullif(replace(coalesce(r.qual, ''),       'auth.uid()', '(auth.jwt() ->> ''sub'')'), '');
     v_check := nullif(replace(coalesce(r.with_check, ''), 'auth.uid()', '(auth.jwt() ->> ''sub'')'), '');
     v_sql := format('create policy %I on public.%I as %s for %s to %s',
