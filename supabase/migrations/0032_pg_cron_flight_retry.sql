@@ -12,7 +12,8 @@
 --   select vault.create_secret('<YOUR_CRON_SECRET>', 'cron_secret');
 -- (must equal the CRON_SECRET env var the Next.js app verifies via authorizeCron)
 --
--- The Vercel daily flight-retry cron is removed from vercel.json in the same change.
+-- Runs ALONGSIDE the daily Vercel flight-retry cron, which is kept as a safety
+-- backstop until this pg_cron is verified working (needs the Vault secret below).
 -- Idempotent: safe to re-run.
 
 create extension if not exists pg_cron;
