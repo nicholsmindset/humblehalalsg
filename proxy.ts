@@ -5,28 +5,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
    `runtime` key (Next 16 throws); proxy defaults to the Node.js runtime, which
    Clerk supports. Only one proxy function is allowed per file. */
 
-// Routes that require a signed-in user. Everything else stays public — including
-// the self-authenticating endpoints (Stripe signature, Svix, CRON_SECRET):
-//   /api/webhooks/stripe, /api/webhooks/clerk, /api/cron/* are deliberately omitted.
-const isProtected = createRouteMatcher([
-  "/admin(.*)",
-  "/owner(.*)",
-  "/dashboard(.*)",
-  "/saved(.*)",
-  "/api/admin/(.*)",
-  "/api/owner/(.*)",
-  "/api/events/(.*)",
-  "/api/tickets/(.*)",
-  "/api/travel/(.*)",
-  "/api/connect/(.*)",
-  "/api/checkout/(.*)",
-  "/api/follow",
-  "/api/settings",
-  "/api/user/(.*)",
-  "/api/portal",
-  "/api/refunds",
-  "/api/confirm",
-]);
+// Only the admin console is gated at the middleware layer (redirects anonymous to
+// sign-in; the page also re-checks the admin role). EVERY API route already does
+// its own auth() / requireAdmin() check, so we must NOT blanket-protect /api/* here
+// — doing so 404s public, guest-facing flows (travel & event browsing, guest
+// checkout, autocomplete). Public/self-authenticating routes (travel search/book,
+// events browsing, Stripe/Svix/cron webhooks) therefore stay open at this layer
+// and enforce auth where needed inside each handler.
+const isProtected = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtected(req)) await auth.protect();

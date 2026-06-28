@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Deno Edge Functions — linted/typed by the Supabase/Deno toolchain, not ESLint.
+    "supabase/functions/**",
   ]),
   // Pre-existing advisory rules downgraded to warnings so the CI `quality` gate
   // stays green and can catch *new* errors. These flag working code (React
