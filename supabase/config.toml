@@ -7,8 +7,5 @@ project_id = "vzlcplizpkmvjspmqwns"
 [functions.on-event-published]
 verify_jwt = false
 
-[functions.on-cert-changed]
-verify_jwt = false
-
 [functions.on-review-created]
 verify_jwt = false
