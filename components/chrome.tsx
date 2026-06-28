@@ -414,8 +414,15 @@ export function TopNav() {
                     <UserButton.Action
                       label="My dashboard"
                       labelIcon={<Icon name="heart" size={15} />}
-                      onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+                      onClick={() => navigate("user-dashboard")}
                     />
+                    {user.role === "owner" && (
+                      <UserButton.Action
+                        label="Business dashboard"
+                        labelIcon={<Icon name="store" size={15} />}
+                        onClick={() => navigate("owner-dashboard")}
+                      />
+                    )}
                   </UserButton.MenuItems>
                 </UserButton>
               ) : (
