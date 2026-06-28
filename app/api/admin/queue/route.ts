@@ -12,7 +12,7 @@ import { slugify } from "@/lib/slug";
    client AFTER the gate, so RLS can't accidentally hide queue rows from an admin.
    Without Supabase configured the gate returns 503 and the UI keeps its mock. */
 
-type QueueType = "listings" | "reviews" | "reports" | "suggestions" | "claims";
+type QueueType = "listings" | "reviews" | "reports" | "suggestions" | "claims" | "events";
 
 const PENDING: Record<QueueType, { table: string; col: string; values: string[] }> = {
   listings:    { table: "staging_businesses", col: "review_status", values: ["new", "reviewing"] },
@@ -20,6 +20,7 @@ const PENDING: Record<QueueType, { table: string; col: string; values: string[] 
   reports:     { table: "reports",            col: "status",        values: ["open", "reviewing"] },
   suggestions: { table: "suggestions",        col: "status",        values: ["pending", "reviewing"] },
   claims:      { table: "claims",             col: "status",        values: ["pending"] },
+  events:      { table: "events",             col: "status",        values: ["pending"] },
 };
 
 export async function GET(req: Request) {
@@ -78,6 +79,13 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("suggestions").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: `Suggestion ${status}`, target: id });
+        return NextResponse.json({ ok: true, status });
+      }
+      case "events": {
+        const status = action === "approve" ? "published" : action === "reject" ? "rejected" : null;
+        if (!status) return badAction();
+        await admin.from("events").update({ status }).eq("id", id);
+        await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved event" : "Rejected event", target: id });
         return NextResponse.json({ ok: true, status });
       }
       case "claims":
