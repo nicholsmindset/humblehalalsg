@@ -245,7 +245,8 @@ begin
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
-      and pg_get_functiondef(p.oid) like '%auth.uid()%'
+      and p.prokind = 'f'                 -- normal funcs only (pg_get_functiondef errors on aggregates)
+      and p.prosrc like '%auth.uid()%'    -- read source text directly (no pg_get_functiondef)
   loop
     raise notice 'CLERK MIGRATION: function %.%(%) still uses auth.uid() — rewrite to (auth.jwt()->>''sub'')',
       r.nspname, r.proname, r.args;
