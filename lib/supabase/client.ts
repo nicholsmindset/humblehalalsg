@@ -12,9 +12,13 @@ export const supabaseConfigured = !!(url && anon);
 /** Anon browser client — NO user token. For public / anon-safe paths only
  *  (e.g. the analytics track_event RPC, which is SECURITY DEFINER). RLS sees no
  *  `sub`, so it cannot read user-scoped rows. Null in mock mode (no keys). */
+// Clerk owns auth → disable Supabase's GoTrue session engine (avoids the
+// "multiple GoTrueClient instances" warning and any session storage-key clashes).
+const NO_GOTRUE = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } } as const;
+
 export function getSupabaseBrowser() {
   if (!url || !anon) return null;
-  return createClient(url, anon);
+  return createClient(url, anon, NO_GOTRUE);
 }
 
 /** Browser client scoped to the current Clerk session: attaches the Clerk JWT
@@ -26,6 +30,7 @@ export function useSupabaseBrowser() {
   return useMemo(() => {
     if (!url || !anon) return null;
     return createClient(url, anon, {
+      ...NO_GOTRUE,
       async accessToken() {
         return session ? await session.getToken() : null;
       },

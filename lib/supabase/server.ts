@@ -15,6 +15,8 @@ export const supabaseConfigured = !!(url && anon);
 export async function getSupabaseServer() {
   if (!url || !anon) return null;
   return createClient(url, anon, {
+    // Clerk owns auth → don't run Supabase's GoTrue session engine.
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     async accessToken() {
       return (await auth()).getToken();
     },
