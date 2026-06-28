@@ -127,7 +127,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVars}>
       <body>
-        <ClerkProvider appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
+        <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode}>
             <DirectoryProvider listings={directory}>
