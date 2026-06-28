@@ -8,6 +8,7 @@ import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
+import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
@@ -27,19 +28,32 @@ async function queueGet(type: string): Promise<QueueRow[] | null> {
   }
 }
 
-async function queueAct(type: string, id: string, action: string): Promise<boolean> {
+async function queueAct(type: string, id: string, action: string): Promise<{ ok: boolean; error?: string; status?: string }> {
   try {
     const r = await fetch("/api/admin/queue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, id, action }),
     });
-    const d = await r.json().catch(() => ({ ok: false }));
-    return !!d.ok;
+    const d = await r.json().catch(() => ({ ok: false, error: "bad_response" }));
+    return { ok: !!d.ok, error: d.error, status: d.status };
   } catch {
-    return false;
+    return { ok: false, error: "network_error" };
   }
 }
+
+/* Human-readable messages for the queue route's error codes, so a failed admin
+   action says WHY (e.g. duplicate slug, not admin) instead of "Action failed". */
+const QUEUE_ERR: Record<string, string> = {
+  forbidden: "You're not signed in as an admin.",
+  unauthenticated: "Please sign in again.",
+  slug_exists: "A published listing with that name already exists.",
+  publish_failed: "Couldn't publish — a database error occurred.",
+  not_found: "That item no longer exists.",
+  action_failed: "The action failed — please try again.",
+  network_error: "Network error — please try again.",
+};
+function queueErr(e?: string): string { return (e && QUEUE_ERR[e]) || "Action failed — please try again."; }
 
 function timeAgo(iso?: unknown): string {
   const t = typeof iso === "string" ? Date.parse(iso) : NaN;
@@ -52,7 +66,7 @@ function timeAgo(iso?: unknown): string {
 }
 
 export function AdminScreen() {
-  const { navigate, toast } = useApp();
+  const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
   const pick = (id: string) => {
@@ -99,7 +113,11 @@ export function AdminScreen() {
         <div className="admin-topbar">
           <div className="flex g10 center"><button className="map-iconbtn admin-menu" onClick={()=>setNavOpen(true)} aria-label="Open menu" style={{width:40,height:40}}><Icon name="menu" size={18}/></button>
             <h1 style={{fontSize:'1.3rem'}}>{nav.find(n=>n[0]===section)?.[1]}</h1></div>
-          <div className="flex g10 center"><button className="map-iconbtn" style={{width:40,height:40,borderRadius:11}}><Icon name="bell" size={18}/></button><span className="avatar" style={{background:'var(--emerald)',color:'#fff'}}>A</span></div>
+          <div className="flex g10 center">
+            <button className="btn btn-soft btn-sm" onClick={()=>navigate(state.user.role==='owner'?'owner-dashboard':'user-dashboard')} title="Back to my dashboard"><Icon name="back" size={15}/> My dashboard</button>
+            <NotificationBell />
+            <span className="avatar" style={{background:'var(--emerald)',color:'#fff'}}>A</span>
+          </div>
         </div>
 
         <div className="admin-body">
@@ -422,7 +440,7 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
     });
   }, []);
   const act = async (id: string, action: string) => {
-    if (live && !(await queueAct("listings", id, action === "approve" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    if (live) { const res = await queueAct("listings", id, action === "approve" ? "approve" : "reject"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Listing published':'Listing rejected');
   };
   return (
@@ -483,7 +501,7 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
     });
   }, []);
   const act = async (id: string, action: string) => {
-    if (live && !(await queueAct("events", id, action === "approve" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    if (live) { const res = await queueAct("events", id, action === "approve" ? "approve" : "reject"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Event approved & published':'Event rejected');
   };
   return (
@@ -657,8 +675,19 @@ export function AdminCertQueue({ toast }: { toast: (msg: string) => void }) {
   );
 }
 
+interface VerifyRow { id: string; name: string; area: string; badges: BadgeKey[]; verify?: { expiringSoon?: boolean } }
+const tierToBadge = (t: unknown): BadgeKey => (t === "muis" ? "muis" : t === "admin" ? "admin" : "pending");
 export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
-  const [rows] = useState<Listing[]>(HHData.listings.slice(0, 5).map((l) => ({ ...l })));
+  const mock: VerifyRow[] = HHData.listings.slice(0, 5).map((l) => ({ id: l.id, name: l.name, area: l.area, badges: l.badges, verify: l.verify }));
+  const [rows, setRows] = useState<VerifyRow[]>(mock);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    queueGet("verification").then((items) => {
+      if (!items) return;
+      setLive(true);
+      setRows(items.map((b) => ({ id: String(b.id), name: String(b.name ?? "—"), area: String(b.area ?? "—"), badges: [tierToBadge(b.halal_tier)], verify: undefined })));
+    });
+  }, []);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [done, setDone] = useState<Record<string, "muis" | "admin">>({});
   const [certNo, setCertNo] = useState("");
@@ -737,6 +766,7 @@ export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
                 </Fragment>
               );
             })}
+            {live && rows.length === 0 && <tr><td colSpan={4}><Empty icon="shield-check" title="No businesses to verify" body="Published businesses appear here once your directory is seeded — then record MUIS / admin verification." /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -811,7 +841,7 @@ export function AdminReports({ toast }: { toast: (msg: string) => void }) {
     });
   }, []);
   const resolve=async (id: string)=>{
-    if (live && !(await queueAct("reports", id, "resolve"))) { toast("Action failed"); return; }
+    if (live) { const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
   };
   return (
@@ -842,7 +872,7 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
     });
   }, []);
   const act=async (id: string,a: string)=>{
-    if (live && !(await queueAct("reviews", id, a === "keep" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    if (live) { const res = await queueAct("reviews", id, a === "keep" ? "approve" : "reject"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast(a==='keep'?'Review approved':'Review removed');
   };
   return (

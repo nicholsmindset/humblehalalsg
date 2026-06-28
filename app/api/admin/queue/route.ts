@@ -12,7 +12,7 @@ import { slugify } from "@/lib/slug";
    client AFTER the gate, so RLS can't accidentally hide queue rows from an admin.
    Without Supabase configured the gate returns 503 and the UI keeps its mock. */
 
-type QueueType = "listings" | "reviews" | "reports" | "suggestions" | "claims" | "events";
+type QueueType = "listings" | "reviews" | "reports" | "suggestions" | "claims" | "events" | "verification";
 
 const PENDING: Record<QueueType, { table: string; col: string; values: string[] }> = {
   listings:    { table: "staging_businesses", col: "review_status", values: ["new", "reviewing"] },
@@ -21,6 +21,8 @@ const PENDING: Record<QueueType, { table: string; col: string; values: string[] 
   suggestions: { table: "suggestions",        col: "status",        values: ["pending", "reviewing"] },
   claims:      { table: "claims",             col: "status",        values: ["pending"] },
   events:      { table: "events",             col: "status",        values: ["pending"] },
+  // Halal verification queue: published businesses (admin records MUIS/admin status). Read-only via GET; actions go to /api/admin/verify.
+  verification:{ table: "businesses",         col: "status",        values: ["published"] },
 };
 
 export async function GET(req: Request) {
