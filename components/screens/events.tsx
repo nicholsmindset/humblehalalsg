@@ -828,7 +828,7 @@ export function EventDetailScreen() {
 
 /* ========================= CHECKOUT / RSVP ========================= */
 export function CheckoutScreen() {
-  const { navigate, params, bookEvent, state, flags } = useApp();
+  const { navigate, params, bookEvent, state, flags, toast } = useApp();
   const { get, list } = useEvents();
   const ev = get(String(params.id)) || list[0];
   const [tier, setTier] = useState(ev.tiers ? 0 : -1);
@@ -849,16 +849,33 @@ export function CheckoutScreen() {
     if (free) {
       if (ev.requiresApproval) {
         setBusy(true);
+        let okFlag = true;
         try {
-          await fetch(`/api/events/${ev.id}/join-request`, {
+          const r = await fetch(`/api/events/${ev.id}/join-request`, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, qty }),
           });
-        } catch { /* graceful — still confirm the request was submitted */ }
+          if (!r.ok) okFlag = false; // real server rejection (422 bad email / 429 rate-limit / 500)
+        } catch { /* network error — treat as graceful (offline/unconfigured) */ }
         finally { setBusy(false); }
+        if (!okFlag) { toast("Couldn't send your request — please try again."); return; }
         navigate("success", { type: "join-request", eventId: ev.id });
         return;
       }
+      // Persist the RSVP server-side (order + ticket + QR, capacity-safe) so the
+      // attendee gets a real scannable ticket; degrades to simulated when the
+      // event row isn't seeded. Keep the local mock + success flow on success.
+      setBusy(true);
+      let okFlag = true;
+      try {
+        const r = await fetch(`/api/rsvp`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eventId: ev.id, name, email, qty }),
+        });
+        if (!r.ok) okFlag = false; // 422 bad email / 429 rate-limit / 404 / 500
+      } catch { /* network error — keep the local ticket (offline/unconfigured) */ }
+      finally { setBusy(false); }
+      if (!okFlag) { toast("Couldn't reserve your spot — please try again."); return; }
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "rsvp", eventId: ev.id });
       return;
