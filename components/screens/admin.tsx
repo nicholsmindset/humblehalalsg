@@ -455,12 +455,37 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
   );
 }
 
+interface EventQueueRow { id: string; title: string; cat: string; dateLabel: string; free: boolean; priceFrom: number; organiser: string; img: string; tone: string; submitted: string }
 export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  const [rows, setRows] = useState(
-    [HHData.events.find(e=>e.id==='e1'), HHData.events.find(e=>e.id==='e6'), HHData.events.find(e=>e.id==='e8')]
-      .filter(Boolean).map((e,i)=>({ ...e!, submitted:`${i+1}d ago` }))
-  );
-  const act = (id: string, action: string) => { setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Event approved & published':'Event rejected'); };
+  const mock: EventQueueRow[] = [HHData.events.find(e=>e.id==='e1'), HHData.events.find(e=>e.id==='e6'), HHData.events.find(e=>e.id==='e8')]
+    .filter(Boolean).map((e,i)=>({ id: e!.id, title: e!.title, cat: e!.cat, dateLabel: e!.dateLabel, free: e!.free, priceFrom: e!.priceFrom, organiser: e!.organiser, img: e!.img, tone: e!.tone, submitted:`${i+1}d ago` }));
+  const [rows, setRows] = useState<EventQueueRow[]>(mock);
+  const [live, setLive] = useState(false);
+  useEffect(() => {
+    queueGet("events").then((items) => {
+      if (!items) return;
+      setLive(true);
+      setRows(items.map((e) => {
+        const d = (e.display && typeof e.display === "object" ? e.display : {}) as Record<string, unknown>;
+        return {
+          id: e.id,
+          title: String(e.title ?? "Event"),
+          cat: String(d.cat ?? "Community"),
+          dateLabel: String(d.dateLabel ?? e.date_iso ?? "—"),
+          free: e.is_free !== false,
+          priceFrom: Number(d.priceFrom) || 0,
+          organiser: String(d.organiser ?? "—"),
+          img: typeof d.img === "string" ? d.img : "",
+          tone: typeof d.tone === "string" ? d.tone : "emerald",
+          submitted: timeAgo(e.created_at),
+        } as EventQueueRow;
+      }));
+    });
+  }, []);
+  const act = async (id: string, action: string) => {
+    if (live && !(await queueAct("events", id, action === "approve" ? "approve" : "reject"))) { toast("Action failed"); return; }
+    setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Event approved & published':'Event rejected');
+  };
   return (
     <div className="card" style={{overflow:'hidden'}}>
       <div className="admin-tablehead">

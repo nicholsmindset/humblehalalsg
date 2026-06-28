@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Organiser command-center stats for one event: attendance, check-in, sales,
@@ -15,19 +16,18 @@ type AuthOk = {
 type AuthErr = { ok: false; res: NextResponse };
 
 async function authorise(ref: string): Promise<AuthOk | AuthErr> {
-  const server = await getSupabaseServer();
+  const { userId } = await auth();
+  if (!userId) return { ok: false, res: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
-  if (!server || !admin) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
-  const { data: { user } } = await server.auth.getUser();
-  if (!user) return { ok: false, res: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
+  if (!admin) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
   const { data: ev } = isSafeEventRef(ref)
     ? await admin.from("events").select("id, title, slug, status, capacity, is_free, date_iso, business_id, display").or(`id.eq.${ref},slug.eq.${ref}`).maybeSingle()
     : { data: null };
   if (!ev) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
-  const { data: profile } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
   let allowed = profile?.role === "admin";
   if (!allowed && ev.business_id) {
-    const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id as string).or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`).maybeSingle();
+    const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id as string).or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
     allowed = !!biz;
   }
   if (!allowed) return { ok: false, res: NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 }) };
