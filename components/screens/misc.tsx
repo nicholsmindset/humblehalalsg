@@ -394,6 +394,20 @@ export function UserDashboardScreen() {
               </div>
             </div>
           )}
+          {state.user.loggedIn && state.user.role !== "owner" && (
+            <div className="card" style={{padding:20, marginTop:16}}>
+              <div className="flex between center wrap g12">
+                <div>
+                  <div style={{fontWeight:700, fontSize:'1.05rem'}}>Run events or own a halal business?</div>
+                  <p className="faint" style={{fontSize:'.88rem', marginTop:2}}>Host an event or list your business to unlock a business dashboard — manage listings, tickets, attendees &amp; payouts.</p>
+                </div>
+                <div className="flex g8 wrap">
+                  <button className="btn btn-gold btn-sm" onClick={()=>navigate('host-event')}><Icon name="plus" size={16}/> Host an event</button>
+                  <button className="btn btn-outline btn-sm" onClick={()=>navigate('for-business')}><Icon name="store" size={16}/> List your business</button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="suggest-cta">
             <div><div style={{fontWeight:700}}>Know a great halal spot we’re missing?</div><p className="faint" style={{fontSize:'.86rem'}}>Help the community discover it.</p></div>
             <button className="btn btn-outline" onClick={()=>navigate('suggest')}><Icon name="plus" size={17}/> Suggest a business</button>
