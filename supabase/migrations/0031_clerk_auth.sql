@@ -23,7 +23,9 @@ begin;
 
 -- ── 1. Save + drop all auth.uid()-based policies in schema public ──────────────
 create temp table _pol_backup on commit drop as
-  select schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
+  select schemaname, tablename, policyname, permissive, cmd,
+         array_to_string(roles, ', ') as roles_csv,   -- materialize to TEXT (no array column)
+         qual, with_check
   from pg_policies
   where schemaname = 'public'
     and ( coalesce(qual, '') like '%auth.uid()%'
@@ -207,8 +209,7 @@ declare
   r record; v_roles text; v_using text; v_check text; v_sql text;
 begin
   for r in select * from _pol_backup loop
-    -- roles is name[] (public/anon/authenticated/...) — array_to_string avoids an aggregate
-    v_roles := nullif(array_to_string(r.roles, ', '), '');
+    v_roles := nullif(r.roles_csv, '');   -- already plain text (captured above)
     v_using := nullif(replace(coalesce(r.qual, ''),       'auth.uid()', '(auth.jwt() ->> ''sub'')'), '');
     v_check := nullif(replace(coalesce(r.with_check, ''), 'auth.uid()', '(auth.jwt() ->> ''sub'')'), '');
     v_sql := format('create policy %I on public.%I as %s for %s to %s',
