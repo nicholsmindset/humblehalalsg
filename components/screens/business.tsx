@@ -693,10 +693,30 @@ export function OwnerDashboardScreen() {
               ) : ownerEvents === null ? (
                 <div className="card" style={{ padding: 24, height: 90, opacity: 0.5 }} aria-busy="true" />
               ) : ownerEvents.length === 0 ? (
-                <div className="card" style={{ padding: 28, textAlign: "center" }}>
-                  <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="calendar" size={24} /></div>
-                  <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No events yet</h3>
-                  <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Host a bazaar, class or talk — it shows here once it’s live.</p>
+                <div className="card" style={{ padding: 28 }}>
+                  <div style={{ textAlign: "center", marginBottom: 20 }}>
+                    <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Icon name="calendar" size={24} /></div>
+                    <h3 style={{ fontSize: "1.2rem", marginBottom: 6 }}>Run events like the pros</h3>
+                    <p className="faint" style={{ fontSize: ".9rem", maxWidth: 480, margin: "0 auto" }}>Host a bazaar, class, iftar or talk — free RSVP or paid tickets. Here&rsquo;s everything you&rsquo;ll manage from your event command centre once it&rsquo;s live:</p>
+                  </div>
+                  <div className="grid-cards">
+                    {([
+                      ["chart", "Live stats", "Real-time bookings, capacity & revenue"],
+                      ["users", "Attendees", "Full guest list with CSV export"],
+                      ["check", "QR check-in", "Scan tickets at the door"],
+                      ["ticket", "Ticket tiers", "Free RSVP or multiple paid tiers"],
+                      ["shield-check", "Approvals", "Approve requests for private events"],
+                    ] as [string, string, string][]).map(([ic, h, b]) => (
+                      <div key={h} className="card" style={{ padding: 14 }}>
+                        <span style={{ width: 34, height: 34, borderRadius: 9, background: "var(--emerald-50)", color: "var(--emerald)", display: "grid", placeItems: "center" }}><Icon name={ic} size={16} /></span>
+                        <div style={{ fontWeight: 700, marginTop: 8, fontSize: ".95rem" }}>{h}</div>
+                        <p className="faint" style={{ fontSize: ".82rem", marginTop: 2 }}>{b}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ textAlign: "center", marginTop: 18 }}>
+                    <button className="btn btn-gold" onClick={() => navigate("host-event")}><Icon name="plus" size={16} /> Host your first event</button>
+                  </div>
                 </div>
               ) : (
                 ownerEvents.map((ev) => {
