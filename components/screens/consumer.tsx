@@ -652,11 +652,16 @@ export function MapScreen() {
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
   const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques });
   const [q, setQ] = useState("");
+  const [cat, setCat] = useState("");
+  const [area, setArea] = useState("");
+  const [halal, setHalal] = useState("");
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
   useEffect(() => setMapMounted(true), []);
   const tog = (k: keyof typeof chips) => setChips((c) => ({ ...c, [k]: !c[k] }));
+  const clearAll = () => { setCat(""); setArea(""); setHalal(""); setQ(""); setChips((c) => ({ ...c, open: false, prayer: false, family: false })); };
+  const hasFilters = !!(cat || area || halal || q || chips.open || chips.prayer || chips.family);
   // Keep the left list in sync when a map pin is selected (GMB-style).
   const resultsRef = useRef<HTMLDivElement>(null);
   const selectedId = activeMosque || activeId;
@@ -700,13 +705,17 @@ export function MapScreen() {
     if (chips.open) r = r.filter((l) => (mapMounted ? isOpenNow(l.hoursWeek) : l.open));
     if (chips.prayer) r = r.filter((l) => l.prayer);
     if (chips.family) r = r.filter((l) => l.badges.includes("family"));
+    if (cat) r = r.filter((l) => l.catId === cat);
+    if (area) r = r.filter((l) => l.area.toLowerCase().includes(area.toLowerCase()));
+    if (halal === "certified") r = r.filter((l) => l.badges.some((b) => ["muis", "admin"].includes(b)));
+    if (halal === "muis") r = r.filter((l) => l.badges.includes("muis"));
     if (userLoc) {
       r = r
         .map((l) => ({ ...l, distanceKm: l.coords ? haversineKm(userLoc, l.coords) : undefined }))
         .sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
     }
     return r;
-  }, [chips, q, userLoc, state.prefs?.certifiedOnly, mapMounted, dir.listings]);
+  }, [chips, q, cat, area, halal, userLoc, state.prefs?.certifiedOnly, mapMounted, dir.listings]);
 
   const mosqueList = useMemo(() => {
     let m = HHData.mosques.map((mq) => ({ ...mq, distanceKm: userLoc ? haversineKm(userLoc, mq.coords) : undefined }));
@@ -773,9 +782,26 @@ export function MapScreen() {
             <button className={`chip ${chips.prayer ? "active" : ""}`} onClick={() => tog("prayer")} aria-pressed={chips.prayer}>Prayer space</button>
             <button className={`chip ${chips.family ? "active" : ""}`} onClick={() => tog("family")} aria-pressed={chips.family}>Family friendly</button>
           </div>
-          <div className="map-split-count">
-            <strong>{resultCount}</strong> {chips.mosque ? "mosque" : "place"}{resultCount === 1 ? "" : "s"}
-            {userLoc ? " · nearest first" : ""}
+          {!chips.mosque && (
+            <div className="flex g8 wrap" style={{ marginTop: 8 }}>
+              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, fontSize: ".85rem", padding: "7px 10px" }}>
+                <option value="">All categories</option>
+                {HHData.categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, fontSize: ".85rem", padding: "7px 10px" }}>
+                <option value="">All areas</option>
+                {HHData.areas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
+              </select>
+              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, fontSize: ".85rem", padding: "7px 10px" }}>
+                <option value="">Any halal status</option>
+                <option value="certified">Certified / verified</option>
+                <option value="muis">MUIS certified</option>
+              </select>
+            </div>
+          )}
+          <div className="map-split-count flex between center">
+            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : "place"}{resultCount === 1 ? "" : "s"}{userLoc ? " · nearest first" : ""}</span>
+            {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: ".82rem" }}>Clear all</button>}
           </div>
         </div>
 
@@ -831,7 +857,7 @@ export function MapScreen() {
       {/* RIGHT — live map */}
       <div className="map-split-map">
         <div className="map-live">
-          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} fit={!activeId && !activeMosque && !userLoc} />
+          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} onView={(id) => navigate("detail", { id })} fit={!activeId && !activeMosque && !userLoc} />
         </div>
       </div>
     </div>
