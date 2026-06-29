@@ -19,6 +19,7 @@ export function MapView(props: {
   zoom?: number;
   points: MapPoint[];
   onSelect?: (id: string) => void;
+  onView?: (id: string, kind: string) => void;
   onPick?: (c: LatLng) => void;
   fit?: boolean;
 }) {

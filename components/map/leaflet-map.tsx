@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { LatLng } from "@/lib/types";
@@ -92,6 +92,7 @@ export default function LeafletMap({
   zoom = 13,
   points,
   onSelect,
+  onView,
   onPick,
   fit = false,
 }: {
@@ -99,6 +100,8 @@ export default function LeafletMap({
   zoom?: number;
   points: MapPoint[];
   onSelect?: (id: string) => void;
+  /** Popup primary action — open the listing detail (or mosque directions). */
+  onView?: (id: string, kind: string) => void;
   /** When set, the map becomes a single-pin location picker: tap the map or
    *  drag the marker to choose a precise spot. */
   onPick?: (c: LatLng) => void;
@@ -139,7 +142,20 @@ export default function LeafletMap({
             eventHandlers={handlers}
             keyboard
             title={p.name}
-          />
+          >
+            {p.kind !== "user" && !onPick && (
+              <Popup>
+                <div style={{ minWidth: 150 }}>
+                  <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
+                  {p.kind === "mosque" ? (
+                    <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
+                  ) : (
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>
+                  )}
+                </div>
+              </Popup>
+            )}
+          </Marker>
         );
       })}
     </MapContainer>
