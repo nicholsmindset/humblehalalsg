@@ -1005,14 +1005,16 @@ export function DetailScreen() {
               <span className={`status-dot ${openNow ? "open" : "closed"}`}></span>{hoursLabel}</span>
           </div>
 
-          {/* badge row */}
+          {/* badge row — halal status (muis/admin) is shown once in the confidence
+              card below, so keep only the non-status badges here (owned/family). */}
           <div className="lc-badges" style={{ marginTop: 16, gap: 8 }}>
-            {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).map((b) => <Badge key={b} type={b} lg />)}
+            {item.badges.filter((b) => b !== "muis" && b !== "admin").map((b) => <Badge key={b} type={b} lg />)}
             {item.prayer && <Badge type="prayer" lg />}
           </div>
 
-          {/* Halal Confidence (HalalRank) — expandable "why this score" */}
-          <HalalConfidenceBadge item={item} />
+          {/* Halal Confidence pill — only when the richer verification card (below)
+              isn't shown, so the score+tier never appear twice. */}
+          {!(item.certified && !muisUnbacked(item)) && <HalalConfidenceBadge item={item} />}
 
           {/* Verification provenance + community confirmation */}
           <VerificationCard item={item} navigate={navigate} toast={toast} />
@@ -1257,7 +1259,6 @@ export function VerificationCard({ item, navigate, toast }: {
           <div className="verif-seal"><Icon name="shield-check" size={24} /></div>
           <div className="f1">
             <div className="flex g8 center wrap">
-              <Badge type={item.badges.find((b) => ["muis", "admin"].includes(b)) as BadgeKey} lg />
               {v.renewed && <span className="verif-fresh"><Icon name="check" size={12} /> Renewed {v.verified}</span>}
               {v.expiringSoon && <span className="verif-expiring"><Icon name="clock" size={12} /> Renews soon</span>}
             </div>

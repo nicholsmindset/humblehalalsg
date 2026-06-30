@@ -50,9 +50,18 @@ function applyFilters(items: FlightItinerary[], f: Filters): FlightItinerary[] {
 
 function FilterRail({ all, f, setF, airlines }: { all: FlightItinerary[]; f: Filters; setF: (f: Filters) => void; airlines: string[] }) {
   const maxDur = Math.max(...all.map((x) => x.durationMin), 60);
+  const [open, setOpen] = useState(false);
+  const activeCount = (f.stops !== null ? 1 : 0) + (f.bagOnly ? 1 : 0) + (f.airlines.size > 0 ? 1 : 0) + (f.depFrom !== 0 || f.depTo !== 24 ? 1 : 0) + (f.maxDur < maxDur ? 1 : 0);
   return (
-    <aside className="flt-rail">
-      <div className="flt-rail-head"><h3>Filter</h3><button type="button" className="flt-rail-clear" onClick={() => setF(noFilters(maxDur))}>Clear</button></div>
+    <aside className={`flt-rail ${open ? "open" : ""}`}>
+      <div className="flt-rail-head">
+        <button type="button" className="flt-rail-toggle" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <h3>Filters{activeCount ? ` · ${activeCount}` : ""}</h3>
+          <Icon name="chevron" size={15} className={`flt-rail-caret ${open ? "up" : ""}`} />
+        </button>
+        <button type="button" className="flt-rail-clear" onClick={() => setF(noFilters(maxDur))}>Clear</button>
+      </div>
+      <div className="flt-rail-body">
       <div className="flt-rail-group">
         <h4>Stops</h4>
         {[[null, "Any number"], [0, "Non-stop only"], [1, "Max 1 stop"], [2, "Max 2 stops"]].map(([v, lbl]) => (
@@ -86,6 +95,7 @@ function FilterRail({ all, f, setF, airlines }: { all: FlightItinerary[]; f: Fil
           ))}
         </div>
       )}
+      </div>
     </aside>
   );
 }
