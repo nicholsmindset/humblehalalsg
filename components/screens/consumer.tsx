@@ -622,18 +622,20 @@ export function MapPreview({ results, navigate }: {
   results: Listing[];
   navigate: (screen: string, params?: Record<string, unknown>) => void;
 }) {
+  const pts = results
+    .filter((l) => l.coords)
+    .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const }));
   return (
     <div className="map-preview card">
-      <div className="map-canvas hh-pattern">
-        {results.slice(0, 8).map((l, i) => (
-          <button key={l.id} className="map-pin" style={{ left: `${12 + (i * 11) % 76}%`, top: `${18 + (i * 23) % 62}%` }}
-            onClick={() => navigate("detail", { id: l.id })}>
-            <span className="pin-dot"><Icon name={l.badges.some((b) => ["muis", "admin"].includes(b)) ? "shield-check" : "pin"} size={14} /></span>
-            <span className="pin-price">{l.price}</span>
-          </button>
-        ))}
-        <div className="map-roads" />
-        <button className="btn btn-primary btn-sm map-this" onClick={() => navigate("map")}><Icon name="refresh" size={15} /> Open full map</button>
+      <div className="map-canvas">
+        {pts.length > 0 ? (
+          <MapView center={pts[0].coords} zoom={12} points={pts} fit onView={(id) => navigate("detail", { id })} />
+        ) : (
+          <div className="hh-pattern" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+            <span className="muted">No mappable results — try widening your filters.</span>
+          </div>
+        )}
+        <button className="btn btn-primary btn-sm map-this" style={{ zIndex: 1000 }} onClick={() => navigate("map")}><Icon name="map" size={15} /> Open full map</button>
       </div>
       <div className="map-cardrail">
         {results.map((l) => <div key={l.id} className="map-railcard"><ListingCard item={l} variant="row" /></div>)}
