@@ -426,8 +426,7 @@ export function AdminOverview({ setSection }: { setSection: (s: string) => void 
 
 interface ApprovalRow { id: string; name: string; cat: string; area: string; badges: BadgeKey[]; tone?: string; image?: string; status: string; submitted: string }
 export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  const mock: ApprovalRow[] = HHData.listings.slice(0,7).map((l,i)=>({ id: l.id, name: l.name, cat: l.cat, area: l.area, badges: l.badges, tone: l.tone, image: l.image, status: i<2?'claim':'new', submitted: `${i+1}d ago` }));
-  const [rows, setRows] = useState<ApprovalRow[]>(mock);
+  const [rows, setRows] = useState<ApprovalRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
     queueGet("listings").then((items) => {
@@ -475,9 +474,7 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
 
 interface EventQueueRow { id: string; title: string; cat: string; dateLabel: string; free: boolean; priceFrom: number; organiser: string; img: string; tone: string; submitted: string }
 export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  const mock: EventQueueRow[] = [HHData.events.find(e=>e.id==='e1'), HHData.events.find(e=>e.id==='e6'), HHData.events.find(e=>e.id==='e8')]
-    .filter(Boolean).map((e,i)=>({ id: e!.id, title: e!.title, cat: e!.cat, dateLabel: e!.dateLabel, free: e!.free, priceFrom: e!.priceFrom, organiser: e!.organiser, img: e!.img, tone: e!.tone, submitted:`${i+1}d ago` }));
-  const [rows, setRows] = useState<EventQueueRow[]>(mock);
+  const [rows, setRows] = useState<EventQueueRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
     queueGet("events").then((items) => {
@@ -678,8 +675,7 @@ export function AdminCertQueue({ toast }: { toast: (msg: string) => void }) {
 interface VerifyRow { id: string; name: string; area: string; badges: BadgeKey[]; verify?: { expiringSoon?: boolean } }
 const tierToBadge = (t: unknown): BadgeKey => (t === "muis" ? "muis" : t === "admin" ? "admin" : "pending");
 export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
-  const mock: VerifyRow[] = HHData.listings.slice(0, 5).map((l) => ({ id: l.id, name: l.name, area: l.area, badges: l.badges, verify: l.verify }));
-  const [rows, setRows] = useState<VerifyRow[]>(mock);
+  const [rows, setRows] = useState<VerifyRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
     queueGet("verification").then((items) => {
@@ -766,7 +762,7 @@ export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
                 </Fragment>
               );
             })}
-            {live && rows.length === 0 && <tr><td colSpan={4}><Empty icon="shield-check" title="No businesses to verify" body="Published businesses appear here once your directory is seeded — then record MUIS / admin verification." /></td></tr>}
+            {rows.length === 0 && <tr><td colSpan={4}><Empty icon="shield-check" title="No businesses to verify" body="Published businesses appear here once your directory is seeded — then record MUIS / admin verification." /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -861,8 +857,7 @@ export function AdminReports({ toast }: { toast: (msg: string) => void }) {
 
 interface ReviewRow { id: string; avatar: string; name: string; biz: string; rating: number; text: string; flagged: boolean }
 export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
-  const mock: ReviewRow[] = HHData.reviews.map((r,i)=>({ id: r.id, avatar: r.avatar, name: r.name, biz: HHData.listings[i].name, rating: r.rating, text: r.text, flagged: i===0 }));
-  const [rows,setRows]=useState<ReviewRow[]>(mock);
+  const [rows,setRows]=useState<ReviewRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
     queueGet("reviews").then((items) => {
@@ -885,6 +880,7 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
           <div className="flex g8 mt12"><button className="btn btn-primary btn-sm" onClick={()=>act(r.id,'keep')}>Keep</button><button className="btn btn-ghost btn-sm" onClick={()=>act(r.id,'remove')}>Remove</button></div>
         </div>
       ))}
+      {rows.length===0 && <Empty icon="check" title="Inbox zero" body="No reviews to moderate." />}
     </div>
   );
 }

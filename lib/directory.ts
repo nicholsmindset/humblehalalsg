@@ -1,11 +1,11 @@
-/* Humble Halal — directory data source. Single seam between the mock seed data
-   (lib/data.ts) and Supabase `businesses`. Returns the existing `Listing` shape
-   so every screen works unchanged. Falls back to the mock whenever Supabase is
-   not configured OR returns no published rows (so the site is never empty during
-   early seeding). Server-only. */
+/* Humble Halal — directory data source. Single seam between Supabase
+   `businesses` and the app. Returns the existing `Listing` shape so every
+   screen works unchanged. When Supabase is not configured OR returns no
+   published rows, returns an EMPTY array (screens render clean empty states —
+   never fabricated listings). Server-only. */
 import "server-only";
 import { cache } from "react";
-import { listings as mockListings, categories } from "./data";
+import { categories } from "./data";
 import type { Listing, BadgeKey } from "./types";
 import type { WeekHours } from "./hours";
 import { slugify } from "./slug";
@@ -100,20 +100,19 @@ async function ratingsBySlug(
   return out;
 }
 
-/** All published listings — from Supabase when configured, else the mock seed.
- *  Real review ratings are overlaid by slug regardless of base source, so cards
- *  show live numbers as soon as reviews exist (mock rating is the fallback). */
+/** All published listings — from Supabase when configured, else an empty array
+ *  (clean empty state, never fabricated data). Real review ratings are overlaid
+ *  by slug so cards show live numbers as soon as reviews exist. */
 // Memoized per request (React cache): getDirectory is called several times per
 // render (layout + pages + getListingBySlug) — dedupe the Supabase round-trips.
 export const getDirectory = cache(async (): Promise<Listing[]> => {
-  if (!supabaseConfigured) return mockListings;
+  if (!supabaseConfigured) return [] as Listing[];
   try {
     const sb = getSupabaseAdmin();
-    if (!sb) return mockListings;
+    if (!sb) return [] as Listing[];
     const { data, error } = await sb.from("businesses").select("*").eq("status", "published").limit(2000);
     const fromDb = !error && data && data.length > 0;
-    // Clone the mock array so the rating overlay never mutates shared module state.
-    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing) : mockListings.map((l) => ({ ...l }));
+    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing) : ([] as Listing[]);
     const ratings = await ratingsBySlug(sb);
     if (ratings.size) {
       for (const l of base) {
@@ -123,7 +122,7 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
     }
     return base;
   } catch {
-    return mockListings;
+    return [] as Listing[];
   }
 });
 

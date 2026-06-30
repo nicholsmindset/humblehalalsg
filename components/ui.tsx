@@ -17,6 +17,7 @@ import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { joinParts } from "@/lib/format";
 import { screenToPath } from "@/lib/routes";
 import { useApp } from "./app-context";
+import { useDirectory } from "./directory-context";
 
 /* ---------------------------------------------------------------
    ICONS  (stroke-based, 24x24)
@@ -417,6 +418,7 @@ export function SearchBar({
   suggest?: boolean;
 }) {
   const { navigate } = useApp();
+  const dir = useDirectory();
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -437,14 +439,14 @@ export function SearchBar({
       .forEach((a) =>
         out.push({ key: `a-${a.id}`, label: `Halal in ${a.name}`, sub: "Area", icon: "pin", go: () => navigate("seo", { slug: `halal-food-in-${a.id}` }) }),
       );
-    HHData.listings
+    dir.listings
       .filter((l) => (l.name + l.cuisine).toLowerCase().includes(s))
       .slice(0, 5)
       .forEach((l) =>
         out.push({ key: `l-${l.id}`, label: l.name, sub: `${l.cuisine} · ${l.area}`, icon: "store", go: () => navigate("detail", { id: l.id }) }),
       );
     return out.slice(0, 7);
-  }, [suggest, value, navigate]);
+  }, [suggest, value, navigate, dir]);
 
   const showList = suggest && open && suggestions.length > 0;
 

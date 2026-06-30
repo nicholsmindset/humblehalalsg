@@ -669,30 +669,9 @@ export function OwnerDashboardScreen() {
               <button className="btn btn-gold" onClick={() => navigate("host-event")}><Icon name="plus" size={17} /> Host an event</button>
             </div>
             <div className="stack g12">
-              {!live ? (
-                ([HHData.events.find((e) => e.id === "e2"), HHData.events.find((e) => e.id === "e1")].filter(Boolean) as EventItem[]).map((ev, i) => {
-                  const left = spotsLeft(ev);
-                  const status: [string, string] = i === 0 ? ["Live", "green"] : ["Under review", "amber"];
-                  return (
-                    <div key={ev.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
-                      <ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{ width: 90, height: 66, borderRadius: 10, flex: "none" }} />
-                      <div className="f1" style={{ minWidth: 160 }}>
-                        <div className="flex g8 center wrap"><span className={`pill-tag ${status[1]}`}>{status[0]}</span><EventPriceTag ev={ev} /></div>
-                        <div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.05rem", marginTop: 5 }}>{ev.title}</div>
-                        <div className="evt-meta" style={{ marginTop: 4 }}><Icon name="calendar" size={13} /> {ev.dateLabel} · {ev.area}</div>
-                      </div>
-                      <div className="evt-mini-stats">
-                        <div><div className="ems-v">{ev.taken}</div><div className="ems-l">booked</div></div>
-                        <div><div className="ems-v">{ev.capacity ? left : "∞"}</div><div className="ems-l">left</div></div>
-                        <div><div className="ems-v">{ev.free ? "Free" : "$" + ev.priceFrom}</div><div className="ems-l">price</div></div>
-                      </div>
-                      <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="eye" size={15} /> View</button><button className="btn btn-soft btn-sm" onClick={() => navigate("event-detail", { id: ev.id })}><Icon name="edit" size={15} /> Manage</button></div>
-                    </div>
-                  );
-                })
-              ) : ownerEvents === null ? (
+              {live && ownerEvents === null ? (
                 <div className="card" style={{ padding: 24, height: 90, opacity: 0.5 }} aria-busy="true" />
-              ) : ownerEvents.length === 0 ? (
+              ) : !live || ownerEvents === null || ownerEvents.length === 0 ? (
                 <div className="card" style={{ padding: 28 }}>
                   <div style={{ textAlign: "center", marginBottom: 20 }}>
                     <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px", display: "grid", placeItems: "center" }}><Icon name="calendar" size={24} /></div>
@@ -1137,15 +1116,8 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
     toast("Reply posted");
   };
 
-  // Mock-mode fallback: show the seed so the dashboard isn't empty in demos.
-  const display: OwnerReviewRow[] =
-    rows === null
-      ? []
-      : rows.length > 0
-        ? rows
-        : supabaseConfigured
-          ? []
-          : HHData.reviews.map((r) => ({ id: r.id, business_name: "Your listing", rating: r.rating, text: r.text, reply: null, status: "published", created_at: "" }));
+  // Real reviews only — empty array shows the "No reviews yet" empty state below.
+  const display: OwnerReviewRow[] = rows && rows.length > 0 ? rows : [];
 
   if (rows === null) return <div className="dash-pane"><div className="card" style={{ padding: 24, height: 100, opacity: 0.5 }} aria-busy="true" /></div>;
   if (display.length === 0) {

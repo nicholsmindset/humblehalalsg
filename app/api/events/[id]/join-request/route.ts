@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
 
@@ -20,19 +19,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
 
   const admin = getSupabaseAdmin();
-  const mockEv = getEvent(id);
-  if (!admin) {
-    if (!mockEv) return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true, simulated: true, requested: true });
-  }
+  // Without Supabase wired we can't verify the event — simulate success (matches
+  // the app's keyless-simulate behaviour). No mock event lookup.
+  if (!admin) return NextResponse.json({ ok: true, simulated: true, requested: true });
 
   const { data: row } = isSafeEventRef(id)
     ? await admin.from("events").select("id, business_id").or(`id.eq.${id},slug.eq.${id}`).maybeSingle()
     : { data: null };
-  if (!row) {
-    if (!mockEv) return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
-    return NextResponse.json({ ok: true, simulated: true, requested: true });
-  }
+  if (!row) return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
 
   // Link the requester's account when signed in, so they see the approved ticket.
   let userId: string | null = null;

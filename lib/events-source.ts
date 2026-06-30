@@ -1,14 +1,13 @@
-/* Humble Halal — events data SEAM. Single seam between the mock seed
-   (lib/events-data.ts) and Supabase `events`, mirroring lib/directory.ts.
-   Returns the existing EventItem shape so every screen works unchanged. Falls
-   back to the mock whenever Supabase is not configured OR there are no published
-   rows (so the events page is never empty during early seeding). Server-only.
+/* Humble Halal — events data SEAM. Single seam between Supabase `events` and
+   the app, mirroring lib/directory.ts. Returns the existing EventItem shape so
+   every screen works unchanged. When Supabase is not configured OR there are no
+   published rows, returns an EMPTY array (the events page renders a clean empty
+   state — never fabricated events). Server-only.
 
    Structural columns live on `events`; the rich display fields (category, image,
    time/date labels, venue, organiser, blurb, tags, priceFrom, tiers) live in the
    `events.display` jsonb (migration 0014) and are merged here. */
 import "server-only";
-import { events as mockEvents } from "./events-data";
 import type { EventItem, EventTier, GenderArrangement, LatLng } from "./types";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
@@ -72,11 +71,12 @@ export function rowToEvent(r: Row): EventItem {
   };
 }
 
-/** Published events from Supabase, or the mock seed as a graceful fallback. */
+/** Published events from Supabase, or an empty array (clean empty state, never
+ *  fabricated events) when Supabase is unconfigured or has no published rows. */
 export async function getEvents(): Promise<EventItem[]> {
-  if (!supabaseConfigured) return mockEvents;
+  if (!supabaseConfigured) return [];
   const db = getSupabaseAdmin();
-  if (!db) return mockEvents;
+  if (!db) return [];
   try {
     const { data } = await db
       .from("events")
@@ -85,7 +85,7 @@ export async function getEvents(): Promise<EventItem[]> {
       .order("date_iso", { ascending: true });
     if (data && data.length) return data.map(rowToEvent);
   } catch {
-    /* fall back to mock */
+    /* fall back to empty */
   }
-  return mockEvents;
+  return [];
 }

@@ -7,6 +7,7 @@ import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
+import { useDirectory } from "../directory-context";
 import type { EventItem, GenderArrangement } from "@/lib/types";
 import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
@@ -534,13 +535,14 @@ export function EventsScreen() {
 export function EventDetailScreen() {
   const { navigate, params, state, toggleEventSave, toast, flags } = useApp();
   const { get, list } = useEvents();
+  const dir = useDirectory();
   const ev = get(String(params.slug || params.id || "")) || list[0];
   const saved = state.savedEvents.includes(ev.id);
   // Free unless the business set a price AND paid ticketing is switched on.
   const effFree = ev.free || !flags.paidTickets;
   const left = spotsLeft(ev);
   const pct = ev.capacity ? Math.min(100, Math.round((ev.taken / ev.capacity) * 100)) : 0;
-  const org = ev.organiserId ? HHData.listings.find((l) => l.id === ev.organiserId) : null;
+  const org = ev.organiserId ? dir.get(ev.organiserId) || null : null;
   const hijri = ev.dateISO ? formatHijri(ev.dateISO) : "";
   const season = ev.dateISO ? hijriSeason(ev.dateISO) : null;
   const genderLabel = GENDER_LABELS[ev.genderArrangement || ""] || "";
@@ -1375,6 +1377,7 @@ export function EventsStrip() {
   const { navigate } = useApp();
   const { list } = useEvents();
   const evs = list.filter((e) => e.featured).slice(0, 4);
+  if (evs.length === 0) return null; // hide the home strip entirely until real events are published
   return (
     <section className="hh-wrap hh-section" style={{ paddingTop: 0 }}>
       <SectionHead title="Events happening soon" action="See all events" onAction={() => navigate("events")} />

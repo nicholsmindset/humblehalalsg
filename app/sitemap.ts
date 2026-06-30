@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
-import { events } from "@/lib/data";
 import { getDirectory } from "@/lib/directory";
+import { getEvents } from "@/lib/events-source";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
@@ -41,7 +41,7 @@ const PUBLIC_STATIC = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE.url;
   const now = new Date();
-  const listings = await getDirectory();
+  const [listings, eventsList] = await Promise.all([getDirectory(), getEvents()]);
 
   const staticEntries: MetadataRoute.Sitemap = PUBLIC_STATIC.map((path) => ({
     url: `${base}${path === "/" ? "" : path}`,
@@ -58,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     images: l.image ? [l.image] : undefined,
   }));
 
-  const eventEntries: MetadataRoute.Sitemap = events.map((e) => ({
+  const eventEntries: MetadataRoute.Sitemap = eventsList.map((e) => ({
     url: `${base}/events/${e.slug}`,
     lastModified: now,
     changeFrequency: "weekly",
