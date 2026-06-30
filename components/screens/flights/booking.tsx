@@ -276,7 +276,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                   <h2>Contact details</h2>
                   <div className="form-row">
                     <div className="field"><label>Email <span className="req">*</span></label><input required type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@email.com" /></div>
-                    <div className="field"><label>Phone <span className="req">*</span></label><div className="phone-grid"><input className="phone-cc" value={contact.phoneCc} onChange={(e) => setContact({ ...contact, phoneCc: e.target.value.replace(/\D/g, "") })} /><input value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="Include country code" /></div></div>
+                    <div className="field"><label>Phone <span className="req">*</span></label><div className="phone-grid"><span className="phone-plus">+</span><input className="phone-cc" inputMode="numeric" value={contact.phoneCc} onChange={(e) => setContact({ ...contact, phoneCc: e.target.value.replace(/\D/g, "") })} aria-label="Country code" title="Country code" /><input type="tel" inputMode="numeric" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="Phone number" aria-label="Phone number" /></div></div>
                   </div>
                 </div>
 

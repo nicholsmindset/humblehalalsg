@@ -468,8 +468,9 @@
 .date-input { min-height:46px; cursor:text; }
 .date-input::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.55; }
 .date-input:hover::-webkit-calendar-picker-indicator { opacity:.9; }
-.phone-grid { display:grid; grid-template-columns: 70px 1fr; gap:8px; }
-.phone-cc { text-align:center; }
+.phone-grid { display:grid; grid-template-columns: auto 54px 1fr; gap:6px; align-items:center; }
+.phone-plus { font-weight:800; color:var(--ink-soft); padding-left:2px; }
+.phone-cc { text-align:center; min-width:0; }
 .flt-book-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
 .seat-bag-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
 .seat-bag { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line-strong); border-radius:var(--r-sm); font-size:.9rem; cursor:pointer; }
