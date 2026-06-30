@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Unified submission intake for add-listing, suggest-a-business and claim flows.
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
 
   if (body?.website) return NextResponse.json({ ok: true, simulated: true }); // honeypot
 
+  const { userId } = await auth(); // who submitted — links the listing to its owner on approval
+
   const kind = String(body?.kind || "") as Kind;
   if (!KINDS.includes(kind)) {
     return NextResponse.json({ ok: false, error: "Unknown submission type" }, { status: 422 });
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
           postal: String(body?.postal || "") || null,
           category_suggested: String(body?.cat || body?.category || "") || null,
           source: "owner",
-          raw: sanitizeRaw(body),
+          raw: { ...sanitizeRaw(body), ...(userId ? { submitted_by: userId } : {}) },
           review_status: "new",
         };
       } else if (kind === "suggest") {
@@ -87,6 +90,7 @@ export async function POST(req: Request) {
         const bid = String(body?.businessId || "");
         row = {
           business_id: isUuid(bid) ? bid : null,
+          user_id: userId,
           role: String(body?.role || "") || null,
           message: String(body?.message || "") || null,
           status: "pending",

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/slug";
+import { revalidatePublic } from "@/lib/revalidate";
 
 /* Unified admin moderation queue.
    GET  ?type=listings|reviews|reports|suggestions|claims&limit=  → pending rows
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("reviews").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved review" : "Removed review", target: id });
+        revalidatePublic();
         return NextResponse.json({ ok: true, status });
       }
       case "reports": {
@@ -88,6 +90,7 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("events").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved event" : "Rejected event", target: id });
+        revalidatePublic(["/events"]);
         return NextResponse.json({ ok: true, status });
       }
       case "claims":
@@ -119,6 +122,9 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   if (error || !s) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
   const raw = (s.raw && typeof s.raw === "object" ? s.raw : {}) as Record<string, unknown>;
+  // The submitter's Clerk id is stashed in raw at intake — link the published
+  // listing to them so it shows in their owner dashboard.
+  const submittedBy = typeof raw.submitted_by === "string" && raw.submitted_by ? raw.submitted_by : null;
   const slug = String(s.slug || slugify(String(s.name)));
   const insert = {
     name: String(s.name),
@@ -129,6 +135,8 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
     halal_tier: "declared", // community-declared until an admin verifies on HalalSG
     source: String(s.source || "owner"),
     nea_licence_no: s.nea_licence_no ?? null,
+    owner_id: submittedBy,
+    claimed_by: submittedBy,
   };
   const { data: created, error: insErr } = await db.from("businesses").insert(insert).select("id").single();
   if (insErr) {
@@ -136,7 +144,9 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
     return NextResponse.json({ ok: false, error: dup ? "slug_exists" : "publish_failed" }, { status: dup ? 409 : 502 });
   }
   await db.from("staging_businesses").update({ review_status: "published", duplicate_of: created.id }).eq("id", id);
+  if (submittedBy) await db.from("profiles").update({ role: "owner" }).eq("id", submittedBy).neq("role", "admin");
   await logAudit(db, { actor, action: "Published listing", target: created.id, meta: { name: insert.name, staging_id: id } });
+  revalidatePublic();
   return NextResponse.json({ ok: true, status: "published", businessId: created.id });
 }
 
@@ -158,5 +168,6 @@ async function actClaim(admin: ReturnType<typeof getSupabaseAdmin>, id: string, 
     await db.from("profiles").update({ role: "owner" }).eq("id", c.user_id).neq("role", "admin");
   }
   await logAudit(db, { actor, action: "Approved claim", target: id, meta: { business_id: c?.business_id } });
+  revalidatePublic();
   return NextResponse.json({ ok: true, status: "approved" });
 }

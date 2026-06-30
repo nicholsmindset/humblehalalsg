@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { getStripe } from "@/lib/stripe";
+import { revalidatePublic } from "@/lib/revalidate";
 
 /* Organiser event management — edit + cancel. Authorised for the event's
    business owner or an admin. Cancel is a soft status flip (preserves orders)
@@ -126,5 +127,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
   } catch { /* notifications best-effort */ }
 
+  revalidatePublic(["/events"]);
   return NextResponse.json({ ok: true, cancelled: true });
 }
