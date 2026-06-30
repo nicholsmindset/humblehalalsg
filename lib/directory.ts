@@ -71,6 +71,7 @@ export function rowToListing(r: Row): Listing {
     coords: r.lat != null && r.lng != null ? { lat: num(r.lat), lng: num(r.lng) } : undefined,
     hoursWeek,
     certified,
+    claimed: !!(r.owner_id || r.claimed_by),
     certBody: tier === "muis" ? "MUIS" : tier === "admin" ? "Humble Halal" : null,
     verify: {
       certNo: str(r.muis_cert_no) || null,
