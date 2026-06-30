@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 import { normalizeCertNo } from "@/lib/muis";
 import { buildGrantPatch, isExpiringSoon, tierAndScore, type GrantAction } from "@/lib/verify-grant";
+import { revalidatePublic } from "@/lib/revalidate";
 
 /* Admin halal-verification intake.
 
@@ -99,5 +100,6 @@ export async function POST(req: Request) {
     /* best-effort */
   }
 
+  revalidatePublic();
   return NextResponse.json({ ok: true, tier, score });
 }
