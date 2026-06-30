@@ -86,14 +86,14 @@
 .prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
 .prayer-caret { transition: transform .2s; color:#A9C8BD; }
 .prayer-caret.up { transform: rotate(180deg); }
-.prayer-mosque { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:55%; }
+.prayer-mosque { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:72%; }
 .prayer-mosque:hover { background:rgba(255,255,255,.18); }
 .prayer-mosque span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .prayer-mosque strong { font-weight:700; }
 .prayer-mosque svg { color:var(--gold); flex:none; }
 /* Keep the mosque NAME visible on mobile (audit #6 — it was hidden, leaving an
    orphan "· 0.8 km"); the .prayer-mosque span already ellipsis-truncates. */
-@media (max-width:560px){ .prayer-sub { display:none; } .prayer-mosque { max-width:60%; } }
+@media (max-width:560px){ .prayer-sub { display:none; } .prayer-mosque { max-width:78%; } }
 
 .prayer-expand { padding:4px 20px 16px; animation: prayerdrop .22s ease; }
 @keyframes prayerdrop { from { opacity:0; transform:translateY(-6px);} to { opacity:1; transform:none; } }
