@@ -609,6 +609,16 @@ export function ClaimScreen() {
   const fileRef = useRef<HTMLInputElement>(null);
   const results = q ? dir.listings.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())) : dir.listings.slice(0,4);
 
+  // Pre-select the business when arriving from a claim link (/claim?id=… or a
+  // slug). Query params hydrate AFTER mount, so useState's one-shot initializer
+  // misses them — sync here once params.id + the directory are available, so the
+  // owner lands straight on their listing instead of having to search.
+  useEffect(() => {
+    if (picked || !params.id) return;
+    const found = dir.get(String(params.id));
+    if (found) setPicked(found);
+  }, [params.id, dir, picked]);
+
   // Proof of ownership is REQUIRED — a claim can't be submitted without a
   // document (audit #2: the platform's trust positioning forbids accepting
   // ownership with zero proof). Max 8MB, common doc/image types.

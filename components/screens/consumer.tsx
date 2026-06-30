@@ -1048,7 +1048,7 @@ export function DetailScreen() {
                   <div className="muted" style={{ fontSize: ".9rem" }}>Claim your free listing to manage details, reply to reviews and add photos.</div>
                 </div>
               </div>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate("claim", { id: item.id })}><Icon name="shield-check" size={15} /> Claim this listing</button>
+              <button className="btn btn-primary btn-sm" onClick={() => navigate("claim", { id: item.slug || item.id })}><Icon name="shield-check" size={15} /> Claim this listing</button>
             </div>
           )}
 
@@ -1081,7 +1081,7 @@ export function DetailScreen() {
               <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>
-            {!item.claimed && <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.id })}><Icon name="building" size={17} /> Claim this business</button>}
+            {!item.claimed && <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.slug || item.id })}><Icon name="building" size={17} /> Claim this business</button>}
           </div>
 
           {/* internal linking: related places + landing pages */}

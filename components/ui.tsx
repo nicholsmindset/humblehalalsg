@@ -284,6 +284,19 @@ export function ListingCard({
     />
   );
 
+  // Subtle "Claim" chip on unclaimed listings (sits above the full-card link via
+  // z-index + stopPropagation, so it claims rather than opening the detail page).
+  const claimChip = !item.claimed ? (
+    <button
+      className="claim-chip"
+      title="Own this business? Claim your free listing"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate("claim", { id: item.slug || item.id }); }}
+      style={{ position: "relative", zIndex: 2, fontSize: ".72rem", fontWeight: 700, color: "var(--ink-soft)", background: "var(--cream-200)", border: "1px solid var(--line)", borderRadius: 999, padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}
+    >
+      <Icon name="building" size={11} /> Claim
+    </button>
+  ) : null;
+
   if (variant === "row") {
     return (
       <div className="card card-hover" style={{ display: "flex", borderRadius: "var(--r-md)" }}>
@@ -312,6 +325,7 @@ export function ListingCard({
             {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).slice(0, 2).map((b) => (
               <Badge key={b} type={b} />
             ))}
+            {claimChip}
           </div>
         </div>
       </div>
@@ -372,6 +386,7 @@ export function ListingCard({
               <Icon name="pin" size={12} /> {item.outletCount} outlets
             </span>
           )}
+          {claimChip}
         </div>
         <p className="lc-blurb">{item.blurb}</p>
         <div className="lc-foot">
