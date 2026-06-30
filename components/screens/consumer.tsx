@@ -6,7 +6,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
 import { useDirectory } from "../directory-context";
-import type { BadgeKey, LatLng, Listing } from "@/lib/types";
+import type { BadgeKey, LatLng, Listing, Review } from "@/lib/types";
 import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
@@ -233,6 +233,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
   navigate: (screen: string, params?: Record<string, unknown>) => void;
 }) {
   const { t } = useApp();
+  const dir = useDirectory();
   const quickChips = (
     <div className="pillbar" style={{ marginTop: 16, justifyContent: variant === "classic" ? "center" : "flex-start" }}>
       <button className="chip" onClick={() => navigate("map")}><Icon name="near" size={16} /> {t("chip.nearMe")}</button>
@@ -260,7 +261,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
   }
 
   if (variant === "split") {
-    const placeCount = HHData.listings.length;
+    const placeCount = dir.listings.length;
     return (
       <section className="hero hero--split">
         <div className="hh-wrap hero-split-grid">
@@ -1441,7 +1442,7 @@ export function DetailOverview({ item }: { item: Listing }) {
 
 export function DetailReviews({ item }: { item: Listing }) {
   const { toast } = useApp();
-  const [reviews, setReviews] = useState(() => HHData.reviews.map((r) => ({ ...r })));
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [sort, setSort] = useState<"recent" | "helpful" | "rating">("recent");
   const [helped, setHelped] = useState<Record<string, boolean>>({});
   const [showForm, setShowForm] = useState(false);

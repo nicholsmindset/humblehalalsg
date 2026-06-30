@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import { listings as mockListings } from "@/lib/data";
 import type { Listing } from "@/lib/types";
 
 interface DirectoryValue {
@@ -18,12 +17,14 @@ function build(listings: Listing[]): DirectoryValue {
   return { listings, byId, bySlug, get: (x) => bySlug.get(x) || byId.get(x) };
 }
 
-// Default value = the mock seed, so screens work even outside a provider.
-const mockValue = build(mockListings);
-const DirectoryContext = createContext<DirectoryValue>(mockValue);
+// Default value = EMPTY, so screens outside a provider show a clean empty state
+// (never fabricated data). The DirectoryProvider is always fed real
+// getDirectory() data in app/layout.tsx.
+const emptyValue = build([]);
+const DirectoryContext = createContext<DirectoryValue>(emptyValue);
 
 export function DirectoryProvider({ listings, children }: { listings?: Listing[]; children: React.ReactNode }) {
-  const value = useMemo(() => (listings && listings.length ? build(listings) : mockValue), [listings]);
+  const value = useMemo(() => (listings && listings.length ? build(listings) : emptyValue), [listings]);
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>;
 }
 

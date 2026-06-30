@@ -36,12 +36,12 @@ export const categories: Category[] = [
 ];
 
 export const areas: Area[] = [
-  { id: "tampines", name: "Tampines", count: 86, tone: "emerald", coords: { lat: 1.3530, lng: 103.9450 } },
-  { id: "bugis", name: "Bugis", count: 124, tone: "gold", coords: { lat: 1.3009, lng: 103.8559 } },
-  { id: "bedok", name: "Bedok", count: 73, tone: "emerald", coords: { lat: 1.3240, lng: 103.9300 } },
-  { id: "geylang", name: "Geylang Serai", count: 152, tone: "gold", coords: { lat: 1.3176, lng: 103.8980 } },
-  { id: "jurong", name: "Jurong", count: 64, tone: "emerald", coords: { lat: 1.3329, lng: 103.7436 } },
-  { id: "paya-lebar", name: "Paya Lebar", count: 91, tone: "gold", coords: { lat: 1.3177, lng: 103.8920 } },
+  { id: "tampines", name: "Tampines", count: 0, tone: "emerald", coords: { lat: 1.3530, lng: 103.9450 } },
+  { id: "bugis", name: "Bugis", count: 0, tone: "gold", coords: { lat: 1.3009, lng: 103.8559 } },
+  { id: "bedok", name: "Bedok", count: 0, tone: "emerald", coords: { lat: 1.3240, lng: 103.9300 } },
+  { id: "geylang", name: "Geylang Serai", count: 0, tone: "gold", coords: { lat: 1.3176, lng: 103.8980 } },
+  { id: "jurong", name: "Jurong", count: 0, tone: "emerald", coords: { lat: 1.3329, lng: 103.7436 } },
+  { id: "paya-lebar", name: "Paya Lebar", count: 0, tone: "gold", coords: { lat: 1.3177, lng: 103.8920 } },
 ];
 
 // Singapore's geographic centre — default map view.
@@ -171,11 +171,7 @@ export const listings: Listing[] = [
   },
 ];
 
-export const reviews: Review[] = [
-  { id: "r1", name: "Aisyah R.", avatar: "AR", rating: 5, date: "2 weeks ago", text: "The rendang here is the real deal — tender, rich and not too sweet. Prayer space was clean and the staff were so warm.", helpful: 24 },
-  { id: "r2", name: "Faizal M.", avatar: "FM", rating: 5, date: "1 month ago", text: "Came with the whole family on a Sunday. Quick service even when busy, and the kids menu was a nice touch.", helpful: 11 },
-  { id: "r3", name: "Nadia K.", avatar: "NK", rating: 4, date: "1 month ago", text: "Lovely flavours, portions are generous. Only wish parking was easier on weekends.", helpful: 6 },
-];
+export const reviews: Review[] = [];
 
 export const badgeMeta: Record<BadgeKey, BadgeMetaEntry> = {
   muis: { key: "muis", cls: "badge--muis", label: "MUIS Certified", icon: "shield-check", tier: "certified" },
@@ -190,9 +186,9 @@ export const badgeMeta: Record<BadgeKey, BadgeMetaEntry> = {
 
 // Owner dashboard analytics (last 30 days)
 export const analytics: Analytics = {
-  views: 4820, calls: 318, whatsapp: 642, directions: 511, website: 207, saves: 389,
-  spark: [12, 18, 15, 22, 26, 24, 31, 28, 35, 33, 40, 38, 44, 42, 49, 46, 52, 55, 51, 58, 62, 59, 66, 71, 68, 74, 79, 76, 83, 88],
-  reviewTrend: [4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8],
+  views: 0, calls: 0, whatsapp: 0, directions: 0, website: 0, saves: 0,
+  spark: [],
+  reviewTrend: [],
 };
 
 // ---- Real photo wiring (Unsplash, confirmed-loading IDs) ----

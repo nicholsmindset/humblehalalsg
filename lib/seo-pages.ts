@@ -230,9 +230,10 @@ export function getSeoPage(slug: string): SeoPage | undefined {
   return BY_SLUG.get(slug);
 }
 
-/** Listings matching a SEO page's area/venue/category/cuisine filters. */
-export function seoListings(page: SeoPage): Listing[] {
-  return listings.filter((l) => {
+/** Listings matching a SEO page's area/venue/category/cuisine filters, drawn
+ *  from the REAL directory passed in (never the mock seed). */
+export function seoListings(page: SeoPage, source: Listing[]): Listing[] {
+  return source.filter((l) => {
     if (page.areaNames && page.areaNames.length) {
       if (!page.areaNames.includes(l.area)) return false;
     } else if (page.areaId) {

@@ -1,4 +1,6 @@
-import { listings, areas, events } from "@/lib/data";
+import { areas } from "@/lib/data";
+import { getDirectory } from "@/lib/directory";
+import { getEvents } from "@/lib/events-source";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allBrands, STATUS_META } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
@@ -8,8 +10,14 @@ import { SITE } from "@/lib/seo";
 // Spec: https://llmstxt.org
 export const dynamic = "force-static";
 
-export function GET() {
+export async function GET() {
   const u = SITE.url;
+  // Real directory + events (never the mock seed).
+  const [listings, events] = await Promise.all([getDirectory(), getEvents()]);
+  const areaCount = (name: string) => listings.filter((l) => l.area === name).length;
+  const featured = (listings.filter((l) => l.featured).length
+    ? listings.filter((l) => l.featured)
+    : listings.filter((l) => l.certified)).slice(0, 15);
   const body = `# ${SITE.name}
 
 > ${SITE.tagline}. ${SITE.description}
@@ -47,12 +55,11 @@ ${allSeoPages()
   .join("\n")}
 
 ## Areas covered
-${areas.map((a) => `- [${a.name}](${u}/halal/halal-food-in-${a.id}): ${a.count}+ halal places`).join("\n")}
+${areas.map((a) => { const n = areaCount(a.name); return `- [${a.name}](${u}/halal/halal-food-in-${a.id})${n > 0 ? `: ${n} halal places` : ""}`; }).join("\n")}
 
 ## Featured listings
-${listings
-  .filter((l) => l.featured)
-  .map((l) => `- [${l.name}](${u}/business/${l.slug}): ${l.cuisine}, ${l.area}${l.certified ? ` — ${l.certBody} certified` : ""}, ${l.rating}★`)
+${featured
+  .map((l) => `- [${l.name}](${u}/business/${l.slug}): ${l.cuisine}, ${l.area}${l.certified ? ` — ${l.certBody} certified` : ""}${l.reviews > 0 ? `, ${l.rating}★` : ""}`)
   .join("\n")}
 
 ## Popular halal searches (SEO landing pages)

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import { events as mockEvents } from "@/lib/events-data";
 import type { EventItem } from "@/lib/types";
 
 interface EventsValue {
@@ -17,12 +16,13 @@ function build(list: EventItem[]): EventsValue {
   return { list, get: (x) => bySlug.get(x) || byId.get(x) };
 }
 
-// Default value = the mock seed, so screens work even outside a provider.
-const mockValue = build(mockEvents);
-const EventsContext = createContext<EventsValue>(mockValue);
+// Default value = EMPTY, so screens outside a provider show a clean empty state
+// (never fabricated data). The EventsProvider is always fed real getEvents() data.
+const emptyValue = build([]);
+const EventsContext = createContext<EventsValue>(emptyValue);
 
 export function EventsProvider({ events, children }: { events?: EventItem[]; children: React.ReactNode }) {
-  const value = useMemo(() => (events && events.length ? build(events) : mockValue), [events]);
+  const value = useMemo(() => (events && events.length ? build(events) : emptyValue), [events]);
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;
 }
 

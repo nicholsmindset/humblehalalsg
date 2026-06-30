@@ -32,6 +32,9 @@ const nextConfig: NextConfig = {
       // (see lib/img.ts) to stay under Vercel's image quota — they bypass the
       // optimizer — but the pattern is kept for safety / any optimized use.
       { protocol: "https", hostname: "static.cupid.travel" },
+      // Supabase Storage — re-hosted business photos from the image-enrichment
+      // pass (scripts/enrich-images.mjs). Our own project domain.
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
     // Cost controls for Vercel Image Optimization (Hobby quota). A long cache TTL
     // avoids re-optimizing the same image (fewer cache writes); trimmed size lists

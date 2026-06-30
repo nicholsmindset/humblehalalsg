@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { HHData } from "@/lib/data";
-import type { BadgeKey } from "@/lib/types";
+import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
 import { useClerk } from "@clerk/nextjs";
@@ -370,7 +370,7 @@ export function UserDashboardScreen() {
           {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
           {tab==='reviews' && (
             <div className="stack g14">
-              {HHData.reviews.slice(0,2).map(r=>(
+              {([] as { id: string; rating: number; text: string }[]).map(r=>(
                 <div key={r.id} className="card" style={{padding:16}}>
                   <div className="flex g10 center"><ImagePh label="place" tone="gold" src={dir.listings[0]?.image} style={{width:48,height:48,borderRadius:10}}/><div><div style={{fontWeight:700}}>Warung Bumbu Rempah</div><span className="rs-stars">{[1,2,3,4,5].map(i=><Icon key={i} name="starf" size={12} style={{color:i<=r.rating?'var(--gold)':'var(--line-strong)'}}/>)}</span></div></div>
                   <p className="muted" style={{marginTop:10, fontSize:'.92rem'}}>{r.text}</p>
@@ -839,7 +839,7 @@ export function SeoScreen() {
   const isCategoryPage = !!page.catId && !page.areaId;
   const isFood = !page.catId || page.catId === "restaurants" || page.catId === "cafes";
   const content = categoryContent(page.catId);
-  const filtered = seoListings(page);
+  const filtered = seoListings(page, dir.listings);
   const results = (filtered.length ? filtered : dir.listings).slice(0, isCategoryPage ? 9 : 6);
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
@@ -1073,8 +1073,9 @@ function ResendTicketsButton({ block = false }: { block?: boolean }) {
 }
 
 export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof useApp>["navigate"]; state: ReturnType<typeof useApp>["state"] }) {
+  const { get: getEvent } = useEvents();
   const localTickets = state.tickets || [];
-  const savedEvs = (state.savedEvents||[]).map(id=>HHData.events.find(e=>e.id===id)).filter(Boolean) as typeof HHData.events;
+  const savedEvs = (state.savedEvents||[]).map(id=>getEvent(id)).filter(Boolean) as EventItem[];
   const [dbTickets, setDbTickets] = useState<DbTicket[] | null>(null);
 
   // Pull the signed-in user's real tickets (with the scannable qr_ref). Falls
@@ -1129,7 +1130,7 @@ export function MyTickets({ navigate, state }: { navigate: ReturnType<typeof use
           <h3 style={{fontSize:'1.15rem', marginBottom:12}}>Upcoming</h3>
           <div className="stack g12">
             {localTickets.map(t=>{
-              const ev = HHData.events.find(e=>e.id===t.eventId); if(!ev) return null;
+              const ev = getEvent(t.eventId); if(!ev) return null;
               return (
                 <button key={t.ref} type="button" className="ticket-row" onClick={()=>navigate('ticket-detail',{id:t.ref})}>
                   <div className="ticket-row-thumb"><ImagePh label={ev.cat.toLowerCase()} tone={ev.tone} src={ev.img} style={{position:'absolute',inset:0}}/></div>

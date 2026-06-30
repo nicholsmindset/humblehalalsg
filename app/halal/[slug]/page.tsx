@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SeoScreen } from "@/components/screens/misc";
 import { allSeoPages, getSeoPage, seoListings, seoFaqItems } from "@/lib/seo-pages";
+import { getDirectory } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, itemListJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 
@@ -27,12 +28,13 @@ export async function generateMetadata({
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const p = getSeoPage(slug);
+  const all = p ? await getDirectory() : [];
   return (
     <>
       {p && (
         <JsonLd
           data={[
-            itemListJsonLd(seoListings(p), p.h1),
+            itemListJsonLd(seoListings(p, all), p.h1),
             breadcrumbJsonLd([
               { name: "Home", path: "/" },
               { name: "Explore", path: "/explore" },
