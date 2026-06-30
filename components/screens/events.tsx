@@ -537,6 +537,12 @@ export function EventDetailScreen() {
   const { get, list } = useEvents();
   const dir = useDirectory();
   const ev = get(String(params.slug || params.id || "")) || list[0];
+  if (!ev) return (
+    <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
+      <Empty icon="calendar" title="Event not found" body="This event isn’t available. Browse upcoming events instead." />
+      <button className="btn btn-primary mt12" onClick={() => navigate("events")}>Browse events</button>
+    </div>
+  );
   const saved = state.savedEvents.includes(ev.id);
   // Free unless the business set a price AND paid ticketing is switched on.
   const effFree = ev.free || !flags.paidTickets;
@@ -833,11 +839,19 @@ export function CheckoutScreen() {
   const { navigate, params, bookEvent, state, flags, toast } = useApp();
   const { get, list } = useEvents();
   const ev = get(String(params.id)) || list[0];
-  const [tier, setTier] = useState(ev.tiers ? 0 : -1);
+  const [tier, setTier] = useState(ev?.tiers ? 0 : -1);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState(state.user.loggedIn ? state.user.name : "");
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // No event in context (e.g. /checkout opened directly, or no events published yet).
+  if (!ev) return (
+    <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
+      <Empty icon="calendar" title="No event selected" body="Browse upcoming events to RSVP or book tickets." />
+      <button className="btn btn-primary mt12" onClick={() => navigate("events")}>Browse events</button>
+    </div>
+  );
 
   // Free unless the event is priced AND paid ticketing is enabled.
   const free = ev.free || !flags.paidTickets;
