@@ -1038,6 +1038,20 @@ export function DetailScreen() {
             ))}
           </div>
 
+          {/* Claim prompt — the cold-outreach hook on unclaimed listings */}
+          {!item.claimed && (
+            <div className="card" style={{ padding: 16, marginTop: 14, display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", background: "var(--emerald-50)", border: "1px solid var(--emerald-200, var(--line))" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
+                <span className="attn-ico"><Icon name="building" size={20} /></span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800 }}>Is this your business?</div>
+                  <div className="muted" style={{ fontSize: ".9rem" }}>Claim your free listing to manage details, reply to reviews and add photos.</div>
+                </div>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={() => navigate("claim", { id: item.id })}><Icon name="shield-check" size={15} /> Claim this listing</button>
+            </div>
+          )}
+
           {/* tabs */}
           <div className="detail-tabs">
             {tabs.map((t) => (
@@ -1067,7 +1081,7 @@ export function DetailScreen() {
               <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>
-            <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.id })}><Icon name="building" size={17} /> Claim this business</button>
+            {!item.claimed && <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.id })}><Icon name="building" size={17} /> Claim this business</button>}
           </div>
 
           {/* internal linking: related places + landing pages */}

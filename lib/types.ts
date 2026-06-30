@@ -93,6 +93,9 @@ export interface Listing {
   image?: string;
   certified?: boolean;
   certBody?: string | null;
+  /** True when an owner has claimed this business (owner_id or claimed_by set).
+   *  Drives the "Is this your business? Claim it" prompt on unclaimed pages. */
+  claimed?: boolean;
   verify?: VerifyInfo;
   prayerInfo?: PrayerInfo;
   statusChanged?: boolean;
