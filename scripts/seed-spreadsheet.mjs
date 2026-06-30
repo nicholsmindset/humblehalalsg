@@ -213,6 +213,22 @@ async function main() {
     console.log(`→ purged ${mockCount ?? "?"} mock 'seed' rows`);
   }
 
+  // ADDR_ONLY=1 → backfill ONLY address/postal via UPDATE (preserves photos the
+  // enrichment pass upgraded; partial upsert can't be used — it'd fail name NOT NULL).
+  if (process.env.ADDR_ONLY === "1") {
+    console.log("→ ADDR_ONLY: UPDATE address/postal by slug (photos untouched).");
+    let done = 0, miss = 0;
+    for (let i = 0; i < out.length; i += 25) {
+      const batch = out.slice(i, i + 25);
+      const res = await Promise.all(batch.map((r) =>
+        sb.from("businesses").update({ address: r.address ?? null, postal: r.postal ?? null }).eq("slug", r.slug)));
+      for (const x of res) { if (x.error) miss++; else done++; }
+      console.log(`  updated ${Math.min(i + 25, out.length)}/${out.length}`);
+    }
+    console.log(`✓ address/postal backfilled: ${done} ok, ${miss} errored.`);
+    return;
+  }
+
   let upserted = 0;
   for (let i = 0; i < out.length; i += 100) {
     const batch = out.slice(i, i + 100);
