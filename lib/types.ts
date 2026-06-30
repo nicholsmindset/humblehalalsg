@@ -88,6 +88,7 @@ export interface Listing {
   ig: string;
   web: string;
   address: string;
+  postal?: string;
   tags: string[];
   // enrichment (added at module load)
   image?: string;
