@@ -2,13 +2,14 @@
 
 /* Humble Halal — Business screens (ported from screens-business.jsx):
    For Business value page, Pricing, Add-Listing wizard, Owner Dashboard, Sparkline. */
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
 import { canUse, planKey, PLAN_LIST } from "@/lib/plans";
 import { useUser } from "@clerk/nextjs";
 import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
+import { DAY_LABELS } from "@/lib/hours";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -504,6 +505,257 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
 type OwnerBiz = { id: string; slug: string; name: string; area: string | null; cat_id: string | null; plan: string; featured: boolean; halal_tier: string | null; last_verified_at: string | null };
 type OwnerEvent = { id: string; slug: string; title: string; status: string; taken: number; capacity: number; is_free: boolean; date_iso: string | null; display: { cat?: string; area?: string; priceFrom?: number; requiresApproval?: boolean } | null };
 
+/* =============================================================
+   OWNER LISTING EDITOR (inline, self-service)
+   Lets a claimed owner edit the editable fields of a listing they own.
+   Talks to /api/owner/listing (GET to load, PATCH to save) — ownership is
+   enforced server-side. Sends only changed fields; "" clears a field.
+============================================================= */
+
+type EditableSocials = { whatsapp?: string; instagram?: string; [k: string]: string | undefined };
+type OwnerListing = {
+  id: string;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  postal?: string | null;
+  description?: string | null;
+  price_level?: string | null;
+  opening_hours?: ({ open?: string; close?: string } | null)[] | null;
+  socials?: EditableSocials | null;
+};
+// A single day in the 7-row editor: closed = no range for that day.
+type DayRow = { closed: boolean; open: string; close: string };
+const EMPTY_DAY: DayRow = { closed: true, open: "", close: "" };
+
+function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string; name: string; toast: (m: string) => void; onClose: () => void; onSaved: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
+  const [address, setAddress] = useState("");
+  const [postal, setPostal] = useState("");
+  const [description, setDescription] = useState("");
+  const [priceLevel, setPriceLevel] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [days, setDays] = useState<DayRow[]>(() => Array.from({ length: 7 }, () => ({ ...EMPTY_DAY })));
+
+  // Keep the loaded values so we PATCH only what actually changed (and preserve
+  // any extra keys already on the `socials` jsonb object).
+  const [orig, setOrig] = useState<OwnerListing | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setLoadError(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/owner/listing?id=${encodeURIComponent(id)}`);
+        const json = await res.json().catch(() => ({ ok: false }));
+        if (!alive) return;
+        if (!res.ok || !json?.ok) {
+          const map: Record<string, string> = { unauthorized: "Please sign in to edit this listing.", forbidden: "You don’t have access to this listing.", not_found: "We couldn’t find this listing.", service_not_configured: "Editing isn’t available right now." };
+          setLoadError(map[json?.error] || "Couldn’t load this listing — try again.");
+          setLoading(false);
+          return;
+        }
+        const b = json.business as OwnerListing;
+        setOrig(b);
+        setPhone(b.phone ?? "");
+        setWebsite(b.website ?? "");
+        setAddress(b.address ?? "");
+        setPostal(b.postal ?? "");
+        setDescription(b.description ?? "");
+        setPriceLevel(b.price_level ?? "");
+        const soc = (b.socials && typeof b.socials === "object" ? b.socials : {}) as EditableSocials;
+        setWhatsapp(soc.whatsapp ?? "");
+        setInstagram(soc.instagram ?? "");
+        const oh = Array.isArray(b.opening_hours) ? b.opening_hours : [];
+        setDays(Array.from({ length: 7 }, (_, i) => {
+          const d = oh[i];
+          if (d && d.open && d.close) return { closed: false, open: d.open, close: d.close };
+          return { ...EMPTY_DAY };
+        }));
+        setLoading(false);
+      } catch {
+        if (alive) { setLoadError("Couldn’t load this listing — try again."); setLoading(false); }
+      }
+    })();
+    return () => { alive = false; };
+  }, [id]);
+
+  const setDay = (i: number, patch: Partial<DayRow>) =>
+    setDays((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
+
+  // Build the opening_hours array in the exact shape rowToListing expects:
+  // length-7 array, each entry { open, close } or null for a closed day.
+  const buildHours = (): ({ open: string; close: string } | null)[] =>
+    days.map((d) => (!d.closed && d.open && d.close ? { open: d.open, close: d.close } : null));
+
+  const sameHours = (a: ({ open: string; close: string } | null)[], b: OwnerListing["opening_hours"]): boolean => {
+    const bb = Array.isArray(b) ? b : [];
+    if (a.length !== 7) return false;
+    for (let i = 0; i < 7; i++) {
+      const x = a[i];
+      const y = bb[i];
+      const yOpen = y?.open || "";
+      const yClose = y?.close || "";
+      const yNull = !(yOpen && yClose);
+      if (x === null && yNull) continue;
+      if (x === null || yNull) return false;
+      if (x.open !== yOpen || x.close !== yClose) return false;
+    }
+    return true;
+  };
+
+  const save = async () => {
+    if (!orig) return;
+    // 6-digit postal sanity check (allow blank to clear).
+    if (postal && !/^\d{6}$/.test(postal)) { toast("Postal code should be 6 digits"); return; }
+
+    const patch: Record<string, unknown> = { id };
+    const diff = (val: string, was: string | null | undefined) => {
+      const nv = val.trim();
+      if (nv !== (was ?? "")) return true;
+      return false;
+    };
+    if (diff(phone, orig.phone)) patch.phone = phone.trim();
+    if (diff(website, orig.website)) patch.website = website.trim();
+    if (diff(address, orig.address)) patch.address = address.trim();
+    if (diff(postal, orig.postal)) patch.postal = postal.trim();
+    if (diff(description, orig.description)) patch.description = description.trim();
+    if (diff(priceLevel, orig.price_level)) patch.price_level = priceLevel;
+
+    // Socials: merge onto the existing jsonb so other keys are preserved.
+    const origSoc = (orig.socials && typeof orig.socials === "object" ? orig.socials : {}) as EditableSocials;
+    const wa = whatsapp.trim();
+    const ig = instagram.trim();
+    if ((wa || "") !== (origSoc.whatsapp ?? "") || (ig || "") !== (origSoc.instagram ?? "")) {
+      const nextSoc: EditableSocials = { ...origSoc };
+      if (wa) nextSoc.whatsapp = wa; else delete nextSoc.whatsapp;
+      if (ig) nextSoc.instagram = ig; else delete nextSoc.instagram;
+      patch.socials = nextSoc;
+    }
+
+    const hours = buildHours();
+    if (!sameHours(hours, orig.opening_hours)) patch.opening_hours = hours;
+
+    if (Object.keys(patch).length <= 1) { toast("No changes to save"); onClose(); return; }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/owner/listing", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (res.ok && json?.ok) {
+        toast("Listing updated");
+        onSaved();
+      } else {
+        const map: Record<string, string> = { forbidden: "You don’t have access to this listing.", not_found: "We couldn’t find this listing.", no_fields: "No changes to save.", unauthorized: "Please sign in to edit this listing." };
+        toast(map[json?.error] || "Couldn’t save — try again.");
+      }
+    } catch {
+      toast("Couldn’t save — try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ borderTop: "1px solid var(--line)", padding: 16, background: "var(--surface-2, #fafafa)" }}>
+      {loading ? (
+        <div className="stack g10" aria-busy="true">
+          <div className="faint" style={{ fontSize: ".88rem" }}>Loading {name}…</div>
+          <div className="card" style={{ height: 60, opacity: 0.4 }} />
+        </div>
+      ) : loadError ? (
+        <div className="stack g12">
+          <div className="notice notice-warn"><Icon name="info" size={18} /><span>{loadError}</span></div>
+          <div className="flex g8"><button className="btn btn-soft btn-sm" onClick={onClose}>Close</button></div>
+        </div>
+      ) : (
+        <div className="stack g16">
+          <div className="field">
+            <label>Phone</label>
+            <input className="input" type="tel" inputMode="tel" placeholder="+65 9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+          </div>
+          <div className="field">
+            <label>Website</label>
+            <input className="input" type="url" placeholder="https://example.com" value={website} onChange={(e) => setWebsite(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+          </div>
+          <div className="grid2 g12" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+            <div className="field">
+              <label>Address</label>
+              <input className="input" type="text" placeholder="123 Example Street, #01-23" value={address} onChange={(e) => setAddress(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+            </div>
+            <div className="field">
+              <label>Postal code</label>
+              <input className="input" type="text" inputMode="numeric" maxLength={6} placeholder="123456" value={postal} onChange={(e) => setPostal(e.target.value.replace(/\D/g, "").slice(0, 6))} style={{ fontSize: 16, minHeight: 44 }} />
+            </div>
+          </div>
+          <div className="field">
+            <label>Description</label>
+            <textarea className="textarea" placeholder="Tell customers what makes your place special." value={description} onChange={(e) => setDescription(e.target.value)} style={{ fontSize: 16, minHeight: 88 }} />
+          </div>
+          <div className="field">
+            <label>Price level</label>
+            <select className="select" value={priceLevel} onChange={(e) => setPriceLevel(e.target.value)} style={{ fontSize: 16, minHeight: 44 }}>
+              <option value="">Not set</option>
+              <option value="$">$</option>
+              <option value="$$">$$</option>
+              <option value="$$$">$$$</option>
+              <option value="$$$$">$$$$</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>WhatsApp</label>
+            <input className="input" type="text" inputMode="tel" placeholder="+65 9123 4567" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+          </div>
+          <div className="field">
+            <label>Instagram</label>
+            <input className="input" type="text" placeholder="@yourhandle" value={instagram} onChange={(e) => setInstagram(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+          </div>
+
+          <div className="field">
+            <label>Opening hours</label>
+            <div className="stack g8" style={{ marginTop: 6 }}>
+              {DAY_LABELS.map((label, i) => {
+                const d = days[i];
+                return (
+                  <div key={label} className="flex g8 center wrap" style={{ alignItems: "center" }}>
+                    <span style={{ width: 44, fontWeight: 600, fontSize: ".9rem" }}>{label}</span>
+                    {d.closed ? (
+                      <span className="faint f1" style={{ fontSize: ".88rem" }}>Closed</span>
+                    ) : (
+                      <div className="flex g6 center f1" style={{ flexWrap: "wrap" }}>
+                        <input aria-label={`${label} opening time`} className="input" type="time" value={d.open} onChange={(e) => setDay(i, { open: e.target.value })} style={{ fontSize: 16, minHeight: 44, width: 130 }} />
+                        <span className="faint">to</span>
+                        <input aria-label={`${label} closing time`} className="input" type="time" value={d.close} onChange={(e) => setDay(i, { close: e.target.value })} style={{ fontSize: 16, minHeight: 44, width: 130 }} />
+                      </div>
+                    )}
+                    <label className="flex g6 center" style={{ fontSize: ".85rem", minHeight: 44 }}>
+                      <input type="checkbox" checked={d.closed} onChange={(e) => setDay(i, e.target.checked ? { closed: true } : { closed: false, open: d.open || "09:00", close: d.close || "18:00" })} style={{ width: 20, height: 20 }} />
+                      Closed
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex g8 wrap" style={{ marginTop: 4 }}>
+            <button className="btn btn-primary" disabled={saving} onClick={save} style={{ minHeight: 44 }}>{saving ? "Saving…" : "Save changes"}</button>
+            <button className="btn btn-soft" disabled={saving} onClick={onClose} style={{ minHeight: 44 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OwnerDashboardScreen() {
   const { navigate, toast, flags } = useApp();
   const dir = useDirectory();
@@ -517,22 +769,34 @@ export function OwnerDashboardScreen() {
   const live = supabaseConfigured;
   const [biz, setBiz] = useState<OwnerBiz[] | null>(null); // null = loading
   const [ownerEvents, setOwnerEvents] = useState<OwnerEvent[] | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null); // listing being edited inline
+
+  // Reload the owner's businesses (id-only refresh keeps card metadata current
+  // after an inline edit). Returns the list so callers can chain.
+  const loadBiz = useCallback(async () => {
+    const sb = supabase;
+    if (!sb || !user) return [] as OwnerBiz[];
+    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at").eq("owner_id", user.id);
+    const list = (bd as OwnerBiz[]) || [];
+    setBiz(list);
+    return list;
+  }, [supabase, user]);
+
   useEffect(() => {
     let alive = true;
     (async () => {
       const sb = supabase;
       if (!sb) return; // mock mode
       if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); } return; }
-      const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at").eq("owner_id", user.id);
-      const list = (bd as OwnerBiz[]) || [];
-      if (alive) setBiz(list);
+      const list = await loadBiz();
+      if (!alive) return;
       if (list.length) {
         const { data: ed } = await sb.from("events").select("id, slug, title, status, taken, capacity, is_free, date_iso, display").in("business_id", list.map((b) => b.id)).order("date_iso", { ascending: false });
         if (alive) setOwnerEvents((ed as OwnerEvent[]) || []);
       } else if (alive) setOwnerEvents([]);
     })();
     return () => { alive = false; };
-  }, [supabase, user]);
+  }, [supabase, user, loadBiz]);
   const myBiz = biz && biz.length ? biz[0] : null;
   // Current subscription tier (from the business `plan`). In mock/demo mode show
   // "verified" so the header isn't bare; the upgrade CTA shows below premium.
@@ -650,11 +914,25 @@ export function OwnerDashboardScreen() {
               </div>
             ) : (
               biz.map((b) => (
-                <div key={b.id} className="card" style={{ display: "flex", gap: 14, padding: 14, alignItems: "center" }}>
-                  <div className="f1"><div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.1rem" }}>{b.name}</div>
-                    <div className="lc-meta">{[b.cat_id, b.area].filter(Boolean).join(" · ") || "—"}</div>
-                    <div className="flex g6" style={{ marginTop: 6 }}>{b.halal_tier === "muis" && <Badge type="muis" />}{b.halal_tier === "admin" && <Badge type="admin" />}{b.featured && <span className="pill-tag green">Featured</span>}</div></div>
-                  <div className="flex g8"><button className="btn btn-outline btn-sm" onClick={() => navigate("detail", { id: b.slug })}><Icon name="eye" size={16} /> View</button></div>
+                <div key={b.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
+                  <div style={{ display: "flex", gap: 14, padding: 14, alignItems: "center", flexWrap: "wrap" }}>
+                    <div className="f1" style={{ minWidth: 180 }}><div style={{ fontWeight: 700, fontFamily: "var(--serif)", fontSize: "1.1rem" }}>{b.name}</div>
+                      <div className="lc-meta">{[b.cat_id, b.area].filter(Boolean).join(" · ") || "—"}</div>
+                      <div className="flex g6" style={{ marginTop: 6 }}>{b.halal_tier === "muis" && <Badge type="muis" />}{b.halal_tier === "admin" && <Badge type="admin" />}{b.featured && <span className="pill-tag green">Featured</span>}</div></div>
+                    <div className="flex g8 wrap">
+                      <button className="btn btn-outline btn-sm" onClick={() => navigate("detail", { id: b.slug })}><Icon name="eye" size={16} /> View</button>
+                      <button className="btn btn-soft btn-sm" aria-expanded={editingId === b.id} onClick={() => setEditingId((cur) => (cur === b.id ? null : b.id))}><Icon name="edit" size={16} /> {editingId === b.id ? "Close" : "Edit"}</button>
+                    </div>
+                  </div>
+                  {editingId === b.id && (
+                    <OwnerListingEditor
+                      id={b.id}
+                      name={b.name}
+                      toast={toast}
+                      onClose={() => setEditingId(null)}
+                      onSaved={() => { setEditingId(null); void loadBiz(); }}
+                    />
+                  )}
                 </div>
               ))
             )}
