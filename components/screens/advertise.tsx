@@ -1,6 +1,7 @@
 "use client";
 
 /* Humble Halal — Advertise with us (advertising sales page). */
+import { useState } from "react";
 import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
@@ -15,17 +16,47 @@ const STATS: [string, string][] = [
   ["Brand-safe", "Curated, halal-context placements only"],
 ];
 
-const FORMATS: { icon: string; name: string; desc: string; price: string }[] = [
-  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map.", price: "from $89/mo" },
-  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: "from $450/mo" },
-  { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: "from $300/mo" },
-  { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: "from $250/send" },
-  { icon: "calendar", name: "Event Promotion", desc: "Boost your bazaar, class or community event across the Events page and homepage strip.", price: "from $120/event" },
+/* `product` maps to the server-trusted price map in /api/checkout/promo.
+   Sponsored Content is bespoke (no fixed price) → contact instead of checkout. */
+const FORMATS: { icon: string; name: string; desc: string; price: string; product?: string }[] = [
+  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map.", price: "from $89/mo", product: "featured-listing" },
+  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: "from $450/mo", product: "homepage-spotlight" },
+  { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: "from $300/mo", product: "category-sponsorship" },
+  { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: "from $250/send", product: "newsletter-sponsorship" },
+  { icon: "calendar", name: "Event Promotion", desc: "Boost your bazaar, class or community event across the Events page and homepage strip.", price: "from $120/event", product: "event-promotion" },
   { icon: "megaphone", name: "Sponsored Content", desc: "An editorial feature or area guide written with your brand — built for search and AI citation.", price: "Custom" },
 ];
 
 export function AdvertiseScreen() {
   const { navigate, toast } = useApp();
+  const [buying, setBuying] = useState<string | null>(null);
+
+  // Start a Stripe Checkout for a fixed-price ad package (reuses /api/checkout/promo).
+  async function handleBuy(f: (typeof FORMATS)[number]) {
+    if (!f.product) {
+      window.location.href = `mailto:${CONTACT_EMAILS.partners}?subject=${encodeURIComponent("Sponsored Content enquiry")}&body=${encodeURIComponent("Hi Humble Halal, I'd like to discuss a Sponsored Content campaign.")}`;
+      return;
+    }
+    setBuying(f.product);
+    try {
+      const r = await fetch("/api/checkout/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: f.product }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (d?.ok && d.url) { window.location.href = d.url; return; }
+      toast(
+        d?.reason === "paid_ads_disabled"
+          ? "Advertising checkout is opening soon — email us for the media kit."
+          : "Couldn't start checkout — please email us for the media kit.",
+      );
+    } catch {
+      toast("Couldn't start checkout — please email us for the media kit.");
+    }
+    setBuying(null);
+  }
+
   return (
     <div className="screen-in hh-page">
       <MobileHeader title="Advertise with us" onBack={() => navigate("for-business")} />
@@ -76,6 +107,9 @@ export function AdvertiseScreen() {
                 <h3 style={{ fontSize: "1.15rem" }}>{f.name}</h3>
                 <p className="muted" style={{ fontSize: ".92rem", lineHeight: 1.5, flex: 1 }}>{f.desc}</p>
                 <div style={{ fontWeight: 700, color: "var(--emerald)" }}>{f.price}</div>
+                <button className="btn btn-primary btn-sm btn-block" style={{ marginTop: 6 }} disabled={buying === f.product} onClick={() => handleBuy(f)}>
+                  {f.product ? (buying === f.product ? "Starting…" : "Get started") : "Talk to us"} <Icon name="arrow" size={15} />
+                </button>
               </div>
             ))}
           </div>
