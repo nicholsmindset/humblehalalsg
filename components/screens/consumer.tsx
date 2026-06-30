@@ -1150,7 +1150,13 @@ export function DetailScreen() {
               <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
               <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}</span>
             </div>
-            <ImagePh label="map location" tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
+            {item.coords ? (
+              <div style={{ height: 200, borderRadius: 12, marginTop: 12, overflow: "hidden", position: "relative" }}>
+                <MapView center={item.coords} zoom={16} points={[{ id: item.id, name: item.name, coords: item.coords as LatLng, kind: "listing" as const }]} />
+              </div>
+            ) : (
+              <ImagePh label="map location" tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
+            )}
             <a className="btn btn-primary btn-block mt12" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Get directions</a>
           </div>
           )}
