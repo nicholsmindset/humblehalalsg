@@ -981,7 +981,7 @@ function OwnerAds({ navigate }: { navigate: ReturnType<typeof useApp>["navigate"
   return (
     <div className="dash-pane">
       <div className="card" style={{ overflow: "hidden" }}>
-        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Your campaigns</h3><span className="faint" style={{ fontSize: ".82rem" }}>Reach &amp; engagement, updated live</span></div>
+        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Your campaigns</h3><button className="btn btn-gold btn-sm" onClick={() => navigate("advertise")}><Icon name="plus" size={14} /> New campaign</button></div>
         <div className="tbl-scroll"><table className="tbl">
           <thead><tr><th>Campaign</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Rate</th></tr></thead>
           <tbody>{rows.map((r) => {
