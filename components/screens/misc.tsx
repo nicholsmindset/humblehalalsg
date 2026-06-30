@@ -619,9 +619,10 @@ export function ClaimScreen() {
     if (found) setPicked(found);
   }, [params.id, dir, picked]);
 
-  // Proof of ownership is REQUIRED — a claim can't be submitted without a
-  // document (audit #2: the platform's trust positioning forbids accepting
-  // ownership with zero proof). Max 8MB, common doc/image types.
+  // Proof of ownership is OPTIONAL at submission to keep claiming frictionless
+  // (cold-outreach conversion). Ownership is never auto-granted — every claim
+  // goes to the admin queue and is verified before approval, so the trust gate
+  // is the admin review, not a blocking upload. Attaching a doc just speeds it up.
   const MAX_PROOF_BYTES = 8 * 1024 * 1024;
   function onPickFile(f: File | null) {
     if (!f) { setProof(null); return; }
@@ -659,7 +660,7 @@ export function ClaimScreen() {
             <div className="stack g16 mt16">
               <div className="field"><label>Your role</label><select className="select" value={role} onChange={e=>setRole(e.target.value)}><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
               <div className="field">
-                <label>Proof of ownership <span className="hint">(required)</span></label>
+                <label>Proof of ownership <span className="hint">(optional — speeds up approval)</span></label>
                 <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic" hidden onChange={e=>onPickFile(e.target.files?.[0] ?? null)} />
                 <div className={`upload-zone ${proof ? "has-file" : ""}`} role="button" tabIndex={0} onClick={()=>fileRef.current?.click()} onKeyDown={e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileRef.current?.click(); } }}>
                   <Icon name={proof ? "check" : "upload"} size={24}/>
@@ -678,16 +679,15 @@ export function ClaimScreen() {
                 </div>
               </div>
               <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" value={message} onChange={e=>setMessage(e.target.value)} /></div>
-              <button className="btn btn-primary btn-lg" disabled={!proof || submitting} onClick={async ()=>{
-                if (!proof) { toast("Please attach a proof-of-ownership document"); return; }
+              <button className="btn btn-primary btn-lg" disabled={submitting} onClick={async ()=>{
                 setSubmitting(true);
                 try {
-                  await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name, role, message, proofFileName: proof.name, proofType: proof.type, proofSize: proof.size }) });
+                  await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name, role, message, proofFileName: proof?.name ?? null, proofType: proof?.type ?? null, proofSize: proof?.size ?? null }) });
                 } catch { /* graceful */ }
                 addRequest("claim", picked.name);
                 navigate('success',{type:'claim'});
               }}>{submitting ? "Submitting…" : "Submit claim"}</button>
-              {!proof && <p className="faint tc" style={{fontSize:'.8rem'}}>Attach a proof-of-ownership document to submit your claim.</p>}
+              <p className="faint tc" style={{fontSize:'.8rem'}}>We verify ownership before your claim is approved.</p>
             </div>
           </div>
         )}
