@@ -1164,7 +1164,7 @@ export function DetailScreen() {
             <hr className="divider" style={{ margin: "14px 0" }} />
             <div className="flex g8" style={{ alignItems: "flex-start" }}>
               <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
-              <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}</span>
+              <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
             </div>
             {item.coords ? (
               <div style={{ height: 200, borderRadius: 12, marginTop: 12, overflow: "hidden", position: "relative" }}>

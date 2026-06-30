@@ -100,6 +100,7 @@ export function listingJsonLd(l: Listing) {
       "@type": "PostalAddress",
       streetAddress: l.address,
       addressLocality: l.area,
+      postalCode: l.postal || undefined,
       addressRegion: "Singapore",
       addressCountry: "SG",
     },

@@ -66,6 +66,7 @@ export function rowToListing(r: Row): Listing {
     ig: str(r.instagram || socials.instagram),
     web: str(r.website),
     address: str(r.address),
+    postal: str(r.postal) || undefined,
     tags,
     image: photos[0]?.url || undefined,
     coords: r.lat != null && r.lng != null ? { lat: num(r.lat), lng: num(r.lng) } : undefined,
