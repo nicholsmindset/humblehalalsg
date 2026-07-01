@@ -59,6 +59,9 @@ interface AppContextValue {
   route: { screen: string; params: Params };
   params: Params;
   navigate: (screen: string, params?: Params) => void;
+  /** Record a listing as recently-viewed. Used by ScreenLink cards that navigate
+      via next/link (for prefetch) instead of navigate(), so "recent" still fills. */
+  trackRecent: (id: string) => void;
   back: () => void;
   state: AppState;
   setUser: (u: UserState) => void;
@@ -229,6 +232,11 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
 
   const back = useCallback(() => router.back(), [router]);
 
+  const trackRecent = useCallback((id: string) => {
+    if (!id) return;
+    setRecent((r) => [id, ...r.filter((x) => x !== id)].slice(0, 8));
+  }, []);
+
   const setUser = useCallback((u: UserState) => setUserState(u), []);
 
   const toggleSave = useCallback(
@@ -376,6 +384,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       route: { screen, params },
       params,
       navigate,
+      trackRecent,
       back,
       state: { saved, wishlist, recent, user, tweaks, prefs, savedEvents, tickets, requests, collections, hydrated },
       setUser,
@@ -402,7 +411,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       setFlag,
     }),
     [
-      screen, params, navigate, back, saved, wishlist, recent, user, tweaks, prefs,
+      screen, params, navigate, trackRecent, back, saved, wishlist, recent, user, tweaks, prefs,
       savedEvents, tickets, requests, collections, setUser, toggleSave, toggleWish, toast, setTweak, setPref,
       toggleCertifiedOnly, toggleEventSave, bookEvent, addRequest, toastMsg,
       createCollection, toggleInCollection, lang, setLang, t, ramadan, toggleRamadan,

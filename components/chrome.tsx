@@ -13,6 +13,7 @@ import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
+import { ScreenLink } from "./screen-link";
 import Link from "next/link";
 
 /* Clerk's account control (manage account, security/MFA, sessions, sign out) is
@@ -384,7 +385,7 @@ export function Onboarding() {
 
 /* ---------------- TOP NAV (desktop) ---------------- */
 export function TopNav() {
-  const { route, navigate, state, t } = useApp();
+  const { navigate, state, t } = useApp();
   const user = state.user;
   const links = [
     { id: "explore", label: t("nav.explore") },
@@ -402,18 +403,9 @@ export function TopNav() {
         <Logo onClick={() => navigate("home")} />
         <nav aria-label="Primary">
           {links.map((l, i) => (
-            <a
-              key={i}
-              href={`/${l.id === "for-business" ? "for-business" : l.id}`}
-              className={route.screen === l.id ? "active" : ""}
-              aria-current={route.screen === l.id ? "page" : undefined}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(l.id);
-              }}
-            >
+            <ScreenLink key={i} screen={l.id} activeClassName="active">
               {l.label}
-            </a>
+            </ScreenLink>
           ))}
         </nav>
         <div className="spacer" />
@@ -475,7 +467,7 @@ export function TopNav() {
 
 /* ---------------- MOBILE TOP BAR + MENU DRAWER ---------------- */
 export function MobileBar() {
-  const { route, navigate, state, t } = useApp();
+  const { navigate, state, t } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -551,16 +543,18 @@ export function MobileBar() {
 
             <nav className="nav-drawer-links" aria-label="Primary">
               {links.map(([id, label, icon]) => (
-                <button
+                <ScreenLink
                   key={id}
-                  className={`nav-drawer-link ${route.screen === id ? "active" : ""}`}
-                  aria-current={route.screen === id ? "page" : undefined}
-                  onClick={() => go(id)}
+                  screen={id}
+                  className="nav-drawer-link"
+                  activeClassName="active"
+                  intent
+                  onClick={close}
                 >
                   <Icon name={icon} size={20} />
                   <span>{label}</span>
                   <Icon name="arrow" size={16} className="nav-drawer-arrow" />
-                </button>
+                </ScreenLink>
               ))}
             </nav>
 
@@ -591,10 +585,10 @@ export function MobileBar() {
 
             <div className="nav-drawer-more">
               {more.map(([id, label, icon]) => (
-                <button key={id} className="nav-drawer-morelink" onClick={() => go(id)}>
+                <ScreenLink key={id} screen={id} className="nav-drawer-morelink" intent onClick={close}>
                   <Icon name={icon} size={16} />
                   <span>{label}</span>
-                </button>
+                </ScreenLink>
               ))}
             </div>
           </aside>
@@ -606,7 +600,7 @@ export function MobileBar() {
 
 /* ---------------- BOTTOM NAV (mobile) ---------------- */
 export function BottomNav() {
-  const { route, navigate, state, t } = useApp();
+  const { state, t } = useApp();
   const tabs = [
     { id: "home", icon: "home", label: t("tab.home") },
     { id: "explore", icon: "search", label: t("tab.search") },
@@ -624,28 +618,18 @@ export function BottomNav() {
   ];
   return (
     <nav className="hh-tabbar" aria-label="Primary mobile">
-      {tabs.map((t) =>
-        t.add ? (
-          <button
-            key="add"
-            className="hh-tab add"
-            onClick={() => navigate("add-listing")}
-            aria-label="Add a listing"
-          >
+      {tabs.map((tab) =>
+        tab.add ? (
+          <ScreenLink key="add" screen="add-listing" className="hh-tab add" aria-label="Add a listing">
             <span className="addbtn">
               <Icon name="plus" size={24} />
             </span>
-          </button>
+          </ScreenLink>
         ) : (
-          <button
-            key={t.label}
-            className={`hh-tab ${route.screen === t.id ? "active" : ""}`}
-            aria-current={route.screen === t.id ? "page" : undefined}
-            onClick={() => navigate(t.id)}
-          >
-            <Icon name={t.icon} size={23} />
-            <span>{t.label}</span>
-          </button>
+          <ScreenLink key={tab.label} screen={tab.id} className="hh-tab" activeClassName="active">
+            <Icon name={tab.icon} size={23} />
+            <span>{tab.label}</span>
+          </ScreenLink>
         ),
       )}
     </nav>

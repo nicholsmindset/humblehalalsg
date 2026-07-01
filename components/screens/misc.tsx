@@ -3,7 +3,6 @@
 /* Humble Halal — Misc screens: Auth, User dashboard, Suggest, Claim, Report, Trust, SEO, States
    (ported from screens-misc.jsx). */
 import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { HHData } from "@/lib/data";
 import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
@@ -1059,7 +1058,12 @@ function TicketQR({ value, size = 96 }: { value: string; size?: number }) {
   const [url, setUrl] = useState("");
   useEffect(() => {
     let alive = true;
-    QRCode.toDataURL(value, { margin: 1, width: size * 2, errorCorrectionLevel: "M" })
+    // qrcode (~90KB) is dynamically imported so it never lands in the shared
+    // bundle — only fetched when a ticket QR actually renders.
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(value, { margin: 1, width: size * 2, errorCorrectionLevel: "M" }),
+      )
       .then((u) => { if (alive) setUrl(u); })
       .catch(() => {});
     return () => { alive = false; };

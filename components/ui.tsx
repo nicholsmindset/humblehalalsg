@@ -15,8 +15,8 @@ import { isUnoptimizedImageSrc } from "@/lib/img";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { joinParts } from "@/lib/format";
-import { screenToPath } from "@/lib/routes";
 import { useApp } from "./app-context";
+import { ScreenLink } from "./screen-link";
 import { useDirectory } from "./directory-context";
 
 /* ---------------------------------------------------------------
@@ -268,19 +268,18 @@ export function ListingCard({
   item: Listing;
   variant?: "standard" | "featured" | "row";
 }) {
-  const { navigate, toggleSave, state } = useApp();
+  const { navigate, trackRecent, toggleSave, state } = useApp();
   const saved = state.saved.includes(item.id);
-  const href = screenToPath("detail", { id: item.id });
-  const go = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate("detail", { id: item.id });
-  };
+  // Full-card overlay link → prefetches the detail route on hover/touch (intent),
+  // so the tap feels instant without eagerly pulling every card's payload.
   const cardLink = (
-    <a
+    <ScreenLink
+      screen="detail"
+      params={{ id: item.id }}
       className="card-stretch"
-      href={href}
+      intent
+      onClick={() => trackRecent(item.id)}
       aria-label={joinParts([item.name, joinParts([item.cuisine, item.area], ", ")], " — ")}
-      onClick={go}
     />
   );
 
