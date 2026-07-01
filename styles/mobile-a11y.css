@@ -102,3 +102,35 @@
 .qty-stepper button { min-width: 44px; min-height: 44px; }
 /* Bare inputs/selects inside booking + guest-details field rows (className="field"). */
 .field input, .field select { min-height: 44px; }
+
+/* ============================================================
+   Round-3 — gaps confirmed by the live prod audit (2026-07),
+   measured on www.humblehalal.com at 375/390/414.
+   ============================================================ */
+
+/* /explore results toolbar overflowed the viewport: the List/Map view toggle
+   was pushed off the right edge (List right≈425, Map right≈504 at cw 375) and
+   became unreachable. Let the toolbar wrap so the toggle drops to its own row
+   instead of overflowing. */
+@media (max-width: 560px) {
+  .explore-toolbar { flex-wrap: wrap; row-gap: 10px; }
+  .explore-toolbar .viewtoggle { margin-left: auto; }
+}
+
+/* Segmented "tab" controls were ~32px tall — home Discover tabs (Featured/
+   Newest/Top rated) and the flight trip-type pills (Round trip/One way). */
+[role="tab"], .ota-pill { min-height: 44px; }
+
+/* Language toggles (EN/BM) already had min-height but were only 37–40px WIDE. */
+.lang-toggle button { min-width: 44px; }
+
+/* "Claim" chip overlaid on every unclaimed listing card was 62×22px. */
+.claim-chip { min-height: 44px; display: inline-flex; align-items: center; }
+
+/* Flight route/preset quick-links ("Jeddah (JED)", trend routes) were ≤32px. */
+.flt-trend, .flt-chip, .flt-route { min-height: 44px; }
+
+/* Bare checkbox/radio rows not already inside a .flt-check/.fp-opt hit row
+   (e.g. flights "Non-stop only", whose control rendered ~13×13px). */
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }

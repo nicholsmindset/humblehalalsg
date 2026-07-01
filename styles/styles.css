@@ -534,7 +534,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 /* toast */
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(var(--tab-h) + 18px); z-index: 200;
+  bottom: calc(var(--tab-h) + 18px + env(safe-area-inset-bottom, 0px)); z-index: 200;
   background: var(--ink); color: var(--cream); padding: 12px 18px; border-radius: var(--r-pill);
   font-weight: 600; font-size: .9rem; box-shadow: var(--sh-lg); display: flex; align-items: center; gap: 9px;
   animation: toastin .25s ease;
