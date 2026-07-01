@@ -128,11 +128,20 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   // listing to them so it shows in their owner dashboard.
   const submittedBy = typeof raw.submitted_by === "string" && raw.submitted_by ? raw.submitted_by : null;
   const slug = String(s.slug || slugify(String(s.name)));
+  // Photos captured at intake (uploaded to storage, URLs in raw.photos) carry
+  // through to the published listing. Accepts [{url}] or [url].
+  const photos = Array.isArray(raw.photos)
+    ? (raw.photos as unknown[]).map((p) => (typeof p === "string" ? { url: p } : p)).filter((p): p is { url: string } => !!p && typeof (p as { url?: unknown }).url === "string")
+    : [];
   const insert = {
     name: String(s.name),
     slug,
     area: String(raw.area || "") || null,
     cat_id: String(s.category_suggested || raw.cat || raw.category || "") || null,
+    description: String(raw.desc || raw.description || "") || null,
+    address: String(raw.address || "") || null,
+    postal: String(raw.postal || "") || null,
+    photos,
     status: "published",
     halal_tier: "declared", // community-declared until an admin verifies on HalalSG
     source: String(s.source || "owner"),

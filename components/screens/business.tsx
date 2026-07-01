@@ -2,7 +2,7 @@
 
 /* Humble Halal — Business screens (ported from screens-business.jsx):
    For Business value page, Pricing, Add-Listing wizard, Owner Dashboard, Sparkline. */
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { HHData, spotsLeft } from "@/lib/data";
 import type { EventItem, Listing, LatLng } from "@/lib/types";
 import { canUse, planKey, PLAN_LIST } from "@/lib/plans";
@@ -188,15 +188,65 @@ interface ListingForm {
   halal: string;
   certNo: string;
   photos: number;
+  photoUrls: string[];
+  proofName: string;
   franchise: boolean;
   outlets: ListingOutlet[];
 }
 const emptyOutlet = (): ListingOutlet => ({ name: "", address: "", region: "", town: "", postal: "" });
 export function AddListingScreen() {
-  const { navigate } = useApp();
+  const { navigate, toast } = useApp();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<ListingForm>({ name: "", desc: "", phone: "", whatsapp: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, franchise: false, outlets: [emptyOutlet()] });
+  const [data, setData] = useState<ListingForm>({ name: "", desc: "", phone: "", whatsapp: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, photoUrls: [], proofName: "", franchise: false, outlets: [emptyOutlet()] });
   const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => setData((d) => ({ ...d, [k]: v }));
+  const [uploading, setUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Real photo upload — one request per file to /api/events/upload (authed,
+  // rate-limited generic image upload). Skips files that fail; caps at 6.
+  const MAX_PHOTOS = 6;
+  const onPhotosPicked = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        // Stop once we've reached the cap (account for in-flight additions).
+        let full = false;
+        setData((d) => { full = (d.photoUrls?.length || 0) >= MAX_PHOTOS; return d; });
+        if (full) { toast(`You can add up to ${MAX_PHOTOS} photos`); break; }
+        try {
+          const fd = new FormData();
+          fd.set("file", file);
+          const res = await fetch("/api/events/upload", { method: "POST", body: fd });
+          const json = await res.json().catch(() => ({ ok: false }));
+          if (json?.ok && json.url) {
+            setData((d) => {
+              const cur = d.photoUrls || [];
+              if (cur.length >= MAX_PHOTOS) return d;
+              return { ...d, photoUrls: [...cur, json.url as string] };
+            });
+          } else {
+            const msg: Record<string, string> = {
+              unauthenticated: "Please sign in to upload photos.",
+              not_configured: "Photo uploads aren’t available yet.",
+              too_large: `${file.name} is too large (max 5MB).`,
+              bad_type: `${file.name} isn’t a supported image.`,
+            };
+            toast(msg[json?.reason] || `Couldn’t upload ${file.name}.`);
+          }
+        } catch {
+          toast(`Couldn’t upload ${file.name}.`);
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+  const removePhoto = (idx: number) =>
+    setData((d) => ({ ...d, photoUrls: (d.photoUrls || []).filter((_, i) => i !== idx) }));
   const setOutlet = (i: number, patch: Partial<ListingOutlet>) => setData((d) => { const o = d.outlets.slice(); o[i] = { ...o[i], ...patch }; return { ...d, outlets: o }; });
   const addOutlet = () => setData((d) => ({ ...d, outlets: [...d.outlets, emptyOutlet()] }));
   const removeOutlet = (i: number) => setData((d) => ({ ...d, outlets: d.outlets.filter((_, idx) => idx !== i) }));
@@ -227,7 +277,12 @@ export function AddListingScreen() {
       await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "listing", ...data }),
+        body: JSON.stringify({
+          kind: "listing",
+          ...data,
+          photos: (data.photoUrls || []).map((url) => ({ url })),
+          proofFileName: data.proofName,
+        }),
       });
     } catch {
       /* graceful — still confirm to the user */
@@ -379,7 +434,7 @@ export function AddListingScreen() {
                 </div>
               )}
               {isFood && (data.halal === "muis" || data.halal === "owned") ? (
-                <div className="upload-zone"><Icon name="upload" size={26} /><div style={{ fontWeight: 700, marginTop: 8 }}>Upload proof</div><p className="faint" style={{ fontSize: ".82rem" }}>{data.halal === "muis" ? "MUIS cert / business registration (PDF, JPG)" : "Business registration (PDF, JPG)"}</p><button className="btn btn-soft btn-sm mt8">Choose file</button></div>
+                <div className="upload-zone"><Icon name="upload" size={26} /><div style={{ fontWeight: 700, marginTop: 8 }}>Upload proof</div><p className="faint" style={{ fontSize: ".82rem" }}>{data.halal === "muis" ? "MUIS cert / business registration (PDF, JPG)" : "Business registration (PDF, JPG)"}</p><button className="btn btn-soft btn-sm mt8" onClick={() => proofInputRef.current?.click()}>{data.proofName ? "Change file" : "Choose file"}</button>{data.proofName && <p className="faint" style={{ fontSize: ".8rem", marginTop: 6, wordBreak: "break-all" }}><Icon name="check" size={14} /> {data.proofName}</p>}<input ref={proofInputRef} type="file" accept="application/pdf,image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) set("proofName", f.name); e.target.value = ""; }} /></div>
               ) : null}
               {!isFood && (
                 <p className="faint" style={{ fontSize: ".82rem" }}>No documents needed — non-food businesses are listed as Muslim-owned or Muslim-friendly without certification.</p>
@@ -390,17 +445,26 @@ export function AddListingScreen() {
             <div>
               <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Add photos</label>
               <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>Cover photo, interior, and a few signature dishes work best.</p>
+              <input ref={photoInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPhotosPicked} />
               <div className="photo-grid">
-                <button className="upload-zone" style={{ aspectRatio: "1" }} onClick={() => set("photos", data.photos + 1)}><Icon name="camera" size={24} /><span style={{ fontSize: ".78rem", fontWeight: 700, marginTop: 6 }}>Add photo</span></button>
-                {Array.from({ length: data.photos }).map((_, i) => <ImagePh key={i} label={`photo ${i + 1}`} tone="gold" ratio="1" />)}
+                {data.photoUrls.length < MAX_PHOTOS && (
+                  <button className="upload-zone" style={{ aspectRatio: "1" }} disabled={uploading} onClick={() => photoInputRef.current?.click()}><Icon name="camera" size={24} /><span style={{ fontSize: ".78rem", fontWeight: 700, marginTop: 6 }}>{uploading ? "Uploading…" : "Add photo"}</span></button>
+                )}
+                {data.photoUrls.map((url, i) => (
+                  <div key={url} style={{ position: "relative" }}>
+                    <ImagePh label={`photo ${i + 1}`} tone="gold" ratio="1" src={url} />
+                    <button type="button" aria-label={`Remove photo ${i + 1}`} onClick={() => removePhoto(i)} style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,.6)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="x" size={15} /></button>
+                  </div>
+                ))}
               </div>
+              <p className="faint" style={{ fontSize: ".78rem", marginTop: 8 }}>{data.photoUrls.length} of {MAX_PHOTOS} photos added.</p>
             </div>
           )}
           {step === 5 && (
             <div className="stack g14">
               <h3 style={{ fontSize: "1.2rem" }}>Review &amp; submit</h3>
               <div className="review-summary-box">
-                {([["Name", data.name || "—"], ["Locations", data.franchise ? `${data.outlets.length} outlets (franchise)` : ([data.town, data.region].filter(Boolean).join(", ") || "—")], ["Category", HHData.categories.find((c) => c.id === data.cat)?.label || "—"], ["Halal status", data.halal || "—"], ["Photos", data.photos]] as [string, string | number][]).map(([k, v]) => (
+                {([["Name", data.name || "—"], ["Locations", data.franchise ? `${data.outlets.length} outlets (franchise)` : ([data.town, data.region].filter(Boolean).join(", ") || "—")], ["Category", HHData.categories.find((c) => c.id === data.cat)?.label || "—"], ["Halal status", data.halal || "—"], ["Photos", data.photoUrls.length]] as [string, string | number][]).map(([k, v]) => (
                   <div key={k} className="rsb-row"><span className="faint">{k}</span><span style={{ fontWeight: 600 }}>{v}</span></div>
                 ))}
               </div>
@@ -617,6 +681,17 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
     // 6-digit postal sanity check (allow blank to clear).
     if (postal && !/^\d{6}$/.test(postal)) { toast("Postal code should be 6 digits"); return; }
 
+    // Opening-hours sanity: for any open day, close must be a valid HH:MM and
+    // strictly after open.
+    const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+    for (const d of days) {
+      if (d.closed) continue;
+      if (!HHMM.test(d.open) || !HHMM.test(d.close) || d.close <= d.open) {
+        toast("Check your opening hours — close time must be after open time");
+        return;
+      }
+    }
+
     const patch: Record<string, unknown> = { id };
     const diff = (val: string, was: string | null | undefined) => {
       const nv = val.trim();
@@ -757,7 +832,7 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
 }
 
 export function OwnerDashboardScreen() {
-  const { navigate, toast, flags } = useApp();
+  const { navigate, toast, flags, params } = useApp();
   const dir = useDirectory();
   const { user } = useUser();
   const supabase = useSupabaseBrowser();
@@ -832,6 +907,19 @@ export function OwnerDashboardScreen() {
   };
 
   const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ["billing", "Billing", "settings"]];
+
+  // One-time success toasts after returning from Stripe (Connect onboarding /
+  // billing portal). Query params arrive via `params`; guard so it fires once.
+  const stripeToastShown = useRef(false);
+  useEffect(() => {
+    if (stripeToastShown.current) return;
+    const payouts = params.payouts;
+    const billing = params.billing;
+    let msg = "";
+    if (payouts === "done") msg = "Payout account connected";
+    else if (billing === "done") msg = "Billing updated";
+    if (msg) { stripeToastShown.current = true; toast(msg); }
+  }, [params, toast]);
 
   return (
     <div className="screen-in hh-page dash">
