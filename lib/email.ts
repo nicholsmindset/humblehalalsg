@@ -6,6 +6,7 @@ import "server-only";
    (app/api/subscribe). */
 
 const FROM = process.env.EMAIL_FROM || "Humble Halal <hello@humblehalal.com>";
+const REPLY_TO = process.env.EMAIL_REPLY_TO || "hello@humblehalal.com";
 
 export async function sendEmail(opts: {
   to: string;
@@ -20,7 +21,7 @@ export async function sendEmail(opts: {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: opts.to, subject: opts.subject, html: opts.html }),
+      body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: opts.to, subject: opts.subject, html: opts.html }),
     });
     try {
       const { getSupabaseAdmin } = await import("./supabase/server");

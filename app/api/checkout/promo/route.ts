@@ -3,16 +3,10 @@ import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
+import { AD_PRODUCTS } from "@/lib/ad-products";
 
 /* One-time advertising purchase (Event Promotion, Newsletter Sponsorship, etc.).
    Humble Halal is the seller. Amount in cents passed from a server-trusted map. */
-const AD_PRODUCTS: Record<string, { name: string; cents: number }> = {
-  "featured-listing": { name: "Featured Listing (1 month)", cents: 8900 },
-  "homepage-spotlight": { name: "Homepage Spotlight (1 month)", cents: 45000 },
-  "category-sponsorship": { name: "Category Sponsorship (1 month)", cents: 30000 },
-  "newsletter-sponsorship": { name: "Newsletter Sponsorship", cents: 25000 },
-  "event-promotion": { name: "Event Promotion", cents: 12000 },
-};
 
 export async function POST(req: Request) {
   if (!getServerFlags().paidAds) {

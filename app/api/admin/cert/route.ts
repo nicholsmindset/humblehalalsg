@@ -4,6 +4,9 @@ import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 import { normalizeCertNo } from "@/lib/muis";
 import { buildGrantPatch } from "@/lib/verify-grant";
 import { revalidatePublic } from "@/lib/revalidate";
+import { sendEmail } from "@/lib/email";
+import { emailForBusinessOwner } from "@/lib/emails/recipient";
+import { certApprovedEmail, certRejectedEmail } from "@/lib/emails/templates";
 
 /* Halal Certificate Vault — admin review endpoints.
 
@@ -179,6 +182,20 @@ export async function POST(req: Request) {
     });
   } catch {
     /* best-effort */
+  }
+
+  // Notify the business owner of the review outcome (best-effort).
+  try {
+    const { email, name, businessName } = await emailForBusinessOwner(db, cert.business_id as string | null);
+    if (email) {
+      const bn = businessName || "your business";
+      const t = action === "approve"
+        ? certApprovedEmail({ name, businessName: bn })
+        : certRejectedEmail({ name, businessName: bn, note: reviewNote || undefined });
+      await sendEmail({ to: email, subject: t.subject, html: t.html, template: action === "approve" ? "cert-approved" : "cert-rejected", businessId: (cert.business_id as string | null) || undefined });
+    }
+  } catch {
+    /* email best-effort */
   }
 
   // Approving a cert changes the business's halal tier/score → refresh public pages.

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { CONTACT_EMAILS } from "@/lib/contact";
+import { contactAutoReplyEmail } from "@/lib/emails/templates";
 
 /* Contact form intake. Graceful: validates + accepts; emails the team via Resend
    when configured (otherwise simulated). Honeypot-protected. */
@@ -22,5 +23,10 @@ export async function POST(req: Request) {
   try {
     await sendEmail({ to, subject: `[Contact: ${subject}] from ${name}`, template: "contact", html: `<p><strong>From:</strong> ${esc(name)} &lt;${esc(email)}&gt;</p><p><strong>Subject:</strong> ${esc(subject)}</p><p>${esc(message).replace(/\n/g, "<br/>")}</p>` });
   } catch { /* best-effort; still acknowledge */ }
+  // Auto-reply to the submitter so they know we received their message (best-effort).
+  try {
+    const t = contactAutoReplyEmail({ name });
+    await sendEmail({ to: email, subject: t.subject, html: t.html, template: "contact-auto-reply" });
+  } catch { /* best-effort */ }
   return NextResponse.json({ ok: true });
 }

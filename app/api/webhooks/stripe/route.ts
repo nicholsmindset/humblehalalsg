@@ -4,6 +4,8 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { ticketConfirmationEmail, adPurchaseEmail } from "@/lib/emails/templates";
+import { AD_PRODUCTS } from "@/lib/ad-products";
 
 const addDaysISO = (base: Date, days: number) => {
   const d = new Date(base);
@@ -106,12 +108,12 @@ export async function POST(req: Request) {
             }
             if (buyerEmail) {
               try {
-                await sendEmail({
-                  to: buyerEmail,
-                  subject: `Your ticket${qty > 1 ? "s" : ""} — ${m.tier || "Event"}`,
-                  template: "ticket-confirmation",
-                  html: `<h2>You're going! 🎟️</h2><p>Your ${qty} ticket${qty > 1 ? "s are" : " is"} confirmed (${m.tier || "Standard"}). Show this email at the door — your reference is <strong>${String(ord.id).slice(0, 8).toUpperCase()}</strong>.</p>`,
+                const t = ticketConfirmationEmail({
+                  eventTitle: m.eventTitle || m.tier || "Event",
+                  qty,
+                  ref: String(ord.id).slice(0, 8).toUpperCase(),
                 });
+                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ticket-confirmation" });
               } catch { /* email best-effort */ }
             }
           }
@@ -154,6 +156,19 @@ export async function POST(req: Request) {
             stripe_payment_intent: pi,
             status: "paid",
           });
+          // Receipt / confirmation email to the buyer (best-effort).
+          const buyerEmail = s.customer_details?.email || null;
+          if (buyerEmail) {
+            try {
+              const catalog = m.product ? AD_PRODUCTS[m.product] : undefined;
+              const productName = catalog?.name || m.product || "Advertising purchase";
+              const cents = s.amount_total ?? catalog?.cents ?? 0;
+              const currency = (s.currency || "sgd").toUpperCase();
+              const amount = cents ? `${currency} ${(cents / 100).toFixed(2)}` : undefined;
+              const t = adPurchaseEmail({ productName, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
+              await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
+            } catch { /* email best-effort */ }
+          }
         }
         break;
       }
