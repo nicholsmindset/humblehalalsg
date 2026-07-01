@@ -92,6 +92,11 @@ ticket checkout is blocked server-side (by design).
 4. Refund from the owner dashboard (or cancel the event) → `charge.refunded` reverses order + tickets.
 5. `event-payouts` cron transfers the organiser's net 24h after the event.
 
+> **Policy — refunds after payout:** a refund issued *after* the organiser payout has
+> been transferred does **not** reverse the Stripe transfer; the platform absorbs it.
+> (The webhook flips the order/tickets to refunded but never claws back a payout.)
+> Refund within the 24h window when possible.
+
 **Donations (charity event):** open `e5` (Iftar) → "Give zakat/sadaqah" → Stripe Checkout → webhook records the donation + bumps the honest running total.
 
 **Sponsored ads:** Admin → Monetization → "Featured & ads" → create a campaign on `homepage_hero`, set **Active** → it renders as a "Sponsored" card on the home page → impressions/clicks accrue in the admin table and in the advertiser's `/owner` → "Sponsored ads" tab.

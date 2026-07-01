@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     try {
       const total = toMoney(body.total);
       const commission = toMoney(body.commissionAmount);
-      const { data } = await db
+      const { data, error: insErr } = await db
         .from("flight_bookings")
         .insert({
           user_id: userId,
@@ -103,6 +103,24 @@ export async function POST(req: Request) {
         })
         .select("id")
         .single();
+      // Unique violation (23505) = this prebook is already recorded — a double
+      // submit / replay (bookFlight is idempotent upstream). Return the existing
+      // booking and skip the duplicate confirmation email.
+      if (insErr?.code === "23505") {
+        const { data: existing } = await db
+          .from("flight_bookings")
+          .select("id, status, booking_ref, pnr")
+          .eq("prebook_id", prebookId)
+          .maybeSingle();
+        return NextResponse.json({
+          ok: true,
+          status: existing?.status ?? status,
+          id: existing?.id ?? null,
+          bookingRef: existing?.booking_ref ?? outcome.booking?.bookingRef ?? null,
+          pnr: existing?.pnr ?? outcome.booking?.pnr ?? null,
+          duplicate: true,
+        });
+      }
       rowId = data?.id ?? null;
     } catch { /* ledger best-effort */ }
   }
