@@ -41,6 +41,31 @@ export function HomeScreen() {
 
   const doSearch = (val: string) => navigate("explore", { q: val });
 
+  // Popular areas, derived from the LIVE directory so the counts are real — the
+  // static catalog ships `count: 0`, which is why every tile used to read
+  // "0 places". We group the actual listings by their area name, keep the
+  // busiest areas, and borrow tone/image metadata from the catalog when the area
+  // is a known one. Falls back to the catalog list (with any real counts filled
+  // in) if the directory is empty (e.g. static/preview data) so the section is
+  // never blank.
+  const popularAreas = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const l of dir.listings) {
+      const name = (l.area || "").trim();
+      if (name) counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    const meta = new Map(catAreas.map((a) => [a.name, a] as const));
+    const ranked = [...counts.entries()]
+      .filter(([, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => {
+        const m = meta.get(name);
+        return { id: m?.id ?? name.toLowerCase(), name, count, tone: m?.tone ?? "cream", image: m?.image };
+      });
+    if (ranked.length >= 4) return ranked.slice(0, 8);
+    return catAreas.map((a) => ({ ...a, count: counts.get(a.name) ?? a.count }));
+  }, [dir.listings, catAreas]);
+
   return (
     <div className="screen-in hh-page">
       {/* PRE-LAUNCH NOTICE — set env NEXT_PUBLIC_PRELAUNCH="0" (Vercel → Settings → Env)
@@ -112,12 +137,12 @@ export function HomeScreen() {
       <section className="hh-wrap hh-section">
         <SectionHead title="Popular areas in Singapore" action="Browse all areas" onAction={() => navigate("explore")} />
         <div className="area-grid">
-          {catAreas.map((a) => (
-            <button key={a.id} className="area-card card card-hover" onClick={() => navigate("seo", { area: a.id })}>
+          {popularAreas.map((a) => (
+            <button key={a.id} className="area-card card card-hover" onClick={() => navigate("explore", { area: a.name })}>
               <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
               <div className="area-ov">
                 <span className="area-name">{a.name}</span>
-                <span className="area-count">{a.count} places</span>
+                <span className="area-count">{a.count} {a.count === 1 ? "place" : "places"}</span>
               </div>
             </button>
           ))}

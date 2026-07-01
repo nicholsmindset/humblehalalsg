@@ -8,6 +8,7 @@ import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
+import { screenToPath } from "@/lib/routes";
 import { UserButton } from "@clerk/nextjs";
 import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
@@ -753,7 +754,14 @@ export function Footer() {
           <div key={title} className="hh-footer-col">
             <div className="hh-footer-title">{title}</div>
             {links.map(([label, screen]) => (
-              <a key={label} onClick={() => navigate(screen)}>
+              <a
+                key={label}
+                href={screenToPath(screen)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(screen);
+                }}
+              >
                 {label}
               </a>
             ))}
@@ -763,13 +771,28 @@ export function Footer() {
       <div className="hh-wrap hh-footer-cats">
         <span className="hh-footer-title">Browse by category</span>
         <div className="hh-footer-catlinks">
-          <a onClick={() => navigate("seo", { slug: "halal-food-in-tampines" })}>Halal directory</a>
+          <a
+            href={screenToPath("seo", { slug: "halal-food-in-tampines" })}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("seo", { slug: "halal-food-in-tampines" });
+            }}
+          >
+            Halal directory
+          </a>
           {allSeoPages()
             .filter((p) => p.catId && !p.areaId)
             .map((p) => {
               const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
               return (
-                <a key={p.slug} onClick={() => navigate("seo", { slug: p.slug })}>
+                <a
+                  key={p.slug}
+                  href={screenToPath("seo", { slug: p.slug })}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("seo", { slug: p.slug });
+                  }}
+                >
                   Halal {label}
                 </a>
               );
