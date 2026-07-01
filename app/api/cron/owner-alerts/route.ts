@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
+import { ownerDigestEmail } from "@/lib/emails/templates";
 
 /* B5 — daily owner roll-up (views / WhatsApp clicks / new leads) → Resend.
    The retention hook for paid plans. Graceful without keys. */
@@ -46,19 +47,19 @@ export async function GET(req: Request) {
       const to = (prof as { email?: string } | null)?.email;
       if (!to) continue;
       const m = bySlug.get(b.slug as string) || { views: 0, whatsapp: 0, calls: 0, enquiries: 0 };
+      const { subject, html } = ownerDigestEmail({
+        businessName: b.name,
+        views: m.views,
+        enquiries: m.enquiries,
+        whatsapp: m.whatsapp,
+        calls: m.calls,
+      });
       const r = await sendEmail({
         to,
-        subject: `${b.name} — your Humble Halal week in numbers`,
+        subject,
         template: "owner-alert",
         businessId: b.id,
-        html:
-          `<p>Here's how <strong>${b.name}</strong> did on Humble Halal this week:</p>` +
-          `<ul>` +
-          `<li><strong>${m.views}</strong> listing views</li>` +
-          `<li><strong>${m.enquiries}</strong> quote enquiries</li>` +
-          `<li><strong>${m.whatsapp}</strong> WhatsApp taps</li>` +
-          `<li><strong>${m.calls}</strong> calls</li>` +
-          `</ul>`,
+        html,
       });
       if (!r.simulated) emailed++;
     }

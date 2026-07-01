@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { eventReminderEmail } from "@/lib/emails/templates";
 
 /* Day-before reminders. Runs daily; emails everyone with a confirmed order for an
    event happening TOMORROW (Asia/Singapore). CRON_SECRET-guarded; degrades to
@@ -31,12 +32,17 @@ export async function GET(req: Request) {
     const { data: orders } = await db
       .from("orders").select("buyer_email").eq("event_id", ev.id).eq("status", "confirmed").not("buyer_email", "is", null);
     const emails = [...new Set((orders || []).map((o) => o.buyer_email as string).filter(Boolean))];
+    const { subject, html } = eventReminderEmail({
+      eventTitle: String(ev.title),
+      dateLabel: when || undefined,
+      venue: where || undefined,
+    });
     for (const to of emails.slice(0, 2000)) {
       const r = await sendEmail({
         to,
-        subject: `Tomorrow: ${ev.title}`,
+        subject,
         template: "event-reminder",
-        html: `<h2>See you tomorrow, in shaa Allah 🌙</h2><p><strong>${ev.title}</strong>${when ? `<br>${when}` : ""}${where ? `<br>${where}` : ""}</p><p>Your ticket/QR is under “My tickets”. Doors open 30 minutes before.</p>`,
+        html,
       }).catch(() => ({ ok: false }));
       if (r.ok) sent++;
     }

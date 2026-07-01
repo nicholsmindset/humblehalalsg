@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { leadConfirmationEmail } from "@/lib/emails/templates";
+import { sendEmail } from "@/lib/email";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -74,6 +76,14 @@ export async function POST(req: Request) {
     }
   } catch {
     return NextResponse.json({ ok: false, error: "Could not submit request" }, { status: 502 });
+  }
+
+  // Best-effort: confirmation email to the enquirer if they left one (non-blocking).
+  if (email) {
+    try {
+      const t = leadConfirmationEmail({ name });
+      await sendEmail({ to: email, subject: t.subject, html: t.html, template: "lead-confirmation" });
+    } catch { /* email best-effort — never affect the API response */ }
   }
 
   // Best-effort: also capture the email in beehiiv for follow-up (non-blocking).

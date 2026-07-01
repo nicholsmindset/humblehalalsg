@@ -3,14 +3,13 @@ import { randomUUID } from "crypto";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { joinApprovedEmail, joinDeclinedEmail } from "@/lib/emails/templates";
 
 /* Organiser view of join requests for an approval-gated event, plus approve /
    decline. A join request = a free pending order (status='pending',
    amount_cents=0). Approve → order 'confirmed' + issue tickets + bump taken.
    Decline → 'cancelled'. Authorised for the event's business owner or an admin
    (mirrors /api/tickets/checkin). Zero migration. */
-
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 
 type AuthOk = { ok: true; admin: NonNullable<ReturnType<typeof getSupabaseAdmin>>; ev: { id: string; business_id: string | null; title: string } };
 type AuthErr = { ok: false; res: NextResponse };
@@ -66,10 +65,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (action === "decline") {
     await admin.from("orders").update({ status: "cancelled" }).eq("id", orderId).eq("status", "pending");
     if (buyerEmail) {
+      const { subject, html } = joinDeclinedEmail({ eventTitle: ev.title });
       await sendEmail({
         to: buyerEmail, template: "join-declined",
-        subject: `Update on your request — ${ev.title}`,
-        html: `<p>Thank you for your interest in <strong>${esc(ev.title)}</strong>. The organiser wasn't able to confirm your spot this time — please keep an eye out for future events. JazakAllah khair.</p>`,
+        subject,
+        html,
       });
     }
     return NextResponse.json({ ok: true, action: "declined" });
@@ -86,10 +86,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await admin.from("events").update({ taken: (Number(e2?.taken) || 0) + qty }).eq("id", ev.id);
   }
   if (buyerEmail) {
+    const { subject, html } = joinApprovedEmail({ eventTitle: ev.title });
     await sendEmail({
       to: buyerEmail, template: "join-approved",
-      subject: `You're in! ${ev.title} 🎟️`,
-      html: `<p>Great news — your request to join <strong>${esc(ev.title)}</strong> has been <strong>approved</strong>. Your ticket and QR code are under “My tickets” — sign in with this email to view them at the door. See you there, in shaa Allah.</p>`,
+      subject,
+      html,
     });
   }
   return NextResponse.json({ ok: true, action: "approved" });

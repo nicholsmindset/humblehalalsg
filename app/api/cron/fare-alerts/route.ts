@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { liteapiConfigured, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries } from "@/lib/flights";
 import { sendEmail } from "@/lib/email";
+import { fareAlertEmail } from "@/lib/emails/templates";
 
 /* Re-check active fare watches and email the traveller when the cheapest fare for
    their route+date drops below the last seen price (≥3% to avoid noise). Expired
@@ -41,15 +42,16 @@ export async function GET(req: Request) {
     const prev = w.last_price != null ? Number(w.last_price) : null;
     if (price != null && prev != null && price < prev * (1 - DROP)) {
       const cur = w.currency || "SGD";
+      const { subject, html } = fareAlertEmail({
+        route: `${w.origin} → ${w.destination}`,
+        oldPrice: `${cur} ${prev}`,
+        newPrice: `${cur} ${price}`,
+      });
       await sendEmail({
         to: w.email,
-        subject: `Fare drop: ${w.origin} → ${w.destination} now ${cur} ${price}`,
+        subject,
         template: "fare-alert",
-        html: `<p>Assalamualaikum,</p><p>The flight you're watching just dropped in price:</p>
-<p><strong>${w.origin} → ${w.destination}</strong> on ${w.depart_date}<br/>
-Now from <strong>${cur} ${price}</strong> (was ${cur} ${prev}).</p>
-<p><a href="https://www.humblehalal.com/travel/flights">Search this route on Humble Halal →</a></p>
-<p style="color:#888;font-size:12px">You're receiving this because you set a fare alert. Prices change quickly — confirm on the airline before booking.</p>`,
+        html,
       });
       patch.notify_count = (Number(w.notify_count) || 0) + 1;
       patch.last_notified_at = new Date().toISOString();

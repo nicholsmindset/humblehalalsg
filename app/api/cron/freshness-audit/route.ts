@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
+import { freshnessNudgeEmail } from "@/lib/emails/templates";
 
 /* B2 — weekly freshness decay monitor. Listings not verified in 180+ days are
    queued and (if claimed) the owner is emailed a one-click re-stamp link.
@@ -29,12 +30,13 @@ export async function GET(req: Request) {
       const to = (prof as { email?: string } | null)?.email;
       if (!to) continue;
       const link = `${base}/api/owner/restamp?business=${b.id}`;
+      const { subject, html } = freshnessNudgeEmail({ businessName: b.name, restampUrl: link });
       const r = await sendEmail({
         to,
-        subject: `Confirm ${b.name}'s details are current`,
+        subject,
         template: "freshness",
         businessId: b.id,
-        html: `<p>It's been a while since <strong>${b.name}</strong> was confirmed on Humble Halal.</p><p><a href="${link}">Confirm details are current →</a></p>`,
+        html,
       });
       if (!r.simulated) emailed++;
     }

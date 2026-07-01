@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { eventCancelledEmail } from "@/lib/emails/templates";
 import { getStripe } from "@/lib/stripe";
 import { revalidatePublic } from "@/lib/revalidate";
 
@@ -118,12 +119,13 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { data: orders } = await admin.from("orders").select("buyer_email").eq("event_id", id).not("buyer_email", "is", null);
     const emails = [...new Set((orders || []).map((o) => o.buyer_email as string).filter(Boolean))];
     const title = (a.ev.display as Record<string, unknown>)?.title || "the event";
+    const { subject, html } = eventCancelledEmail({ eventTitle: String(title), refunded: true });
     for (const to of emails.slice(0, 500)) {
       await sendEmail({
         to,
-        subject: "An event you booked has been cancelled",
+        subject,
         template: "event-cancelled",
-        html: `<p>We’re sorry — <strong>${String(title)}</strong> has been cancelled by the organiser. Any paid tickets will be refunded. Jazākallāhu khayran for your understanding.</p>`,
+        html,
       }).catch(() => {});
     }
   } catch { /* notifications best-effort */ }
