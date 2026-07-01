@@ -496,6 +496,7 @@ export function ExploreScreen() {
     <div className="screen-in hh-page">
       <div className="explore-top">
         <div className="hh-wrap" style={{ paddingTop: 16, paddingBottom: 14 }}>
+          <h1 className="sr-only">Explore halal food &amp; Muslim-owned businesses in Singapore</h1>
           <SearchBar value={q} onChange={setQ} onSubmit={setQ} placeholder="Search restaurants, cafés, services…" suggest />
           <div className="flex between center explore-toolbar" style={{ marginTop: 12, gap: 10 }}>
             <div className="flex g8 center">
