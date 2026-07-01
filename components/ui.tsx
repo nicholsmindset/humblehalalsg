@@ -517,6 +517,9 @@ export function SearchBar({
       >
         <Icon name="search" className="lead" />
         <input
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
           value={value}
           autoFocus={autoFocus}
           aria-label="Search"

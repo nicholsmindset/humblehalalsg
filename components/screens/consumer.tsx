@@ -490,7 +490,7 @@ export function ExploreScreen() {
       <div className="explore-top">
         <div className="hh-wrap" style={{ paddingTop: 16, paddingBottom: 14 }}>
           <SearchBar value={q} onChange={setQ} onSubmit={setQ} placeholder="Search restaurants, cafés, services…" suggest />
-          <div className="flex between center" style={{ marginTop: 12, gap: 10 }}>
+          <div className="flex between center explore-toolbar" style={{ marginTop: 12, gap: 10 }}>
             <div className="flex g8 center">
               <button className={`chip ${showFilters ? "active" : ""}`} onClick={() => setShowFilters((s) => !s)}>
                 <Icon name="filter" size={16} /> Filters {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
