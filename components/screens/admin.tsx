@@ -11,6 +11,7 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
+import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
@@ -1309,19 +1310,102 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
    Real schema-backed: sales team books campaigns on placements, tracks live
    impressions/clicks/CTR + booked revenue. Degrades to a sign-in prompt when
    the backend isn't configured / caller isn't an admin. */
-type AdPlacement = { key: string; label: string; monthly_rate_cents: number; inventory_cap: number };
+type AdPlacement = {
+  key: string; label: string; monthly_rate_cents: number; inventory_cap: number;
+  active?: boolean; fill_mode?: string; size_format?: string; adsense_slot?: string | null;
+  position_label?: string | null; page_type?: string | null; booked?: number;
+};
 type AdCampaign = {
   campaign_id: string; title: string; placement_key: string; status: string;
   advertiser_name: string | null; rate_cents: number; starts_on: string | null; ends_on: string | null;
   impressions: number; clicks: number; ctr: number;
+  review_status?: string; image_url?: string | null;
 };
 const STATUS_TAG: Record<string, string> = { active: "green", paused: "amber", scheduled: "blue", draft: "", ended: "" };
+const REVIEW_TAG: Record<string, string> = { approved: "green", pending: "amber", rejected: "" };
+const FILL_LABEL: Record<string, string> = {
+  off: "Off", direct_only: "Direct only", adsense_only: "AdSense fill", direct_then_adsense: "Direct → AdSense",
+};
+const FILL_MODES = ["off", "direct_only", "adsense_only", "direct_then_adsense"] as const;
+
+/* ── Placements panel — the owner's on/off + fill-mode control surface (0040).
+   Toggle any slot live/off with one switch; pick whether it serves a direct
+   sponsor, AdSense fill, both (direct wins), or is off. Non-developer friendly. */
+function AdminPlacements({ toast }: { toast: (msg: string) => void }) {
+  const [rows, setRows] = useState<AdPlacement[] | null>(null);
+  const [err, setErr] = useState(false);
+  const load = async () => {
+    try {
+      const r = await fetch("/api/admin/placements");
+      const d = await r.json();
+      if (d.ok) { setRows(d.placements); setErr(false); } else setErr(true);
+    } catch { setErr(true); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const patch = async (key: string, body: Record<string, unknown>) => {
+    // Optimistic update for a snappy toggle.
+    setRows((rs) => rs?.map((p) => (p.key === key ? { ...p, ...body } : p)) ?? rs);
+    const r = await fetch("/api/admin/placements", {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, ...body }),
+    });
+    const d = await r.json();
+    if (!d.ok) { toast(d.error || "Couldn’t update placement"); load(); }
+  };
+
+  if (err) return null;
+  const list = rows || [];
+
+  return (
+    <div className="card" style={{ overflow: "hidden" }}>
+      <div className="admin-tablehead">
+        <h3 style={{ fontSize: "1.05rem" }}>Placements</h3>
+        <span className="faint" style={{ fontSize: ".82rem" }}>Toggle a slot live/off · choose direct sponsor or AdSense fill</span>
+      </div>
+      <div className="tbl-scroll"><table className="tbl">
+        <thead><tr><th>Slot</th><th>Where</th><th>Size</th><th>Live</th><th>Fill mode</th><th>AdSense slot</th><th>Booked</th></tr></thead>
+        <tbody>{list.map((p) => (
+          <tr key={p.key} className="rowhover">
+            <td><div style={{ fontWeight: 700 }}>{p.label}</div><div className="faint" style={{ fontSize: ".72rem" }}>{p.page_type}</div></td>
+            <td className="muted" style={{ fontSize: ".82rem" }}>{p.position_label || "—"}</td>
+            <td className="muted" style={{ fontSize: ".82rem" }}>{(p.size_format || "").replace(/_/g, " ")}</td>
+            <td>
+              <button
+                role="switch"
+                aria-checked={p.active !== false}
+                aria-label={`${p.active !== false ? "Turn off" : "Turn on"} ${p.label}`}
+                className={`cert-toggle ${p.active !== false ? "on" : ""}`}
+                style={{ flex: "none" }}
+                onClick={() => { const next = !(p.active !== false); patch(p.key, { active: next }); toast(next ? "Slot live" : "Slot off"); }}
+              >
+                <span className="cert-switch"><span className="cert-knob" /></span>
+              </button>
+            </td>
+            <td>
+              <select className="select" style={{ minWidth: 150 }} value={p.fill_mode || "direct_then_adsense"} onChange={(e) => patch(p.key, { fillMode: e.target.value })}>
+                {FILL_MODES.map((m) => <option key={m} value={m}>{FILL_LABEL[m]}</option>)}
+              </select>
+            </td>
+            <td>
+              {(p.fill_mode === "adsense_only" || p.fill_mode === "direct_then_adsense") ? (
+                <input className="input" style={{ width: 120 }} defaultValue={p.adsense_slot || ""} placeholder="1234567890"
+                  onBlur={(e) => { const v = e.target.value.trim(); if (v !== (p.adsense_slot || "")) patch(p.key, { adsenseSlot: v }); }} />
+              ) : <span className="faint">—</span>}
+            </td>
+            <td className="muted">{p.booked || 0}/{p.inventory_cap}</td>
+          </tr>
+        ))}</tbody>
+      </table></div>
+    </div>
+  );
+}
 
 export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
   const [data, setData] = useState<{ placements: AdPlacement[]; campaigns: AdCampaign[]; revenueCents: number } | null>(null);
   const [err, setErr] = useState(false);
   const [creating, setCreating] = useState(false);
-  const empty = { title: "", placementKey: "", advertiserName: "", rate: "", startsOn: "", endsOn: "", targetUrl: "", body: "" };
+  const [uploading, setUploading] = useState(false);
+  const empty = { title: "", placementKey: "", advertiserName: "", rate: "", startsOn: "", endsOn: "", targetUrl: "", body: "", imageUrl: "" };
   const [form, setForm] = useState(empty);
 
   const load = async () => {
@@ -1338,6 +1422,23 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
     toast(`Campaign ${status}`);
     load();
   };
+  const setReview = async (id: string, reviewStatus: string) => {
+    await fetch("/api/admin/campaigns", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, reviewStatus }) });
+    toast(reviewStatus === "approved" ? "Creative approved — now serving" : "Creative rejected");
+    load();
+  };
+  const uploadCreative = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const r = await fetch("/api/admin/ads/upload", { method: "POST", body: fd });
+      const d = await r.json();
+      if (d.ok && d.url) { setForm((f) => ({ ...f, imageUrl: d.url })); toast("Image uploaded"); }
+      else if (d.simulated) { setForm((f) => ({ ...f, imageUrl: URL.createObjectURL(file) })); toast("Preview only (storage not configured)"); }
+      else toast(d.error || "Upload failed");
+    } catch { toast("Upload failed"); }
+    finally { setUploading(false); }
+  };
   const create = async () => {
     if (!form.title.trim() || !form.placementKey) return toast("Add a title and pick a placement");
     const res = await fetch("/api/admin/campaigns", {
@@ -1346,11 +1447,11 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
         title: form.title, placementKey: form.placementKey, advertiserName: form.advertiserName || undefined,
         rateCents: Math.round((Number(form.rate) || 0) * 100), startsOn: form.startsOn || undefined,
         endsOn: form.endsOn || undefined, targetUrl: form.targetUrl || undefined, body: form.body || undefined,
-        status: "active",
+        imageUrl: form.imageUrl || undefined, status: "active",
       }),
     });
     const d = await res.json();
-    if (d.ok) { toast("Campaign created — now live"); setForm(empty); setCreating(false); load(); }
+    if (d.ok) { toast("Campaign created — pending review before it serves"); setForm(empty); setCreating(false); load(); }
     else toast(d.error || "Couldn’t create campaign");
   };
 
@@ -1361,16 +1462,19 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
   const campaigns = data?.campaigns || [];
 
   return (
-    <div className="stack g16" style={{ maxWidth: 920 }}>
+    <div className="stack g16" style={{ maxWidth: 980 }}>
       <div className="flex between center wrap g10">
         <div>
-          <h3 style={{ fontSize: "1.15rem" }}>Sponsored ads</h3>
+          <h3 style={{ fontSize: "1.15rem" }}>Sponsored ads &amp; placements</h3>
           <p className="faint" style={{ fontSize: ".86rem" }}>
             {campaigns.length} campaign{campaigns.length === 1 ? "" : "s"} · <strong>{fmtSGD(data?.revenueCents || 0)}</strong> booked
           </p>
         </div>
         <button className="btn btn-gold btn-sm" onClick={() => setCreating((c) => !c)}><Icon name="plus" size={16} /> New campaign</button>
       </div>
+
+      {/* Placements — on/off + fill-mode control */}
+      <AdminPlacements toast={toast} />
 
       {/* Rate card */}
       <div className="flex g8 wrap">
@@ -1397,30 +1501,40 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
             <div className="field"><label>Ends</label><input className="input" type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} /></div>
             <div className="field"><label>Click-through URL</label><input className="input" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} placeholder="/business/… or https://…" /></div>
             <div className="field"><label>Tagline</label><input className="input" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Short creative line" /></div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label>Creative image {uploading && <span className="faint">· uploading…</span>}</label>
+              <div className="flex g10 center wrap">
+                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCreative(f); }} />
+                {form.imageUrl && <img src={form.imageUrl} alt="creative preview" style={{ height: 44, borderRadius: 8, border: "1px solid var(--line)" }} />}
+              </div>
+            </div>
           </div>
-          <button className="btn btn-primary btn-sm mt12" onClick={create}>Create &amp; activate</button>
+          <button className="btn btn-primary btn-sm mt12" onClick={create} disabled={uploading}>Create — submit for review</button>
         </div>
       )}
 
       <div className="card" style={{ overflow: "hidden" }}>
-        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Campaigns</h3><span className="faint" style={{ fontSize: ".82rem" }}>Live impressions, clicks &amp; CTR</span></div>
+        <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Campaigns</h3><span className="faint" style={{ fontSize: ".82rem" }}>Review → live impressions, clicks &amp; CTR</span></div>
         {campaigns.length === 0 ? (
           <div style={{ padding: 24, textAlign: "center" }} className="faint">No campaigns yet — book one to start tracking.</div>
         ) : (
           <div className="tbl-scroll"><table className="tbl">
-            <thead><tr><th>Campaign</th><th>Placement</th><th>Status</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Rate</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Campaign</th><th>Placement</th><th>Status</th><th>Review</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Rate</th><th>Actions</th></tr></thead>
             <tbody>{campaigns.map((c) => (
               <tr key={c.campaign_id} className="rowhover">
                 <td><div style={{ fontWeight: 700 }}>{c.title}</div><div className="faint" style={{ fontSize: ".78rem" }}>{c.advertiser_name || "—"}</div></td>
                 <td className="muted">{placements.find((p) => p.key === c.placement_key)?.label || c.placement_key}</td>
                 <td><span className={`pill-tag ${STATUS_TAG[c.status] || ""}`}>{c.status}</span></td>
+                <td><span className={`pill-tag ${REVIEW_TAG[c.review_status || "approved"] || ""}`}>{c.review_status || "approved"}</span></td>
                 <td>{c.impressions.toLocaleString()}</td>
                 <td>{c.clicks.toLocaleString()}</td>
                 <td>{c.ctr}%</td>
                 <td className="muted">{fmtSGD(c.rate_cents)}</td>
                 <td>
-                  <div className="flex g6">
-                    {c.status !== "active" && <button className="btn btn-soft btn-sm" onClick={() => setStatus(c.campaign_id, "active")}>Activate</button>}
+                  <div className="flex g6 wrap">
+                    {c.review_status !== "approved" && <button className="btn btn-soft btn-sm" onClick={() => setReview(c.campaign_id, "approved")}>Approve</button>}
+                    {c.review_status !== "rejected" && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setReview(c.campaign_id, "rejected")}>Reject</button>}
+                    {c.status !== "active" && <button className="btn btn-ghost btn-sm" onClick={() => setStatus(c.campaign_id, "active")}>Activate</button>}
                     {c.status === "active" && <button className="btn btn-ghost btn-sm" onClick={() => setStatus(c.campaign_id, "paused")}>Pause</button>}
                     {c.status !== "ended" && <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} onClick={() => setStatus(c.campaign_id, "ended")}>End</button>}
                   </div>
@@ -1429,6 +1543,19 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
             ))}</tbody>
           </table></div>
         )}
+      </div>
+
+      {/* Brand-safety policy — the AdSense block list + direct-review rubric */}
+      <div className="card" style={{ padding: 16 }}>
+        <h3 style={{ fontSize: "1rem", marginBottom: 6 }}>Brand-safety — blocked advertiser categories</h3>
+        <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>
+          Applied to AdSense (mirror in the AdSense dashboard → Blocking controls) and used as the review rubric for direct creatives.
+        </p>
+        <div className="flex g8 wrap">
+          {BLOCKED_AD_CATEGORIES.map((cat) => (
+            <span key={cat.key} className="tag" title={cat.why} style={{ color: "var(--danger)" }}>{cat.label}</span>
+          ))}
+        </div>
       </div>
     </div>
   );
