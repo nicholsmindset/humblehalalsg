@@ -11,6 +11,7 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
+import { useUser } from "@clerk/nextjs";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -135,7 +136,7 @@ export function AdminScreen() {
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}
-          {section==='users' && <AdminUsers />}
+          {section==='users' && <AdminUsers toast={toast} />}
           {section==='catalog' && <AdminCatalog toast={toast} />}
           {section==='featured' && <AdminFeatured toast={toast} />}
           {section==='monetization' && <AdminMonetization />}
@@ -961,11 +962,20 @@ export function AdminSuggestions({ toast }: { toast: (msg: string) => void }) {
 }
 
 type AdminUserRow = { id: string; email: string; name: string | null; role: string; created_at: string };
-export function AdminUsers() {
+type UserRole = "user" | "owner" | "admin";
+export function AdminUsers({ toast }: { toast: (msg: string) => void }) {
   const supabase = useSupabaseBrowser();
+  const { user: clerkUser } = useUser();
+  const meId = clerkUser?.id ?? null;
   const [rows, setRows] = useState<AdminUserRow[] | null>(null);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "user" | "owner">("all");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  // Broadcast composer.
+  const [bTitle, setBTitle] = useState("");
+  const [bMsg, setBMsg] = useState("");
+  const [bAudience, setBAudience] = useState<"all" | "owner">("all");
+  const [sending, setSending] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -976,34 +986,124 @@ export function AdminUsers() {
     })();
     return () => { alive = false; };
   }, [supabase]);
+
+  const USER_ERR: Record<string, string> = {
+    cannot_demote_self: "You can't remove your own admin access.",
+    invalid_role: "That role isn't allowed.",
+    forbidden: "You're not signed in as an admin.",
+    unauthenticated: "Please sign in again.",
+    update_failed: "Couldn't update — a database error occurred.",
+    service_unavailable: "Backend not configured.",
+  };
+
+  const changeRole = async (id: string, role: UserRole) => {
+    setSavingId(id);
+    try {
+      const r = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, role }),
+      });
+      const d = await r.json().catch(() => ({ ok: false, error: "network_error" }));
+      if (!d.ok) { toast(USER_ERR[d.error as string] || "Couldn't change role — please try again."); return; }
+      setRows((rs) => (rs || []).map((u) => (u.id === id ? { ...u, role } : u)));
+      toast(`Role updated → ${role}`);
+    } catch {
+      toast("Network error — please try again.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const sendBroadcast = async () => {
+    if (!bTitle.trim()) { toast("Add a title first."); return; }
+    setSending(true);
+    try {
+      const r = await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: bTitle.trim(), message: bMsg.trim(), audience: bAudience }),
+      });
+      const d = await r.json().catch(() => ({ ok: false }));
+      if (!d.ok) { toast(USER_ERR[d.error as string] || "Couldn't send — please try again."); return; }
+      toast(`Sent to ${d.count} ${d.count === 1 ? "person" : "people"}`);
+      setBTitle(""); setBMsg("");
+    } catch {
+      toast("Network error — please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const filtered = (rows || []).filter((u) =>
     (roleFilter === "all" || u.role === roleFilter) &&
     (!q || (u.name || "").toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase())));
   return (
-    <div className="card" style={{overflow:'hidden'}}>
-      <div className="admin-tablehead"><div className="flex g8">
-        <button className={`chip ${roleFilter==="all"?"active":""}`} onClick={()=>setRoleFilter("all")}>All</button>
-        <button className={`chip ${roleFilter==="user"?"active":""}`} onClick={()=>setRoleFilter("user")}>Users</button>
-        <button className={`chip ${roleFilter==="owner"?"active":""}`} onClick={()=>setRoleFilter("owner")}>Owners</button>
+    <div className="stack g16">
+      {/* Broadcast composer */}
+      <div className="card" style={{ padding: 20 }}>
+        <div className="flex between center wrap g8"><h3 style={{ fontSize: "1.1rem" }}>Broadcast notification</h3></div>
+        <p className="muted" style={{ marginTop: 4, fontSize: ".88rem" }}>Sends an in-app notification (bell) to every targeted user.</p>
+        <div className="stack g10 mt14">
+          <input placeholder="Title" value={bTitle} maxLength={200} onChange={(e) => setBTitle(e.target.value)} />
+          <textarea placeholder="Message (optional)" value={bMsg} maxLength={2000} rows={3} onChange={(e) => setBMsg(e.target.value)} />
+          <div className="flex between center wrap g8">
+            <div className="flex g8 center">
+              <label className="lc-meta" htmlFor="bcast-aud">Audience</label>
+              <select id="bcast-aud" value={bAudience} onChange={(e) => setBAudience(e.target.value as "all" | "owner")}>
+                <option value="all">All users</option>
+                <option value="owner">Owners only</option>
+              </select>
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={sendBroadcast} disabled={sending || !bTitle.trim()}>
+              <Icon name="bell" size={15} /> {sending ? "Sending…" : "Send"}
+            </button>
+          </div>
+        </div>
       </div>
-        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search users…" value={q} onChange={(e)=>setQ(e.target.value)} style={{fontSize:'.86rem'}}/></div></div>
-      {rows === null ? (
-        <div style={{ padding: 24, opacity: 0.5 }} aria-busy="true">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div style={{ padding: 24 }}><Empty icon="users" title="No users yet" body="Signed-up users appear here. (Requires migration 0018 + admin access.)" /></div>
-      ) : (
-        <div className="tbl-scroll"><table className="tbl">
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
-          <tbody>{filtered.map((u)=>(
-            <tr key={u.id} className="rowhover">
-              <td><div className="flex g8 center"><span className="avatar" style={{width:32,height:32,fontSize:'.78rem'}}>{(u.name||u.email||'?')[0].toUpperCase()}</span><span style={{fontWeight:600}}>{u.name||'—'}</span></div></td>
-              <td className="muted">{u.email}</td>
-              <td><span className={`pill-tag ${u.role==='owner'?'blue':u.role==='admin'?'green':'gray'}`}>{u.role}</span></td>
-              <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("en-SG",{day:"numeric",month:"short",year:"numeric"}) : "—"}</td>
-            </tr>
-          ))}</tbody>
-        </table></div>
-      )}
+
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead"><div className="flex g8">
+          <button className={`chip ${roleFilter === "all" ? "active" : ""}`} onClick={() => setRoleFilter("all")}>All</button>
+          <button className={`chip ${roleFilter === "user" ? "active" : ""}`} onClick={() => setRoleFilter("user")}>Users</button>
+          <button className={`chip ${roleFilter === "owner" ? "active" : ""}`} onClick={() => setRoleFilter("owner")}>Owners</button>
+        </div>
+          <div className="searchbar" style={{ maxWidth: 240, padding: "4px 4px 4px 12px" }}><Icon name="search" className="lead" size={16} /><input placeholder="Search users…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} /></div></div>
+        {rows === null ? (
+          <div style={{ padding: 24, opacity: 0.5 }} aria-busy="true">Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 24 }}><Empty icon="users" title="No users yet" body="Signed-up users appear here. (Requires migration 0018 + admin access.)" /></div>
+        ) : (
+          <div className="tbl-scroll"><table className="tbl">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Manage</th></tr></thead>
+            <tbody>{filtered.map((u) => {
+              const isSelf = !!meId && u.id === meId;
+              return (
+              <tr key={u.id} className="rowhover">
+                <td><div className="flex g8 center"><span className="avatar" style={{ width: 32, height: 32, fontSize: ".78rem" }}>{(u.name || u.email || "?")[0].toUpperCase()}</span><span style={{ fontWeight: 600 }}>{u.name || "—"}</span></div></td>
+                <td className="muted">{u.email}</td>
+                <td><span className={`pill-tag ${u.role === "owner" ? "blue" : u.role === "admin" ? "green" : "gray"}`}>{u.role}</span></td>
+                <td className="muted">{u.created_at ? new Date(u.created_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" }) : "—"}</td>
+                <td>
+                  <select
+                    aria-label={`Role for ${u.name || u.email}`}
+                    value={(["user", "owner", "admin"].includes(u.role) ? u.role : "user") as UserRole}
+                    disabled={savingId === u.id || isSelf}
+                    title={isSelf ? "You can't change your own admin role" : undefined}
+                    onChange={(e) => changeRole(u.id, e.target.value as UserRole)}
+                    style={{ fontSize: ".82rem", padding: "4px 6px" }}
+                  >
+                    <option value="user">User</option>
+                    <option value="owner">Owner</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </td>
+              </tr>
+              );
+            })}</tbody>
+          </table></div>
+        )}
+      </div>
     </div>
   );
 }

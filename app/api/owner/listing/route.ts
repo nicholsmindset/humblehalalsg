@@ -11,7 +11,24 @@ export const dynamic = "force-dynamic";
 
 // Fields a claimed owner may edit. Excludes name/halal_tier/status/featured/plan
 // (identity + trust + billing stay admin-controlled).
-const EDITABLE = ["phone", "website", "address", "postal", "description", "price_level", "opening_hours", "socials"] as const;
+const EDITABLE = ["phone", "website", "address", "postal", "description", "price_level", "opening_hours", "socials", "photos"] as const;
+
+// Coerce an incoming `photos` value into the jsonb shape rowToListing reads:
+// an array of { url, caption? } with string urls. Anything malformed is dropped.
+function sanitizePhotos(v: unknown): { url: string; caption?: string }[] {
+  if (!Array.isArray(v)) return [];
+  const out: { url: string; caption?: string }[] = [];
+  for (const p of v) {
+    if (!p || typeof p !== "object") continue;
+    const url = (p as { url?: unknown }).url;
+    if (typeof url !== "string" || !url.trim()) continue;
+    const caption = (p as { caption?: unknown }).caption;
+    const entry: { url: string; caption?: string } = { url: url.trim() };
+    if (typeof caption === "string" && caption.trim()) entry.caption = caption.trim();
+    out.push(entry);
+  }
+  return out.slice(0, 6); // cap defensively; UI also caps at 6
+}
 
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 async function ownership(db: Db, id: string, userId: string) {
@@ -33,7 +50,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await db
     .from("businesses")
-    .select("id, slug, name, area, phone, website, address, postal, description, price_level, opening_hours, socials")
+    .select("id, slug, name, area, phone, website, address, postal, description, price_level, opening_hours, socials, photos")
     .eq("id", id)
     .single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -53,7 +70,11 @@ export async function PATCH(req: Request) {
   if (!owns) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 
   const patch: Record<string, unknown> = {};
-  for (const k of EDITABLE) if (k in body) patch[k] = body[k] === "" ? null : body[k];
+  for (const k of EDITABLE) {
+    if (!(k in body)) continue;
+    if (k === "photos") { patch.photos = sanitizePhotos(body.photos); continue; }
+    patch[k] = body[k] === "" ? null : body[k];
+  }
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, error: "no_fields" }, { status: 400 });
 
   const { error } = await db.from("businesses").update(patch).eq("id", id);

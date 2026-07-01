@@ -108,6 +108,15 @@ export function PrayerStrip({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        // Stabilise: if we computed a nearest recently and the user hasn't moved
+        // far, keep it — so GPS jitter can't flip between two similarly-close
+        // mosques on every reload (the "sometimes changes" issue).
+        try {
+          const c = JSON.parse(localStorage.getItem("hh_nearest_mosque") || "null");
+          if (c && Date.now() - c.at < 6 * 3600e3 && haversineKm(me, { lat: c.lat, lng: c.lng }) < 0.15) {
+            setNearest({ name: c.name, area: c.area, km: c.km }); setLocating(false); return;
+          }
+        } catch { /* ignore cache */ }
         let best: { name: string; area: string; km: number } | null = null;
         for (const m of HHData.mosques) {
           if (!m.coords) continue;
@@ -115,12 +124,17 @@ export function PrayerStrip({
           if (!best || km < best.km) best = { name: m.name, area: m.area, km };
         }
         setNearest(best);
+        try { if (best) localStorage.setItem("hh_nearest_mosque", JSON.stringify({ ...best, lat: me.lat, lng: me.lng, at: Date.now() })); } catch { /* ignore */ }
         setLocating(false);
       },
       () => { setLocating(false); navigate("map", { show: "mosques" }); },
       { enableHighAccuracy: true, timeout: 8000 },
     );
   }, [navigate]);
+  // Show the last-known nearest mosque instantly on load (stable across reloads).
+  useEffect(() => {
+    try { const c = JSON.parse(localStorage.getItem("hh_nearest_mosque") || "null"); if (c?.name) setNearest({ name: c.name, area: c.area, km: c.km }); } catch { /* ignore */ }
+  }, []);
   useEffect(() => {
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
     if (!nav?.permissions?.query) return;
@@ -407,6 +421,9 @@ export function TopNav() {
           <LangToggle />
           {user.loggedIn ? (
             <>
+              <button className="btn btn-ghost btn-sm nav-dash" onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")} aria-label="Open my dashboard">
+                <Icon name="chart" size={16} /> Dashboard
+              </button>
               {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>

@@ -16,7 +16,7 @@ export async function POST() {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
 
-  const { data: biz } = await admin.from("businesses").select("id").eq("owner_id", userId).maybeSingle();
+  const { data: biz } = await admin.from("businesses").select("id").or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
   if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
 
   const { data: acct } = await admin

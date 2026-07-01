@@ -81,9 +81,11 @@
 .prayer-lead { display:flex; align-items:center; gap:10px; background:none; border:none; color:inherit; cursor:pointer; padding:4px 0; }
 .prayer-ico { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.14); display:grid; place-items:center; color:var(--gold); flex:none; }
 .prayer-next { display:flex; flex-direction:column; line-height:1.05; text-align:left; }
-/* High-contrast next-prayer text on the emerald gradient (audit #9 — ≥4.5:1). */
-.prayer-next strong { font-size:.95rem; font-weight:800; color:#fff; text-shadow:0 1px 6px rgba(8,40,32,.5); }
-.prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+/* High-contrast next-prayer text on the emerald gradient (audit #9 — ≥4.5:1).
+   Scoped to `.prayer-strip` so tools.css's global `.prayer-next strong{color:emerald}`
+   (used on the tools page) can't override the header text to green-on-emerald. */
+.prayer-strip .prayer-next strong { font-size:.95rem; font-weight:800; color:#fff !important; text-shadow:0 1px 6px rgba(8,40,32,.5); }
+.prayer-strip .prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
 .prayer-caret { transition: transform .2s; color:#A9C8BD; }
 .prayer-caret.up { transform: rotate(180deg); }
 .prayer-mosque { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:72%; }

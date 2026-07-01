@@ -18,7 +18,7 @@ export async function POST() {
   const { data: biz } = await admin
     .from("businesses")
     .select("stripe_customer_id")
-    .eq("owner_id", userId)
+    .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`)
     .maybeSingle();
   if (!biz?.stripe_customer_id) return NextResponse.json({ ok: false, reason: "no_customer" });
 
