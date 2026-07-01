@@ -76,6 +76,7 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("reports").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: `Report ${status}`, target: id });
+        revalidatePublic();
         return NextResponse.json({ ok: true, status });
       }
       case "suggestions": {
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("suggestions").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: `Suggestion ${status}`, target: id });
+        revalidatePublic();
         return NextResponse.json({ ok: true, status });
       }
       case "events": {

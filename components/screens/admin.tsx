@@ -134,7 +134,7 @@ export function AdminScreen() {
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
-          {section==='reports' && <AdminReports toast={toast} />}
+          {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}
           {section==='users' && <AdminUsers />}
           {section==='catalog' && <AdminCatalog toast={toast} />}
           {section==='featured' && <AdminFeatured toast={toast} />}
@@ -820,42 +820,38 @@ export function AdminHotelVerify({ toast }: { toast: (m: string) => void }) {
   );
 }
 
-interface ReportRow { id: string; biz: string; reason: string; by: string; time: string; sev: string }
+interface ReportRow { id: string; bizId: string; reason: string; time: string; sev: string }
 const REPORT_LABEL: Record<string, string> = { halal: "Wrong halal status", closed: "Permanently closed", hours: "Wrong opening hours", address: "Wrong address", owner: "Ownership dispute", menu: "Menu issue", other: "Other" };
-export function AdminReports({ toast }: { toast: (msg: string) => void }) {
-  const mock: ReportRow[] = [
-    {id:'rp1', biz:'Tok Tok Mee Pok House', reason:'Wrong halal status', by:'Nadia K.', time:'2h ago', sev:'high'},
-    {id:'rp2', biz:'Kopi & Kueh Corner', reason:'Permanently closed', by:'Faizal M.', time:'5h ago', sev:'high'},
-    {id:'rp3', biz:'Qahwa & Co.', reason:'Wrong opening hours', by:'Imran S.', time:'1d ago', sev:'low'},
-    {id:'rp4', biz:'Barakah Mart', reason:'Wrong address', by:'Sara L.', time:'2d ago', sev:'low'},
-  ];
-  const [rows,setRows]=useState<ReportRow[]>(mock);
-  const [live, setLive] = useState(false);
+export function AdminReports({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const dir = useDirectory();
+  const [rows,setRows]=useState<ReportRow[]>([]);
   useEffect(() => {
     queueGet("reports").then((items) => {
       if (!items) return;
-      setLive(true);
       setRows(items.map((r) => {
         const code = String(r.reason ?? "other");
-        return { id: r.id, biz: String(r.business_ref ?? r.business_id ?? "—"), reason: `${REPORT_LABEL[code] ?? code}${r.details ? ` — ${String(r.details).slice(0, 80)}` : ""}`, by: "community", time: timeAgo(r.created_at), sev: code === "halal" || code === "closed" ? "high" : "low" };
+        return { id: r.id, bizId: String(r.business_ref ?? r.business_id ?? ""), reason: `${REPORT_LABEL[code] ?? code}${r.details ? ` — ${String(r.details).slice(0, 80)}` : ""}`, time: timeAgo(r.created_at), sev: code === "halal" || code === "closed" ? "high" : "low" };
       }));
     });
   }, []);
   const resolve=async (id: string)=>{
-    if (live) { const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; } }
+    const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; }
     setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
   };
   return (
     <div className="stack g12">
-      {rows.map(r=>(
+      {rows.map(r=>{
+        const biz = dir.get(r.bizId);
+        return (
         <div key={r.id} className="card" style={{padding:18}}>
           <div className="flex between center wrap g10">
-            <div className="flex g12 center"><span className={`sev-dot ${r.sev}`}/><div><div style={{fontWeight:700}}>{r.reason}</div><div className="faint" style={{fontSize:'.82rem'}}>{r.biz} · reported by {r.by} · {r.time}</div></div></div>
-            <div className="flex g8"><button className="btn btn-outline btn-sm">View listing</button><button className="btn btn-soft btn-sm">Contact owner</button><button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button></div>
+            <div className="flex g12 center"><span className={`sev-dot ${r.sev}`}/><div><div style={{fontWeight:700}}>{r.reason}</div><div className="faint" style={{fontSize:'.82rem'}}>{biz?.name || r.bizId.slice(0,8) || "—"} · reported by community · {r.time}</div></div></div>
+            <div className="flex g8">{biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}<button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button></div>
           </div>
         </div>
-      ))}
-      {rows.length===0 && <Empty icon="check" title="Inbox zero" body="No open reports or corrections." />}
+        );
+      })}
+      {rows.length===0 && <Empty icon="flag" title="No open reports" body="Community reports about listings appear here." />}
     </div>
   );
 }
@@ -893,18 +889,14 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
 /* Ownership claims — owners who submitted "this is my business". Approving links
    them (owner_id + role='owner') via actClaim in /api/admin/queue. This is the
    payoff for cold-outreach claim links. */
-interface ClaimRow { id: string; businessId: string; role: string; message: string; proof: string | null; created: string }
+interface ClaimRow { id: string; businessId: string; role: string; message: string; created: string }
 export function AdminClaims({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
   const dir = useDirectory();
   const [rows, setRows] = useState<ClaimRow[]>([]);
   useEffect(() => {
     queueGet("claims").then((items) => {
       if (!items) return;
-      setRows(items.map((r) => {
-        const raw = (r.raw && typeof r.raw === "object" ? r.raw : {}) as Record<string, unknown>;
-        const proof = r.proof_file_name ?? raw.proofFileName;
-        return { id: r.id, businessId: String(r.business_id ?? ""), role: String(r.role ?? "Owner"), message: String(r.message ?? ""), proof: proof ? String(proof) : null, created: String(r.created_at ?? "") };
-      }));
+      setRows(items.map((r) => ({ id: r.id, businessId: String(r.business_id ?? ""), role: String(r.role ?? "Owner"), message: String(r.message ?? ""), created: String(r.created_at ?? "") })));
     });
   }, []);
   const act = async (id: string, a: string) => {
@@ -921,7 +913,7 @@ export function AdminClaims({ toast, navigate }: { toast: (msg: string) => void;
           <div key={r.id} className="card" style={{ padding: 18 }}>
             <div className="flex between center wrap g8">
               <div><div style={{ fontWeight: 700 }}>{biz?.name || r.businessId.slice(0, 8) || "Unknown business"}</div><div className="lc-meta">{[r.role, biz?.area].filter(Boolean).join(" · ")} · {timeAgo(r.created)}</div></div>
-              {r.proof ? <span className="pill-tag green"><Icon name="check" size={12} /> {r.proof}</span> : <span className="pill-tag amber">No document</span>}
+              {biz?.certified && <span className="pill-tag green">{biz.certBody} verified</span>}
             </div>
             {r.message && <p className="muted" style={{ marginTop: 10, fontSize: ".92rem" }}>“{r.message}”</p>}
             <div className="flex g8 mt12">
