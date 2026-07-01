@@ -16,6 +16,7 @@ import type {
 import { eventCats, events, myTickets, spotsLeft } from "./events-data";
 import { slugify } from "./slug";
 import { deriveWeekHours } from "./hours";
+import mosqueCoords from "./mosque-coords.json";
 
 export const categories: Category[] = [
   { id: "restaurants", label: "Restaurants", icon: "utensils" },
@@ -512,6 +513,13 @@ export const mosques: Mosque[] = [
   { id: "m-al-firdaus", name: "Masjid Al-Firdaus", area: "Boon Lay", region: "West", coords: { lat: 1.346, lng: 103.713 } },
   { id: "m-pusara-aman", name: "Masjid Pusara Aman", area: "Lim Chu Kang", region: "West", coords: { lat: 1.396, lng: 103.698 } },
 ];
+
+// Overlay accurate OSM-geocoded coords (scripts/geocode-mosques.mjs) onto the
+// approximate hand-entered ones so the "nearest mosque" calc is correct.
+for (const _m of mosques) {
+  const c = (mosqueCoords as Record<string, { lat: number; lng: number }>)[_m.id];
+  if (c) _m.coords = c;
+}
 
 export { eventCats, events, myTickets, spotsLeft };
 

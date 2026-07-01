@@ -334,3 +334,56 @@ export function ticketResendEmail(o: { tickets: { title: string; ref: string }[]
     { label: "Open my tickets", url: `${U}/travel/trips` },
   );
 }
+
+/* ═══ Go-live batch — acknowledgements, payouts, review replies ═════════ */
+
+/** Anonymous "suggest a business" form — acknowledge an optional email. */
+export function suggestionAckEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "Thanks for your suggestion",
+    "We've received your suggestion",
+    greet(o.name) +
+      p(`Thank you for suggesting a halal spot to Humble Halal. Our team reviews every recommendation to keep the directory trustworthy — if it's a good fit, we'll add it soon.`) +
+      p(`Jazakumullah khair for helping the community discover great halal places.`),
+    { label: "Explore the directory", url: `${U}/explore` },
+    `You don't need to do anything else — this is just to let you know it arrived.`,
+  );
+}
+
+/** Anonymous "report an issue" form — acknowledge an optional email. */
+export function reportAckEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "Thanks — we've received your report",
+    "Your report is with our team",
+    greet(o.name) +
+      p(`Thank you for flagging this. We've received your report and our team will look into it to keep listings accurate for everyone.`) +
+      p(`Reports like yours are how we keep Humble Halal trustworthy — jazakumullah khair.`),
+    { label: "How we verify", url: `${U}/verify` },
+    `You don't need to do anything else — this is just to let you know it arrived.`,
+  );
+}
+
+/** Organiser payout notice — sent when an event payout is transferred. */
+export function payoutSentEmail(o: { name?: string | null; amount: string; eventTitle?: string | null }): Out {
+  return wrap(
+    "Your payout is on its way",
+    "We've sent your payout",
+    greet(o.name) +
+      p(`Good news — we've sent a payout of <strong style="color:#0b5d3b;">${esc(o.amount)}</strong>${o.eventTitle ? ` for <strong>${esc(o.eventTitle)}</strong>` : ""} to your connected bank account.`) +
+      p(`Depending on your bank, it typically lands within a few business days. You can see the full breakdown of ticket sales and fees from your dashboard.`),
+    { label: "View your payouts", url: `${U}/owner` },
+  );
+}
+
+/** Notify a reviewer that the business owner replied to their review. */
+export function reviewReplyEmail(o: { name?: string | null; businessName: string; reply: string }): Out {
+  return wrap(
+    `${o.businessName} replied to your review`,
+    "You've got a reply",
+    greet(o.name) +
+      p(`<strong>${esc(o.businessName)}</strong> just replied to the review you left on Humble Halal:`) +
+      p(`&ldquo;${esc(o.reply)}&rdquo;`) +
+      p(`Thank you for sharing your experience — reviews like yours help the whole community discover trustworthy halal places.`),
+    { label: "See the reply", url: `${U}/explore` },
+  );
+}

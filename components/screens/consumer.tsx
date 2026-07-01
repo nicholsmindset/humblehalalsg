@@ -5,7 +5,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
-import { useDirectory } from "../directory-context";
+import { useDirectory, useCatalog } from "../directory-context";
 import type { BadgeKey, LatLng, Listing, Review } from "@/lib/types";
 import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
@@ -35,6 +35,7 @@ import { Newsletter } from "../newsletter";
 export function HomeScreen() {
   const { navigate, state } = useApp();
   const dir = useDirectory();
+  const { categories: catCategories, areas: catAreas } = useCatalog();
   const [q, setQ] = useState("");
   const tw = state.tweaks;
 
@@ -88,7 +89,7 @@ export function HomeScreen() {
       <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
         <SectionHead title="Browse by category" action="View all" onAction={() => navigate("explore")} />
         <div className="cat-grid">
-          {HHData.categories.slice(0, 8).map((c) => (
+          {catCategories.slice(0, 8).map((c) => (
             <CategoryButton key={c.id} cat={c}
               onClick={() => c.id === "mosques" ? navigate("map") : navigate("explore", { cat: c.id })} />
           ))}
@@ -111,7 +112,7 @@ export function HomeScreen() {
       <section className="hh-wrap hh-section">
         <SectionHead title="Popular areas in Singapore" action="Browse all areas" onAction={() => navigate("explore")} />
         <div className="area-grid">
-          {HHData.areas.map((a) => (
+          {catAreas.map((a) => (
             <button key={a.id} className="area-card card card-hover" onClick={() => navigate("seo", { area: a.id })}>
               <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
               <div className="area-ov">
@@ -358,6 +359,7 @@ interface ExploreFilters {
 export function ExploreScreen() {
   const { navigate, params, state } = useApp();
   const dir = useDirectory();
+  const { categories: catCategories } = useCatalog();
   const router = useRouter();
   const [q, setQ] = useState((params.q as string) || "");
   const [showFilters, setShowFilters] = useState(false);
@@ -436,7 +438,7 @@ export function ExploreScreen() {
       // Match the category label too (audit #8: searching "restaurant"/"cafe"
       // should surface that category, not just name/cuisine/area/blurb matches).
       r = r.filter((l) => {
-        const catLabel = HHData.categories.find((c) => c.id === l.catId)?.label || "";
+        const catLabel = catCategories.find((c) => c.id === l.catId)?.label || "";
         return (l.name + " " + l.cuisine + " " + l.area + " " + l.blurb + " " + catLabel + " " + l.catId).toLowerCase().includes(s);
       });
     }
@@ -520,7 +522,7 @@ export function ExploreScreen() {
           <div className="flex between center" style={{ marginBottom: 16 }}>
             <p className="muted" style={{ fontWeight: 600 }}>
               <span style={{ color: "var(--ink)" }}>{results.length}</span> place{results.length !== 1 ? "s" : ""}
-              {filters.cat && <span> in {HHData.categories.find((c) => c.id === filters.cat)?.label}</span>}
+              {filters.cat && <span> in {catCategories.find((c) => c.id === filters.cat)?.label}</span>}
               {state.prefs && state.prefs.certifiedOnly && <span className="cert-active-note"><Icon name="shield-check" size={13} /> certified only</span>}
             </p>
           </div>
@@ -565,6 +567,7 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClose: () => void;
   onClear: () => void;
 }) {
+  const { categories: catCategories, areas: catAreas } = useCatalog();
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
   );
@@ -585,12 +588,12 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
       </div>
       <Section title="Category">
         <div className="fp-opts">
-          {HHData.categories.slice(0, 6).map((c) => <Opt key={c.id} k="cat" v={c.id} label={c.label} />)}
+          {catCategories.slice(0, 6).map((c) => <Opt key={c.id} k="cat" v={c.id} label={c.label} />)}
         </div>
       </Section>
       <Section title="Area">
         <div className="fp-opts">
-          {HHData.areas.map((a) => <Opt key={a.id} k="area" v={a.name.toLowerCase()} label={a.name} />)}
+          {catAreas.map((a) => <Opt key={a.id} k="area" v={a.name.toLowerCase()} label={a.name} />)}
         </div>
       </Section>
       <Section title="Price">
@@ -650,6 +653,7 @@ export function MapPreview({ results, navigate }: {
 export function MapScreen() {
   const { navigate, toast, state, params } = useApp();
   const dir = useDirectory();
+  const { categories: catCategories, areas: catAreas } = useCatalog();
   const wantMosques = params.show === "mosques";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
@@ -789,11 +793,11 @@ export function MapScreen() {
             <div className="flex g8 wrap" style={{ marginTop: 8 }}>
               <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, fontSize: ".85rem", padding: "7px 10px" }}>
                 <option value="">All categories</option>
-                {HHData.categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {catCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
               <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, fontSize: ".85rem", padding: "7px 10px" }}>
                 <option value="">All areas</option>
-                {HHData.areas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
+                {catAreas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select>
               <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, fontSize: ".85rem", padding: "7px 10px" }}>
                 <option value="">Any halal status</option>

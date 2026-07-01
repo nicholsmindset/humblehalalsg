@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import type { Listing } from "@/lib/types";
+import type { Listing, Category, Area } from "@/lib/types";
+import { categories as staticCategories, areas as staticAreas } from "@/lib/data";
 
 interface DirectoryValue {
   listings: Listing[];
@@ -23,11 +24,50 @@ function build(listings: Listing[]): DirectoryValue {
 const emptyValue = build([]);
 const DirectoryContext = createContext<DirectoryValue>(emptyValue);
 
-export function DirectoryProvider({ listings, children }: { listings?: Listing[]; children: React.ReactNode }) {
+// ── Catalog (merged categories + areas) ─────────────────────────────────────
+// Server-merged (lib/catalog.ts: static seed overlaid with admin edits) and
+// passed down alongside the directory. Falls back to the static seed so screens
+// rendered outside the provider (or before it's fed) still work unchanged.
+interface CatalogValue {
+  categories: Category[];
+  areas: Area[];
+}
+const staticCatalog: CatalogValue = { categories: staticCategories, areas: staticAreas };
+const CatalogContext = createContext<CatalogValue>(staticCatalog);
+
+export function DirectoryProvider({
+  listings,
+  categories,
+  areas,
+  children,
+}: {
+  listings?: Listing[];
+  categories?: Category[];
+  areas?: Area[];
+  children: React.ReactNode;
+}) {
   const value = useMemo(() => (listings && listings.length ? build(listings) : emptyValue), [listings]);
-  return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>;
+  const catalog = useMemo<CatalogValue>(
+    () => ({
+      categories: categories && categories.length ? categories : staticCategories,
+      areas: areas && areas.length ? areas : staticAreas,
+    }),
+    [categories, areas],
+  );
+  return (
+    <DirectoryContext.Provider value={value}>
+      <CatalogContext.Provider value={catalog}>{children}</CatalogContext.Provider>
+    </DirectoryContext.Provider>
+  );
 }
 
 export function useDirectory(): DirectoryValue {
   return useContext(DirectoryContext);
+}
+
+/** Merged directory taxonomy (categories + areas). Use this instead of the raw
+ *  HHData.categories / HHData.areas on browse surfaces so admin-added/edited
+ *  categories and areas show up. */
+export function useCatalog(): CatalogValue {
+  return useContext(CatalogContext);
 }

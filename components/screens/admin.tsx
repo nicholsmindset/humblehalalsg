@@ -1108,16 +1108,198 @@ export function AdminUsers({ toast }: { toast: (msg: string) => void }) {
   );
 }
 
+/* ── Categories & Areas (persisted) ─────────────────────────────────────────
+   Reads the DB overlay rows from GET /api/admin/catalog and MERGES them with the
+   static seed (HHData.categories / HHData.areas) — the same merge lib/catalog.ts
+   does server-side — so the admin sees exactly the browse-facing list. Add =
+   POST, edit = PATCH, delete = soft (active=false). When the backend isn't wired
+   (dev/demo) GET fails and we fall back to the static seed read-only, surfacing
+   the reason via a toast on write. */
+type CatRow = { id: string; label?: string; icon?: string; name?: string; tone?: string; sort?: number; active?: boolean };
+type MergedCat = { id: string; label: string; icon: string; fromDb: boolean };
+type MergedArea = { id: string; name: string; tone: string; fromDb: boolean };
+
+const CAT_ICON_OPTIONS = ["utensils", "coffee", "store", "basket", "sparkles", "shield", "wrench", "heart", "family", "building", "globe", "mosque"];
+const AREA_TONE_OPTIONS = ["emerald", "gold", "cream"];
+
+function mergeCats(rows: CatRow[]): MergedCat[] {
+  const overrides = new Map(rows.map((r) => [r.id, r]));
+  const inactive = new Set(rows.filter((r) => r.active === false).map((r) => r.id));
+  const out: MergedCat[] = [];
+  for (const c of HHData.categories) {
+    if (inactive.has(c.id)) continue;
+    const o = overrides.get(c.id);
+    out.push({ id: c.id, label: o?.label || c.label, icon: o?.icon || c.icon, fromDb: !!o });
+    overrides.delete(c.id);
+  }
+  for (const o of overrides.values()) {
+    if (o.active === false) continue;
+    out.push({ id: o.id, label: o.label || o.id, icon: o.icon || "store", fromDb: true });
+  }
+  return out;
+}
+function mergeAreas(rows: CatRow[]): MergedArea[] {
+  const overrides = new Map(rows.map((r) => [r.id, r]));
+  const inactive = new Set(rows.filter((r) => r.active === false).map((r) => r.id));
+  const out: MergedArea[] = [];
+  for (const a of HHData.areas) {
+    if (inactive.has(a.id)) continue;
+    const o = overrides.get(a.id);
+    out.push({ id: a.id, name: o?.name || a.name, tone: o?.tone || a.tone, fromDb: !!o });
+    overrides.delete(a.id);
+  }
+  for (const o of overrides.values()) {
+    if (o.active === false) continue;
+    out.push({ id: o.id, name: o.name || o.id, tone: o.tone || "emerald", fromDb: true });
+  }
+  return out;
+}
+
 export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
+  const [cats, setCats] = useState<MergedCat[]>(() => mergeCats([]));
+  const [areas, setAreas] = useState<MergedArea[]>(() => mergeAreas([]));
+  const [live, setLive] = useState(false); // backend reachable + admin
+  const [busy, setBusy] = useState(false);
+
+  const [addCat, setAddCat] = useState<{ label: string; icon: string } | null>(null);
+  const [addArea, setAddArea] = useState<{ name: string; tone: string } | null>(null);
+  const [editCat, setEditCat] = useState<{ id: string; label: string; icon: string } | null>(null);
+  const [editArea, setEditArea] = useState<{ id: string; name: string; tone: string } | null>(null);
+
+  const load = async () => {
+    try {
+      const r = await fetch("/api/admin/catalog");
+      const d = await r.json();
+      if (d.ok) {
+        setCats(mergeCats(d.categories || []));
+        setAreas(mergeAreas(d.areas || []));
+        setLive(true);
+      } else {
+        setLive(false);
+      }
+    } catch {
+      setLive(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
+
+  const write = async (method: "POST" | "PATCH" | "DELETE", body: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/catalog", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.ok) { await load(); return true; }
+      toast(d.error === "service_unavailable" || d.error === "service_not_configured"
+        ? "Connect Supabase to save catalog changes"
+        : d.error === "forbidden" || d.error === "unauthenticated"
+          ? "Sign in as an admin to edit the catalog"
+          : d.error === "duplicate_id" ? "That id already exists"
+          : `Couldn’t save (${d.error || "error"})`);
+      return false;
+    } catch {
+      toast("Network error — change not saved");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveAddCat = async () => {
+    if (!addCat?.label.trim()) return toast("Enter a category name");
+    if (await write("POST", { kind: "category", label: addCat.label, icon: addCat.icon })) { setAddCat(null); toast("Category added"); }
+  };
+  const saveAddArea = async () => {
+    if (!addArea?.name.trim()) return toast("Enter an area name");
+    if (await write("POST", { kind: "area", name: addArea.name, tone: addArea.tone })) { setAddArea(null); toast("Area added"); }
+  };
+  const saveEditCat = async () => {
+    if (!editCat?.label.trim()) return toast("Enter a category name");
+    if (await write("PATCH", { kind: "category", id: editCat.id, label: editCat.label, icon: editCat.icon })) { setEditCat(null); toast("Category updated"); }
+  };
+  const saveEditArea = async () => {
+    if (!editArea?.name.trim()) return toast("Enter an area name");
+    if (await write("PATCH", { kind: "area", id: editArea.id, name: editArea.name, tone: editArea.tone })) { setEditArea(null); toast("Area updated"); }
+  };
+  const hideCat = async (id: string) => { if (await write("DELETE", { kind: "category", id })) toast("Category hidden"); };
+  const hideArea = async (id: string) => { if (await write("DELETE", { kind: "area", id })) toast("Area hidden"); };
+
   return (
-    <div className="admin-twocol">
-      <div className="card" style={{padding:20}}>
-        <div className="flex between center"><h3 style={{fontSize:'1.1rem'}}>Categories</h3><button className="btn btn-soft btn-sm" onClick={()=>toast('Add category')}><Icon name="plus" size={15}/> Add</button></div>
-        <div className="stack g8 mt14">{HHData.categories.map(c=>(<div key={c.id} className="catalog-row"><span className="flex g10 center"><span className="attn-ico"><Icon name={c.icon} size={16}/></span>{c.label}</span><div className="flex g6"><button className="btn btn-ghost btn-sm"><Icon name="edit" size={15}/></button></div></div>))}</div>
-      </div>
-      <div className="card" style={{padding:20}}>
-        <div className="flex between center"><h3 style={{fontSize:'1.1rem'}}>Locations / areas</h3><button className="btn btn-soft btn-sm" onClick={()=>toast('Add area')}><Icon name="plus" size={15}/> Add</button></div>
-        <div className="stack g8 mt14">{HHData.areas.map(a=>(<div key={a.id} className="catalog-row"><span className="flex g10 center"><Icon name="pin" size={16} style={{color:'var(--emerald)'}}/>{a.name}</span><span className="faint" style={{fontSize:'.82rem'}}>{a.count} listings</span></div>))}</div>
+    <div className="stack g12">
+      {!live && (
+        <div className="card" style={{ padding: "10px 14px" }}>
+          <span className="faint" style={{ fontSize: ".84rem" }}>
+            <Icon name="info" size={14} /> Showing the built-in catalog. Sign in as an admin with Supabase connected to add or edit — changes then persist and appear in the directory.
+          </span>
+        </div>
+      )}
+      <div className="admin-twocol">
+        {/* CATEGORIES */}
+        <div className="card" style={{ padding: 20 }}>
+          <div className="flex between center">
+            <h3 style={{ fontSize: "1.1rem" }}>Categories</h3>
+            <button className="btn btn-soft btn-sm" disabled={busy} onClick={() => { setAddCat({ label: "", icon: "store" }); setEditCat(null); }}><Icon name="plus" size={15} /> Add</button>
+          </div>
+          {addCat && (
+            <div className="card mt12" style={{ padding: 12 }}>
+              <div className="field"><label>Name</label><input className="input" autoFocus value={addCat.label} onChange={(e) => setAddCat({ ...addCat, label: e.target.value })} placeholder="e.g. Bakeries" /></div>
+              <div className="field"><label>Icon</label><select className="select" value={addCat.icon} onChange={(e) => setAddCat({ ...addCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
+              <div className="flex g8 mt8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveAddCat}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setAddCat(null)}>Cancel</button></div>
+            </div>
+          )}
+          <div className="stack g8 mt14">{cats.map((c) => (
+            <div key={c.id} className="catalog-row">
+              {editCat?.id === c.id ? (
+                <div className="stack g8" style={{ width: "100%" }}>
+                  <div className="field"><label>Name</label><input className="input" value={editCat.label} onChange={(e) => setEditCat({ ...editCat, label: e.target.value })} /></div>
+                  <div className="field"><label>Icon</label><select className="select" value={editCat.icon} onChange={(e) => setEditCat({ ...editCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
+                  <div className="flex g8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveEditCat}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setEditCat(null)}>Cancel</button></div>
+                </div>
+              ) : (
+                <>
+                  <span className="flex g10 center"><span className="attn-ico"><Icon name={c.icon} size={16} /></span>{c.label}{c.fromDb && <span className="pill-tag green" style={{ fontSize: ".68rem" }}>edited</span>}</span>
+                  <div className="flex g6">
+                    <button className="btn btn-ghost btn-sm" disabled={busy} aria-label={`Edit ${c.label}`} onClick={() => { setEditCat({ id: c.id, label: c.label, icon: c.icon }); setAddCat(null); }}><Icon name="edit" size={15} /></button>
+                    <button className="btn btn-ghost btn-sm" disabled={busy} aria-label={`Hide ${c.label}`} onClick={() => hideCat(c.id)}><Icon name="x" size={15} /></button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}</div>
+        </div>
+
+        {/* AREAS */}
+        <div className="card" style={{ padding: 20 }}>
+          <div className="flex between center">
+            <h3 style={{ fontSize: "1.1rem" }}>Locations / areas</h3>
+            <button className="btn btn-soft btn-sm" disabled={busy} onClick={() => { setAddArea({ name: "", tone: "emerald" }); setEditArea(null); }}><Icon name="plus" size={15} /> Add</button>
+          </div>
+          {addArea && (
+            <div className="card mt12" style={{ padding: 12 }}>
+              <div className="field"><label>Name</label><input className="input" autoFocus value={addArea.name} onChange={(e) => setAddArea({ ...addArea, name: e.target.value })} placeholder="e.g. Woodlands" /></div>
+              <div className="field"><label>Tone</label><select className="select" value={addArea.tone} onChange={(e) => setAddArea({ ...addArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+              <div className="flex g8 mt8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveAddArea}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setAddArea(null)}>Cancel</button></div>
+            </div>
+          )}
+          <div className="stack g8 mt14">{areas.map((a) => (
+            <div key={a.id} className="catalog-row">
+              {editArea?.id === a.id ? (
+                <div className="stack g8" style={{ width: "100%" }}>
+                  <div className="field"><label>Name</label><input className="input" value={editArea.name} onChange={(e) => setEditArea({ ...editArea, name: e.target.value })} /></div>
+                  <div className="field"><label>Tone</label><select className="select" value={editArea.tone} onChange={(e) => setEditArea({ ...editArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+                  <div className="flex g8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveEditArea}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setEditArea(null)}>Cancel</button></div>
+                </div>
+              ) : (
+                <>
+                  <span className="flex g10 center"><Icon name="pin" size={16} style={{ color: "var(--emerald)" }} />{a.name}{a.fromDb && <span className="pill-tag green" style={{ fontSize: ".68rem" }}>edited</span>}</span>
+                  <div className="flex g6">
+                    <button className="btn btn-ghost btn-sm" disabled={busy} aria-label={`Edit ${a.name}`} onClick={() => { setEditArea({ id: a.id, name: a.name, tone: a.tone }); setAddArea(null); }}><Icon name="edit" size={15} /></button>
+                    <button className="btn btn-ghost btn-sm" disabled={busy} aria-label={`Hide ${a.name}`} onClick={() => hideArea(a.id)}><Icon name="x" size={15} /></button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}</div>
+        </div>
       </div>
     </div>
   );
