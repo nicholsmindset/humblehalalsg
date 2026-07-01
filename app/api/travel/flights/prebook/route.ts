@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/flags";
-import { liteapiConfigured, prebookFlight } from "@/lib/liteapi";
+import { liteapiConfigured, prebookFlight, LiteApiError } from "@/lib/liteapi";
 import type { FlightContactInput, FlightPassengerInput } from "@/lib/liteapi-types";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
@@ -42,7 +42,41 @@ export async function POST(req: Request) {
       servicesAttachable: r.servicesAttachable ?? r.services ?? null,
       expiration: r.expiration ?? null,
     });
-  } catch {
+  } catch (e) {
+    // Distinguish a client-fixable upstream failure (expired/invalid offer,
+    // rejected passenger doc) from a genuine gateway/5xx. LiteApiError.detail is
+    // the trimmed upstream body (no secrets) — logged + returned as `reason`.
+    if (e instanceof LiteApiError) {
+      const detail = (e.detail || "").slice(0, 500);
+      console.error(`flight-prebook liteapi_${e.status}: ${detail}`);
+      // LiteAPI returns `{error:{code,description,message}}` for validation
+      // rejections. Parse it so the traveller gets an actionable message
+      // instead of a generic gateway error.
+      let code: number | undefined;
+      let description = "";
+      try {
+        const j = JSON.parse(e.detail || "{}") as { error?: { code?: number; description?: string; message?: string } };
+        code = Number(j.error?.code) || undefined;
+        description = String(j.error?.description || j.error?.message || "");
+      } catch { /* non-JSON upstream body */ }
+
+      // Name looks like a placeholder/test value (LiteAPI fraud filter, code
+      // 53099 — returned as a 500 but user-fixable). Ask for the real name.
+      if (code === 53099 || /placeholder|test name/i.test(description)) {
+        return NextResponse.json(
+          { ok: false, error: "Please enter each traveller's real name exactly as it appears on their passport.", reason: "liteapi_53099", detail },
+          { status: 422 },
+        );
+      }
+      if (e.status >= 400 && e.status < 500) {
+        // Most other 4xx here mean the held fare is stale — the user should re-search.
+        return NextResponse.json(
+          { ok: false, error: "Fare no longer available — please search again", reason: `liteapi_${e.status}`, detail },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json({ ok: false, error: "Could not start the booking", reason: `liteapi_${e.status}`, detail }, { status: 502 });
+    }
     return NextResponse.json({ ok: false, error: "Could not start the booking" }, { status: 502 });
   }
 }
