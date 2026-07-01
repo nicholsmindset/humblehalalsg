@@ -117,7 +117,7 @@ export function HomeScreen() {
               <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
               <div className="area-ov">
                 <span className="area-name">{a.name}</span>
-                <span className="area-count">{a.count} places</span>
+                {a.count > 0 && <span className="area-count">{a.count} places</span>}
               </div>
             </button>
           ))}
@@ -208,7 +208,10 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
   const featured = useMemo(() => dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)).slice(0, 8), [dir.listings, certifiedOnly]);
   const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 8), [dir.listings, certifiedOnly]);
   const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 8), [dir.listings, certifiedOnly]);
-  const items = tab === "newest" ? newest : tab === "top" ? top : featured;
+  const picked = tab === "newest" ? newest : tab === "top" ? top : featured;
+  // Never render a bare heading over an empty grid: if the selected tab is empty
+  // (e.g. no listings carry the `featured` flag), fall back to real listings.
+  const items = picked.length ? picked : dir.listings.filter((l) => !certifiedOnly || l.certified).slice(0, 8);
   const sort = tab === "newest" ? "newest" : tab === "top" ? "rating" : "featured";
   const tabs: [typeof tab, string][] = [["featured", "Featured"], ["newest", "Newest"], ["top", "Top rated"]];
   return (
@@ -220,7 +223,11 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
         </div>
         <button className="discover-all" onClick={() => navigate("explore", { sort })}>See all <Icon name="chevron" size={13} /></button>
       </div>
-      <div className="grid-cards">{items.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+      {items.length > 0 ? (
+        <div className="grid-cards">{items.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+      ) : (
+        <Empty icon="search" title="Listings coming soon" body="We’re still adding places — explore the full directory." />
+      )}
     </>
   );
 }

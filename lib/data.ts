@@ -338,7 +338,11 @@ listings.forEach((l, i) => {
   l.hoursWeek = l.hoursWeek || deriveWeekHours(l.catId, i);
 });
 // gallery + collage + area imagery
-const galleryKeys = ["interior", "spread", "curry", "beauty", "latte", "butcher"];
+// Shared fallback gallery appended to every business detail page — keep it to
+// food/venue-appropriate imagery only. "beauty" (glamour model) and "butcher"
+// (raw-meat joint) were removed: they render on unrelated halal listings and
+// read as off-brand / haram-adjacent on a halal-trust directory.
+const galleryKeys = ["interior", "spread", "curry", "latte"];
 export const gallery = galleryKeys.map((k) => IMG(PIC[k]));
 export const collage = [IMG(PIC.nasipadang), IMG(PIC.cafe), IMG(PIC.sgstreet)];
 const areaImg: Record<string, string> = {

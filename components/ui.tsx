@@ -253,7 +253,6 @@ export function ImagePh({
           onError={() => setFailed(true)}
         />
       )}
-      {label && (!showImg || !loaded) && <span className="imgph-label">photo · {label}</span>}
     </div>
   );
 }
