@@ -23,6 +23,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { AnalyticsPageView } from "@/components/analytics/page-view";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
+import { getCategories, getAreas } from "@/lib/catalog";
 import { EventsProvider } from "@/components/events-context";
 import { getEvents } from "@/lib/events-source";
 import { getRamadanMode } from "@/lib/platform";
@@ -123,14 +124,20 @@ export default async function RootLayout({
   // Directory snapshot — Supabase when configured, else the mock seed (keeps
   // static rendering when there are no keys, so no regression).
   // Independent reads — run in parallel to cut server-render TTFB.
-  const [directory, events, ramadanMode] = await Promise.all([getDirectory(), getEvents(), getRamadanMode()]);
+  const [directory, events, ramadanMode, categories, areas] = await Promise.all([
+    getDirectory(),
+    getEvents(),
+    getRamadanMode(),
+    getCategories(),
+    getAreas(),
+  ]);
   return (
     <html lang="en" className={fontVars}>
       <body>
         <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode}>
-            <DirectoryProvider listings={directory}>
+            <DirectoryProvider listings={directory} categories={categories} areas={areas}>
               <EventsProvider events={events}>
                 <AppShell>{children}</AppShell>
               </EventsProvider>

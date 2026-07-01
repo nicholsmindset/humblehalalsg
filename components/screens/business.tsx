@@ -1561,8 +1561,13 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
     if (reply.length < 2) return toast("Write a short reply");
     const sb = supabase;
     if (!sb) { toast("Reply sent"); setOpen((o) => ({ ...o, [id]: false })); return; }
-    const { error } = await sb.rpc("owner_reply_to_review", { p_review_id: id, p_reply: reply });
-    if (error) return toast("Couldn’t send reply");
+    // POST the reply route (calls owner_reply_to_review AND emails the reviewer)
+    // rather than the RPC directly, so a reviewer notification goes out.
+    try {
+      const res = await fetch("/api/owner/review-reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reviewId: id, reply }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.ok) return toast("Couldn’t send reply");
+    } catch { return toast("Couldn’t send reply"); }
     setRows((rs) => (rs || []).map((r) => (r.id === id ? { ...r, reply } : r)));
     setOpen((o) => ({ ...o, [id]: false }));
     toast("Reply posted");

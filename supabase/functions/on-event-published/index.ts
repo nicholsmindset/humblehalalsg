@@ -4,6 +4,7 @@
 import { admin } from "../_shared/supabase.ts";
 import { authorized, type WebhookPayload } from "../_shared/verify.ts";
 import { sendEmail } from "../_shared/email.ts";
+import { emailLayout, esc, p } from "../_shared/email-layout.ts";
 
 type EventRow = {
   id: string;
@@ -65,9 +66,15 @@ Deno.serve(async (req) => {
   // Emails (best-effort; never fail the webhook so it isn't retried).
   try {
     const { data: profs } = await db.from("profiles").select("email").in("id", followerIds);
-    const emails = (profs ?? []).map((p) => p.email as string).filter(Boolean);
-    const html = `<p>An organiser you follow just published <strong>${title}</strong>.</p>
-      <p><a href="${SITE}${link}">View the event →</a></p>`;
+    const emails = (profs ?? []).map((row) => row.email as string).filter(Boolean);
+    const html = emailLayout({
+      preheader: `New event: ${esc(title)}`,
+      heading: "A new event you might like",
+      bodyHtml:
+        p(`Assalamualaikum,`) +
+        p(`An organiser you follow on Humble Halal just published <strong>${esc(title)}</strong>. Seats can fill quickly — take a look and RSVP if it's for you.`),
+      cta: { label: "View the event", url: `${SITE}${link}` },
+    });
     for (const to of emails) {
       await sendEmail({ to, subject: `New event: ${title}`, html, template: "event_published" });
     }

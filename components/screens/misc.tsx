@@ -452,13 +452,15 @@ export function UserDashboardScreen() {
 export function SuggestScreen() {
   const { navigate } = useApp();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
   const nameErr = !name.trim() ? "Please enter the business name" : "";
+  const emailErr = email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? "Enter a valid email address" : "";
   const submit = async () => {
     setTouched(true);
-    if (nameErr) return;
+    if (nameErr || emailErr) return;
     try {
-      await fetch("/api/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "suggest", name }) });
+      await fetch("/api/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "suggest", name, email: email.trim() || undefined }) });
     } catch { /* graceful */ }
     navigate("success", { type: "suggest" });
   };
@@ -480,6 +482,12 @@ export function SuggestScreen() {
               <div className="field"><label>Category</label><select className="select"><option>Select category</option>{HHData.categories.map(c=><option key={c.id}>{c.label}</option>)}</select></div>
             </div>
             <div className="field"><label>Why do you recommend it? <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Tell us what’s great about it" /></div>
+            <div className="field">
+              <label htmlFor="sg-email">Your email <span className="hint">(optional — we’ll confirm we got it)</span></label>
+              <input id="sg-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}
+                aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "sg-email-err" : undefined} />
+              {touched && emailErr && <span id="sg-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
+            </div>
             <div className="field"><label>Link or photo <span className="hint">(optional)</span></label><div className="upload-zone" style={{padding:'18px'}}><Icon name="camera" size={22}/><span className="faint" style={{fontSize:'.82rem', marginTop:6}}>Add a photo or paste a link</span></div></div>
             <button className="btn btn-primary btn-lg" onClick={submit}>Submit suggestion</button>
           </div>
@@ -731,13 +739,18 @@ export function ReportScreen() {
   const { navigate, params, toast } = useApp();
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
+  const [email, setEmail] = useState("");
+  const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const dir = useDirectory();
   const item = params.id ? dir.get(String(params.id)) : null;
+  const emailErr = email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? "Enter a valid email address" : "";
   const submitReport = async () => {
+    setTouched(true);
+    if (emailErr) return;
     setBusy(true);
     try {
-      await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item?.id || "", reason, details }) });
+      await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item?.id || "", reason, details, email: email.trim() || undefined }) });
     } catch { /* graceful */ }
     setBusy(false);
     navigate("success", { type: "report" });
@@ -768,6 +781,12 @@ export function ReportScreen() {
             ))}
           </div>
           <div className="field mt16"><label>Details <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
+          <div className="field mt16">
+            <label htmlFor="rp-email">Your email <span className="hint">(optional — we’ll confirm we got it)</span></label>
+            <input id="rp-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={(e)=>setEmail(e.target.value)}
+              aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "rp-email-err" : undefined} />
+            {touched && emailErr && <span id="rp-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
+          </div>
           <button className="btn btn-primary btn-lg btn-block mt16" disabled={!reason || busy} onClick={submitReport}>{busy ? "Submitting…" : "Submit report"}</button>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email";
 import { emailForUser } from "@/lib/emails/recipient";
-import { claimSubmittedEmail, claimAdminAlertEmail, listingSubmittedEmail } from "@/lib/emails/templates";
+import { claimSubmittedEmail, claimAdminAlertEmail, listingSubmittedEmail, suggestionAckEmail } from "@/lib/emails/templates";
 
 /* Unified submission intake for add-listing, suggest-a-business and claim flows.
    Graceful-degradation: validates + accepts now (so the UI shows a real
@@ -82,11 +82,13 @@ export async function POST(req: Request) {
         };
       } else if (kind === "suggest") {
         table = "suggestions";
+        const suggestEmailRaw = String(body?.email || "").trim().slice(0, 200);
         row = {
           name,
           area: String(body?.area || "") || null,
           category: String(body?.category || "") || null,
           note: String(body?.note || body?.why || "") || null,
+          email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(suggestEmailRaw) ? suggestEmailRaw : null,
         };
       } else {
         table = "claims";
@@ -130,6 +132,14 @@ export async function POST(req: Request) {
             if (email) {
               const t = listingSubmittedEmail({ name: ownerName, businessName: name });
               await sendEmail({ to: email, subject: t.subject, html: t.html, template: "listing-submitted" });
+            }
+          } else if (kind === "suggest") {
+            // Anonymous form — acknowledge only if the suggester left an email.
+            const suggestEmailRaw = String(body?.email || "").trim().slice(0, 200);
+            const suggestEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(suggestEmailRaw) ? suggestEmailRaw : null;
+            if (suggestEmail) {
+              const t = suggestionAckEmail({ name: null });
+              await sendEmail({ to: suggestEmail, subject: t.subject, html: t.html, template: "suggestion-ack" });
             }
           }
         } catch { /* email best-effort */ }
