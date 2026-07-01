@@ -4,6 +4,8 @@ import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, bookFlight } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sendEmail } from "@/lib/email";
+import { flightBookingEmail } from "@/lib/emails/templates";
 
 /* Step 3 of flight booking — confirm with LiteAPI AFTER the card is charged.
    CRITICAL invariant: once payment is captured (Stripe SDK), a failed booking is
@@ -91,7 +93,25 @@ export async function POST(req: Request) {
 
   if (status === "confirming") {
     // Payment is (or may be) captured; provider not yet confirmed → reassure, retry async.
+    // The retry job emails the ticket once confirmed, so we don't send here.
     return NextResponse.json({ ok: true, status: "confirming", id: rowId, message: "Payment received — we're confirming your flight and will email your ticket shortly." });
   }
+
+  // Confirmed/ticketed → email the traveller their booking (best-effort).
+  const contactEmail = String(body.contactEmail || "").trim();
+  if (contactEmail) {
+    try {
+      const origin = String(body.origin || "").trim();
+      const destination = String(body.destination || "").trim();
+      const route = origin && destination ? `${origin} → ${destination}` : (origin || destination || "your flight");
+      const t = flightBookingEmail({
+        route,
+        dateLabel: String(body.date || "") || undefined,
+        ref: outcome.booking?.bookingRef ?? outcome.booking?.pnr ?? undefined,
+      });
+      await sendEmail({ to: contactEmail, subject: t.subject, html: t.html, template: "flight-booking" });
+    } catch { /* email best-effort */ }
+  }
+
   return NextResponse.json({ ok: true, status, id: rowId, bookingRef: outcome.booking?.bookingRef ?? null, pnr: outcome.booking?.pnr ?? null });
 }

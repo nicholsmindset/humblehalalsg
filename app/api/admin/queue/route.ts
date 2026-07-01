@@ -4,6 +4,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/slug";
 import { revalidatePublic } from "@/lib/revalidate";
+import { sendEmail } from "@/lib/email";
+import { emailForUser, emailForBusinessOwner } from "@/lib/emails/recipient";
+import { claimApprovedEmail, claimRejectedEmail, listingApprovedEmail, listingRejectedEmail, eventApprovedEmail } from "@/lib/emails/templates";
 
 /* Unified admin moderation queue.
    GET  ?type=listings|reviews|reports|suggestions|claims&limit=  → pending rows
@@ -92,6 +95,19 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("events").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved event" : "Rejected event", target: id });
+        // On approval, notify the organiser (business owner) their event is live.
+        if (status === "published") {
+          try {
+            const { data: ev } = await admin.from("events").select("business_id, title, slug, display").eq("id", id).maybeSingle();
+            if (ev) {
+              const { email, name } = await emailForBusinessOwner(admin, ev.business_id as string | null);
+              if (email) {
+                const { subject, html } = eventApprovedEmail({ name, eventTitle: String(ev.title || "your event"), slug: (ev.slug as string | null) || undefined });
+                await sendEmail({ to: email, subject, html, template: "event-approved", businessId: (ev.business_id as string | null) || undefined });
+              }
+            }
+          } catch { /* email best-effort */ }
+        }
         revalidatePublic(["/events"]);
         return NextResponse.json({ ok: true, status });
       }
@@ -116,6 +132,20 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   if (action === "reject") {
     await db.from("staging_businesses").update({ review_status: "rejected" }).eq("id", id);
     await logAudit(db, { actor, action: "Rejected listing", target: id });
+    // Notify the submitter (if we captured their Clerk id at intake) their listing wasn't published.
+    try {
+      const { data: s } = await db.from("staging_businesses").select("name, raw").eq("id", id).maybeSingle();
+      const raw = (s?.raw && typeof s.raw === "object" ? s.raw : {}) as Record<string, unknown>;
+      const submittedBy = typeof raw.submitted_by === "string" && raw.submitted_by ? raw.submitted_by : null;
+      if (submittedBy) {
+        const { email, name } = await emailForUser(db, submittedBy);
+        if (email) {
+          const businessName = String(s?.name || "your business");
+          const { subject, html } = listingRejectedEmail({ name, businessName });
+          await sendEmail({ to: email, subject, html, template: "listing-rejected" });
+        }
+      }
+    } catch { /* email best-effort */ }
     return NextResponse.json({ ok: true, status: "rejected" });
   }
   if (action !== "approve") return badAction();
@@ -157,6 +187,16 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   await db.from("staging_businesses").update({ review_status: "published", duplicate_of: created.id }).eq("id", id);
   if (submittedBy) await db.from("profiles").update({ role: "owner" }).eq("id", submittedBy).neq("role", "admin");
   await logAudit(db, { actor, action: "Published listing", target: created.id, meta: { name: insert.name, staging_id: id } });
+  // Notify the submitter their listing is live.
+  if (submittedBy) {
+    try {
+      const { email, name } = await emailForUser(db, submittedBy);
+      if (email) {
+        const { subject, html } = listingApprovedEmail({ name, businessName: insert.name });
+        await sendEmail({ to: email, subject, html, template: "listing-approved", businessId: created.id });
+      }
+    } catch { /* email best-effort */ }
+  }
   revalidatePublic();
   return NextResponse.json({ ok: true, status: "published", businessId: created.id });
 }
@@ -167,6 +207,19 @@ async function actClaim(admin: ReturnType<typeof getSupabaseAdmin>, id: string, 
   if (action === "reject") {
     await db.from("claims").update({ status: "rejected" }).eq("id", id);
     await logAudit(db, { actor, action: "Rejected claim", target: id });
+    // Notify the claimant their ownership claim wasn't verified.
+    try {
+      const { data: c } = await db.from("claims").select("business_id, user_id").eq("id", id).maybeSingle();
+      if (c?.user_id) {
+        const { email, name } = await emailForUser(db, c.user_id as string);
+        if (email) {
+          const { data: biz } = await db.from("businesses").select("name").eq("id", c.business_id as string).maybeSingle();
+          const businessName = String(biz?.name || "this business");
+          const { subject, html } = claimRejectedEmail({ name, businessName });
+          await sendEmail({ to: email, subject, html, template: "claim-rejected", businessId: (c.business_id as string | null) || undefined });
+        }
+      }
+    } catch { /* email best-effort */ }
     return NextResponse.json({ ok: true, status: "rejected" });
   }
   if (action !== "approve") return badAction();
@@ -177,6 +230,16 @@ async function actClaim(admin: ReturnType<typeof getSupabaseAdmin>, id: string, 
     await db.from("businesses").update({ owner_id: c.user_id, claimed_by: c.user_id }).eq("id", c.business_id);
     // Claimant now owns a business → grant the owner role (no-op for admins).
     await db.from("profiles").update({ role: "owner" }).eq("id", c.user_id).neq("role", "admin");
+    // Notify the claimant they're verified as owner.
+    try {
+      const { email, name } = await emailForUser(db, c.user_id as string);
+      if (email) {
+        const { data: biz } = await db.from("businesses").select("name").eq("id", c.business_id as string).maybeSingle();
+        const businessName = String(biz?.name || "your business");
+        const { subject, html } = claimApprovedEmail({ name, businessName });
+        await sendEmail({ to: email, subject, html, template: "claim-approved", businessId: (c.business_id as string | null) || undefined });
+      }
+    } catch { /* email best-effort */ }
   }
   await logAudit(db, { actor, action: "Approved claim", target: id, meta: { business_id: c?.business_id } });
   revalidatePublic();

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sendEmail } from "@/lib/email";
+import { emailForUser } from "@/lib/emails/recipient";
+import { claimSubmittedEmail, claimAdminAlertEmail, listingSubmittedEmail } from "@/lib/emails/templates";
 
 /* Unified submission intake for add-listing, suggest-a-business and claim flows.
    Graceful-degradation: validates + accepts now (so the UI shows a real
@@ -102,7 +105,36 @@ export async function POST(req: Request) {
         };
       }
       const { error } = await sb.from(table).insert(row);
-      if (!error) return NextResponse.json({ ok: true, simulated: false, queued: true });
+      if (!error) {
+        // Best-effort acknowledgement emails — never affect the API response.
+        try {
+          if (kind === "claim" && userId) {
+            // Resolve the claimed business's name (falls back to the typed name).
+            const bid = isUuid(String(body?.businessId || "")) ? String(body?.businessId) : null;
+            let businessName = name || "the business";
+            if (bid) {
+              const { data: biz } = await sb.from("businesses").select("name").eq("id", bid).maybeSingle();
+              if (biz?.name) businessName = String(biz.name);
+            }
+            const { email, name: claimantName } = await emailForUser(sb, userId);
+            if (email) {
+              const t = claimSubmittedEmail({ name: claimantName, businessName });
+              await sendEmail({ to: email, subject: t.subject, html: t.html, template: "claim-submitted", businessId: bid || undefined });
+            }
+            // Alert the admin inbox of the pending claim.
+            const alertTo = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+            const alert = claimAdminAlertEmail({ businessName, claimantEmail: email, role: String(body?.role || "") || null });
+            await sendEmail({ to: alertTo, subject: alert.subject, html: alert.html, template: "claim-admin-alert", businessId: bid || undefined });
+          } else if (kind === "listing" && userId) {
+            const { email, name: ownerName } = await emailForUser(sb, userId);
+            if (email) {
+              const t = listingSubmittedEmail({ name: ownerName, businessName: name });
+              await sendEmail({ to: email, subject: t.subject, html: t.html, template: "listing-submitted" });
+            }
+          }
+        } catch { /* email best-effort */ }
+        return NextResponse.json({ ok: true, simulated: false, queued: true });
+      }
     }
   } catch {
     /* fall through to simulated */

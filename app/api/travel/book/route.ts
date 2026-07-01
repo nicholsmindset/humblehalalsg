@@ -4,6 +4,8 @@ import { getServerFlags } from "@/lib/flags";
 import { liteapiConfigured, book } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sendEmail } from "@/lib/email";
+import { hotelBookingEmail } from "@/lib/emails/templates";
 
 /* Sanitize client-reported ledger money (security audit M3). These figures come
    from the client's prebook state and are reconciled against LiteAPI's weekly
@@ -115,6 +117,21 @@ export async function POST(req: Request) {
     } catch {
       /* ledger write is best-effort */
     }
+  }
+
+  // Confirmation email to the guest (best-effort — never affects the booking response).
+  try {
+    const holderName = [holder.firstName, holder.lastName].filter(Boolean).join(" ").trim() || null;
+    const t = hotelBookingEmail({
+      name: holderName,
+      hotelName: String(body.hotelName || "your hotel"),
+      checkIn: String(body.checkin || "") || undefined,
+      checkOut: String(body.checkout || "") || undefined,
+      ref: result.hotelConfirmationCode ?? result.bookingId ?? undefined,
+    });
+    await sendEmail({ to: holder.email, subject: t.subject, html: t.html, template: "hotel-booking" });
+  } catch {
+    /* email best-effort */
   }
 
   // Optional outbound CRM/automation webhook (best-effort, like MailerLite).

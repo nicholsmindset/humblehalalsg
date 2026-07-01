@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { sendEmail } from "@/lib/email";
+import { rsvpConfirmationEmail } from "@/lib/emails/templates";
 
 /* Free RSVP — the launch path. DB-backed when the event exists in Supabase;
    otherwise returns simulated:true so the client keeps the local mock ticket
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
   const { data: row } = isSafeEventRef(eventId)
     ? await supa
         .from("events")
-        .select("id, capacity, taken, business_id, status")
+        .select("id, capacity, taken, business_id, status, title, date_iso")
         .or(`id.eq.${eventId},slug.eq.${eventId}`)
         .maybeSingle()
     : { data: null };
@@ -80,6 +82,17 @@ export async function POST(req: Request) {
   await supa.from("tickets").insert(tix);
   const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: row.id, p_qty: qty });
   if (incErr) await supa.from("events").update({ taken: taken + qty }).eq("id", row.id);
+
+  // Confirmation email to the RSVP submitter (best-effort — never affects response).
+  if (body.email) {
+    try {
+      const eventTitle = String((row as { title?: string }).title || mockEv?.title || "your event");
+      const dateLabel = String((row as { date_iso?: string }).date_iso || mockEv?.dateLabel || "") || undefined;
+      const venue = mockEv?.venue || undefined;
+      const t = rsvpConfirmationEmail({ name: body.name, eventTitle, dateLabel, venue, ref });
+      await sendEmail({ to: body.email, subject: t.subject, html: t.html, template: "rsvp-confirmation", businessId: (row.business_id as string | null) || undefined });
+    } catch { /* email best-effort */ }
+  }
 
   return NextResponse.json({ ok: true, ref });
 }

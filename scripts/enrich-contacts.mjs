@@ -34,12 +34,22 @@ function findPhone(text) {
   const m = (text || "").match(SG_PHONE);
   return m ? `+65 ${m[1]} ${m[2]}` : null;
 }
-function pickWebsite(results) {
+// Only trust a result whose DOMAIN matches the business name (avoids picking a
+// news/aggregator page as the "website" or its phone). Returns the result or null.
+function pickOfficial(results, name) {
+  const tokens = (name || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 3);
+  const compact = (name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   for (const r of results || []) {
-    try { const h = new URL(r.url).hostname; if (!DENY.test(h)) return `https://${h}`; } catch { /* skip */ }
+    try {
+      const h = new URL(r.url).hostname.replace(/^www\./, "");
+      if (DENY.test(h)) continue;
+      const label = h.split(".")[0];
+      if (tokens.some((t) => h.includes(t)) || (label.length > 3 && compact.includes(label))) return r;
+    } catch { /* skip */ }
   }
   return null;
 }
+const originOf = (r) => { try { return `https://${new URL(r.url).hostname.replace(/^www\./, "")}`; } catch { return null; } };
 
 async function firecrawl(path, body) {
   const res = await fetch(`https://api.firecrawl.dev/v1/${path}`, {
@@ -68,11 +78,14 @@ async function main() {
   let gotPhone = 0, gotWeb = 0, miss = 0;
   for (const r of todo) {
     try {
-      const s = await firecrawl("search", { query: `${r.name} ${r.area || "Singapore"} contact phone`, limit: 4, scrapeOptions: { formats: ["markdown"] } });
+      const s = await firecrawl("search", { query: `${r.name} ${r.area || "Singapore"} contact phone`, limit: 5, scrapeOptions: { formats: ["markdown"] } });
       const results = s?.data || [];
-      const blob = results.map((x) => `${x.title || ""} ${x.description || ""} ${x.markdown || ""}`).join("\n").slice(0, 20000);
-      const phone = r.phone || findPhone(blob);
-      const website = r.website || pickWebsite(results);
+      // Only take contact details from the business's OWN page (name-matched
+      // domain) — never a news/blog/aggregator hit — so we don't inject wrong data.
+      const official = pickOfficial(results, r.name);
+      const officialBlob = official ? `${official.title || ""} ${official.description || ""} ${official.markdown || ""}`.slice(0, 20000) : "";
+      const phone = r.phone || (officialBlob ? findPhone(officialBlob) : null);
+      const website = r.website || (official ? originOf(official) : null);
       const patch = {};
       if (phone && !r.phone) { patch.phone = phone; gotPhone++; }
       if (website && !r.website) { patch.website = website; gotWeb++; }

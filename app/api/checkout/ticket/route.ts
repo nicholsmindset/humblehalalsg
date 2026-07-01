@@ -80,6 +80,7 @@ export async function POST(req: Request) {
   const meta: Record<string, string> = {
     kind: "ticket",
     eventId: ev.id,
+    eventTitle: String(ev.title || "").slice(0, 200), // for the confirmation email
     businessId: String(ev.organiserId),
     tier: tier?.name ?? "Standard",
     qty: String(qty),
