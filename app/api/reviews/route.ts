@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { emailForBusinessOwner } from "@/lib/emails/recipient";
+import { reviewReceivedEmail } from "@/lib/emails/templates";
+import { sendEmail } from "@/lib/email";
 
 /* Review submission. Graceful-degradation: validates + accepts now (returns
    simulated), and is the single integration point to persist to Supabase
@@ -74,7 +77,17 @@ export async function POST(req: Request) {
       const { error } = await sb
         .from("reviews")
         .insert({ business_id: id, rating, text, status: "pending" });
-      if (!error) return NextResponse.json({ ok: true, simulated: false, pending: true });
+      if (!error) {
+        // Notify the business owner of the new (pending) review (best-effort).
+        try {
+          const { email, name, businessName } = await emailForBusinessOwner(sb, id);
+          if (email) {
+            const t = reviewReceivedEmail({ name, businessName: businessName || "your listing", rating, text });
+            await sendEmail({ to: email, subject: t.subject, html: t.html, template: "review-received", businessId: id });
+          }
+        } catch { /* email best-effort — never affect the API response */ }
+        return NextResponse.json({ ok: true, simulated: false, pending: true });
+      }
     }
   } catch {
     /* fall through to simulated */

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
+import { certExpiryEmail } from "@/lib/emails/templates";
 
 /* B1 — weekly MUIS cert re-check (the #1 moat job). Any business whose
    muis_expiry has passed while still tier muis/admin is flagged back to
@@ -79,14 +80,11 @@ export async function GET(req: Request) {
       if (!to) continue;
 
       const bizName = (biz?.name as string) || "your business";
-      const subject = isExpired
-        ? `Action needed: ${bizName}'s halal certificate has expired`
-        : `Reminder: ${bizName}'s halal certificate expires on ${c.expires_on}`;
-      const html = isExpired
-        ? `<p>The halal certificate on file for <strong>${bizName}</strong>${c.cert_no ? ` (${c.cert_no})` : ""} expired on <strong>${c.expires_on}</strong>.</p>` +
-          `<p>Renew with the issuer and upload the new certificate to keep your halal-confidence badge.</p>`
-        : `<p>The halal certificate on file for <strong>${bizName}</strong>${c.cert_no ? ` (${c.cert_no})` : ""} expires on <strong>${c.expires_on}</strong>.</p>` +
-          `<p>Renew with the issuer and upload the new certificate to avoid any drop in your halal-confidence badge.</p>`;
+      const { subject, html } = certExpiryEmail({
+        businessName: bizName,
+        certNo: c.cert_no ? String(c.cert_no) : undefined,
+        expiresOn: String(c.expires_on),
+      });
       const r = await sendEmail({ to, subject, html, template: "cert-expiry", businessId: c.business_id });
       if (!r.simulated) emailed++;
     }

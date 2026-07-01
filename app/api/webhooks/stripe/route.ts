@@ -4,7 +4,8 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
-import { ticketConfirmationEmail, adPurchaseEmail } from "@/lib/emails/templates";
+import { ticketConfirmationEmail, adPurchaseEmail, planStartedEmail } from "@/lib/emails/templates";
+import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 
 const addDaysISO = (base: Date, days: number) => {
@@ -61,6 +62,17 @@ export async function POST(req: Request) {
             if (subscription) {
               await supa.from("subscriptions").upsert({ business_id: businessId, stripe_subscription_id: subscription, plan, status: "active" }, { onConflict: "stripe_subscription_id" });
             }
+            // Welcome / plan-started email to the customer (best-effort). Prefer the
+            // owner's profile (name) resolved via the business; fall back to the
+            // email Stripe collected at checkout.
+            try {
+              const owner = await emailForBusinessOwner(supa, businessId);
+              const to = owner.email || s.customer_details?.email || null;
+              if (to) {
+                const t = planStartedEmail({ name: owner.name || s.customer_details?.name, plan });
+                await sendEmail({ to, subject: t.subject, html: t.html, template: "plan-started", businessId });
+              }
+            } catch { /* email best-effort — never affect the webhook ack */ }
           }
         }
         // Event-ticket checkout (separate charges). Record the order + tickets and

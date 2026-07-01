@@ -183,3 +183,154 @@ export function contactAutoReplyEmail(o: { name?: string | null }): Out {
     { label: "Explore Humble Halal", url: `${U}/explore` },
   );
 }
+
+/* ═══ Phase 3 — additional transactional ═══════════════════════════════ */
+const stars = (n: number) => "★".repeat(Math.max(0, Math.min(5, n))) + "☆".repeat(Math.max(0, 5 - n));
+
+export function reviewReceivedEmail(o: { name?: string | null; businessName: string; rating: number; text?: string }): Out {
+  return wrap(
+    `New review for ${o.businessName}`,
+    "You've got a new review",
+    greet(o.name) +
+      p(`Someone just reviewed <strong>${esc(o.businessName)}</strong> — <span style="color:#c19a2e;">${stars(o.rating)}</span> (${o.rating}/5).`) +
+      (o.text ? p(`&ldquo;${esc(o.text)}&rdquo;`) : "") +
+      p(`Replying shows customers you're listening — thank them, or address their feedback, from your dashboard.`),
+    { label: "Reply to the review", url: `${U}/owner` },
+  );
+}
+export function bookingRefundedEmail(o: { name?: string | null; kind: "hotel" | "flight"; ref?: string }): Out {
+  const what = o.kind === "hotel" ? "hotel booking" : "flight booking";
+  return wrap(
+    `Your ${what} has been refunded`,
+    "Refund processed",
+    greet(o.name) +
+      p(`Your ${what}${o.ref ? ` (ref <strong>${esc(o.ref)}</strong>)` : ""} has been cancelled and refunded. The amount will return to your original payment method within 5–10 business days.`),
+    { label: "View your trips", url: `${U}/travel/trips` },
+  );
+}
+export function bookingFailedEmail(o: { name?: string | null; kind: "hotel" | "flight" }): Out {
+  const what = o.kind === "hotel" ? "hotel booking" : "flight booking";
+  return wrap(
+    `We couldn't complete your ${what}`,
+    "Booking not completed",
+    greet(o.name) +
+      p(`We're sorry — we weren't able to confirm your ${what}, and <strong>you have not been charged</strong>. Please try again, or reply to this email and we'll be glad to help.`),
+    { label: "Try again", url: `${U}/travel` },
+  );
+}
+export function leadConfirmationEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "We've received your request",
+    "Thanks — we'll be in touch",
+    greet(o.name) +
+      p(`Thank you for your enquiry. We've received your details and the right person will get back to you shortly, usually within 1–2 business days.`),
+    { label: "Explore Humble Halal", url: `${U}/explore` },
+  );
+}
+export function payoutConnectedEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "Your payout account is ready",
+    "Payouts are set up",
+    greet(o.name) +
+      p(`Your payout account is connected. When you sell tickets, your earnings are paid out automatically to your bank — no extra steps needed.`),
+    { label: "Open your dashboard", url: `${U}/owner` },
+  );
+}
+export function planStartedEmail(o: { name?: string | null; plan: string }): Out {
+  return wrap(
+    `Your ${o.plan} plan is active`,
+    `Welcome to ${esc(o.plan)}`,
+    greet(o.name) +
+      p(`Your <strong>${esc(o.plan)}</strong> plan is now active — thank you for supporting Humble Halal and Singapore's halal community. You can view invoices, update your card or change plan anytime.`),
+    { label: "Manage billing", url: `${U}/owner` },
+  );
+}
+
+/* ═══ Rebrands of the existing inline-HTML emails ══════════════════════ */
+export function fareAlertEmail(o: { route: string; oldPrice: string; newPrice: string; url?: string }): Out {
+  return wrap(
+    `Price drop: ${o.route}`,
+    "A flight you're watching just got cheaper",
+    p(`Good news — <strong>${esc(o.route)}</strong> dropped from ${esc(o.oldPrice)} to <strong style="color:#0b5d3b;">${esc(o.newPrice)}</strong>.`) +
+      p(`Fares move fast — book soon to lock in the lower price.`),
+    { label: "See the fare", url: o.url || `${U}/travel/flights` },
+  );
+}
+export function freshnessNudgeEmail(o: { name?: string | null; businessName: string; restampUrl: string }): Out {
+  return wrap(
+    `Keep ${o.businessName} looking fresh`,
+    "A quick confirm keeps your listing trusted",
+    greet(o.name) +
+      p(`It's been a while since <strong>${esc(o.businessName)}</strong> was last confirmed. A quick one-tap re-confirm keeps your "last verified" date fresh — customers trust recently-verified listings more.`),
+    { label: "Confirm my details", url: o.restampUrl },
+  );
+}
+export function certExpiryEmail(o: { name?: string | null; businessName: string; certNo?: string; expiresOn: string }): Out {
+  return wrap(
+    `Your halal certificate is expiring`,
+    "Time to renew your certificate",
+    greet(o.name) +
+      p(`The halal certificate on file for <strong>${esc(o.businessName)}</strong>${o.certNo ? ` (${esc(o.certNo)})` : ""} expires on <strong>${esc(o.expiresOn)}</strong>.`) +
+      p(`Renew with MUIS and upload the new certificate to keep your verified badge active.`),
+    { label: "Upload new certificate", url: `${U}/owner` },
+  );
+}
+export function ownerDigestEmail(o: { name?: string | null; businessName: string; views: number; enquiries: number; whatsapp: number; calls: number }): Out {
+  return wrap(
+    `Your week on Humble Halal — ${o.businessName}`,
+    "Here's how you did this week",
+    greet(o.name) +
+      p(`A quick snapshot for <strong>${esc(o.businessName)}</strong> over the last 7 days:`) +
+      p(`👀 <strong>${o.views}</strong> profile views<br>✉️ <strong>${o.enquiries}</strong> enquiries<br>💬 <strong>${o.whatsapp}</strong> WhatsApp taps<br>📞 <strong>${o.calls}</strong> calls`),
+    { label: "See full insights", url: `${U}/owner` },
+  );
+}
+export function eventReminderEmail(o: { name?: string | null; eventTitle: string; dateLabel?: string; venue?: string }): Out {
+  return wrap(
+    `Tomorrow: ${o.eventTitle}`,
+    "Your event is coming up",
+    greet(o.name) +
+      p(`Just a reminder that <strong>${esc(o.eventTitle)}</strong> is happening soon.`) +
+      p(`${o.dateLabel ? `📅 ${esc(o.dateLabel)}<br>` : ""}${o.venue ? `📍 ${esc(o.venue)}` : ""}`),
+    { label: "View your ticket", url: `${U}/travel/trips` },
+  );
+}
+export function joinApprovedEmail(o: { name?: string | null; eventTitle: string }): Out {
+  return wrap(
+    `You're in: ${o.eventTitle}`,
+    "Your request was approved",
+    greet(o.name) +
+      p(`Great news — your request to join <strong>${esc(o.eventTitle)}</strong> has been approved. Your ticket is ready.`),
+    { label: "Open my tickets", url: `${U}/travel/trips` },
+  );
+}
+export function joinDeclinedEmail(o: { name?: string | null; eventTitle: string }): Out {
+  return wrap(
+    `Update on ${o.eventTitle}`,
+    "About your request to join",
+    greet(o.name) +
+      p(`Thank you for your interest in <strong>${esc(o.eventTitle)}</strong>. Unfortunately the organiser wasn't able to approve your request this time — often it's simply a capacity limit. We hope to see you at a future event.`),
+    { label: "Browse events", url: `${U}/events` },
+  );
+}
+export function eventCancelledEmail(o: { name?: string | null; eventTitle: string; refunded?: boolean }): Out {
+  return wrap(
+    `Cancelled: ${o.eventTitle}`,
+    "This event has been cancelled",
+    greet(o.name) +
+      p(`We're sorry to let you know that <strong>${esc(o.eventTitle)}</strong> has been cancelled by the organiser.`) +
+      (o.refunded ? p(`Any payment will be fully refunded to your original method within 5–10 business days.`) : "") +
+      p(`We apologise for the inconvenience.`),
+    { label: "Find other events", url: `${U}/events` },
+  );
+}
+export function ticketResendEmail(o: { tickets: { title: string; ref: string }[] }): Out {
+  const rows = o.tickets.map((t) => `<tr><td style="padding:6px 0;font-size:15px;color:#1c2621;">${esc(t.title)}</td><td style="padding:6px 0;font-size:14px;color:#5b6b62;text-align:right;">${esc(t.ref)}</td></tr>`).join("");
+  return wrap(
+    "Your Humble Halal tickets",
+    "Here are your tickets",
+    p(`As requested, here are your tickets — open them to show the QR code at the door.`) +
+      `<table role="presentation" width="100%" style="border-top:1px solid #e7e1d5;margin:8px 0;">${rows}</table>`,
+    { label: "Open my tickets", url: `${U}/travel/trips` },
+  );
+}
