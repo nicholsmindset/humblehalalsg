@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 import { normalizeCertNo } from "@/lib/muis";
 import { buildGrantPatch } from "@/lib/verify-grant";
+import { revalidatePublic } from "@/lib/revalidate";
 
 /* Halal Certificate Vault — admin review endpoints.
 
@@ -179,6 +180,9 @@ export async function POST(req: Request) {
   } catch {
     /* best-effort */
   }
+
+  // Approving a cert changes the business's halal tier/score → refresh public pages.
+  if (action === "approve") revalidatePublic();
 
   return NextResponse.json({ ok: true, status: newStatus, tier, score });
 }

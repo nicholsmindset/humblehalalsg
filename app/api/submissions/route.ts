@@ -88,11 +88,16 @@ export async function POST(req: Request) {
       } else {
         table = "claims";
         const bid = String(body?.businessId || "");
+        // Proof is optional; note the attached filename in the message so the
+        // admin claims queue shows what (if anything) was submitted, without a
+        // schema dependency (the actual file upload is a later enhancement).
+        const proofName = String(body?.proofFileName || "").trim();
+        const msg = String(body?.message || "").trim();
         row = {
           business_id: isUuid(bid) ? bid : null,
           user_id: userId,
           role: String(body?.role || "") || null,
-          message: String(body?.message || "") || null,
+          message: [msg, proofName ? `[proof attached: ${proofName}]` : ""].filter(Boolean).join(" ") || null,
           status: "pending",
         };
       }

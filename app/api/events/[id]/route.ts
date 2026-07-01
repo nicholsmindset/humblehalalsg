@@ -49,6 +49,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { error } = await admin.from("events").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
+  revalidatePublic(["/events"]);
   return NextResponse.json({ ok: true });
 }
 
