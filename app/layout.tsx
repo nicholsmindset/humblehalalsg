@@ -16,6 +16,7 @@ import "../styles/travel.css";
 import "../styles/tools.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
+import "../styles/blog.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
