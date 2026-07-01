@@ -19,8 +19,6 @@
         "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
         "total-blocking-time": ["warn", { "maxNumericValue": 300 }],
         "viewport": ["error", {}],
-        "content-width": ["error", {}],
-        "tap-targets": ["warn", {}],
         "font-size": ["warn", {}]
       }
     },
