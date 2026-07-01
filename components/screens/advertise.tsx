@@ -34,7 +34,7 @@ export function AdvertiseScreen() {
   // Start a Stripe Checkout for a fixed-price ad package (reuses /api/checkout/promo).
   async function handleBuy(f: (typeof FORMATS)[number]) {
     if (!f.product) {
-      window.location.href = `mailto:${CONTACT_EMAILS.partners}?subject=${encodeURIComponent("Sponsored Content enquiry")}&body=${encodeURIComponent("Hi Humble Halal, I'd like to discuss a Sponsored Content campaign.")}`;
+      window.location.assign(`mailto:${CONTACT_EMAILS.partners}?subject=${encodeURIComponent("Sponsored Content enquiry")}&body=${encodeURIComponent("Hi Humble Halal, I'd like to discuss a Sponsored Content campaign.")}`);
       return;
     }
     setBuying(f.product);
@@ -45,7 +45,7 @@ export function AdvertiseScreen() {
         body: JSON.stringify({ product: f.product }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d?.ok && d.url) { window.location.href = d.url; return; }
+      if (d?.ok && d.url) { window.location.assign(d.url); return; }
       toast(
         d?.reason === "paid_ads_disabled"
           ? "Advertising checkout is opening soon — email us for the media kit."
