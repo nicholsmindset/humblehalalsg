@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { leadConfirmationEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
+import { beehiivSubscribe } from "@/lib/beehiiv";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -87,31 +88,14 @@ export async function POST(req: Request) {
   }
 
   // Best-effort: also capture the email in beehiiv for follow-up (non-blocking).
-  const bhKey = process.env.BEEHIIV_API_KEY;
-  const bhPub = process.env.BEEHIIV_PUBLICATION_ID;
-  if (bhKey && bhPub && email) {
-    try {
-      await fetch(`https://api.beehiiv.com/v2/publications/${bhPub}/subscriptions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${bhKey}`,
-        },
-        body: JSON.stringify({
-          email,
-          reactivate_existing: true,
-          send_welcome_email: false,
-          utm_source: "lead",
-          custom_fields: [
-            { name: "source", value: "lead" },
-            ...(category ? [{ name: "category", value: String(category) }] : []),
-          ],
-        }),
-      });
-    } catch {
-      /* ignore — lead is already stored */
-    }
+  // Transactional (quote intake) → no welcome email; tags intent=owner.
+  if (email) {
+    await beehiivSubscribe({
+      email,
+      source: "lead",
+      sendWelcome: false,
+      ...(category ? { extraFields: [{ name: "category", value: String(category) }] } : {}),
+    });
   }
 
   return NextResponse.json({ ok: true });

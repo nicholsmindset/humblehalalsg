@@ -19,6 +19,7 @@ import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
+import { Newsletter } from "../newsletter";
 
 /* ---------- Islamic-layer helpers ---------- */
 const GENDER_LABELS: Record<string, string> = {
@@ -525,6 +526,21 @@ export function EventsScreen() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Intent-matched capture: browsing events → weekly what's-on newsletter
+            (source "events" → events segment; drives ticket RSVPs). */}
+        <section className="hh-section" style={{ paddingTop: 8 }}>
+          <div className="newsletter-card" style={{ maxWidth: 640 }}>
+            <span className="eyebrow">🌙 HumbleHalal events</span>
+            <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Halal events, every week</h2>
+            <p className="muted" style={{ marginTop: 8 }}>
+              Bazaars, classes and community events near you — straight to your inbox.
+            </p>
+            <div style={{ marginTop: 14 }}>
+              <Newsletter source="events" cta="Keep me posted" />
+            </div>
+          </div>
         </section>
       </div>
     </div>

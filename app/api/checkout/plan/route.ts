@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { beehiivSubscribe } from "@/lib/beehiiv";
 import { SITE } from "@/lib/seo";
 
 /* Listing-plan subscription checkout (Humble Halal is the seller — no Connect).
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
   // billing portal work. Falls back to an anonymous checkout if unauthenticated.
   let customer: string | undefined;
   let businessId: string | undefined;
+  let ownerEmail = "";
   try {
     const { userId } = await auth();
     const admin = getSupabaseAdmin();
@@ -38,10 +40,10 @@ export async function POST(req: Request) {
       if (biz) {
         businessId = biz.id as string;
         customer = (biz.stripe_customer_id as string) || undefined;
+        const cu = await currentUser();
+        ownerEmail = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
         if (!customer) {
-          const cu = await currentUser();
-          const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
-          const created = await stripe.customers.create({ email: email || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
+          const created = await stripe.customers.create({ email: ownerEmail || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
           customer = created.id;
           await admin.from("businesses").update({ stripe_customer_id: customer }).eq("id", businessId);
         }
@@ -58,5 +60,20 @@ export async function POST(req: Request) {
     success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/pricing`,
   });
+
+  // Abandoned-checkout signal (best-effort, non-blocking): tag the owner as
+  // checkout_started so a beehiiv recovery automation can follow up. Transactional
+  // (no welcome email); the webhook flips stage → subscribed on success to suppress
+  // recovery. Only fires when we resolved the owner's email.
+  if (ownerEmail) {
+    await beehiivSubscribe({
+      email: ownerEmail,
+      source: "checkout",
+      stage: "checkout_started",
+      sendWelcome: false,
+      extraFields: [{ name: "checkout_plan", value: plan! }],
+    });
+  }
+
   return NextResponse.json({ ok: true, url: session.url });
 }

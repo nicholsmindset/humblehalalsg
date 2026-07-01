@@ -1142,6 +1142,19 @@ export function DetailScreen() {
               </div>
             );
           })()}
+
+          {/* Intent-matched capture: reader is looking at a specific halal place,
+              so offer the weekly new-spots newsletter (source "listing" → foodie). */}
+          <section className="newsletter-card" style={{ marginTop: 28 }}>
+            <span className="eyebrow">🌙 HumbleHalal newsletter</span>
+            <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Love halal finds like this?</h2>
+            <p className="muted" style={{ marginTop: 8 }}>
+              We send the best new halal spots around {item.area} and across Singapore every week. Be first to know.
+            </p>
+            <div style={{ marginTop: 14 }}>
+              <Newsletter source="listing" cta="Get weekly finds" />
+            </div>
+          </section>
         </div>
 
         {/* sidebar (desktop) */}

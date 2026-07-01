@@ -1039,6 +1039,9 @@ export function SuccessScreen() {
     'join-request': { t:'Request sent! 🙌', d:'The organiser will review your request. You’ll get an email — and your ticket appears under “My tickets” — once it’s approved.', cta:'Browse more events', go:'events' },
   };
   const s = map[params.type as string] || map.suggest;
+  // Owner-lifecycle capture: at the moment a business is listed/claimed, seed the
+  // B2B nurture (source "for-business" → owner segment) with the lifecycle stage.
+  const ownerStage = params.type === "listing" ? "listed" : params.type === "claim" ? "claimed" : null;
   return (
     <div className="state-screen">
       <div className="state-card">
@@ -1049,6 +1052,17 @@ export function SuccessScreen() {
           <button className="btn btn-primary btn-lg" onClick={()=>navigate(s.go)}>{s.cta}</button>
           <button className="btn btn-ghost" onClick={()=>navigate('home')}>Home</button>
         </div>
+        {ownerStage && (
+          <div className="newsletter-card" style={{ marginTop: 24, textAlign: "left" }}>
+            <h2 style={{ fontSize: "1.1rem" }}>Get more customers from your listing</h2>
+            <p className="muted" style={{ marginTop: 6, fontSize: ".92rem" }}>
+              Weekly tips for halal businesses — plus the free starter kit on winning more customers on HumbleHalal.
+            </p>
+            <div style={{ marginTop: 12 }}>
+              <Newsletter source="for-business" stage={ownerStage} cta="Send me tips" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

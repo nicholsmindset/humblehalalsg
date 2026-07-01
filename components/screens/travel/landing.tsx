@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "../../ui";
+import { Newsletter } from "../../newsletter";
 import {
   Carousel,
   DateRangeField,
@@ -426,6 +427,22 @@ export function TravelScreen({
       </section>
 
       {resultsRegion(true)}
+
+      {/* Intent-matched capture: trip-planning intent → halal-travel magnet
+          (source "travel" → travel segment; drives LiteAPI bookings). */}
+      <div className="hh-wrap" style={{ paddingBottom: 40 }}>
+        <section className="newsletter-card" style={{ maxWidth: 640 }}>
+          <span className="eyebrow"><Icon name="crescent" size={13} /> Halal travel</span>
+          <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Planning a halal-friendly trip?</h2>
+          <p className="muted" style={{ marginTop: 8 }}>
+            Get our free Halal Travel Checklist + city prayer-space guides, and we&apos;ll alert you
+            when watched hotels drop in price.
+          </p>
+          <div style={{ marginTop: 14 }}>
+            <Newsletter source="travel" collectName cta="Send me the checklist" />
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
