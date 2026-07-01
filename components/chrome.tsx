@@ -737,9 +737,9 @@ export function Footer() {
           <div key={title} className="hh-footer-col">
             <div className="hh-footer-title">{title}</div>
             {links.map(([label, screen]) => (
-              <a key={label} onClick={() => navigate(screen)}>
+              <ScreenLink key={label} screen={screen}>
                 {label}
-              </a>
+              </ScreenLink>
             ))}
           </div>
         ))}
@@ -747,15 +747,15 @@ export function Footer() {
       <div className="hh-wrap hh-footer-cats">
         <span className="hh-footer-title">Browse by category</span>
         <div className="hh-footer-catlinks">
-          <a onClick={() => navigate("seo", { slug: "halal-food-in-tampines" })}>Halal directory</a>
+          <ScreenLink screen="seo" params={{ slug: "halal-food-in-tampines" }}>Halal directory</ScreenLink>
           {allSeoPages()
             .filter((p) => p.catId && !p.areaId)
             .map((p) => {
               const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
               return (
-                <a key={p.slug} onClick={() => navigate("seo", { slug: p.slug })}>
+                <ScreenLink key={p.slug} screen="seo" params={{ slug: p.slug }}>
                   Halal {label}
-                </a>
+                </ScreenLink>
               );
             })}
         </div>

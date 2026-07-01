@@ -17,7 +17,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const e = (await getEvents()).find((x) => x.slug === slug);
+  // Match slug OR id: event cards link via id (screenToPath) while events carry
+  // a slug — matching both prevents direct-load / refresh / crawler 404s.
+  const e = (await getEvents()).find((x) => x.slug === slug || x.id === slug);
   if (!e) return pageMeta({ title: "Event", path: `/events/${slug}`, index: false });
   return pageMeta({
     title: `${e.title} — ${e.dateLabel}, ${e.area}`,
@@ -29,7 +31,9 @@ export async function generateMetadata({
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const e = (await getEvents()).find((x) => x.slug === slug);
+  // Match slug OR id: event cards link via id (screenToPath) while events carry
+  // a slug — matching both prevents direct-load / refresh / crawler 404s.
+  const e = (await getEvents()).find((x) => x.slug === slug || x.id === slug);
   if (!e) notFound(); // missing/unpublished event → clean 404 (never renders the screen without data)
   return (
     <>
