@@ -38,7 +38,7 @@ export function liteapiConfigured(): boolean {
 }
 
 class LiteApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public detail?: string) {
     super(message);
   }
 }
@@ -70,7 +70,14 @@ async function request<T>(path: string, init: RequestInit = {}, base: string = B
   // and /rates/prebook) must NEVER be auto-retried — a retried booking can
   // double-book / double-charge (CP1 audit). Failures surface as LiteApiError.
   if (res.status >= 500 && method === "GET") res = await once(url, init, key);
-  if (!res.ok) throw new LiteApiError(res.status, `liteapi_${res.status}`);
+  if (!res.ok) {
+    // Capture a trimmed upstream body so booking routes can distinguish a
+    // client-fixable failure (expired offer, invalid passenger) from a real 5xx.
+    // LiteAPI error bodies are `{error:{code,message}}` — no secrets.
+    let detail: string | undefined;
+    try { detail = (await res.text()).slice(0, 300); } catch { /* body already consumed */ }
+    throw new LiteApiError(res.status, `liteapi_${res.status}`, detail);
+  }
   return (await res.json()) as T;
 }
 
