@@ -5,6 +5,8 @@
    cron call — an unset secret would otherwise make money-moving/email crons
    (e.g. event-payouts) publicly triggerable. Outside production the fallback
    fails open so local testing and pre-DB demos still respond. */
+import { timingSafeEqual } from "crypto";
+
 export function authorizeCron(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
@@ -14,5 +16,8 @@ export function authorizeCron(req: Request): boolean {
     }
     return true; // dev / demo convenience only
   }
-  return req.headers.get("authorization") === `Bearer ${secret}`;
+  // Constant-time compare, consistent with the LiteAPI webhook handler.
+  const given = Buffer.from(req.headers.get("authorization") || "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  return given.length === expected.length && timingSafeEqual(given, expected);
 }

@@ -4,6 +4,7 @@ import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { SITE } from "@/lib/seo";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Listing-plan subscription checkout (Humble Halal is the seller — no Connect).
    Price IDs come from env so they can be swapped per environment. Links the
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
   if (!getServerFlags().paidPlans) {
     return NextResponse.json({ ok: false, reason: "paid_plans_disabled" }, { status: 403 });
   }
+  // Stripe-session factory — rate-limit like /api/donate.
+  const rl = await rateLimit(req, "checkout-plan", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 

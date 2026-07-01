@@ -19,6 +19,14 @@ const securityHeaders = [
   },
 ];
 
+const supabaseImageHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").hostname;
+  } catch {
+    return "";
+  }
+})();
+
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (a stray parent lockfile otherwise
   // makes Next infer the wrong root).
@@ -33,8 +41,11 @@ const nextConfig: NextConfig = {
       // optimizer — but the pattern is kept for safety / any optimized use.
       { protocol: "https", hostname: "static.cupid.travel" },
       // Supabase Storage — re-hosted business photos from the image-enrichment
-      // pass (scripts/enrich-images.mjs). Our own project domain.
-      { protocol: "https", hostname: "*.supabase.co" },
+      // pass (scripts/enrich-images.mjs). Scoped to OUR project host when the
+      // env var is present at build time (a `*.supabase.co` wildcard would let
+      // any Supabase project on the internet burn our image-optimizer quota);
+      // wildcard only as a fallback for env-less local/CI builds.
+      { protocol: "https", hostname: supabaseImageHost || "*.supabase.co" },
     ],
     // Cost controls for Vercel Image Optimization (Hobby quota). A long cache TTL
     // avoids re-optimizing the same image (fewer cache writes); trimmed size lists

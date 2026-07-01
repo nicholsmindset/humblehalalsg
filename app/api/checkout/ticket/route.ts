@@ -7,6 +7,7 @@ import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Paid event-ticket checkout — SEPARATE CHARGES + delayed transfer model.
 
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
   if (!getServerFlags().paidTickets) {
     return NextResponse.json({ ok: false, reason: "paid_tickets_disabled" }, { status: 403 });
   }
+  // Unauthenticated Stripe-session factory — rate-limit like /api/donate.
+  const rl = await rateLimit(req, "checkout-ticket", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
 
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });

@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/stripe";
 import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
 import { AD_PRODUCTS } from "@/lib/ad-products";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* One-time advertising purchase (Event Promotion, Newsletter Sponsorship, etc.).
    Humble Halal is the seller. Amount in cents passed from a server-trusted map. */
@@ -12,6 +13,8 @@ export async function POST(req: Request) {
   if (!getServerFlags().paidAds) {
     return NextResponse.json({ ok: false, reason: "paid_ads_disabled" }, { status: 403 });
   }
+  // Unauthenticated Stripe-session factory — rate-limit like /api/donate.
+  const rl = await rateLimit(req, "checkout-promo", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
