@@ -6,6 +6,7 @@ import { HHData } from "@/lib/data";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
+import { useDirectory } from "../directory-context";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
@@ -79,6 +80,8 @@ export function AdminScreen() {
     ["revenue", "Revenue (P&L)", "trend"],
     ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
+    ["claims", "Ownership claims", "building"],
+    ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
     ["hotels", "Hotel verification", "bed"],
@@ -125,6 +128,8 @@ export function AdminScreen() {
           {section==='revenue' && <AdminRevenue />}
           {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
+          {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
+          {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
@@ -881,6 +886,84 @@ export function AdminReviews({ toast }: { toast: (msg: string) => void }) {
         </div>
       ))}
       {rows.length===0 && <Empty icon="check" title="Inbox zero" body="No reviews to moderate." />}
+    </div>
+  );
+}
+
+/* Ownership claims — owners who submitted "this is my business". Approving links
+   them (owner_id + role='owner') via actClaim in /api/admin/queue. This is the
+   payoff for cold-outreach claim links. */
+interface ClaimRow { id: string; businessId: string; role: string; message: string; proof: string | null; created: string }
+export function AdminClaims({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const dir = useDirectory();
+  const [rows, setRows] = useState<ClaimRow[]>([]);
+  useEffect(() => {
+    queueGet("claims").then((items) => {
+      if (!items) return;
+      setRows(items.map((r) => {
+        const raw = (r.raw && typeof r.raw === "object" ? r.raw : {}) as Record<string, unknown>;
+        const proof = r.proof_file_name ?? raw.proofFileName;
+        return { id: r.id, businessId: String(r.business_id ?? ""), role: String(r.role ?? "Owner"), message: String(r.message ?? ""), proof: proof ? String(proof) : null, created: String(r.created_at ?? "") };
+      }));
+    });
+  }, []);
+  const act = async (id: string, a: string) => {
+    const res = await queueAct("claims", id, a);
+    if (!res.ok) { toast(queueErr(res.error)); return; }
+    setRows((r) => r.filter((x) => x.id !== id));
+    toast(a === "approve" ? "Claim approved — owner linked" : "Claim rejected");
+  };
+  return (
+    <div className="stack g12">
+      {rows.map((r) => {
+        const biz = dir.get(r.businessId);
+        return (
+          <div key={r.id} className="card" style={{ padding: 18 }}>
+            <div className="flex between center wrap g8">
+              <div><div style={{ fontWeight: 700 }}>{biz?.name || r.businessId.slice(0, 8) || "Unknown business"}</div><div className="lc-meta">{[r.role, biz?.area].filter(Boolean).join(" · ")} · {timeAgo(r.created)}</div></div>
+              {r.proof ? <span className="pill-tag green"><Icon name="check" size={12} /> {r.proof}</span> : <span className="pill-tag amber">No document</span>}
+            </div>
+            {r.message && <p className="muted" style={{ marginTop: 10, fontSize: ".92rem" }}>“{r.message}”</p>}
+            <div className="flex g8 mt12">
+              <button className="btn btn-primary btn-sm" onClick={() => act(r.id, "approve")}>Approve &amp; link owner</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => act(r.id, "reject")}>Reject</button>
+              {biz && <button className="btn btn-soft btn-sm" onClick={() => navigate("detail", { id: biz.slug || r.businessId })}><Icon name="eye" size={15} /> View listing</button>}
+            </div>
+          </div>
+        );
+      })}
+      {rows.length === 0 && <Empty icon="building" title="No ownership claims" body="When a business owner claims their listing, it appears here to approve." />}
+    </div>
+  );
+}
+
+/* Community suggestions — "you're missing this place". Approving marks the
+   suggestion accepted so it can be added to the directory. */
+interface SuggestRow { id: string; name: string; area: string; category: string; note: string; created: string }
+export function AdminSuggestions({ toast }: { toast: (msg: string) => void }) {
+  const [rows, setRows] = useState<SuggestRow[]>([]);
+  useEffect(() => {
+    queueGet("suggestions").then((items) => {
+      if (!items) return;
+      setRows(items.map((r) => ({ id: r.id, name: String(r.name ?? "—"), area: String(r.area ?? ""), category: String(r.category ?? ""), note: String(r.note ?? ""), created: String(r.created_at ?? "") })));
+    });
+  }, []);
+  const act = async (id: string, a: string) => {
+    const res = await queueAct("suggestions", id, a);
+    if (!res.ok) { toast(queueErr(res.error)); return; }
+    setRows((r) => r.filter((x) => x.id !== id));
+    toast(a === "approve" ? "Suggestion accepted" : "Suggestion dismissed");
+  };
+  return (
+    <div className="stack g12">
+      {rows.map((r) => (
+        <div key={r.id} className="card" style={{ padding: 18 }}>
+          <div className="flex between center wrap g8"><div><div style={{ fontWeight: 700 }}>{r.name}</div><div className="lc-meta">{[r.category, r.area].filter(Boolean).join(" · ")} · {timeAgo(r.created)}</div></div></div>
+          {r.note && <p className="muted" style={{ marginTop: 10, fontSize: ".92rem" }}>{r.note}</p>}
+          <div className="flex g8 mt12"><button className="btn btn-primary btn-sm" onClick={() => act(r.id, "approve")}>Accept</button><button className="btn btn-ghost btn-sm" onClick={() => act(r.id, "reject")}>Dismiss</button></div>
+        </div>
+      ))}
+      {rows.length === 0 && <Empty icon="sparkles" title="No suggestions" body="Community place suggestions appear here to review." />}
     </div>
   );
 }

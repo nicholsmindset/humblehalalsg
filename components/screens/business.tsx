@@ -776,7 +776,7 @@ export function OwnerDashboardScreen() {
   const loadBiz = useCallback(async () => {
     const sb = supabase;
     if (!sb || !user) return [] as OwnerBiz[];
-    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at").eq("owner_id", user.id);
+    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at, status").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`);
     const list = (bd as OwnerBiz[]) || [];
     setBiz(list);
     return list;
