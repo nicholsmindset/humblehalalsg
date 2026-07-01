@@ -23,6 +23,7 @@ import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
 import { Newsletter } from "../newsletter";
+import { NotificationBell } from "../notification-bell";
 import { VERIFY_FAQ } from "@/lib/faq";
 
 /* =============================================================
@@ -305,6 +306,24 @@ export function UserDashboardScreen() {
     if (name && name.trim()) createCollection(name.trim());
   };
 
+  // My reviews — load the signed-in user's own reviews from /api/reviews/mine.
+  type MyReview = { id: string; businessName: string; businessSlug: string | null; rating: number; text: string; status: string; created_at: string };
+  const [myReviews, setMyReviews] = useState<MyReview[]>([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  useEffect(() => {
+    if (!state.user.loggedIn) { setMyReviews([]); setReviewsLoaded(true); return; }
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/reviews/mine");
+        const d = await res.json().catch(() => ({}));
+        if (active && d?.ok && Array.isArray(d.reviews)) setMyReviews(d.reviews as MyReview[]);
+      } catch { /* graceful */ }
+      finally { if (active) setReviewsLoaded(true); }
+    })();
+    return () => { active = false; };
+  }, [state.user.loggedIn]);
+
   return (
     <div className="screen-in hh-page dash">
       <div className="dash-header dash-header-user hh-pattern">
@@ -314,9 +333,12 @@ export function UserDashboardScreen() {
             <div><h1 style={{color:'#fff', fontSize:'1.6rem'}}>{state.user.loggedIn?state.user.name:'Guest'}</h1>
               <p style={{color:'#CFE0DA', fontSize:'.9rem'}}>{state.user.loggedIn?'Member since 2025':'Log in to sync across devices'}</p></div>
           </div>
-          {!state.user.loggedIn
-            ? <button className="btn btn-gold" onClick={()=>navigate('login')}>Log in</button>
-            : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={logOut}><Icon name="logout" size={17}/> Log out</button>}
+          <div className="flex g10 center">
+            {state.user.loggedIn && <NotificationBell />}
+            {!state.user.loggedIn
+              ? <button className="btn btn-gold" onClick={()=>navigate('login')}>Log in</button>
+              : <button className="btn" style={{background:'rgba(255,255,255,.14)',color:'#fff'}} onClick={logOut}><Icon name="logout" size={17}/> Log out</button>}
+          </div>
         </div>
       </div>
 
@@ -369,19 +391,25 @@ export function UserDashboardScreen() {
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
           {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
           {tab==='reviews' && (
-            <div className="stack g14">
-              {([] as { id: string; rating: number; text: string }[]).map(r=>(
-                <div key={r.id} className="card" style={{padding:16}}>
-                  <div className="flex g10 center"><ImagePh label="place" tone="gold" src={dir.listings[0]?.image} style={{width:48,height:48,borderRadius:10}}/><div><div style={{fontWeight:700}}>Warung Bumbu Rempah</div><span className="rs-stars">{[1,2,3,4,5].map(i=><Icon key={i} name="starf" size={12} style={{color:i<=r.rating?'var(--gold)':'var(--line-strong)'}}/>)}</span></div></div>
-                  <p className="muted" style={{marginTop:10, fontSize:'.92rem'}}>{r.text}</p>
+            reviewsLoaded && myReviews.length===0
+              ? <Empty icon="star" title="No reviews yet" body="You haven’t written any reviews yet. Explore places and share your experience." action="Start exploring" onAction={()=>navigate('explore')} />
+              : <div className="stack g14">
+                  {myReviews.map(r=>(
+                    <div key={r.id} className="card" style={{padding:16}}>
+                      <div className="flex between center wrap g10">
+                        <div>
+                          {r.businessSlug
+                            ? <a href={screenToPath("detail", { id: r.businessSlug })} style={{fontWeight:700, color:'var(--emerald)'}}>{r.businessName}</a>
+                            : <div style={{fontWeight:700}}>{r.businessName}</div>}
+                          <span className="rs-stars" style={{display:'block', marginTop:2}}>{[1,2,3,4,5].map(i=><Icon key={i} name="starf" size={12} style={{color:i<=r.rating?'var(--gold)':'var(--line-strong)'}}/>)}</span>
+                        </div>
+                        <span className={`pill-tag ${r.status==='published'?'green':'amber'}`}>{r.status==='published'?'Published':'Pending'}</span>
+                      </div>
+                      {r.text && <p className="muted" style={{marginTop:10, fontSize:'.92rem'}}>{r.text}</p>}
+                      <p className="faint" style={{marginTop:8, fontSize:'.78rem'}}>{new Date(r.created_at).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' })}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <div className="card" style={{padding:20}}>
-                <h3 style={{fontSize:'1.1rem'}}>Suggested for you</h3>
-                <p className="muted" style={{fontSize:'.88rem', marginTop:4}}>Based on your saved places in Tampines &amp; Bedok.</p>
-                <div className="grid-cards mt16">{dir.listings.slice(2,5).map(l=><ListingCard key={l.id} item={l}/>)}</div>
-              </div>
-            </div>
           )}
           {tab==='settings' && (
             <div className="card" style={{padding:22, maxWidth:540}}>

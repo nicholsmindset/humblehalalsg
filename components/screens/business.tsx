@@ -587,6 +587,7 @@ type OwnerListing = {
   price_level?: string | null;
   opening_hours?: ({ open?: string; close?: string } | null)[] | null;
   socials?: EditableSocials | null;
+  photos?: ({ url?: string; caption?: string } | null)[] | null;
 };
 // A single day in the 7-row editor: closed = no range for that day.
 type DayRow = { closed: boolean; open: string; close: string };
@@ -611,6 +612,13 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
   // Keep the loaded values so we PATCH only what actually changed (and preserve
   // any extra keys already on the `socials` jsonb object).
   const [orig, setOrig] = useState<OwnerListing | null>(null);
+
+  // Photos: jsonb array of { url, caption? }. We track just the url list in
+  // the editor; captions on existing photos are preserved on save.
+  const MAX_PHOTOS = 6;
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -644,6 +652,8 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
           if (d && d.open && d.close) return { closed: false, open: d.open, close: d.close };
           return { ...EMPTY_DAY };
         }));
+        const ph = Array.isArray(b.photos) ? b.photos : [];
+        setPhotos(ph.map((p) => p?.url).filter((u): u is string => typeof u === "string" && !!u).slice(0, MAX_PHOTOS));
         setLoading(false);
       } catch {
         if (alive) { setLoadError("Couldn’t load this listing — try again."); setLoading(false); }
@@ -674,6 +684,53 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
       if (x.open !== yOpen || x.close !== yClose) return false;
     }
     return true;
+  };
+
+  // Real photo upload — mirrors AddListingScreen: one request per file to the
+  // generic authed image endpoint. Skips files that fail; caps at MAX_PHOTOS.
+  const onPhotosPicked = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        let full = false;
+        setPhotos((cur) => { full = cur.length >= MAX_PHOTOS; return cur; });
+        if (full) { toast(`You can add up to ${MAX_PHOTOS} photos`); break; }
+        try {
+          const fd = new FormData();
+          fd.set("file", file);
+          const res = await fetch("/api/events/upload", { method: "POST", body: fd });
+          const json = await res.json().catch(() => ({ ok: false }));
+          if (json?.ok && json.url) {
+            setPhotos((cur) => (cur.length >= MAX_PHOTOS ? cur : [...cur, json.url as string]));
+          } else {
+            const msg: Record<string, string> = {
+              unauthenticated: "Please sign in to upload photos.",
+              not_configured: "Photo uploads aren\u2019t available yet.",
+              too_large: `${file.name} is too large (max 5MB).`,
+              bad_type: `${file.name} isn\u2019t a supported image.`,
+            };
+            toast(msg[json?.reason] || `Couldn\u2019t upload ${file.name}.`);
+          }
+        } catch {
+          toast(`Couldn\u2019t upload ${file.name}.`);
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+  const removePhoto = (idx: number) => setPhotos((cur) => cur.filter((_, i) => i !== idx));
+
+  // Did the photo url list change from what we loaded?
+  const photosChanged = (): boolean => {
+    const was = (Array.isArray(orig?.photos) ? orig!.photos : [])
+      .map((p) => p?.url).filter((u): u is string => typeof u === "string" && !!u);
+    if (was.length !== photos.length) return true;
+    for (let i = 0; i < photos.length; i++) if (photos[i] !== was[i]) return true;
+    return false;
   };
 
   const save = async () => {
@@ -718,6 +775,15 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
 
     const hours = buildHours();
     if (!sameHours(hours, orig.opening_hours)) patch.opening_hours = hours;
+
+    // Photos: preserve captions on existing urls; new uploads carry url only.
+    if (photosChanged()) {
+      const prev = (Array.isArray(orig.photos) ? orig.photos : []).filter((p): p is { url?: string; caption?: string } => !!p);
+      patch.photos = photos.map((url) => {
+        const existing = prev.find((p) => p.url === url);
+        return existing?.caption ? { url, caption: existing.caption } : { url };
+      });
+    }
 
     if (Object.keys(patch).length <= 1) { toast("No changes to save"); onClose(); return; }
 
@@ -792,6 +858,26 @@ function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: string;
           <div className="field">
             <label>Instagram</label>
             <input className="input" type="text" placeholder="@yourhandle" value={instagram} onChange={(e) => setInstagram(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+          </div>
+
+          <div className="field">
+            <label>Photos</label>
+            <p className="faint" style={{ fontSize: ".8rem", marginBottom: 8 }}>Cover photo, interior, and a few signature dishes work best. Up to {MAX_PHOTOS}.</p>
+            <input ref={photoInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPhotosPicked} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 10 }}>
+              {photos.length < MAX_PHOTOS && (
+                <button type="button" className="upload-zone" style={{ aspectRatio: "1", minHeight: 96 }} disabled={uploading} onClick={() => photoInputRef.current?.click()}>
+                  <Icon name="camera" size={22} /><span style={{ fontSize: ".76rem", fontWeight: 700, marginTop: 6 }}>{uploading ? "Uploading\u2026" : "Add photo"}</span>
+                </button>
+              )}
+              {photos.map((url, i) => (
+                <div key={url} style={{ position: "relative" }}>
+                  <ImagePh label={`photo ${i + 1}`} tone="gold" ratio="1" src={url} />
+                  <button type="button" aria-label={`Remove photo ${i + 1}`} onClick={() => removePhoto(i)} style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,.6)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="x" size={15} /></button>
+                </div>
+              ))}
+            </div>
+            <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>{photos.length} of {MAX_PHOTOS} photos added.</p>
           </div>
 
           <div className="field">
