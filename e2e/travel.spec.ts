@@ -57,6 +57,9 @@ test("hotels landing: Ask-AI tab reveals a natural-language search", async ({ pa
 });
 
 test("hotel detail: back link, gallery and sticky tabs render", async ({ page }) => {
+  // Integration test: hotel detail is served from LiteAPI. Skipped when no
+  // LiteAPI key is wired into CI (the page has no data to render).
+  test.skip(!(process.env.LITEAPI_SAND_KEY || process.env.LITEAPI_PROD_KEY), "requires a LiteAPI backend");
   await page.goto("/travel/hotel/lpa8d3c?checkin=2026-09-15&checkout=2026-09-16&adults=2&rooms=1");
   await expect(page.getByText("See all properties")).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -136,6 +139,9 @@ test("API: ai-search returns a grounded, structured response", async ({ request 
 });
 
 test("API: highlights returns at least one grounded card", async ({ request }) => {
+  // Integration test: /api/travel/highlights is grounded in LiteAPI data. Skipped
+  // when no LiteAPI key is wired into CI.
+  test.skip(!(process.env.LITEAPI_SAND_KEY || process.env.LITEAPI_PROD_KEY), "requires a LiteAPI backend");
   const res = await request.post("/api/travel/highlights", { data: { hotelId: "lpa8d3c" } });
   expect(res.ok()).toBeTruthy();
   const body = await res.json();

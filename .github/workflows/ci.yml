@@ -19,6 +19,19 @@ jobs:
       - run: npm run build
   e2e:
     runs-on: ubuntu-latest
+    env:
+      # ClerkProvider needs a publishable key to mount, or the app throws
+      # "Missing publishableKey" on every request. Use the real dev key if it's
+      # set as a secret, else a valid-format placeholder so the client boots. We
+      # deliberately do NOT set CLERK_SECRET_KEY here — proxy.ts self-disables the
+      # Clerk middleware without it, so requests aren't rejected with "Invalid host".
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY || 'pk_test_aHVtYmxlLWhhbGFsLWNpLmNsZXJrLmFjY291bnRzLmRldiQ=' }}
+      # Optional: set these secrets to un-skip the data-backed integration specs
+      # (business detail, hotel detail, highlights). Empty when unset → those tests
+      # skip and the suite still passes on the 15 render/structure smokes.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      LITEAPI_SAND_KEY: ${{ secrets.LITEAPI_SAND_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
