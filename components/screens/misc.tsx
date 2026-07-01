@@ -22,6 +22,7 @@ import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
 import { Newsletter } from "../newsletter";
+import { AdSlot } from "../ads/ad-slot";
 import { NotificationBell } from "../notification-bell";
 import { VERIFY_FAQ } from "@/lib/faq";
 
@@ -943,6 +944,10 @@ export function SeoScreen() {
           ) : (
             <Empty icon="search" title="No places yet" body={`We're still adding halal spots for ${page.h1.toLowerCase()}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
           )}
+
+          {/* Directory hub slot (leaderboard) — between the listings and the guide,
+              never interrupting the ranked results. Direct-first, AdSense fill. */}
+          <AdSlot slot="directory_hub" />
 
           {/* collapsible SEO content (crawlable in the DOM) */}
           <div className="seo-prose mt24">
