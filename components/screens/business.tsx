@@ -1261,18 +1261,10 @@ function CertVault({
     }
   };
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      if (!entitled) { if (alive) setCerts([]); return; }
-      try {
-        const r = await fetch("/api/owner/cert");
-        const d = await r.json().catch(() => ({ ok: false }));
-        if (alive) setCerts(d.ok && Array.isArray(d.certs) ? (d.certs as OwnerCert[]) : []);
-      } catch {
-        if (alive) setCerts([]);
-      }
-    })();
-    return () => { alive = false; };
+    // Same fetch as the post-submit refresh — one implementation, not two.
+    if (!entitled) { setCerts([]); return; }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entitled]);
 
   const submit = async () => {
@@ -1400,18 +1392,24 @@ function OwnerAds({ navigate }: { navigate: ReturnType<typeof useApp>["navigate"
   const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerCampaign[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState(false);
   useEffect(() => {
     let alive = true;
     (async () => {
       const sb = supabase;
       if (!sb) { if (alive) setLoading(false); return; }
       const { data, error } = await sb.rpc("owner_campaign_performance");
-      if (alive) { if (!error && Array.isArray(data)) setRows(data as OwnerCampaign[]); setLoading(false); }
+      if (alive) {
+        if (!error && Array.isArray(data)) setRows(data as OwnerCampaign[]);
+        else if (error) setLoadErr(true); // was silently swallowed → looked like "no campaigns"
+        setLoading(false);
+      }
     })();
     return () => { alive = false; };
   }, [supabase]);
 
   if (loading) return <div className="dash-pane"><div className="card" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" /></div>;
+  if (loadErr) return <div className="dash-pane"><div className="card" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load your campaigns — refresh to try again.</p></div></div>;
 
   if (!rows || rows.length === 0) {
     return (
@@ -1464,6 +1462,7 @@ function OwnerInsights() {
   const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerRow[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -1474,6 +1473,7 @@ function OwnerInsights() {
       const { data, error } = await sb.rpc("owner_listing_analytics", { p_from: from, p_to: to });
       if (alive) {
         if (!error && Array.isArray(data)) setRows(data as OwnerRow[]);
+        else if (error) setLoadErr(true); // was silently swallowed → looked like "no activity"
         setLoading(false);
       }
     })();
@@ -1482,6 +1482,9 @@ function OwnerInsights() {
 
   if (loading) {
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;
+  }
+  if (loadErr) {
+    return <div className="card mt20" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load your insights — refresh to try again.</p></div>;
   }
 
   const total = (rows || []).reduce(
@@ -1539,6 +1542,7 @@ type OwnerReviewRow = {
 function OwnerReviews({ toast }: { toast: (m: string) => void }) {
   const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerReviewRow[] | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
@@ -1548,7 +1552,10 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
       const sb = supabase;
       if (!sb) { if (alive) setRows([]); return; }
       const { data, error } = await sb.rpc("owner_reviews");
-      if (alive) setRows(!error && Array.isArray(data) ? (data as OwnerReviewRow[]) : []);
+      if (alive) {
+        if (error) setLoadErr(true); // was silently swallowed → looked like "no reviews yet"
+        setRows(!error && Array.isArray(data) ? (data as OwnerReviewRow[]) : []);
+      }
     })();
     return () => { alive = false; };
   }, [supabase]);
@@ -1574,6 +1581,7 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
   const display: OwnerReviewRow[] = rows && rows.length > 0 ? rows : [];
 
   if (rows === null) return <div className="dash-pane"><div className="card" style={{ padding: 24, height: 100, opacity: 0.5 }} aria-busy="true" /></div>;
+  if (loadErr) return <div className="dash-pane"><div className="card" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load your reviews — refresh to try again.</p></div></div>;
   if (display.length === 0) {
     return (
       <div className="dash-pane">

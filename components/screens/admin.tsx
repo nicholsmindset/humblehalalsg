@@ -57,6 +57,19 @@ const QUEUE_ERR: Record<string, string> = {
 };
 function queueErr(e?: string): string { return (e && QUEUE_ERR[e]) || "Action failed — please try again."; }
 
+/* /api/admin/revenue is consumed by BOTH the Revenue and Rollout sections —
+   share one in-flight/settled promise (60s TTL) instead of refetching on every
+   section switch. */
+let revenueCache: { at: number; p: Promise<Record<string, unknown> | null> } | null = null;
+function getRevenue(): Promise<Record<string, unknown> | null> {
+  if (revenueCache && Date.now() - revenueCache.at < 60_000) return revenueCache.p;
+  const p = fetch("/api/admin/revenue")
+    .then(async (r) => { const j = await r.json(); return j.ok ? (j as Record<string, unknown>) : null; })
+    .catch(() => null);
+  revenueCache = { at: Date.now(), p };
+  return p;
+}
+
 function timeAgo(iso?: unknown): string {
   const t = typeof iso === "string" ? Date.parse(iso) : NaN;
   if (!Number.isFinite(t)) return "—";
@@ -259,8 +272,8 @@ export function AdminRevenue() {
   const [d, setD] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => { (async () => {
-    try { const r = await fetch("/api/admin/revenue"); const j = await r.json(); if (j.ok) setD(j); }
-    catch { /* ignore */ }
+    const j = await getRevenue();
+    if (j) setD(j as unknown as RevenueData);
     setLoading(false);
   })(); }, []);
 
@@ -371,8 +384,8 @@ const ROLLOUT_STAGES: { n: number; title: string; env: string; flags: string[]; 
 export function AdminRollout() {
   const [flags, setFlags] = useState<Record<string, boolean> | null>(null);
   useEffect(() => { (async () => {
-    try { const r = await fetch("/api/admin/revenue"); const j = await r.json(); if (j.ok) setFlags(j.flags || {}); else setFlags({}); }
-    catch { setFlags({}); }
+    const j = await getRevenue();
+    setFlags(((j?.flags as Record<string, boolean>) || {}));
   })(); }, []);
 
   return (
@@ -410,6 +423,28 @@ export function AdminRollout() {
 }
 
 export function AdminOverview({ setSection }: { setSection: (s: string) => void }) {
+  // Live pending counts so "Needs your attention" is actionable, not a static
+  // list of labels. null = backend not configured / not loaded (no badge).
+  const [counts, setCounts] = useState<Record<string, number | null>>({});
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const types: [string, string][] = [["approvals", "listings"], ["reports", "reports"], ["claims", "claims"], ["verification", "cert"]];
+      const loaded = await Promise.all(types.map(async ([sec, t]) => {
+        if (t === "cert") {
+          try {
+            const r = await fetch("/api/admin/cert");
+            const d = r.ok ? await r.json() : null;
+            return [sec, d?.ok && Array.isArray(d.items) ? d.items.length : null] as const;
+          } catch { return [sec, null] as const; }
+        }
+        const items = await queueGet(t);
+        return [sec, items ? items.length : null] as const;
+      }));
+      if (alive) setCounts(Object.fromEntries(loaded));
+    })();
+    return () => { alive = false; };
+  }, []);
   return (
     <div>
       <a href="/admin/analytics" className="card" style={{ padding: 20, display: "block", textDecoration: "none", color: "inherit" }}>
@@ -422,7 +457,13 @@ export function AdminOverview({ setSection }: { setSection: (s: string) => void 
         <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Needs your attention</h3>
         <div className="stack g10">
           {([['Listings awaiting approval','approvals','doc'],['Reports to review','reports','flag'],['Ownership claims','claims','building'],['Verification requests','verification','shield-check']] as [string, string, string][]).map(([t,sec,icon])=>(
-            <button key={t} className="attn-row" onClick={()=>setSection(sec)}><span className="flex g10 center"><span className="attn-ico"><Icon name={icon} size={17}/></span>{t}</span><Icon name="chevron" size={17}/></button>
+            <button key={t} className="attn-row" onClick={()=>setSection(sec)}>
+              <span className="flex g10 center"><span className="attn-ico"><Icon name={icon} size={17}/></span>{t}</span>
+              <span className="flex g8 center">
+                {counts[sec] != null && <span className="tag" style={counts[sec] ? { background: "var(--gold)", color: "#3a2c08", fontWeight: 800 } : undefined}>{counts[sec]}</span>}
+                <Icon name="chevron" size={17}/>
+              </span>
+            </button>
           ))}
         </div>
       </div>
