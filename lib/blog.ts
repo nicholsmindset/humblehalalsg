@@ -774,7 +774,7 @@ interface BlogMeta {
 }
 
 const META: Record<string, BlogMeta> = {
-  "what-is-halal-singapore": { category: "halal-basics", image: bimg("1542816417-0983c9c9ad53"), imageAlt: "A mosque in Singapore — understanding what halal means" },
+  "what-is-halal-singapore": { category: "halal-basics", image: bimg("1565557623262-b51c2513a641"), imageAlt: "A plate of halal curry and naan — halal food in Singapore" },
   "how-to-check-muis-halal-certification": { category: "halal-basics", image: bimg("1555992336-fb0d29498b13"), imageAlt: "A Singapore food court where you can check halal certification" },
   "is-it-halal-how-to-tell-singapore": { category: "halal-basics", image: bimg("1466637574441-749b8f19452f"), imageAlt: "Reading ingredients to tell whether food is halal" },
   "best-halal-restaurants-singapore-2026": { category: "restaurants-cafes", image: bimg("1551218808-94e220e084d2"), imageAlt: "A spread of dishes at a halal restaurant in Singapore" },
