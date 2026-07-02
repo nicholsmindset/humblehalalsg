@@ -137,6 +137,16 @@
 .dest-city { font-family: var(--serif, Georgia, serif); font-size: 1.5rem; font-weight: 700; line-height: 1.1; position: relative; z-index: 1; }
 .dest-country { font-size: .82rem; color: #cfe0da; position: relative; z-index: 1; }
 .dest-go { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; color: var(--gold-200, #f0dca8); position: relative; z-index: 1; }
+/* Mobile: 2-up compact tiles — with one 220px column, 19 cities stacked into a
+   ~3,200px solid-emerald wall (audit #53). Halve the height, lighten the cards. */
+@media (max-width: 560px) {
+  .dest-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dest-card { min-height: 92px; padding: 12px 14px; border-radius: var(--r-md, 14px); }
+  .dest-city { font-size: 1.02rem; }
+  .dest-country { font-size: .74rem; }
+  .dest-go { margin-top: 4px; font-size: .7rem; }
+  .dest-tag { top: 10px; right: 10px; font-size: .58rem; padding: 3px 7px; }
+}
 
 /* ── hotel detail ────────────────────────────────────────────────────────── */
 .travel-gallery { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; border-radius: var(--r-lg, 20px); overflow: hidden; max-height: 400px; }
