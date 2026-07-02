@@ -144,7 +144,7 @@ export default function Dashboard() {
 
       {err && <div style={S.error}>⚠ {err}</div>}
 
-      <Cards summary={summary} loading={loading && !hasLoaded.current} />
+      <Cards summary={summary} loading={loading && summary === null} />
 
       <nav style={S.tabs}>
         {(["overview", "vendors", "search", "journeys"] as Tab[]).map((t) => (
@@ -157,7 +157,7 @@ export default function Dashboard() {
       </nav>
 
       <section>
-        {loading && !hasLoaded.current ? <Skeleton /> : (
+        {loading && summary === null ? <Skeleton /> : (
           <>
             {tab === "overview" && <Overview daily={daily} vendors={vendors} />}
             {tab === "vendors" && (openVendor

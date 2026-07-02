@@ -72,7 +72,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <div className="card" style={{ padding: 32, textAlign: "center" }}>
               <h2 style={{ fontSize: "1.15rem" }}>No guides in this category yet</h2>
               <p className="muted" style={{ marginTop: 8 }}>We&apos;re writing more — browse everything on the blog in the meantime.</p>
-              <a className="btn btn-primary" style={{ marginTop: 14, display: "inline-flex" }} href="/blog">All guides &amp; stories</a>
+              <Link className="btn btn-primary" style={{ marginTop: 14, display: "inline-flex" }} href="/blog">All guides &amp; stories</Link>
             </div>
           ) : (
             <div className="blog-grid">

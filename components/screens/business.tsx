@@ -1264,7 +1264,6 @@ function CertVault({
     // Same fetch as the post-submit refresh — one implementation, not two.
     if (!entitled) { setCerts([]); return; }
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entitled]);
 
   const submit = async () => {
