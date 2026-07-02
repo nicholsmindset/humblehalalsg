@@ -145,6 +145,10 @@ export function listingJsonLd(l: Listing) {
 }
 
 export function eventJsonLd(e: EventItem) {
+  // endDate: same-day events with a parseable end time (Google Events rich
+  // results want it). SGT offset — events are local to Singapore.
+  const endTime = e.endTime && /^\d{1,2}:\d{2}$/.test(e.endTime) ? e.endTime : "";
+  const endDate = e.dateISO && endTime ? `${e.dateISO}T${endTime.padStart(5, "0")}:00+08:00` : undefined;
   return {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -153,12 +157,16 @@ export function eventJsonLd(e: EventItem) {
     image: e.img,
     url: `${SITE.url}/events/${e.slug}`,
     startDate: e.dateISO,
+    ...(endDate ? { endDate } : {}),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",
       name: e.venue,
       address: { "@type": "PostalAddress", addressLocality: e.area, addressCountry: "SG" },
+      ...(e.venueCoords
+        ? { geo: { "@type": "GeoCoordinates", latitude: e.venueCoords.lat, longitude: e.venueCoords.lng } }
+        : {}),
     },
     organizer: { "@type": "Organization", name: e.organiser },
     offers: {
@@ -170,6 +178,20 @@ export function eventJsonLd(e: EventItem) {
         : "https://schema.org/InStock",
       url: `${SITE.url}/events/${e.slug}`,
     },
+  };
+}
+
+/** ItemList of upcoming events for the /events listing page. */
+export function eventListJsonLd(events: EventItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: events.slice(0, 20).map((e, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: e.title,
+      url: `${SITE.url}/events/${e.slug}`,
+    })),
   };
 }
 
@@ -303,6 +325,22 @@ export function faqJsonLd(items: { q: string; a: string }[]) {
       "@type": "Question",
       name: it.q,
       acceptedAnswer: { "@type": "Answer", text: it.a },
+    })),
+  };
+}
+
+/** ItemList of event pages — used by the /events/c/* and /events/in/* hubs. */
+export function eventItemListJsonLd(events: EventItem[], name: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: events.length,
+    itemListElement: events.map((e, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE.url}/events/${e.slug}`,
+      name: e.title,
     })),
   };
 }

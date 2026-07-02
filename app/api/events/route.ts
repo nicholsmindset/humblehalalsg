@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     prayerNearby?: boolean; halalCatering?: boolean; prayerSlotNote?: string;
     genderArrangement?: string; seatingNote?: string; refundPolicy?: string;
     donationEnabled?: boolean; requiresApproval?: boolean; venueCoords?: { lat: number; lng: number }; coverUrl?: string;
+    feeMode?: string;
   };
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
 
@@ -71,6 +72,9 @@ export async function POST(req: Request) {
     donationEnabled: b.catId === "charity" && b.donationEnabled === true,
     requiresApproval: b.requiresApproval === true,
     venueCoords: coords,
+    // Booking-fee mode (lib/fees): "absorb" = organiser covers the fee;
+    // anything else = "pass" (buyer pays it on top — the default).
+    feeMode: !free && b.feeMode === "absorb" ? "absorb" : undefined,
   };
 
   const id = `evt_${randomUUID().slice(0, 12)}`;

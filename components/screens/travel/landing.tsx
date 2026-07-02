@@ -114,7 +114,10 @@ export function TravelScreen({
   const [aiSimulated, setAiSimulated] = useState(false);
 
   const runSearch = async (refineOverride?: typeof refine) => {
-    if (!dest || !checkin || !checkout) return;
+    // Inline validation — this used to silently return, leaving the user
+    // wondering why nothing happened.
+    if (!dest) { setNote("Choose a destination to search."); return; }
+    if (!checkin || !checkout) { setNote("Pick your check-in and check-out dates."); return; }
     setLoading(true);
     setNote("");
     const childAges = occ.children > 0 ? Array(occ.children).fill(8) : undefined;

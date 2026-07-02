@@ -327,8 +327,9 @@ export function HHTweaks() {
   const tweaks = state.tweaks;
   const [open, setOpen] = useState(false);
 
-  // Internal design tool — only in development, or behind ?tweaks in production.
-  const enabled = process.env.NODE_ENV !== "production" || (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("tweaks"));
+  // Internal design tool — development only. (Previously reachable in
+  // production via ?tweaks; removed pre-launch so visitors can't open it.)
+  const enabled = process.env.NODE_ENV !== "production";
   if (!enabled) return null;
 
   return (

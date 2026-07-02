@@ -142,7 +142,7 @@ export function HomeScreen() {
               <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
               <div className="area-ov">
                 <span className="area-name">{a.name}</span>
-                <span className="area-count">{a.count} {a.count === 1 ? "place" : "places"}</span>
+                {a.count > 0 && <span className="area-count">{a.count} {a.count === 1 ? "place" : "places"}</span>}
               </div>
             </button>
           ))}
@@ -233,7 +233,10 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
   const featured = useMemo(() => dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)).slice(0, 8), [dir.listings, certifiedOnly]);
   const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 8), [dir.listings, certifiedOnly]);
   const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 8), [dir.listings, certifiedOnly]);
-  const items = tab === "newest" ? newest : tab === "top" ? top : featured;
+  const picked = tab === "newest" ? newest : tab === "top" ? top : featured;
+  // Never render a bare heading over an empty grid: if the selected tab is empty
+  // (e.g. no listings carry the `featured` flag), fall back to real listings.
+  const items = picked.length ? picked : dir.listings.filter((l) => !certifiedOnly || l.certified).slice(0, 8);
   const sort = tab === "newest" ? "newest" : tab === "top" ? "rating" : "featured";
   const tabs: [typeof tab, string][] = [["featured", "Featured"], ["newest", "Newest"], ["top", "Top rated"]];
   return (
@@ -245,7 +248,11 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
         </div>
         <button className="discover-all" onClick={() => navigate("explore", { sort })}>See all <Icon name="chevron" size={13} /></button>
       </div>
-      <div className="grid-cards">{items.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+      {items.length > 0 ? (
+        <div className="grid-cards">{items.map((l) => <ListingCard key={l.id} item={l} />)}</div>
+      ) : (
+        <Empty icon="search" title="Listings coming soon" body="We’re still adding places — explore the full directory." />
+      )}
     </>
   );
 }
@@ -428,6 +435,8 @@ export function ExploreScreen() {
     };
     setQ((cur) => (cur === wantQ ? cur : wantQ));
     setSort((cur) => (cur === wantSort ? cur : wantSort));
+    const wantView = params.view === "map" ? "map" : "list";
+    setView((cur) => (cur === wantView ? cur : wantView));
     setFilters((cur) => {
       const same = cur.cat === wantF.cat && cur.area === wantF.area && cur.price === wantF.price && cur.halal === wantF.halal
         && cur.owned === wantF.owned && cur.prayer === wantF.prayer && cur.family === wantF.family && cur.delivery === wantF.delivery && cur.open === wantF.open;
@@ -451,9 +460,10 @@ export function ExploreScreen() {
     (["owned", "prayer", "family", "delivery", "open"] as const).forEach((k) => {
       if (filters[k]) sp.set(k, "1");
     });
+    if (view === "map") sp.set("view", "map"); // shareable/back-restorable map view
     const qs = sp.toString();
     router.replace(qs ? `/explore?${qs}` : "/explore", { scroll: false });
-  }, [q, sort, filters, router]);
+  }, [q, sort, filters, view, router]);
 
   const results = useMemo(() => {
     let r = dir.listings.slice();
@@ -514,6 +524,7 @@ export function ExploreScreen() {
     <div className="screen-in hh-page">
       <div className="explore-top">
         <div className="hh-wrap" style={{ paddingTop: 16, paddingBottom: 14 }}>
+          <h1 className="sr-only">Explore halal food &amp; Muslim-owned businesses in Singapore</h1>
           <SearchBar value={q} onChange={setQ} onSubmit={setQ} placeholder="Search restaurants, cafés, services…" suggest />
           <div className="flex between center explore-toolbar" style={{ marginTop: 12, gap: 10 }}>
             <div className="flex g8 center">
@@ -556,7 +567,16 @@ export function ExploreScreen() {
           <SponsoredSlot placement="category_featured" />
 
           {view === "map" ? (
-            <MapPreview results={results} navigate={navigate} />
+            <MapPreview
+              results={results}
+              navigate={navigate}
+              mapParams={{
+                ...(q ? { q } : {}),
+                ...(filters.cat ? { cat: filters.cat } : {}),
+                ...(filters.area ? { area: filters.area } : {}),
+                ...(filters.halal ? { halal: filters.halal } : {}),
+              }}
+            />
           ) : results.length === 0 ? (
             <Empty icon="search" title="No places match your search"
               body="Try removing a filter or searching a different area. You can also suggest a place we’re missing."
@@ -646,13 +666,20 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
 }
 
 /* ---- Map preview (inside explore) ---- */
-export function MapPreview({ results, navigate }: {
+const MAP_RAIL_MAX = 30; // don't mount hundreds of row cards under the preview
+
+export function MapPreview({ results, navigate, mapParams }: {
   results: Listing[];
   navigate: (screen: string, params?: Record<string, unknown>) => void;
+  /** Active explore query/filters — carried into the full map so "Open full
+   *  map" doesn't silently reset the user's search. */
+  mapParams?: Record<string, string>;
 }) {
   const pts = results
     .filter((l) => l.coords)
     .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const }));
+  const unmapped = results.length - pts.length;
+  const railItems = results.slice(0, MAP_RAIL_MAX);
   return (
     <div className="map-preview card">
       <div className="map-canvas">
@@ -663,10 +690,20 @@ export function MapPreview({ results, navigate }: {
             <span className="muted">No mappable results — try widening your filters.</span>
           </div>
         )}
-        <button className="btn btn-primary btn-sm map-this" style={{ zIndex: 1000 }} onClick={() => navigate("map")}><Icon name="map" size={15} /> Open full map</button>
+        <button className="btn btn-primary btn-sm map-this" style={{ zIndex: 1000 }} onClick={() => navigate("map", mapParams)}><Icon name="map" size={15} /> Open full map</button>
       </div>
+      {unmapped > 0 && (
+        <p className="faint" style={{ fontSize: ".78rem", padding: "6px 12px 0" }}>
+          {unmapped} of {results.length} places don&apos;t have a map location yet — they&apos;re still in the list view.
+        </p>
+      )}
       <div className="map-cardrail">
-        {results.map((l) => <div key={l.id} className="map-railcard"><ListingCard item={l} variant="row" /></div>)}
+        {railItems.map((l) => <div key={l.id} className="map-railcard"><ListingCard item={l} variant="row" /></div>)}
+        {results.length > MAP_RAIL_MAX && (
+          <button className="btn btn-outline btn-sm" style={{ margin: "6px auto" }} onClick={() => navigate("map", mapParams)}>
+            +{results.length - MAP_RAIL_MAX} more — open full map
+          </button>
+        )}
       </div>
     </div>
   );
@@ -683,10 +720,19 @@ export function MapScreen() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
   const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques });
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState("");
-  const [area, setArea] = useState("");
-  const [halal, setHalal] = useState("");
+  const [q, setQ] = useState((params.q as string) || "");
+  const [cat, setCat] = useState((params.cat as string) || "");
+  const [area, setArea] = useState((params.area as string) || "");
+  const [halal, setHalal] = useState((params.halal as string) || "");
+  // Search params hydrate AFTER mount — without this sync, "Open full map"
+  // from explore dropped the user's active query/filters on the floor.
+  const pq = (params.q as string) || "", pcat = (params.cat as string) || "", parea = (params.area as string) || "", phalal = (params.halal as string) || "";
+  useEffect(() => {
+    if (pq) setQ((cur) => cur || pq);
+    if (pcat) setCat((cur) => cur || pcat);
+    if (parea) setArea((cur) => cur || parea);
+    if (phalal) setHalal((cur) => cur || phalal);
+  }, [pq, pcat, parea, phalal]);
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
@@ -724,11 +770,18 @@ export function MapScreen() {
     );
   };
 
-  // Arrived via "Mosques near me" → ask for location once so we can sort by nearest.
+  // Arrived via "Mosques near me" → turn the mosque layer on and ask for
+  // location once. Keyed on wantMosques (NOT mount): search params hydrate
+  // after mount, so ?show=mosques used to be false on first render and the
+  // mosque pins/geolocation never activated on a direct load.
+  const askedNear = useRef(false);
   useEffect(() => {
-    if (wantMosques) nearMe();
+    if (!wantMosques || askedNear.current) return;
+    askedNear.current = true;
+    setChips((c) => (c.mosque ? c : { ...c, mosque: true }));
+    nearMe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [wantMosques]);
 
   const list = useMemo(() => {
     let r = dir.listings.filter((l) => l.coords);
@@ -902,39 +955,45 @@ export function MapScreen() {
 export function DetailScreen() {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
-  const item = dir.get(String(params.slug || params.id || "")) || dir.listings[0];
-  const saved = state.saved.includes(item.id);
+  // Strict slug/id resolution — the old `|| dir.listings[0]` fallback silently
+  // rendered the FIRST listing for any bad/stale slug instead of a not-found
+  // state (same bug class fixed on the events screens).
+  const item = dir.get(String(params.slug || params.id || ""));
+  const saved = item ? state.saved.includes(item.id) : false;
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);
-  const outlet = item.franchise && item.outlets ? item.outlets[outletIdx] : null;
-  const tabs = item.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
+  const outlet = item?.franchise && item.outlets ? item.outlets[outletIdx] : null;
+  const tabs = item?.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
 
   // Live "open now" — computed client-side (SG time) after mount to avoid SSR
   // hydration mismatch; refreshes each minute.
   const [live, setLive] = useState<{ open: boolean; label: string } | null>(null);
+  const hoursWeek = item?.hoursWeek;
   useEffect(() => {
-    const update = () => setLive(openStatus(item.hoursWeek));
+    if (!hoursWeek) return;
+    const update = () => setLive(openStatus(hoursWeek));
     update();
     const t = setInterval(update, 60000);
     return () => clearInterval(t);
-  }, [item.hoursWeek]);
-  const openNow = live ? live.open : item.open;
-  const hoursLabel = live ? live.label : item.hours;
+  }, [hoursWeek]);
+  const openNow = live ? live.open : item?.open ?? false;
+  const hoursLabel = live ? live.label : item?.hours ?? "";
 
   // Analytics: this listing's stable key + a record that it was viewed.
-  const slug = item.slug || item.id;
+  const slug = item ? item.slug || item.id : "";
+  const catId = item?.catId;
   useEffect(() => {
-    track.listingView(slug, item.catId);
-  }, [slug, item.catId]);
-  const logLead = (type: LeadAction) => track.leadAction(type, slug, item.catId);
+    if (slug && catId) track.listingView(slug, catId);
+  }, [slug, catId]);
+  const logLead = (type: LeadAction) => { if (item) track.leadAction(type, slug, item.catId); };
 
   // Photo lightbox — capped at the business's plan gallery limit (lib/plans).
   // Lower tiers show fewer photos; premium/featured are unaffected (high caps).
-  const galleryImgs = ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item));
+  const galleryImgs = item ? ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item)) : [];
 
   // Verified+ unlocks the rich contact buttons (WhatsApp & directions). Free
   // listings still keep their core contact (phone / website) — never hidden.
-  const richContact = canUse(item, "contact_buttons");
+  const richContact = item ? canUse(item, "contact_buttons") : false;
   const [lb, setLb] = useState<number | null>(null);
   useEffect(() => {
     if (lb === null) return;
@@ -946,6 +1005,14 @@ export function DetailScreen() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [lb, galleryImgs.length]);
+
+  // All hooks above run unconditionally; bail to a real not-found state here.
+  if (!item) return (
+    <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
+      <Empty icon="store" title="Listing not found" body="This place isn't in the directory (it may have been removed). Browse or search instead." />
+      <button className="btn btn-primary mt12" onClick={() => navigate("explore")}>Explore places</button>
+    </div>
+  );
 
   // High-ticket service verticals get a "Request a quote" lead CTA (preselects the vertical).
   const QUOTE_VERTICAL: Record<string, string> = {

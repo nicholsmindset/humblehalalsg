@@ -5,6 +5,7 @@ import {
   Cormorant_Garamond,
   Libre_Caslon_Text,
   Newsreader,
+  Amiri,
 } from "next/font/google";
 import "../styles/styles.css";
 import "../styles/ota.css";
@@ -16,6 +17,7 @@ import "../styles/travel.css";
 import "../styles/tools.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
+import "../styles/blog.css";
 import "../styles/ads.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AppProviders } from "@/components/providers";
@@ -117,7 +119,15 @@ const newsreader = Newsreader({
   display: "swap",
 });
 
-const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader]
+// Quranic/Arabic naskh face — Arabic ayah text must never fall back to a Latin sans.
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-quran",
+  display: "swap",
+});
+
+const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader, amiri]
   .map((f) => f.variable)
   .join(" ");
 

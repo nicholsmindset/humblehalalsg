@@ -8,6 +8,10 @@ export interface BlogSection {
   h2: string;
   body?: string[];
   bullets?: string[];
+  /** Optional in-body editorial figure (breaks wider than the reading column). */
+  image?: string;
+  imageAlt?: string;
+  caption?: string;
 }
 
 export interface BlogPost {
@@ -32,6 +36,10 @@ export interface BlogPost {
   sections: BlogSection[];
   faq: { q: string; a: string }[];
   related?: string[];
+  /** Editorial extras (flagship pieces): drop-cap opener + one pull-quote. */
+  dropcap?: boolean;
+  pullQuote?: string;
+  pullQuoteBy?: string;
 }
 
 const AUTHOR = "The Humble Halal Team";
@@ -117,6 +125,9 @@ const rawPosts: RawPost[] = [
       { q: "Is Muslim-owned the same as halal-certified?", a: "Not necessarily. A Muslim-owned business may not hold a MUIS halal certificate. Muslim-owned is a trust signal; MUIS certification is the official verification." },
     ],
     related: ["how-to-check-muis-halal-certification", "best-halal-restaurants-singapore-2026"],
+    dropcap: true,
+    pullQuote: "“No pork, no lard” is a helpful signal — but it is self-declared, and it is not the same as MUIS certification.",
+    pullQuoteBy: "The Humble Halal Team",
   },
   {
     slug: "how-to-check-muis-halal-certification",
@@ -202,6 +213,9 @@ const rawPosts: RawPost[] = [
       { q: "Is every outlet of a halal-certified chain also halal?", a: "No. MUIS certification is outlet-specific. Confirm the exact branch you’re visiting on HalalSG, as some outlets of a brand may not be certified." },
     ],
     related: ["what-is-halal-singapore", "best-halal-restaurants-singapore-2026"],
+    dropcap: true,
+    pullQuote: "If an outlet isn’t on the HalalSG register — or the certificate has expired — it is not currently MUIS halal-certified.",
+    pullQuoteBy: "The Humble Halal Team",
   },
   {
     slug: "best-halal-restaurants-singapore-2026",
@@ -292,6 +306,9 @@ const rawPosts: RawPost[] = [
       { q: "Is there halal fine dining in Singapore?", a: "Yes. Singapore has a growing number of halal fine-dining and halal steak restaurants, alongside heritage Malay and Indian-Muslim kitchens. Filter by cuisine and certification to find them." },
     ],
     related: ["halal-buffet-guide-singapore", "what-is-halal-singapore"],
+    dropcap: true,
+    pullQuote: "“Best” is part taste, part trust — start with certification, then let the food decide.",
+    pullQuoteBy: "The Humble Halal Team",
   },
   {
     slug: "halal-buffet-guide-singapore",
@@ -638,6 +655,9 @@ const rawPosts: RawPost[] = [
       { q: "How do I know if a brand is halal?", a: "Check the brand on the MUIS HalalSG register, or use Humble Halal's “Is it halal?” brand checker, which cites each brand's certification status. Always confirm on HalalSG." },
     ],
     related: ["what-is-halal-singapore", "how-to-check-muis-halal-certification"],
+    dropcap: true,
+    pullQuote: "When something looks ambiguous, treat it as not certified — and verify at the source.",
+    pullQuoteBy: "The Humble Halal Team",
   },
   {
     slug: "halal-food-bugis-arab-street",
@@ -754,7 +774,7 @@ interface BlogMeta {
 }
 
 const META: Record<string, BlogMeta> = {
-  "what-is-halal-singapore": { category: "halal-basics", image: bimg("1591604129939-f1efa4d9f7fa"), imageAlt: "An open Quran — understanding what halal means" },
+  "what-is-halal-singapore": { category: "halal-basics", image: bimg("1565557623262-b51c2513a641"), imageAlt: "A plate of halal curry and naan — halal food in Singapore" },
   "how-to-check-muis-halal-certification": { category: "halal-basics", image: bimg("1555992336-fb0d29498b13"), imageAlt: "A Singapore food court where you can check halal certification" },
   "is-it-halal-how-to-tell-singapore": { category: "halal-basics", image: bimg("1466637574441-749b8f19452f"), imageAlt: "Reading ingredients to tell whether food is halal" },
   "best-halal-restaurants-singapore-2026": { category: "restaurants-cafes", image: bimg("1551218808-94e220e084d2"), imageAlt: "A spread of dishes at a halal restaurant in Singapore" },
@@ -776,11 +796,19 @@ const META: Record<string, BlogMeta> = {
   "muslim-owned-businesses-singapore": { category: "community-business", image: bimg("1604719312566-8912e9227c6a"), imageAlt: "A small Muslim-owned business storefront" },
 };
 
-export const posts: BlogPost[] = rawPosts.map((p) => {
+const builtPosts: BlogPost[] = rawPosts.map((p) => {
   const m = META[p.slug];
   if (!m) throw new Error(`blog: missing category/image meta for "${p.slug}" — add it to META in lib/blog.ts`);
   return { ...p, ...m };
 });
+
+// Only these slugs render publicly. The remaining posts are placeholders and
+// will be published (add the slug here) once real content is written, before
+// the site opens to the public. This gates the hub, post pages, category counts,
+// related posts, sitemap and static params in one place.
+const PUBLISHED_SLUGS = new Set<string>(["what-is-halal-singapore"]);
+
+export const posts: BlogPost[] = builtPosts.filter((p) => PUBLISHED_SLUGS.has(p.slug));
 
 const BY_SLUG = new Map(posts.map((p) => [p.slug, p]));
 
@@ -795,7 +823,8 @@ export function getPost(slug: string): BlogPost | undefined {
 export function relatedPosts(post: BlogPost, limit = 3): BlogPost[] {
   const picked = (post.related || []).map((s) => BY_SLUG.get(s)).filter(Boolean) as BlogPost[];
   if (picked.length >= limit) return picked.slice(0, limit);
-  const rest = posts.filter((p) => p.slug !== post.slug && !picked.includes(p));
+  // Pad the shortfall with the NEWEST posts, not raw authored-array order.
+  const rest = allPosts().filter((p) => p.slug !== post.slug && !picked.includes(p));
   return [...picked, ...rest].slice(0, limit);
 }
 

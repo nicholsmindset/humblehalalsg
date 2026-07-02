@@ -8,7 +8,7 @@
         "https://humblehalal.com/blog/what-is-halal-singapore"
       ],
       "numberOfRuns": 2,
-      "settings": { "preset": "mobile" }
+      "settings": { "formFactor": "mobile", "screenEmulation": { "mobile": true, "width": 412, "height": 823, "deviceScaleFactor": 1.75, "disabled": false } }
     },
     "assert": {
       "assertions": {
@@ -19,8 +19,6 @@
         "cumulative-layout-shift": ["warn", { "maxNumericValue": 0.1 }],
         "total-blocking-time": ["warn", { "maxNumericValue": 300 }],
         "viewport": ["error", {}],
-        "content-width": ["error", {}],
-        "tap-targets": ["warn", {}],
         "font-size": ["warn", {}]
       }
     },

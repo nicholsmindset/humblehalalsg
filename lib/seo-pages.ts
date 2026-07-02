@@ -234,7 +234,11 @@ export function getSeoPage(slug: string): SeoPage | undefined {
  *  from the REAL directory passed in (never the mock seed). */
 export function seoListings(page: SeoPage, source: Listing[]): Listing[] {
   return source.filter((l) => {
-    if (page.areaNames && page.areaNames.length) {
+    if (page.areaNames) {
+      // An explicitly EMPTY match list (venue/district with no seeded areas)
+      // means "no listings map here yet" — return none, never the whole
+      // directory. The page renders its honest empty state instead of
+      // asserting unrelated businesses (in the UI and in ItemList JSON-LD).
       if (!page.areaNames.includes(l.area)) return false;
     } else if (page.areaId) {
       const area = areas.find((a) => a.id === page.areaId);

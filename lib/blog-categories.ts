@@ -37,8 +37,8 @@ export const BLOG_CATEGORIES: BlogCategory[] = [
     title: "Halal Basics: Guides to Halal & MUIS in Singapore",
     description:
       "Start here. Plain-English guides to what halal means, how MUIS certification works, and how to tell if a place in Singapore is really halal.",
-    heroImage: bimg("1542816417-0983c9c9ad53"),
-    heroAlt: "A mosque in Singapore",
+    heroImage: bimg("1565557623262-b51c2513a641"),
+    heroAlt: "Halal food in Singapore",
     blurb: "What halal means, MUIS certification & how to check.",
   },
   {

@@ -15,8 +15,8 @@ import { isUnoptimizedImageSrc } from "@/lib/img";
 import type { BadgeKey, Listing } from "@/lib/types";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { joinParts } from "@/lib/format";
-import { screenToPath } from "@/lib/routes";
 import { useApp } from "./app-context";
+import { ScreenLink } from "./screen-link";
 import { useDirectory } from "./directory-context";
 
 /* ---------------------------------------------------------------
@@ -253,7 +253,6 @@ export function ImagePh({
           onError={() => setFailed(true)}
         />
       )}
-      {label && (!showImg || !loaded) && <span className="imgph-label">photo · {label}</span>}
     </div>
   );
 }
@@ -268,24 +267,40 @@ export function ListingCard({
   item: Listing;
   variant?: "standard" | "featured" | "row";
 }) {
-  const { navigate, toggleSave, state } = useApp();
+  const { navigate, trackRecent, toggleSave, state } = useApp();
   const saved = state.saved.includes(item.id);
-  const href = screenToPath("detail", { id: item.id });
-  const go = (e: React.MouseEvent) => {
-    e.preventDefault();
-    navigate("detail", { id: item.id });
-  };
+  // Full-card overlay link → prefetches the detail route on hover/touch (intent),
+  // so the tap feels instant without eagerly pulling every card's payload.
   const cardLink = (
-    <a
+    <ScreenLink
+      screen="detail"
+      params={{ id: item.id }}
       className="card-stretch"
-      href={href}
+      intent
+      onClick={() => trackRecent(item.id)}
       aria-label={joinParts([item.name, joinParts([item.cuisine, item.area], ", ")], " — ")}
-      onClick={go}
     />
   );
 
   // Subtle "Claim" chip on unclaimed listings (sits above the full-card link via
   // z-index + stopPropagation, so it claims rather than opening the detail page).
+  // Halal-confidence pill — only when it DIFFERENTIATES. Nearly the whole seeded
+  // directory is tier "declared" (base score exactly 42), so a bare number pill
+  // made every card show an identical "42" that reads like a poor rating. Cards
+  // show the score for earned tiers (muis/admin/community), a warning chip for
+  // flagged listings, and nothing for declared/pending (the tier badge beside it
+  // already says "Muslim-Owned"/"Halal-friendly"); the detail page keeps the
+  // full score + reasons.
+  const hsPill = (() => {
+    const hs = scoreListing(item);
+    if (hs.tier === "declared" || hs.tier === "pending") return null;
+    return (
+      <span className="hs-pill" title={`Halal confidence ${hs.score}/100 · ${hs.label}`}>
+        <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
+        {hs.tier === "reported" ? hs.label : hs.score}
+      </span>
+    );
+  })();
   const claimChip = !item.claimed ? (
     <button
       className="claim-chip"
@@ -313,15 +328,7 @@ export function ListingCard({
             {joinParts([item.cuisine, item.area])}
           </div>
           <div className="lc-badges" style={{ marginTop: 2 }}>
-            {(() => {
-              const hs = scoreListing(item);
-              return (
-                <span className="hs-pill" title={`Halal confidence ${hs.score}/100 · ${hs.label}`}>
-                  <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
-                  {hs.score}
-                </span>
-              );
-            })()}
+            {hsPill}
             {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).slice(0, 2).map((b) => (
               <Badge key={b} type={b} />
             ))}
@@ -369,15 +376,7 @@ export function ListingCard({
           <Rating value={item.rating} count={item.reviews} showCount={false} />
         </div>
         <div className="lc-badges">
-          {(() => {
-            const hs = scoreListing(item);
-            return (
-              <span className="hs-pill" title={`Halal confidence ${hs.score}/100 · ${hs.label}`}>
-                <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
-                {hs.score}
-              </span>
-            );
-          })()}
+          {hsPill}
           {item.badges.filter((b) => b !== "muis" || !muisUnbacked(item)).slice(0, 3).map((b) => (
             <Badge key={b} type={b} />
           ))}

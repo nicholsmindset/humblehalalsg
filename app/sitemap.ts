@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
 import { allSeoPages } from "@/lib/seo-pages";
+import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
 import { allCategories } from "@/lib/blog-categories";
@@ -38,6 +39,10 @@ const PUBLIC_STATIC = [
   "/accessibility",
 ];
 
+// Hourly ISR — the sitemap was frozen at build time, so newly published events
+// (the pages we most want crawled fast) never entered it until a redeploy.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE.url;
   const now = new Date();
@@ -68,6 +73,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const seoEntries: MetadataRoute.Sitemap = allSeoPages().map((p) => ({
     url: `${base}/halal/${p.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  const eventSeoEntries: MetadataRoute.Sitemap = allEventSeoPages().map((p) => ({
+    url: `${base}${eventSeoPath(p)}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.7,
@@ -122,6 +134,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...listingEntries,
     ...eventEntries,
     ...seoEntries,
+    ...eventSeoEntries,
     ...brandEntries,
     ...blogEntries,
     ...blogCatEntries,

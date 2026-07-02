@@ -4,6 +4,8 @@
    (ported from screens-events.jsx). Owns the shared EventCard / EventPriceTag /
    EventDateChip / EventsStrip used by other screen modules. */
 import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { HHData, spotsLeft } from "@/lib/data";
 import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
@@ -13,14 +15,16 @@ import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
 import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
-import { computeOrder } from "@/lib/fees";
-import { track } from "@/lib/analytics";
+import { computeOrder, fmtSGD } from "@/lib/fees";
+import { getEventSeoPage, eventSeoPageForArea, eventSeoPath } from "@/lib/event-seo-pages";
+import { track, getSessionId } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { Newsletter } from "../newsletter";
+import { EventSeoLinks } from "../events/seo-links";
 
 /* ---------- Islamic-layer helpers ---------- */
 const GENDER_LABELS: Record<string, string> = {
@@ -88,7 +92,7 @@ function DonatePanel({ ev }: { ev: EventItem }) {
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState(false);
   const presets = [10, 25, 50, 100];
-  const raised = ev.donationRaisedCents != null ? `S$${(ev.donationRaisedCents / 100).toLocaleString()}` : null;
+  const raised = ev.donationRaisedCents != null ? fmtSGD(ev.donationRaisedCents) : null;
 
   const donate = async () => {
     const amt = custom ? Math.round(Number(custom) * 100) : amount * 100;
@@ -210,7 +214,7 @@ function EventRatings({ ev }: { ev: EventItem }) {
       {data.count > 0 ? (
         <div className="flex g8 center" style={{ marginTop: 8 }}>
           <Icon name="star" size={18} style={{ color: "var(--gold)" }} />
-          <strong>{data.avg}</strong><span className="faint">· {data.count} rating{data.count > 1 ? "s" : ""}</span>
+          <strong>{Math.round(Number(data.avg) * 10) / 10}</strong><span className="faint">· {data.count} rating{data.count > 1 ? "s" : ""}</span>
         </div>
       ) : (
         <p className="faint" style={{ marginTop: 8, fontSize: ".9rem" }}>No ratings yet — be the first after you attend.</p>
@@ -260,8 +264,17 @@ export function EventPriceTag({ ev, lg, free }: { ev: EventItem; lg?: boolean; f
 
 /* ---------- Date block ---------- */
 export function EventDateChip({ ev }: { ev: EventItem }) {
-  const [, day] = ev.dateLabel.split(", ");
-  const [mon, num] = (day || "").split(" ");
+  // Derive from the ISO date (always present) — parsing dateLabel broke for
+  // host-created events whose label isn't "Sat, 14 Mar" shaped.
+  let mon = "", num = "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ev.dateISO || "");
+  if (m) {
+    mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(m[2]) - 1] || "";
+    num = String(Number(m[3]));
+  } else {
+    const [, day] = ev.dateLabel.split(", ");
+    [mon, num] = (day || "").split(" ");
+  }
   return (
     <div className="evt-datechip">
       <span className="ed-mon">{mon}</span>
@@ -291,10 +304,13 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
   const saved = state.savedEvents.includes(ev.id);
   const effFree = ev.free || !flags.paidTickets;
   const left = spotsLeft(ev);
-  const href = screenToPath("event-detail", { id: ev.id });
+  // Link by SLUG (canonical URL) — screenToPath's slugForEvent only knows the
+  // mock seed, so DB events used to get non-canonical /events/<uuid> links.
+  const ref = ev.slug || ev.id;
+  const href = screenToPath("event-detail", { id: ref });
   const go = (e: MouseEvent) => {
     e.preventDefault();
-    navigate("event-detail", { id: ev.id });
+    navigate("event-detail", { id: ref });
   };
   const cardLink = (
     <a className="card-stretch" href={href} aria-label={`${ev.title} — ${ev.dateLabel}, ${ev.area}`} onClick={go} />
@@ -348,7 +364,7 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
         <span className="evt-cat">{ev.cat}</span>
         <h3 className="evt-name">{ev.title}</h3>
         <div className="evt-meta">
-          <Icon name="calendar" size={14} /> {ev.dateLabel} · {ev.timeLabel.split(" – ")[0]}
+          <Icon name="calendar" size={14} /> {ev.dateLabel} · {ev.timeLabel.split(/\s*[–—-]\s*/)[0]}
         </div>
         <div className="evt-meta">
           <Icon name="pin" size={14} /> {ev.venue}
@@ -394,6 +410,10 @@ export function EventsScreen() {
   const [area, setArea] = useState("");
   const [gender, setGender] = useState(""); // '', 'segregated', 'sisters', 'brothers', 'mixed'
   const [q, setQ] = useState("");
+  // Search params hydrate AFTER mount (SearchParamsBridge) — without this sync,
+  // /events?cat=bazaar deep links (home shortcuts) showed all events unfiltered.
+  const paramCat = (params.cat as string) || "";
+  useEffect(() => { if (paramCat) setCat(paramCat); }, [paramCat]);
 
   const results = useMemo(() => {
     let r = allEvents.slice();
@@ -462,7 +482,7 @@ export function EventsScreen() {
             )}
             <div className="sortwrap">
               <Icon name="pin" size={15} style={{ color: "var(--ink-soft)" }} />
-              <select className="sort-select" value={area} onChange={(e) => setArea(e.target.value)}>
+              <select className="sort-select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Filter by area">
                 <option value="">All areas</option>
                 {REGIONS.map((region) => (
                   <optgroup key={region} label={region}>
@@ -543,17 +563,23 @@ export function EventsScreen() {
             </div>
           </div>
         </section>
+
+        {/* SEO cluster links — every category + area landing page is reachable
+            from the hub, so crawlers (and people) can browse by intent. */}
+        <EventSeoLinks />
       </div>
     </div>
   );
 }
 
 /* ========================= EVENT DETAIL ========================= */
-export function EventDetailScreen() {
+export function EventDetailScreen({ certVerified }: { certVerified?: boolean } = {}) {
   const { navigate, params, state, toggleEventSave, toast, flags } = useApp();
-  const { get, list } = useEvents();
+  const { get } = useEvents();
   const dir = useDirectory();
-  const ev = get(String(params.slug || params.id || "")) || list[0];
+  // Strict slug/id resolution — the old `|| list[0]` fallback silently rendered
+  // an UNRELATED event (mismatching the page's metadata/JSON-LD) on a miss.
+  const ev = get(String(params.slug || params.id || ""));
   if (!ev) return (
     <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
       <Empty icon="calendar" title="Event not found" body="This event isn’t available. Browse upcoming events instead." />
@@ -581,7 +607,13 @@ export function EventDetailScreen() {
         title=""
         onBack={() => navigate("events")}
         right={
-          <button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => toggleEventSave(ev.id)}>
+          <button
+            className="btn btn-ghost"
+            style={{ padding: 8 }}
+            onClick={() => toggleEventSave(ev.id)}
+            aria-label={saved ? "Remove from saved events" : "Save this event"}
+            aria-pressed={saved}
+          >
             <Icon
               name="heart"
               size={22}
@@ -628,6 +660,15 @@ export function EventDetailScreen() {
             )}
           </div>
           <div className="flex g8 wrap" style={{ marginTop: 10 }}>
+            {certVerified && (
+              <span
+                className="tag"
+                style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}
+                title="This organiser holds a current halal certificate, verified by our team (Cert Vault)."
+              >
+                <Icon name="shield" size={13} /> Halal-certified organiser
+              </span>
+            )}
             {season && (
               <span className="tag" style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}>
                 <Icon name="moon" size={13} /> {season.label}
@@ -680,6 +721,20 @@ export function EventDetailScreen() {
           <p style={{ marginTop: 10, color: "var(--ink-soft)", lineHeight: 1.65, fontSize: "1.02rem" }}>
             {ev.blurb} Doors open 30 minutes before start. Come early to settle in and find your seat.
           </p>
+          {(() => {
+            // Cross-links into the SEO cluster (category + area landing pages).
+            const catPage = getEventSeoPage("category", ev.catId);
+            const areaPage = eventSeoPageForArea(ev.area);
+            if (!catPage && !areaPage) return null;
+            return (
+              <p className="muted" style={{ marginTop: 12, fontSize: ".9rem" }}>
+                More:{" "}
+                {catPage && <Link href={eventSeoPath(catPage)}>{catPage.h1}</Link>}
+                {catPage && areaPage && <span> · </span>}
+                {areaPage && <Link href={eventSeoPath(areaPage)}>Halal events in {areaPage.areaName}</Link>}
+              </p>
+            );
+          })()}
 
           <div className="evt-info-grid">
             <div className="evt-info-item">
@@ -797,7 +852,7 @@ export function EventDetailScreen() {
           <div className="card evt-bookcard">
             <div className="flex between center">
               <EventPriceTag ev={ev} lg free={effFree} />
-              {!ev.soldOut && ev.capacity && (
+              {!ev.soldOut && ev.capacity > 0 && (
                 <span className="faint" style={{ fontSize: ".8rem" }}>
                   {left} left
                 </span>
@@ -837,7 +892,7 @@ export function EventDetailScreen() {
       <div className="detail-stickybar evt-stickybar">
         <div className="evt-sticky-price">
           <EventPriceTag ev={ev} lg free={effFree} />
-          {!ev.soldOut && ev.capacity && (
+          {!ev.soldOut && ev.capacity > 0 && (
             <span className="faint" style={{ fontSize: ".74rem" }}>
               {left} spots left
             </span>
@@ -852,17 +907,103 @@ export function EventDetailScreen() {
 }
 
 /* ========================= CHECKOUT / RSVP ========================= */
+/** Map API failure reasons to honest, user-facing copy. */
+function checkoutErrorMessage(reason: string | undefined, status: number): string {
+  switch (reason) {
+    case "sold_out":
+    case "insufficient_capacity":
+      return "This event is sold out — no tickets were charged.";
+    case "paid_tickets_disabled":
+    case "stripe_not_configured":
+    case "business_not_onboarded":
+      return "Online ticket payment isn't available for this event yet — no charge was made.";
+    case "event_over":
+      return "This event has already taken place.";
+    default:
+      return status === 429
+        ? "Too many attempts — please wait a moment and try again."
+        : "Couldn't complete your booking — please try again. You have not been charged.";
+  }
+}
+
 export function CheckoutScreen() {
   const { navigate, params, bookEvent, state, flags, toast } = useApp();
-  const { get, list } = useEvents();
-  const ev = get(String(params.id)) || list[0];
-  const [tier, setTier] = useState(ev?.tiers ? 0 : -1);
+  const { get } = useEvents();
+  const { user: clerkUser } = useUser();
+  // Resolve strictly by slug/id — never fall back to an unrelated event (the
+  // old `|| list[0]` briefly checked out the wrong event while search params
+  // hydrate, and could freeze `tier` for an event with a different tier shape).
+  const ev = get(String(params.id ?? ""));
+  const [tier, setTier] = useState(0);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState(state.user.loggedIn ? state.user.name : "");
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  // Promo code: validated live for the price preview; the server re-validates
+  // and recomputes at session creation, so this can never change what's charged.
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discountCents: number } | null>(null);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+  // Search params hydrate in a post-mount effect (SearchParamsBridge) — wait
+  // one effect pass before declaring "no event" so the empty state doesn't
+  // flash on a normal ?id= load.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
+  // Re-anchor tier/qty (and any applied promo) when the resolved event changes.
+  useEffect(() => { setTier(0); setQty(1); setError(""); setPromo(null); setPromoInput(""); setPromoMsg(null); }, [ev?.id]);
 
-  // No event in context (e.g. /checkout opened directly, or no events published yet).
+  // Signed-in buyers skip the typing — prefill from Clerk, never overwrite edits.
+  useEffect(() => {
+    const em = clerkUser?.primaryEmailAddress?.emailAddress;
+    if (em) setEmail((cur) => cur || em);
+    const nm = clerkUser?.fullName;
+    if (nm) setName((cur) => cur || nm);
+  }, [clerkUser]);
+
+  // Funnel middle step (event page_view → checkout_start → purchase).
+  const evKey = ev ? String(ev.slug || ev.id) : "";
+  useEffect(() => {
+    if (evKey) track.checkoutStart(evKey, ev?.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evKey]);
+
+  const validatePromo = async (code: string) => {
+    if (!ev) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    try {
+      const t = ev.tiers ? ev.tiers[Math.min(tier, ev.tiers.length - 1)] : undefined;
+      const r = await fetch("/api/checkout/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: ev.id, code, tier: t?.name ?? "Standard", qty }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setPromo({ code: j.code, discountCents: j.discountCents });
+      } else {
+        setPromo(null);
+        setPromoMsg(j.message || "That code isn’t valid.");
+      }
+    } catch {
+      setPromo(null);
+      setPromoMsg("Couldn’t check the code — please try again.");
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
+  // Quantity/tier changes shift the subtotal → re-price an applied code.
+  useEffect(() => {
+    if (promo) void validatePromo(promo.code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qty, tier]);
+
+  if (!ev && !hydrated) return null; // params not readable yet — no flash
+
+  // No event resolved (e.g. /checkout opened directly, or no events published yet).
   if (!ev) return (
     <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
       <Empty icon="calendar" title="No event selected" body="Browse upcoming events to RSVP or book tickets." />
@@ -872,13 +1013,20 @@ export function CheckoutScreen() {
 
   // Free unless the event is priced AND paid ticketing is enabled.
   const free = ev.free || !flags.paidTickets;
-  const unit = free ? 0 : ev.tiers ? ev.tiers[tier].price : ev.priceFrom;
-  const order = computeOrder(unit * 100, qty); // cents
-  const total = order.subtotalCents / 100;
-  const fee = order.feeCents / 100;
-  const tierName = free ? "RSVP" : ev.tiers ? ev.tiers[tier].name : "Standard";
+  const activeTier = ev.tiers ? ev.tiers[Math.min(tier, ev.tiers.length - 1)] : undefined;
+  const unit = free ? 0 : activeTier ? activeTier.price : ev.priceFrom;
+  // Fee mode is the organiser's choice: "pass" adds the booking fee for the
+  // buyer (default); "absorb" bakes it into the organiser's share.
+  const feeMode = ev.feeMode === "absorb" ? "absorb" : "pass";
+  const order = computeOrder(unit * 100, qty, { feeMode, discountCents: free ? 0 : (promo?.discountCents ?? 0) }); // cents
+  const tierName = free ? "RSVP" : activeTier ? activeTier.name : "Standard";
+  // Server clamps: /api/rsvp caps at 10, /api/checkout/ticket at 20 — mirror
+  // them (and remaining capacity) so the UI never over-promises.
+  const left = spotsLeft(ev);
+  const maxQty = Math.max(1, Math.min(free ? 10 : 20, ev.capacity > 0 ? left : Infinity));
 
   const confirm = async () => {
+    setError("");
     if (free) {
       if (ev.requiresApproval) {
         setBusy(true);
@@ -889,9 +1037,9 @@ export function CheckoutScreen() {
             body: JSON.stringify({ name, email, qty }),
           });
           if (!r.ok) okFlag = false; // real server rejection (422 bad email / 429 rate-limit / 500)
-        } catch { /* network error — treat as graceful (offline/unconfigured) */ }
+        } catch { okFlag = false; /* network error — don't fake success */ }
         finally { setBusy(false); }
-        if (!okFlag) { toast("Couldn't send your request — please try again."); return; }
+        if (!okFlag) { toast("Couldn't send your request — please check your connection and try again."); return; }
         navigate("success", { type: "join-request", eventId: ev.id });
         return;
       }
@@ -899,48 +1047,77 @@ export function CheckoutScreen() {
       // attendee gets a real scannable ticket; degrades to simulated when the
       // event row isn't seeded. Keep the local mock + success flow on success.
       setBusy(true);
+      let reason: string | undefined;
       let okFlag = true;
       try {
         const r = await fetch(`/api/rsvp`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ eventId: ev.id, name, email, qty }),
         });
-        if (!r.ok) okFlag = false; // 422 bad email / 429 rate-limit / 404 / 500
-      } catch { /* network error — keep the local ticket (offline/unconfigured) */ }
+        if (!r.ok) {
+          okFlag = false; // 409 sold_out / 422 bad email / 429 rate-limit / 404 / 500
+          const j = await r.json().catch(() => ({}));
+          reason = j?.reason;
+          if (reason === "insufficient_capacity" && Number(j?.left) > 0) {
+            toast(`Only ${j.left} spot${j.left > 1 ? "s" : ""} left — reduce your guest count.`);
+            setBusy(false);
+            return;
+          }
+        }
+      } catch { okFlag = false; /* network error — don't fake a reservation */ }
       finally { setBusy(false); }
-      if (!okFlag) { toast("Couldn't reserve your spot — please try again."); return; }
+      if (!okFlag) {
+        toast(
+          reason === "sold_out" ? "Sorry — this event just sold out." :
+          reason === "event_over" ? "This event has already taken place." :
+          "Couldn't reserve your spot — please try again.",
+        );
+        return;
+      }
       track.eventRsvp(ev.id, ev.title, qty, email);
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "rsvp", eventId: ev.id });
       return;
     }
-    // Paid: ask the server for a Stripe Checkout URL; fall back to mock if unconfigured.
+    // Paid: ask the server for a Stripe Checkout URL. Anything except a URL is
+    // a FAILURE surfaced to the user — never a mock "payment successful" (the
+    // old fallback showed a success screen + local ticket with no charge and
+    // no server-side order whenever payments were disabled or sold out).
     setBusy(true);
     try {
       const res = await fetch("/api/checkout/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: ev.id, tier: tierName, qty, name }),
+        body: JSON.stringify({
+          eventId: ev.id,
+          tier: tierName,
+          qty,
+          name,
+          email,
+          promo: promo?.code,
+          sessionId: getSessionId(),
+        }),
       });
-      const data = await res.json();
-      if (data.url) {
+      const data = await res.json().catch(() => ({}));
+      if (data?.url) {
         window.location.href = data.url;
         return;
       }
-      // not configured / disabled — keep the demo flowing
-      // Demo/unconfigured path only. When Stripe IS configured the user is
-      // redirected offsite, so the authoritative Purchase must fire server-side
-      // from the Stripe webhook (Phase 2).
-      track.purchase({ transaction_id: `${ev.id}-${Date.now()}`, item_id: ev.id, item_name: ev.title, tier: tierName, quantity: qty, value: total }, { email: email || undefined });
-      bookEvent(ev.id, tierName, qty);
-      navigate("success", { type: "payment-event", eventId: ev.id });
+      // 100%-off promo → the server issued the tickets directly, no payment step.
+      if (data?.ok && data?.comp) {
+        bookEvent(ev.id, tierName, qty);
+        navigate("success", { type: "payment-event", eventId: ev.id });
+        return;
+      }
+      // A rejected promo is a real answer — clear it so the total is honest again.
+      if (typeof data?.reason === "string" && data.reason.startsWith("promo_")) {
+        setPromo(null);
+        setPromoMsg("That code no longer applies — your total has been updated.");
+        return;
+      }
+      setError(checkoutErrorMessage(data?.reason, res.status));
     } catch {
-      // Demo/unconfigured path only. When Stripe IS configured the user is
-      // redirected offsite, so the authoritative Purchase must fire server-side
-      // from the Stripe webhook (Phase 2).
-      track.purchase({ transaction_id: `${ev.id}-${Date.now()}`, item_id: ev.id, item_name: ev.title, tier: tierName, quantity: qty, value: total }, { email: email || undefined });
-      bookEvent(ev.id, tierName, qty);
-      navigate("success", { type: "payment-event", eventId: ev.id });
+      setError("Network error — please check your connection and try again. You have not been charged.");
     } finally {
       setBusy(false);
     }
@@ -984,7 +1161,7 @@ export function CheckoutScreen() {
                     <Icon name="minus" size={15} />
                   </button>
                   <span>{qty}</span>
-                  <button onClick={() => setQty(qty + 1)} aria-label="Increase">
+                  <button onClick={() => setQty(Math.min(maxQty, qty + 1))} disabled={qty >= maxQty} aria-label="Increase">
                     <Icon name="plus" size={15} />
                   </button>
                 </div>
@@ -1005,12 +1182,11 @@ export function CheckoutScreen() {
                 </div>
                 {!free && (
                   <div className="field">
-                    <label>Card details</label>
-                    <div className="card-input">
-                      <Icon name="ticket" size={16} />
-                      <input className="input" style={{ border: "none", padding: 0, boxShadow: "none" }} placeholder="4242 4242 4242 4242" />
-                    </div>
-                    <span className="hint">Secured by Stripe — you’ll complete payment on the next step.</span>
+                    <label>Payment</label>
+                    <p className="hint" style={{ display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                      <Icon name="shield" size={14} /> You’ll pay securely on Stripe’s checkout page — card
+                      {flags.payNow ? " or PayNow" : ""}. We never see your card details.
+                    </p>
                   </div>
                 )}
               </div>
@@ -1033,23 +1209,80 @@ export function CheckoutScreen() {
                   <span className="muted">
                     {tierName} × {qty}
                   </span>
-                  <span style={{ fontWeight: 600 }}>{free ? "Free" : `$${total.toFixed(2)}`}</span>
+                  <span style={{ fontWeight: 600 }}>{free ? "Free" : fmtSGD(order.subtotalCents)}</span>
                 </div>
-                {!free && (
+                {!free && order.discountCents > 0 && (
+                  <div className="flex between">
+                    <span className="muted">Promo ({promo?.code})</span>
+                    <span style={{ fontWeight: 600, color: "var(--emerald)" }}>−{fmtSGD(order.discountCents)}</span>
+                  </div>
+                )}
+                {!free && feeMode === "pass" && (
                   <div className="flex between">
                     <span className="muted">Booking fee</span>
-                    <span style={{ fontWeight: 600 }}>${fee.toFixed(2)}</span>
+                    <span style={{ fontWeight: 600 }}>{fmtSGD(order.feeCents)}</span>
+                  </div>
+                )}
+                {!free && feeMode === "absorb" && (
+                  <div className="flex between">
+                    <span className="muted">Booking fee</span>
+                    <span style={{ fontWeight: 600, color: "var(--emerald)" }}>Included</span>
+                  </div>
+                )}
+                {!free && (
+                  <div className="field" style={{ marginTop: 4 }}>
+                    <label>Promo code</label>
+                    <div className="flex g8">
+                      <input
+                        className="input"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        placeholder="e.g. EARLYBIRD"
+                        disabled={!!promo || promoBusy}
+                        style={{ textTransform: "uppercase" }}
+                      />
+                      {promo ? (
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => {
+                            setPromo(null);
+                            setPromoInput("");
+                            setPromoMsg(null);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => void validatePromo(promoInput.trim().toUpperCase())}
+                          disabled={promoBusy || !promoInput.trim()}
+                        >
+                          {promoBusy ? "…" : "Apply"}
+                        </button>
+                      )}
+                    </div>
+                    {promoMsg && (
+                      <span className="hint" style={{ color: "var(--danger)" }}>
+                        {promoMsg}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
               <div className="flex between" style={{ paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                 <span style={{ fontWeight: 700 }}>Total</span>
                 <span style={{ fontWeight: 800, fontSize: "1.2rem", fontFamily: "var(--serif)" }}>
-                  {free ? "$0.00" : `$${(total + fee).toFixed(2)}`}
+                  {free ? "$0.00" : fmtSGD(order.totalCents)}
                 </span>
               </div>
+              {error && (
+                <p role="alert" style={{ marginTop: 12, fontSize: ".85rem", fontWeight: 600, color: "var(--danger)" }}>
+                  {error}
+                </p>
+              )}
               <button className="btn btn-primary btn-block btn-lg mt16" onClick={confirm} disabled={!name || busy}>
-                {busy ? "Redirecting…" : free ? (ev.requiresApproval ? "Request to join" : "Confirm RSVP") : `Pay $${(total + fee).toFixed(2)}`}
+                {busy ? "Redirecting…" : free ? (ev.requiresApproval ? "Request to join" : "Confirm RSVP") : `Pay ${fmtSGD(order.totalCents)}`}
               </button>
               <p className="faint tc" style={{ fontSize: ".76rem", marginTop: 10 }}>
                 {free ? "You can cancel your RSVP any time." : "Secure checkout via Stripe · refundable up to 48h before."}
@@ -1066,7 +1299,7 @@ export function CheckoutScreen() {
 interface HostForm {
   title: string; cat: string; desc: string; date: string; time: string; endTime: string;
   venue: string; area: string; lat: number | null; lng: number | null; coverUrl: string;
-  free: boolean; price: string; tierName: string; cap: string;
+  free: boolean; price: string; tierName: string; cap: string; feeMode: "pass" | "absorb";
   photos: number; prayer: boolean; halal: boolean; prayerNote: string;
   gender: "" | GenderArrangement; seating: string; refundPolicy: string; donation: boolean;
   requiresApproval: boolean;
@@ -1082,7 +1315,7 @@ export function HostEventScreen() {
   const [d, setD] = useState<HostForm>({
     title: "", cat: "", desc: "", date: "", time: "", endTime: "", venue: "", area: "",
     lat: null, lng: null, coverUrl: "",
-    free: true, price: "", tierName: "Standard", cap: "", photos: 0,
+    free: true, price: "", tierName: "Standard", cap: "", feeMode: "pass", photos: 0,
     prayer: false, halal: false, prayerNote: "", gender: "", seating: "", refundPolicy: "", donation: false,
     requiresApproval: false,
   });
@@ -1107,23 +1340,33 @@ export function HostEventScreen() {
   const isCharity = d.cat === "charity";
 
   // Persist the event to Supabase as 'pending' (admin approves → published).
-  // Degrades gracefully to the success screen when DB/auth isn't available.
+  // The response is CHECKED: the old fire-and-forget always showed "submitted
+  // for review" — a signed-out user or a server error silently lost all five
+  // steps of form data.
   const submitEvent = async () => {
     setSubmitting(true);
     try {
       const catLabel = HHData.eventCats.find((c) => c.id === d.cat)?.label || "Community";
-      const timeLabel = d.time ? d.time + (d.endTime ? `–${d.endTime}` : "") : "";
-      await fetch("/api/events", {
+      const timeLabel = d.time ? d.time + (d.endTime ? ` – ${d.endTime}` : "") : "";
+      // "Sat, 14 Mar" — same shape the cards/date chip render for seeded events.
+      const dt = new Date(`${d.date}T00:00:00`);
+      const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const dateLabel = d.date && !Number.isNaN(dt.getTime())
+        ? `${WD[dt.getDay()]}, ${dt.getDate()} ${MO[dt.getMonth()]}`
+        : d.date;
+      const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: d.title, catId: d.cat, catLabel, desc: d.desc,
-          dateISO: d.date, dateLabel: d.date, timeLabel, endTime: d.endTime || undefined,
+          dateISO: d.date, dateLabel, timeLabel, endTime: d.endTime || undefined,
           venue: d.venue, area: d.area,
           venueCoords: d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng } : undefined,
           coverUrl: d.coverUrl || undefined,
           free: d.free, price: Number(d.price) || 0,
           tiers: !d.free ? [{ name: d.tierName || "Standard", price: Number(d.price) || 0 }] : undefined,
+          feeMode: !d.free ? d.feeMode : undefined,
           capacity: Number(d.cap) || 0,
           prayerNearby: d.prayer, halalCatering: d.halal, requiresApproval: d.requiresApproval,
           prayerSlotNote: d.prayerNote || undefined,
@@ -1132,7 +1375,22 @@ export function HostEventScreen() {
           donationEnabled: isCharity && d.donation,
         }),
       });
-    } catch { /* graceful — still show success */ }
+      const j = await res.json().catch(() => ({}));
+      // Treat "backend not configured" (simulated) as success — demo mode.
+      if (!res.ok && !j?.simulated) {
+        toast(
+          res.status === 401
+            ? "Please sign in to host an event — your details are kept on this page."
+            : "Couldn't submit your event — please try again. Your details are kept on this page.",
+        );
+        setSubmitting(false);
+        return;
+      }
+    } catch {
+      toast("Network error — please try again. Your details are kept on this page.");
+      setSubmitting(false);
+      return;
+    }
     setSubmitting(false);
     navigate("success", { type: "event-listing" });
   };
@@ -1316,6 +1574,22 @@ export function HostEventScreen() {
                     <select className="select" value={d.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)}>
                       {REFUND_POLICIES.map((r) => <option key={r.id || "none"} value={r.id}>{r.label}</option>)}
                     </select>
+                  </div>
+                  <div className="field">
+                    <label>Booking fee (5% + S$0.50/ticket)</label>
+                    <div className="evt-segment lg">
+                      <button className={d.feeMode === "pass" ? "on" : ""} onClick={() => set("feeMode", "pass")}>
+                        Buyer pays it
+                      </button>
+                      <button className={d.feeMode === "absorb" ? "on" : ""} onClick={() => set("feeMode", "absorb")}>
+                        I absorb it
+                      </button>
+                    </div>
+                    <span className="hint">
+                      {d.feeMode === "absorb"
+                        ? "Buyers see your ticket price only — the fee comes out of your payout."
+                        : "The fee is added at checkout — you receive your full ticket price."}
+                    </span>
                   </div>
                 </>
               )}

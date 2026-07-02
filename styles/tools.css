@@ -31,7 +31,7 @@
    ============================================================ */
 .tasbih { max-width: 460px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 .tasbih-dhikr { text-align: center; }
-.tasbih-arabic { font-size: 2.1rem; line-height: 1.4; color: var(--emerald); }
+.tasbih-arabic { font-family: var(--font-quran), "Amiri", "Scheherazade New", serif; font-size: 2.1rem; line-height: 1.5; color: var(--emerald); }
 .tasbih-translit { font-family: var(--serif); font-weight: 600; font-size: 1.15rem; margin-top: 4px; }
 .tasbih-meaning { font-size: .9rem; margin-top: 2px; }
 .tasbih-presets { justify-content: center; flex-wrap: nowrap; }
@@ -270,13 +270,13 @@
   display: grid; place-items: center; font-weight: 700; font-size: .82rem;
 }
 .quran-surah-name { flex: 1; font-family: var(--serif); font-weight: 600; min-width: 0; }
-.quran-surah-ar { font-size: 1.3rem; color: var(--emerald); }
+.quran-surah-ar { font-family: var(--font-quran), "Amiri", "Scheherazade New", serif; font-size: 1.4rem; color: var(--emerald); }
 
 /* Reader */
 .quran-reader { display: flex; flex-direction: column; gap: 12px; }
 .quran-ayah { padding: 18px 20px; }
 .quran-ayah-num { font-size: .78rem; font-weight: 700; color: var(--gold-700); margin-bottom: 8px; }
-.quran-ayah-ar { font-size: 1.9rem; line-height: 2.2; color: var(--ink); text-align: right; }
+.quran-ayah-ar { font-family: var(--font-quran), "Amiri", "Scheherazade New", serif; font-size: 2rem; line-height: 1.95; color: var(--ink); text-align: right; }
 .quran-ayah-en { margin-top: 10px; color: var(--ink-soft); line-height: 1.6; }
 .quran-ayah:target { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-100); }
 
@@ -310,7 +310,7 @@
    ============================================================ */
 .hadith-feature { padding: 22px; display: flex; flex-direction: column; gap: 10px; border-color: var(--gold-100); }
 .hadith-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; }
-.hadith-arabic { font-size: 1.5rem; line-height: 2; text-align: right; color: var(--ink); }
+.hadith-arabic { font-family: var(--font-quran), "Amiri", "Scheherazade New", serif; font-size: 1.6rem; line-height: 1.9; text-align: right; color: var(--ink); }
 .hadith-text { font-family: var(--serif); font-size: 1.08rem; line-height: 1.55; }
 .hadith-feature .hadith-text { font-size: 1.2rem; }
 

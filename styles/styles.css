@@ -146,6 +146,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .hh-topnav nav a.active { color: var(--emerald); }
 .hh-topnav nav a.active::after { content:''; position:absolute; left:0; right:0; bottom:-2px; height:2px; background:var(--gold); border-radius:2px; }
 .hh-topnav .spacer { flex: 1; }
+/* 861–1120px: logo + 8 nav links + lang/login/CTA overflow .hh-wrap by ~30px
+   at 1024 (page-level horizontal scroll). Tighten gaps + type in this band. */
+@media (min-width: 861px) and (max-width: 1120px) {
+  .hh-topnav .inner { gap: 12px; }
+  .hh-topnav nav { gap: 13px; margin-left: 2px; }
+  .hh-topnav nav a { font-size: .88rem; }
+  .hh-topnav .inner .flex.g10 { gap: 6px; }
+}
 
 /* ---- Logo ---- */
 .hh-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
@@ -703,6 +711,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 }
 .hh-pin-wrap:hover .hh-pin { transform: rotate(-45deg) scale(1.12); }
 .hh-pin-active { background: var(--gold); width: 28px; height: 28px; z-index: 5; }
+/* Cluster badge: one circle with a count instead of N overlapping teardrops. */
+.hh-cluster {
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--emerald); color: #fff; font-weight: 800; font-size: .82rem;
+  border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(15,110,86,.25), 0 2px 8px rgba(31,41,51,.35);
+  cursor: pointer; transition: transform .12s;
+}
+.hh-pin-wrap:hover .hh-cluster { transform: scale(1.08); }
 /* Mosque markers: round gold badge with a dark centre — distinct from eatery teardrops. */
 .hh-mosque-pin {
   display: block; width: 22px; height: 22px; border-radius: 50%;

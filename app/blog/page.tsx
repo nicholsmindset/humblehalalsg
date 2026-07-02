@@ -19,6 +19,9 @@ export const metadata: Metadata = pageMeta({
     "Guides to eating halal in Singapore — what halal means, how MUIS certification works, the best halal restaurants and buffets, and more from the Humble Halal team.",
   path: "/blog",
   image: featured.image,
+  // Title already carries the brand — without this, the root "%s | Humble
+  // Halal" template double-branded it past the ~60-char SERP limit.
+  absoluteTitle: true,
 });
 
 function fmtDate(iso: string) {
@@ -96,14 +99,16 @@ export default function Page() {
           </div>
 
           {/* Latest posts */}
-          <div className="blog-section" style={{ marginTop: 8 }}>
-            <h2 className="blog-hub-heading">Latest guides</h2>
-            <div className="blog-grid">
-              {rest.map((p) => (
-                <BlogCard key={p.slug} post={p} headingLevel="h3" />
-              ))}
+          {rest.length > 0 && (
+            <div className="blog-section" style={{ marginTop: 8 }}>
+              <h2 className="blog-hub-heading">Latest guides</h2>
+              <div className="blog-grid">
+                {rest.map((p) => (
+                  <BlogCard key={p.slug} post={p} headingLevel="h3" />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Newsletter */}
           <div className="blog-inline-cta">

@@ -20,7 +20,16 @@ const addDaysISO = (base: Date, days: number) => {
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) return NextResponse.json({ ok: true, skipped: "not_configured" });
+  if (!stripe || !secret) {
+    // In production a missing secret is a misconfiguration, not a no-op: a 200
+    // here would make Stripe mark every paid event delivered and never retry
+    // (silent permanent loss). 503 keeps deliveries pending until it's fixed —
+    // same fail-closed posture as the Clerk and LiteAPI webhooks.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });
+    }
+    return NextResponse.json({ ok: true, skipped: "not_configured" });
+  }
 
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
@@ -87,10 +96,19 @@ export async function POST(req: Request) {
           const qty = Math.max(1, parseInt(m.qty || "1", 10));
           const subtotal = parseInt(m.subtotalCents || "0", 10);
           const fee = parseInt(m.feeCents || "0", 10);
+          // Organiser's transfer amount. netCents is authoritative (fee-mode +
+          // promo aware); sessions created before that metadata existed carry
+          // only subtotalCents, whose old semantics WERE the organiser net.
+          const net = m.netCents != null && m.netCents !== "" ? parseInt(m.netCents, 10) : subtotal;
           const total = s.amount_total ?? subtotal + fee;
           const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
           const buyerEmail = s.customer_details?.email || null;
           const connected = m.connectedAccount || null;
+          const discount = parseInt(m.discountCents || "0", 10) || 0;
+          let utm: unknown = null;
+          try {
+            utm = m.utm ? JSON.parse(m.utm) : null;
+          } catch { /* malformed attribution never blocks fulfillment */ }
 
           // Resolve the DB event (for the FK + payout date). Mock-only events have
           // no row yet → store a null event_id and a +1d fallback payout date.
@@ -104,15 +122,30 @@ export async function POST(req: Request) {
             buyer_name: m.buyer || null,
             amount_cents: total,
             fee_cents: fee,
-            net_cents: subtotal,
+            net_cents: net,
             currency: s.currency || "sgd",
             qty,
             stripe_payment_intent: pi,
             status: "confirmed",
             connected_account_id: connected,
-            payout_status: connected && subtotal > 0 ? "pending" : "none",
+            payout_status: connected && net > 0 ? "pending" : "none",
             payout_due: payoutDue,
+            fee_mode: m.feeMode === "absorb" ? "absorb" : "pass",
+            promo_code_id: m.promoCodeId || null,
+            discount_cents: discount,
+            ref_code: m.refCode || null,
+            session_id: m.sessionId || null,
+            utm,
           }).select("id").single();
+
+          // Count the redemption once the money is actually confirmed (accepting
+          // the tiny max_redemptions oversell window vs. reserving at session
+          // creation, which would need a TTL-release cron).
+          if (ord?.id && m.promoCodeId) {
+            try {
+              await supa.rpc("redeem_promo", { p_id: m.promoCodeId });
+            } catch { /* best-effort counter — never blocks fulfillment */ }
+          }
 
           if (ord?.id) {
             const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: dbEvent?.id ?? null, tier: m.tier || null, qr_ref: randomUUID() }));
@@ -196,7 +229,11 @@ export async function POST(req: Request) {
         const businessId = sub.metadata?.business_id || undefined;
         const plan = sub.metadata?.plan || null;
         const active = sub.status === "active" || sub.status === "trialing";
-        const cpe = (sub as unknown as { current_period_end?: number }).current_period_end;
+        // Basil API (stripe v22+): current_period_end lives on the subscription
+        // ITEMS; the top-level field only exists on older pinned API versions.
+        const cpe =
+          sub.items?.data?.[0]?.current_period_end ??
+          (sub as unknown as { current_period_end?: number }).current_period_end;
         if (supa && businessId) {
           await supa.from("subscriptions").upsert({
             business_id: businessId,

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import Supercluster from "supercluster";
 import "leaflet/dist/leaflet.css";
 import type { LatLng } from "@/lib/types";
 
@@ -87,6 +88,112 @@ function ClickToPick({ onPick }: { onPick: (c: LatLng) => void }) {
   return null;
 }
 
+/* Scroll-wheel zoom only AFTER the user clicks into the map, released when the
+   pointer leaves — an embedded map (explore preview) otherwise hijacks page
+   scrolling the moment the cursor passes over it. */
+function WheelGuard() {
+  const map = useMap();
+  useEffect(() => {
+    map.scrollWheelZoom.disable();
+    const el = map.getContainer();
+    const enable = () => map.scrollWheelZoom.enable();
+    const disable = () => map.scrollWheelZoom.disable();
+    el.addEventListener("click", enable);
+    el.addEventListener("focusin", enable);
+    el.addEventListener("mouseleave", disable);
+    return () => {
+      el.removeEventListener("click", enable);
+      el.removeEventListener("focusin", enable);
+      el.removeEventListener("mouseleave", disable);
+    };
+  }, [map]);
+  return null;
+}
+
+/* Deterministically spread points that share EXACT coordinates (mall tenants
+   geocoded from one postal code) in a small ring so they stay separable once
+   zoomed past cluster level. ~11m radius per ring step. */
+function spreadStacked(points: MapPoint[]): MapPoint[] {
+  const byCoord = new Map<string, number>();
+  return points.map((p) => {
+    const key = `${p.coords.lat.toFixed(6)},${p.coords.lng.toFixed(6)}`;
+    const n = byCoord.get(key) ?? 0;
+    byCoord.set(key, n + 1);
+    if (n === 0) return p;
+    const angle = n * 2.399963; // golden angle — even ring coverage
+    const r = 0.0001 * (1 + Math.floor(n / 8));
+    return { ...p, coords: { lat: p.coords.lat + r * Math.sin(angle), lng: p.coords.lng + r * Math.cos(angle) } };
+  });
+}
+
+type ClusterProps = { point?: MapPoint };
+
+/* Supercluster layer for listing pins — 300+ individual markers (each with a
+   mounted popup) made the map slow and unreadable; clusters render one badge
+   with a count and zoom in on tap. Mosque/user pins stay individual. */
+function ClusterLayer({ points, renderPoint }: { points: MapPoint[]; renderPoint: (p: MapPoint) => React.ReactNode }) {
+  const map = useMap();
+  const spread = useMemo(() => spreadStacked(points), [points]);
+  const index = useMemo(() => {
+    const sc = new Supercluster<ClusterProps, ClusterProps>({ radius: 60, maxZoom: 16 });
+    sc.load(spread.map((p) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [p.coords.lng, p.coords.lat] },
+      properties: { point: p },
+    })));
+    return sc;
+  }, [spread]);
+
+  const [view, setView] = useState<{ bounds: [number, number, number, number]; zoom: number } | null>(null);
+  useEffect(() => {
+    const update = () => {
+      const b = map.getBounds();
+      setView({ bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], zoom: map.getZoom() });
+    };
+    update();
+    map.on("moveend", update);
+    map.on("zoomend", update);
+    return () => { map.off("moveend", update); map.off("zoomend", update); };
+  }, [map]);
+
+  const clusters = view ? index.getClusters(view.bounds, Math.round(view.zoom)) : [];
+  return (
+    <>
+      {clusters.map((c) => {
+        const [lng, lat] = c.geometry.coordinates;
+        if (c.properties && "cluster" in c.properties && (c.properties as { cluster?: boolean }).cluster) {
+          const count = (c.properties as { point_count: number }).point_count;
+          const size = count >= 100 ? 44 : count >= 25 ? 38 : 32;
+          const icon = L.divIcon({
+            className: "hh-pin-wrap",
+            html: `<span class="hh-cluster" style="width:${size}px;height:${size}px">${count}</span>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          });
+          const clusterId = c.id as number;
+          return (
+            <Marker
+              key={`cluster-${clusterId}`}
+              position={[lat, lng]}
+              icon={icon}
+              keyboard
+              title={`${count} places — zoom in`}
+              eventHandlers={{
+                click: () => {
+                  const z = Math.min(index.getClusterExpansionZoom(clusterId), 18);
+                  map.flyTo([lat, lng], z, { duration: 0.4 });
+                },
+              }}
+            />
+          );
+        }
+        const p = (c.properties as ClusterProps).point!;
+        return renderPoint(p);
+      })}
+    </>
+  );
+}
+
 export default function LeafletMap({
   center,
   zoom = 13,
@@ -108,11 +215,52 @@ export default function LeafletMap({
   /** Frame all markers (used on the results map when nothing is selected). */
   fit?: boolean;
 }) {
+  const renderPoint = (p: MapPoint) => {
+    // Build handlers WITHOUT undefined values (passing dragend:undefined
+    // makes Leaflet log "wrong listener type" for every marker).
+    const handlers: L.LeafletEventHandlerFnMap = { click: () => onSelect?.(p.id) };
+    if (onPick) {
+      handlers.dragend = (e) => {
+        const ll = (e.target as L.Marker).getLatLng();
+        onPick({ lat: ll.lat, lng: ll.lng });
+      };
+    }
+    return (
+      <Marker
+        key={p.id}
+        position={[p.coords.lat, p.coords.lng]}
+        icon={pinIcon(p)}
+        draggable={!!onPick}
+        eventHandlers={handlers}
+        keyboard
+        title={p.name}
+      >
+        {p.kind !== "user" && !onPick && (
+          <Popup>
+            <div style={{ minWidth: 150 }}>
+              <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
+              {p.kind === "mosque" ? (
+                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
+              ) : (
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>
+              )}
+            </div>
+          </Popup>
+        )}
+      </Marker>
+    );
+  };
+
+  // Listing pins cluster (the directory has 300+); mosque/user/active pins and
+  // the location-picker pin always render individually.
+  const clusterable = onPick ? [] : points.filter((p) => (p.kind ?? "listing") === "listing" && !p.active);
+  const individual = onPick ? points : points.filter((p) => (p.kind ?? "listing") !== "listing" || p.active);
+
   return (
     <MapContainer
       center={[center.lat, center.lng]}
       zoom={zoom}
-      scrollWheelZoom
+      scrollWheelZoom={false}
       style={{ width: "100%", height: "100%" }}
       aria-label="Map of halal places in Singapore"
     >
@@ -122,42 +270,10 @@ export default function LeafletMap({
       />
       <FitOrCenter center={center} zoom={zoom} points={points} fit={fit} />
       <AutoSize />
+      <WheelGuard />
       {onPick && <ClickToPick onPick={onPick} />}
-      {points.map((p) => {
-        // Build handlers WITHOUT undefined values (passing dragend:undefined
-        // makes Leaflet log "wrong listener type" for every marker).
-        const handlers: L.LeafletEventHandlerFnMap = { click: () => onSelect?.(p.id) };
-        if (onPick) {
-          handlers.dragend = (e) => {
-            const ll = (e.target as L.Marker).getLatLng();
-            onPick({ lat: ll.lat, lng: ll.lng });
-          };
-        }
-        return (
-          <Marker
-            key={p.id}
-            position={[p.coords.lat, p.coords.lng]}
-            icon={pinIcon(p)}
-            draggable={!!onPick}
-            eventHandlers={handlers}
-            keyboard
-            title={p.name}
-          >
-            {p.kind !== "user" && !onPick && (
-              <Popup>
-                <div style={{ minWidth: 150 }}>
-                  <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
-                  {p.kind === "mosque" ? (
-                    <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
-                  ) : (
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>
-                  )}
-                </div>
-              </Popup>
-            )}
-          </Marker>
-        );
-      })}
+      {clusterable.length > 0 && <ClusterLayer points={clusterable} renderPoint={renderPoint} />}
+      {individual.map(renderPoint)}
     </MapContainer>
   );
 }

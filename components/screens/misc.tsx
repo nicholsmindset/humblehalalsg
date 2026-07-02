@@ -3,7 +3,6 @@
 /* Humble Halal — Misc screens: Auth, User dashboard, Suggest, Claim, Report, Trust, SEO, States
    (ported from screens-misc.jsx). */
 import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { HHData } from "@/lib/data";
 import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
@@ -268,7 +267,7 @@ export function LoginScreen() {
    USER DASHBOARD
 ============================================================= */
 export function UserDashboardScreen() {
-  const { navigate, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
+  const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
   const { signOut } = useClerk();
   const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -279,7 +278,9 @@ export function UserDashboardScreen() {
     setUser({ loggedIn: false, role: "user", name: "Guest" });
     navigate("home");
   };
-  const [tab, setTab] = useState("saved");
+  // Deep-linkable tab (email CTAs use /dashboard?tab=tickets).
+  const TAB_IDS = ["saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
+  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : "saved");
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
   const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
@@ -904,8 +905,9 @@ export function SeoScreen() {
   const isCategoryPage = !!page.catId && !page.areaId;
   const isFood = !page.catId || page.catId === "restaurants" || page.catId === "cafes";
   const content = categoryContent(page.catId);
-  const filtered = seoListings(page, dir.listings);
-  const results = (filtered.length ? filtered : dir.listings).slice(0, isCategoryPage ? 9 : 6);
+  // No whole-directory fallback: a page with zero real matches renders its
+  // honest "No places yet — suggest one" state instead of unrelated listings.
+  const results = seoListings(page, dir.listings).slice(0, isCategoryPage ? 9 : 6);
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";
@@ -982,7 +984,7 @@ export function SeoScreen() {
             <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free guide</span>
             <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>Get the Ultimate Halal Food Guide by MRT</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              New {noun} {placeLabel} land in our weekly newsletter first. Subscribe and we&apos;ll email you
+              Be first to hear about new {noun} {placeLabel} in our weekly newsletter. Subscribe and we&apos;ll email you
               the free guide — MUIS-verified spots sorted by MRT station.
             </p>
             <div style={{ marginTop: 14 }}>
@@ -1085,7 +1087,12 @@ function TicketQR({ value, size = 96 }: { value: string; size?: number }) {
   const [url, setUrl] = useState("");
   useEffect(() => {
     let alive = true;
-    QRCode.toDataURL(value, { margin: 1, width: size * 2, errorCorrectionLevel: "M" })
+    // qrcode (~90KB) is dynamically imported so it never lands in the shared
+    // bundle — only fetched when a ticket QR actually renders.
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(value, { margin: 1, width: size * 2, errorCorrectionLevel: "M" }),
+      )
       .then((u) => { if (alive) setUrl(u); })
       .catch(() => {});
     return () => { alive = false; };

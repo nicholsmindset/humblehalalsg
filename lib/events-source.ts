@@ -8,9 +8,17 @@
    time/date labels, venue, organiser, blurb, tags, priceFrom, tiers) live in the
    `events.display` jsonb (migration 0014) and are merged here. */
 import "server-only";
+import { cache } from "react";
 import type { EventItem, EventTier, GenderArrangement, LatLng } from "./types";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
+
+/** Today's date (YYYY-MM-DD) in Singapore time — events are local to SG, the
+ *  server runs UTC, so a plain `new Date().toISOString()` would flip the day
+ *  up to 8 hours early. en-CA gives the ISO date format directly. */
+export function todaySG(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+}
 
 type Row = Record<string, unknown>;
 const str = (v: unknown, d = "") => (v == null ? d : String(v));
@@ -68,12 +76,16 @@ export function rowToEvent(r: Row): EventItem {
     donationRaisedCents: d.donationRaisedCents != null ? num(d.donationRaisedCents) : undefined,
     refundPolicy: d.refundPolicy ? str(d.refundPolicy) : undefined,
     requiresApproval: bool(d.requiresApproval),
+    feeMode: d.feeMode === "absorb" ? "absorb" : undefined,
   };
 }
 
-/** Published events from Supabase, or an empty array (clean empty state, never
- *  fabricated events) when Supabase is unconfigured or has no published rows. */
-export async function getEvents(): Promise<EventItem[]> {
+/** Published UPCOMING events from Supabase (an event stays listed through its
+ *  own day in Singapore time), or an empty array (clean empty state, never
+ *  fabricated events) when Supabase is unconfigured or has no published rows.
+ *  React-cache'd so layout + generateMetadata + page share one query per
+ *  request (was 3 identical Supabase round-trips). */
+export const getEvents = cache(async (): Promise<EventItem[]> => {
   if (!supabaseConfigured) return [];
   const db = getSupabaseAdmin();
   if (!db) return [];
@@ -82,10 +94,16 @@ export async function getEvents(): Promise<EventItem[]> {
       .from("events")
       .select("*")
       .eq("status", "published")
+      .gte("date_iso", todaySG())
       .order("date_iso", { ascending: true });
-    if (data && data.length) return data.map(rowToEvent);
+    if (data && data.length) {
+      // Never surface seed/demo events publicly (e.g. the "…(Demo)" iftar seeded
+      // by /api/admin/seed-demo). Real events replace these before launch.
+      const isDemo = (e: EventItem) => /\(demo\)|\bdemo\b/i.test(e.title) || /\bdemo\b/i.test(e.organiser || "");
+      return data.map(rowToEvent).filter((e) => !isDemo(e));
+    }
   } catch {
     /* fall back to empty */
   }
   return [];
-}
+});

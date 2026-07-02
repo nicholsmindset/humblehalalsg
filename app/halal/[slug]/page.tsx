@@ -29,12 +29,16 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const p = getSeoPage(slug);
   const all = p ? await getDirectory() : [];
+  const matched = p ? seoListings(p, all) : [];
   return (
     <>
       {p && (
         <JsonLd
           data={[
-            itemListJsonLd(seoListings(p, all), p.h1),
+            // ItemList only when there are REAL matches — an empty (or
+            // formerly whole-directory) list asserted unrelated businesses
+            // belonged to this venue/area.
+            ...(matched.length ? [itemListJsonLd(matched, p.h1)] : []),
             breadcrumbJsonLd([
               { name: "Home", path: "/" },
               { name: "Explore", path: "/explore" },
