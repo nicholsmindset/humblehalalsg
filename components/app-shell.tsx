@@ -37,7 +37,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isChromeless && <BottomNav />}
       {!isChromeless && !isMapFull && <Footer />}
       <Toast msg={toastMsg} />
-      {state.hydrated && !state.prefs.onboarded && <Onboarding />}
+      {/* Onboarding is a blocking modal — only show it on the home page so it
+          never covers a task page (e.g. /travel/flights) a user lands on directly. */}
+      {state.hydrated && !state.prefs.onboarded && screen === "home" && <Onboarding />}
       {state.hydrated && state.prefs.onboarded && !isChromeless && <NewsletterPopup />}
       <HHTweaks />
     </div>

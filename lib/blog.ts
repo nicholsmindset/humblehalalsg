@@ -796,11 +796,19 @@ const META: Record<string, BlogMeta> = {
   "muslim-owned-businesses-singapore": { category: "community-business", image: bimg("1604719312566-8912e9227c6a"), imageAlt: "A small Muslim-owned business storefront" },
 };
 
-export const posts: BlogPost[] = rawPosts.map((p) => {
+const builtPosts: BlogPost[] = rawPosts.map((p) => {
   const m = META[p.slug];
   if (!m) throw new Error(`blog: missing category/image meta for "${p.slug}" — add it to META in lib/blog.ts`);
   return { ...p, ...m };
 });
+
+// Only these slugs render publicly. The remaining posts are placeholders and
+// will be published (add the slug here) once real content is written, before
+// the site opens to the public. This gates the hub, post pages, category counts,
+// related posts, sitemap and static params in one place.
+const PUBLISHED_SLUGS = new Set<string>(["what-is-halal-singapore"]);
+
+export const posts: BlogPost[] = builtPosts.filter((p) => PUBLISHED_SLUGS.has(p.slug));
 
 const BY_SLUG = new Map(posts.map((p) => [p.slug, p]));
 
