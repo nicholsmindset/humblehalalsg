@@ -7,13 +7,16 @@
    enforced server-side. Sends only changed fields; "" clears a field.
 ============================================================= */
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { DAY_LABELS } from "@/lib/hours";
-import { Icon, ImagePh } from "../ui";
+import { galleryMax } from "@/lib/plans";
+import { Icon } from "../ui";
+import { PhotoManager, type ManagedPhoto } from "./photo-manager";
 
 type EditableSocials = { whatsapp?: string; instagram?: string; [k: string]: string | undefined };
 type OwnerListing = {
   id: string;
+  plan?: string | null;
   phone?: string | null;
   website?: string | null;
   address?: string | null;
@@ -48,12 +51,11 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
   // any extra keys already on the `socials` jsonb object).
   const [orig, setOrig] = useState<OwnerListing | null>(null);
 
-  // Photos: jsonb array of { url, caption? }. We track just the url list in
-  // the editor; captions on existing photos are preserved on save.
-  const MAX_PHOTOS = 6;
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  // Photos: jsonb array of { url, caption? }, managed (cover/order/captions)
+  // by PhotoManager. Cap follows the plan (lib/plans galleryMax: 3/15/20/30).
+  const [plan, setPlan] = useState<string>("free");
+  const [photos, setPhotos] = useState<ManagedPhoto[]>([]);
+  const maxPhotos = galleryMax(plan);
 
   useEffect(() => {
     let alive = true;
@@ -87,8 +89,14 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
           if (d && d.open && d.close) return { closed: false, open: d.open, close: d.close };
           return { ...EMPTY_DAY };
         }));
+        setPlan(b.plan || "free");
         const ph = Array.isArray(b.photos) ? b.photos : [];
-        setPhotos(ph.map((p) => p?.url).filter((u): u is string => typeof u === "string" && !!u).slice(0, MAX_PHOTOS));
+        setPhotos(
+          ph
+            .filter((p): p is { url: string; caption?: string } => !!p && typeof p.url === "string" && !!p.url)
+            .map((p) => (p.caption ? { url: p.url, caption: p.caption } : { url: p.url }))
+            .slice(0, galleryMax(b.plan || "free")),
+        );
         setLoading(false);
       } catch {
         if (alive) { setLoadError("Couldn’t load this listing — try again."); setLoading(false); }
@@ -121,50 +129,15 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
     return true;
   };
 
-  // Real photo upload — mirrors AddListingScreen: one request per file to the
-  // generic authed image endpoint. Skips files that fail; caps at MAX_PHOTOS.
-  const onPhotosPicked = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = ""; // allow re-selecting the same file later
-    if (!files.length) return;
-    setUploading(true);
-    try {
-      for (const file of files) {
-        let full = false;
-        setPhotos((cur) => { full = cur.length >= MAX_PHOTOS; return cur; });
-        if (full) { toast(`You can add up to ${MAX_PHOTOS} photos`); break; }
-        try {
-          const fd = new FormData();
-          fd.set("file", file);
-          const res = await fetch("/api/events/upload", { method: "POST", body: fd });
-          const json = await res.json().catch(() => ({ ok: false }));
-          if (json?.ok && json.url) {
-            setPhotos((cur) => (cur.length >= MAX_PHOTOS ? cur : [...cur, json.url as string]));
-          } else {
-            const msg: Record<string, string> = {
-              unauthenticated: "Please sign in to upload photos.",
-              not_configured: "Photo uploads aren’t available yet.",
-              too_large: `${file.name} is too large (max 5MB).`,
-              bad_type: `${file.name} isn’t a supported image.`,
-            };
-            toast(msg[json?.reason] || `Couldn’t upload ${file.name}.`);
-          }
-        } catch {
-          toast(`Couldn’t upload ${file.name}.`);
-        }
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-  const removePhoto = (idx: number) => setPhotos((cur) => cur.filter((_, i) => i !== idx));
-
-  // Did the photo url list change from what we loaded?
+  // Did the photo list (urls, order or captions) change from what we loaded?
   const photosChanged = (): boolean => {
     const was = (Array.isArray(orig?.photos) ? orig!.photos : [])
-      .map((p) => p?.url).filter((u): u is string => typeof u === "string" && !!u);
+      .filter((p): p is { url: string; caption?: string } => !!p && typeof p.url === "string" && !!p.url);
     if (was.length !== photos.length) return true;
-    for (let i = 0; i < photos.length; i++) if (photos[i] !== was[i]) return true;
+    for (let i = 0; i < photos.length; i++) {
+      if (photos[i].url !== was[i].url) return true;
+      if ((photos[i].caption || "") !== (was[i].caption || "")) return true;
+    }
     return false;
   };
 
@@ -211,13 +184,9 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
     const hours = buildHours();
     if (!sameHours(hours, orig.opening_hours)) patch.opening_hours = hours;
 
-    // Photos: preserve captions on existing urls; new uploads carry url only.
+    // Photos: PhotoManager owns urls, order AND captions — send as-is.
     if (photosChanged()) {
-      const prev = (Array.isArray(orig.photos) ? orig.photos : []).filter((p): p is { url?: string; caption?: string } => !!p);
-      patch.photos = photos.map((url) => {
-        const existing = prev.find((p) => p.url === url);
-        return existing?.caption ? { url, caption: existing.caption } : { url };
-      });
+      patch.photos = photos.map((p) => (p.caption ? { url: p.url, caption: p.caption } : { url: p.url }));
     }
 
     if (Object.keys(patch).length <= 1) { toast("No changes to save"); onClose(); return; }
@@ -297,22 +266,8 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
 
           <div className="field">
             <label>Photos</label>
-            <p className="faint" style={{ fontSize: ".8rem", marginBottom: 8 }}>Cover photo, interior, and a few signature dishes work best. Up to {MAX_PHOTOS}.</p>
-            <input ref={photoInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPhotosPicked} />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 10 }}>
-              {photos.length < MAX_PHOTOS && (
-                <button type="button" className="upload-zone" style={{ aspectRatio: "1", minHeight: 96 }} disabled={uploading} onClick={() => photoInputRef.current?.click()}>
-                  <Icon name="camera" size={22} /><span style={{ fontSize: ".76rem", fontWeight: 700, marginTop: 6 }}>{uploading ? "Uploading…" : "Add photo"}</span>
-                </button>
-              )}
-              {photos.map((url, i) => (
-                <div key={url} style={{ position: "relative" }}>
-                  <ImagePh label={`photo ${i + 1}`} tone="gold" ratio="1" src={url} />
-                  <button type="button" aria-label={`Remove photo ${i + 1}`} onClick={() => removePhoto(i)} style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,.6)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="x" size={15} /></button>
-                </div>
-              ))}
-            </div>
-            <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>{photos.length} of {MAX_PHOTOS} photos added.</p>
+            <p className="faint" style={{ fontSize: ".8rem", marginBottom: 8 }}>Cover photo, interior, and a few signature dishes work best. Captions help customers (and search) know what they&rsquo;re looking at.</p>
+            <PhotoManager photos={photos} onChange={setPhotos} max={maxPhotos} plan={plan} businessId={id} toast={toast} />
           </div>
 
           <div className="field">

@@ -229,6 +229,7 @@
 .lightbox-nav.prev { left:14px; } .lightbox-nav.next { right:14px; }
 .lightbox-nav:hover, .lightbox-close:hover { background:rgba(255,255,255,.26); }
 .lightbox-count { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); color:#fff; font-size:.86rem; font-weight:600; background:rgba(0,0,0,.4); padding:4px 12px; border-radius:999px; }
+.lightbox-cap { position:absolute; bottom:52px; left:50%; transform:translateX(-50%); max-width:min(80vw, 560px); text-align:center; color:#fff; font-size:.9rem; background:rgba(0,0,0,.45); padding:6px 14px; border-radius:10px; }
 .tag-link { cursor:pointer; transition:background .14s; }
 .tag-link:hover { background:var(--emerald-50,#e9f6f0); }
 
@@ -295,6 +296,16 @@
 .audit-row { display:flex; gap:14px; align-items:flex-start; padding:13px 0; border-bottom:1px solid var(--line); }
 .audit-row:last-child { border-bottom:none; }
 .audit-dot { width:9px; height:9px; border-radius:50%; background:var(--emerald); margin-top:5px; flex:none; box-shadow:0 0 0 3px var(--emerald-50); }
+
+/* =========================== OWNER PHOTO MANAGER =========================== */
+.photo-mgr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
+.photo-mgr-card { border:1px solid var(--line); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:8px; background:var(--white); }
+.photo-mgr-img { position:relative; border-radius:8px; overflow:hidden; }
+.photo-mgr-cover { position:absolute; top:6px; left:6px; display:inline-flex; align-items:center; gap:4px; background:var(--gold); color:#3D2D0D; font-size:.7rem; font-weight:800; padding:3px 8px; border-radius:999px; z-index:1; }
+.photo-mgr-cap { font-size:.82rem; min-height:38px; }
+.photo-mgr-actions { display:flex; align-items:center; gap:2px; flex-wrap:wrap; }
+.photo-mgr-actions .btn { min-height:36px; padding:6px 8px; }
+.photo-mgr-add { aspect-ratio:4/3; min-height:130px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 
 /* =========================== FOOTER =========================== */
 .hh-footer { background: var(--emerald-700); color: #CFE0DA; margin-top: 8px; }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { revalidatePublic } from "@/lib/revalidate";
+import { galleryMax } from "@/lib/plans";
 
 /* Owner self-service listing editor. GET returns the editable fields for a
    business the caller owns; PATCH updates a whitelist of fields. Ownership is
@@ -15,7 +16,8 @@ const EDITABLE = ["phone", "website", "address", "postal", "description", "price
 
 // Coerce an incoming `photos` value into the jsonb shape rowToListing reads:
 // an array of { url, caption? } with string urls. Anything malformed is dropped.
-function sanitizePhotos(v: unknown): { url: string; caption?: string }[] {
+// `max` is the caller's plan gallery limit (lib/plans galleryMax: 3/15/20/30).
+function sanitizePhotos(v: unknown, max: number): { url: string; caption?: string }[] {
   if (!Array.isArray(v)) return [];
   const out: { url: string; caption?: string }[] = [];
   for (const p of v) {
@@ -24,15 +26,15 @@ function sanitizePhotos(v: unknown): { url: string; caption?: string }[] {
     if (typeof url !== "string" || !url.trim()) continue;
     const caption = (p as { caption?: unknown }).caption;
     const entry: { url: string; caption?: string } = { url: url.trim() };
-    if (typeof caption === "string" && caption.trim()) entry.caption = caption.trim();
+    if (typeof caption === "string" && caption.trim()) entry.caption = caption.trim().slice(0, 120);
     out.push(entry);
   }
-  return out.slice(0, 6); // cap defensively; UI also caps at 6
+  return out.slice(0, Math.max(1, max));
 }
 
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 async function ownership(db: Db, id: string, userId: string) {
-  const { data } = await db.from("businesses").select("id, slug, owner_id, claimed_by").eq("id", id).maybeSingle();
+  const { data } = await db.from("businesses").select("id, slug, owner_id, claimed_by, plan").eq("id", id).maybeSingle();
   if (!data) return { row: null as null, owns: false };
   return { row: data, owns: data.owner_id === userId || data.claimed_by === userId };
 }
@@ -50,7 +52,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await db
     .from("businesses")
-    .select("id, slug, name, area, phone, website, address, postal, description, price_level, opening_hours, socials, photos")
+    .select("id, slug, name, area, cat_id, plan, phone, website, address, postal, description, price_level, opening_hours, socials, photos, attributes")
     .eq("id", id)
     .single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -72,7 +74,7 @@ export async function PATCH(req: Request) {
   const patch: Record<string, unknown> = {};
   for (const k of EDITABLE) {
     if (!(k in body)) continue;
-    if (k === "photos") { patch.photos = sanitizePhotos(body.photos); continue; }
+    if (k === "photos") { patch.photos = sanitizePhotos(body.photos, galleryMax(row.plan)); continue; }
     patch[k] = body[k] === "" ? null : body[k];
   }
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, error: "no_fields" }, { status: 400 });

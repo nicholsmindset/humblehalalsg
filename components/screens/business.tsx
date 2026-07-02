@@ -223,8 +223,9 @@ export function AddListingScreen() {
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Real photo upload — one request per file to /api/events/upload (authed,
-  // rate-limited generic image upload). Skips files that fail; caps at 6.
+  // Real photo upload — one request per file to /api/owner/photos (authed,
+  // rate-limited; business-photos bucket). Skips files that fail; caps at 6 —
+  // the plan-based gallery cap applies once the listing is approved + owned.
   const MAX_PHOTOS = 6;
   const onPhotosPicked = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -240,7 +241,7 @@ export function AddListingScreen() {
         try {
           const fd = new FormData();
           fd.set("file", file);
-          const res = await fetch("/api/events/upload", { method: "POST", body: fd });
+          const res = await fetch("/api/owner/photos", { method: "POST", body: fd });
           const json = await res.json().catch(() => ({ ok: false }));
           if (json?.ok && json.url) {
             setData((d) => {
