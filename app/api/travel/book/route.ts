@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       // Promo voucher applied at prebook (sanitized like the validate route).
       const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 32) || null;
       const discountAmount = voucherCode ? toMoney(body.discountAmount) : null;
-      const { data: bk } = await db
+      const { data: bk, error: insErr } = await db
         .from("hotel_bookings")
         .insert({
           user_id: userId,
@@ -105,6 +105,13 @@ export async function POST(req: Request) {
         })
         .select("id")
         .single();
+      // Unique violation (23505) = this LiteAPI booking is already recorded — a
+      // double submit / replay of the same prebook+transaction (book() itself is
+      // idempotent upstream). Ack without a duplicate commission row or a
+      // duplicate confirmation email.
+      if (insErr?.code === "23505") {
+        return NextResponse.json({ ok: true, bookingId: result.bookingId, confirmationCode: result.hotelConfirmationCode, duplicate: true });
+      }
       if (bk?.id && commission != null) {
         await db.from("hotel_commissions").insert({
           booking_id: bk.id,

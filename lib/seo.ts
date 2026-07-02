@@ -28,6 +28,9 @@ interface PageMetaInput {
   /** When true, bypass the "%s | Humble Halal" template to keep a precise,
       keyword-first <title> (used for programmatic/SEO pages). */
   absoluteTitle?: boolean;
+  /** Blog posts / articles: emits og:type=article + article:published_time /
+      modified_time / section so scrapers classify the page correctly. */
+  article?: { publishedTime?: string; modifiedTime?: string; section?: string };
 }
 
 /** Build per-page Metadata with canonical + Open Graph + Twitter in one line. */
@@ -38,6 +41,7 @@ export function pageMeta({
   image,
   index = true,
   absoluteTitle = false,
+  article,
 }: PageMetaInput): Metadata {
   // Absolute canonical/OG URL (robust even if metadataBase is ever absent).
   const canonical = new URL(path, SITE.url).toString();
@@ -54,13 +58,20 @@ export function pageMeta({
     alternates: { canonical },
     robots: index ? undefined : { index: false, follow: false },
     openGraph: {
-      type: "website",
       siteName: SITE.name,
       title,
       description,
       url: canonical,
       locale: SITE.locale,
       images,
+      ...(article
+        ? {
+            type: "article" as const,
+            publishedTime: article.publishedTime,
+            modifiedTime: article.modifiedTime || article.publishedTime,
+            section: article.section,
+          }
+        : { type: "website" as const }),
     },
     twitter: {
       card: "summary_large_image",

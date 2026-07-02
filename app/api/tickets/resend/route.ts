@@ -3,13 +3,17 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { ticketResendEmail } from "@/lib/emails/templates";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Resend the signed-in user's tickets to their own email — each as a link to
    its /tickets/[id] page (which renders the scannable QR). Eventbrite-style
    "email me my tickets". Auth-scoped to the caller's own orders; only `valid`
    tickets are sent. Graceful (simulated) without Supabase/Resend configured. */
 
-export async function POST() {
+export async function POST(req: Request) {
+  // Each call sends a real email — cap per IP so a signed-in user can't loop it
+  // into Resend-quota burn.
+  const rl = await rateLimit(req, "ticket-resend", 5, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const { userId } = await auth();
   const cu = await currentUser();
   const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";

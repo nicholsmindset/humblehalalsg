@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useSession } from "@clerk/nextjs";
 import { createClient } from "@supabase/supabase-js";
 
@@ -27,13 +27,25 @@ export function getSupabaseBrowser() {
  *  dashboard). Returns null in mock mode. Must be called inside ClerkProvider. */
 export function useSupabaseBrowser() {
   const { session } = useSession();
+  // Latest-session ref: Clerk hands out a NEW session object on every token
+  // refresh. Keying the memo on that identity recreated the client every few
+  // minutes, which re-fired every downstream fetch effect — and a refetch that
+  // raced the rotation could run as `anon` and fail RLS (the intermittent
+  // "Failed to load analytics" banner). Key on the stable session id instead
+  // and read the live session through the ref.
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const sessionId = session?.id ?? null;
   return useMemo(() => {
     if (!url || !anon) return null;
     return createClient(url, anon, {
       ...NO_GOTRUE,
       async accessToken() {
-        return session ? await session.getToken() : null;
+        return sessionRef.current ? await sessionRef.current.getToken() : null;
       },
     });
-  }, [session]);
+    // Recreate only when the session IDENTITY changes (sign-in/out), never on
+    // token refresh — sessionRef supplies the live token either way.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 }

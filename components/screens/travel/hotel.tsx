@@ -243,8 +243,25 @@ function RoomGroupCard({ group, hotel, bookingEnabled }: { group: RoomGroup; hot
 
 /* ── hotel detail screen ─────────────────────────────────────────────────── */
 
+const SAVED_HOTELS_KEY = "hh_saved_hotels";
+
 export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, mosques, halalFood, prayer, sentiment, qibla, bookingEnabled }: { hotel: Hotel; images: string[]; offers: RateOffer[]; roomGroups: RoomGroup[]; reviews: HotelReview[]; mosques: NearPlace[]; halalFood: NearPlace[]; prayer: PrayerTimesResult | null; sentiment: HotelSentiment | null; qibla: number | null; bookingEnabled: boolean }) {
+  // Persisted per-device (the button used to be pure useState — "Saved" was a
+  // lie the moment the page reloaded).
   const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    try { setSaved((JSON.parse(localStorage.getItem(SAVED_HOTELS_KEY) || "[]") as string[]).includes(hotel.id)); } catch { /* private mode */ }
+  }, [hotel.id]);
+  const toggleSaved = () => {
+    setSaved((s) => {
+      const next = !s;
+      try {
+        const cur = JSON.parse(localStorage.getItem(SAVED_HOTELS_KEY) || "[]") as string[];
+        localStorage.setItem(SAVED_HOTELS_KEY, JSON.stringify(next ? [...new Set([...cur, hotel.id])] : cur.filter((id) => id !== hotel.id)));
+      } catch { /* private mode */ }
+      return next;
+    });
+  };
   const flags = activeFlagLabels(hotel.flags);
   const allOptionPrices = roomGroups.flatMap((g) => g.options).filter((o) => o.price != null);
   const cheapestOpt = allOptionPrices.sort((a, b) => a.price! - b.price!)[0];
@@ -293,7 +310,7 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
               {hotel.coords ? <> · <a href="#location" className="link">Show map</a></> : null}
             </div>
           </div>
-          <button type="button" className={`hotel-save ${saved ? "on" : ""}`} aria-pressed={saved} onClick={() => setSaved((s) => !s)}>
+          <button type="button" className={`hotel-save ${saved ? "on" : ""}`} aria-pressed={saved} onClick={toggleSaved}>
             <Icon name="heart" size={16} /> {saved ? "Saved" : "Save"}
           </button>
         </div>

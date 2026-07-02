@@ -57,8 +57,10 @@ export async function POST(req: Request) {
     const email = primary?.email_address ?? null;
     const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || null;
     if (evt.type === "user.created") {
-      // New user → provision profile with the default role.
-      await admin.from("profiles").upsert({ id: d.id, email, name, role: "user" }, { onConflict: "id" });
+      // New user → provision profile with the default role. ignoreDuplicates so
+      // a replayed/redelivered user.created can never overwrite an existing row
+      // (it would reset a promoted admin's role back to 'user').
+      await admin.from("profiles").upsert({ id: d.id, email, name, role: "user" }, { onConflict: "id", ignoreDuplicates: true });
     } else {
       // Existing user → refresh contact fields only; never touch role.
       await admin.from("profiles").update({ email, name }).eq("id", d.id);

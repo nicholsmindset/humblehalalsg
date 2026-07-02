@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { todaySG } from "@/lib/events-source";
 import { sendEmail } from "@/lib/email";
 import { rsvpConfirmationEmail } from "@/lib/emails/templates";
 
@@ -50,6 +51,12 @@ export async function POST(req: Request) {
   if (!row) {
     if (!mockEv) return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
     return NextResponse.json({ ok: true, simulated: true, ref });
+  }
+
+  // Past events can't be RSVP'd (listing filters them out, but a direct POST or
+  // stale tab could still hit this). Compared in Singapore time.
+  if (row.date_iso && String(row.date_iso) < todaySG()) {
+    return NextResponse.json({ ok: false, reason: "event_over" }, { status: 409 });
   }
 
   // Capacity gate (capacity 0 = unlimited). Final race bounded by the atomic RPC.
