@@ -81,6 +81,12 @@ export type LeadAction =
 
 const SESSION_KEY = "hh_sid";
 
+/** The analytics session id, for callers that need to correlate a server-side
+ *  record with this browser session (e.g. orders.session_id → funnel joins). */
+export function getSessionId(): string | null {
+  return sessionId();
+}
+
 /** Stable per-browser-session id (sessionStorage). Null during SSR. */
 function sessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -206,6 +212,13 @@ export const track = {
     const eventId = newEventId();
     dl({ event: "lead_submit", lead_type: leadType, ...extra, event_id: eventId });
     postServerEvent("lead_submit", eventId, { user_data: userData, custom_data: { lead_type: leadType, ...extra } });
+  },
+  // Buyer opened the checkout for an event — the middle step of the organiser
+  // funnel (event page_view → checkout_start → purchase). Persisted first-party
+  // (0042 admits the event_type) and mirrored as GA4's begin_checkout.
+  checkoutStart(itemId: string, itemName?: string, value?: number) {
+    emit({ p_event_type: "checkout_start", p_listing_slug: itemId });
+    dl({ event: "begin_checkout", item_id: itemId, item_name: itemName, value, currency: "SGD" });
   },
   eventRsvp(itemId: string, itemName: string, quantity: number, email?: string) {
     const eventId = newEventId();

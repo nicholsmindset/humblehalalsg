@@ -11,6 +11,7 @@ export interface Flags {
   paidPlans: boolean;
   paidHotels: boolean;
   paidFlights: boolean;
+  payNow: boolean;
   certVault: boolean;
   semanticSearch: boolean;
   aiConcierge: boolean;
@@ -26,6 +27,10 @@ export function getServerFlags(): Flags {
     paidPlans: truthy(process.env.PAID_PLANS_ENABLED),
     paidHotels: truthy(process.env.PAID_HOTELS_ENABLED),
     paidFlights: truthy(process.env.PAID_FLIGHTS_ENABLED),
+    // PayNow at ticket checkout (SGD, one-time payments only). Requires PayNow
+    // activated on the Stripe account first — the checkout route retries
+    // card-only if Stripe rejects the method, so flipping this early is safe.
+    payNow: truthy(process.env.PAYNOW_ENABLED),
     // Halal Certificate Vault — owner upload + admin review. Default OFF for a
     // flag-gated pilot before GA. Not a payment route; gates the feature surface.
     certVault: truthy(process.env.CERT_VAULT_ENABLED),
@@ -38,4 +43,4 @@ export function getServerFlags(): Flags {
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, certVault: false, semanticSearch: false, aiConcierge: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false };

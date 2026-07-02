@@ -76,6 +76,7 @@ export function rowToEvent(r: Row): EventItem {
     donationRaisedCents: d.donationRaisedCents != null ? num(d.donationRaisedCents) : undefined,
     refundPolicy: d.refundPolicy ? str(d.refundPolicy) : undefined,
     requiresApproval: bool(d.requiresApproval),
+    feeMode: d.feeMode === "absorb" ? "absorb" : undefined,
   };
 }
 

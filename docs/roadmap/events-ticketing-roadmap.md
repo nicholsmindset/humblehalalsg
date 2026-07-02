@@ -4,6 +4,14 @@
 
 **Status:** drafted 2026-06-27. Benchmarked via competitive research (Eventbrite organizer + attendee feature set, 2025–2026). Quick wins marked **[QW]**, bigger builds **[BB]**.
 
+> **2026-07-02 update:** this roadmap is now extended by the implementation-ready
+> **[Events Marketplace Blueprint](events-marketplace-blueprint.md)** — full IA/sitemap,
+> schema DDL (promo codes, attribution, add-ons, questions, waitlists, verified reviews),
+> fee-mode + PayNow money flows, organizer analytics design, marketing prompt templates,
+> and the phased build plan. Phase 1 (promo codes, pass/absorb fees, PayNow flag, event
+> SEO pages, similar events, attribution + Marketing tab) is being built on branch
+> `feat/events-marketplace`.
+
 ---
 
 ## 1. Where we stand today (current state)

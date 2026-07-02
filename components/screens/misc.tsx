@@ -263,7 +263,7 @@ export function LoginScreen() {
    USER DASHBOARD
 ============================================================= */
 export function UserDashboardScreen() {
-  const { navigate, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
+  const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
   const { signOut } = useClerk();
   const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -274,7 +274,9 @@ export function UserDashboardScreen() {
     setUser({ loggedIn: false, role: "user", name: "Guest" });
     navigate("home");
   };
-  const [tab, setTab] = useState("saved");
+  // Deep-linkable tab (email CTAs use /dashboard?tab=tickets).
+  const TAB_IDS = ["saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
+  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : "saved");
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
   const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];

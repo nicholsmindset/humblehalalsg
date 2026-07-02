@@ -329,6 +329,22 @@ export function faqJsonLd(items: { q: string; a: string }[]) {
   };
 }
 
+/** ItemList of event pages — used by the /events/c/* and /events/in/* hubs. */
+export function eventItemListJsonLd(events: EventItem[], name: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: events.length,
+    itemListElement: events.map((e, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE.url}/events/${e.slug}`,
+      name: e.title,
+    })),
+  };
+}
+
 export function itemListJsonLd(listings: Listing[], name: string) {
   return {
     "@context": "https://schema.org",

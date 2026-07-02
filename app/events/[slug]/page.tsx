@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EventDetailScreen } from "@/components/screens/events";
+import { SimilarEvents } from "@/components/events/similar-events";
 import { getEvents } from "@/lib/events-source";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getServerFlags } from "@/lib/flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
@@ -34,12 +37,35 @@ export async function generateMetadata({
   });
 }
 
+/** True when the organiser business holds a current, admin-approved halal cert
+ *  (Cert Vault). The badge only ever reflects a verified record — never
+ *  self-declared — and the whole surface stays behind CERT_VAULT_ENABLED. */
+async function organiserCertVerified(businessId: string | null): Promise<boolean> {
+  if (!businessId || !getServerFlags().certVault) return false;
+  const supa = getSupabaseAdmin();
+  if (!supa) return false;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { count } = await supa
+      .from("halal_certs")
+      .select("id", { count: "exact", head: true })
+      .eq("business_id", businessId)
+      .eq("status", "approved")
+      .gte("expires_on", today);
+    return (count ?? 0) > 0;
+  } catch {
+    return false; // badge is best-effort — absence is the safe default
+  }
+}
+
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   // Match slug OR id: event cards link via id (screenToPath) while events carry
   // a slug — matching both prevents direct-load / refresh / crawler 404s.
-  const e = (await getEvents()).find((x) => x.slug === slug || x.id === slug);
+  const events = await getEvents();
+  const e = events.find((x) => x.slug === slug || x.id === slug);
   if (!e) notFound(); // missing/unpublished event → clean 404 (never renders the screen without data)
+  const certVerified = await organiserCertVerified(e.organiserId);
   return (
     <>
       <JsonLd
@@ -52,7 +78,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           ]),
         ]}
       />
-      <EventDetailScreen />
+      <EventDetailScreen certVerified={certVerified} />
+      <SimilarEvents anchor={e} pool={events} />
     </>
   );
 }

@@ -94,7 +94,7 @@ export function rsvpConfirmationEmail(o: { name?: string | null; eventTitle: str
     greet(o.name) +
       p(`You're confirmed for <strong>${esc(o.eventTitle)}</strong>.`) +
       p(`${o.dateLabel ? `📅 ${esc(o.dateLabel)}<br>` : ""}${o.venue ? `📍 ${esc(o.venue)}<br>` : ""}${o.ref ? `Reference: <strong>${esc(o.ref)}</strong>` : ""}`),
-    { label: "View your ticket", url: `${U}/travel/trips` },
+    { label: "View your ticket", url: `${U}/dashboard?tab=tickets` },
     `Can't make it? You can release your spot from your tickets.`,
   );
 }
@@ -104,7 +104,7 @@ export function ticketConfirmationEmail(o: { eventTitle: string; qty?: number; r
     "Your tickets are confirmed",
     p(`Thank you for your booking. Your ${o.qty && o.qty > 1 ? `${o.qty} tickets are` : "ticket is"} confirmed for <strong>${esc(o.eventTitle)}</strong>.`) +
       p(`${o.ref ? `Reference: <strong>${esc(o.ref)}</strong><br>` : ""}Show the QR code from your tickets at the door.`),
-    { label: "Open my tickets", url: `${U}/travel/trips` },
+    { label: "Open my tickets", url: `${U}/dashboard?tab=tickets` },
   );
 }
 export function eventApprovedEmail(o: { name?: string | null; eventTitle: string; slug?: string }): Out {
@@ -292,7 +292,7 @@ export function eventReminderEmail(o: { name?: string | null; eventTitle: string
     greet(o.name) +
       p(`Just a reminder that <strong>${esc(o.eventTitle)}</strong> is happening soon.`) +
       p(`${o.dateLabel ? `📅 ${esc(o.dateLabel)}<br>` : ""}${o.venue ? `📍 ${esc(o.venue)}` : ""}`),
-    { label: "View your ticket", url: `${U}/travel/trips` },
+    { label: "View your ticket", url: `${U}/dashboard?tab=tickets` },
   );
 }
 export function joinApprovedEmail(o: { name?: string | null; eventTitle: string }): Out {
@@ -301,7 +301,7 @@ export function joinApprovedEmail(o: { name?: string | null; eventTitle: string 
     "Your request was approved",
     greet(o.name) +
       p(`Great news — your request to join <strong>${esc(o.eventTitle)}</strong> has been approved. Your ticket is ready.`),
-    { label: "Open my tickets", url: `${U}/travel/trips` },
+    { label: "Open my tickets", url: `${U}/dashboard?tab=tickets` },
   );
 }
 export function joinDeclinedEmail(o: { name?: string | null; eventTitle: string }): Out {
@@ -331,7 +331,7 @@ export function ticketResendEmail(o: { tickets: { title: string; ref: string }[]
     "Here are your tickets",
     p(`As requested, here are your tickets — open them to show the QR code at the door.`) +
       `<table role="presentation" width="100%" style="border-top:1px solid #e7e1d5;margin:8px 0;">${rows}</table>`,
-    { label: "Open my tickets", url: `${U}/travel/trips` },
+    { label: "Open my tickets", url: `${U}/dashboard?tab=tickets` },
   );
 }
 
