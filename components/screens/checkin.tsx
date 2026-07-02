@@ -102,7 +102,7 @@ export function CheckinScanner({ slug }: { slug: string }) {
 
   return (
     <div className="screen-in hh-page">
-      <MobileHeader title="Door check-in" onBack={() => navigate("event-detail", { slug })} />
+      <MobileHeader title="Door check-in" onBack={() => navigate("event-detail", { id: slug })} />
       <div className="hh-wrap" style={{ maxWidth: 560, paddingTop: 16 }}>
         <div className="flex between center">
           <h1 style={{ fontSize: "1.5rem" }}>Check in attendees</h1>
