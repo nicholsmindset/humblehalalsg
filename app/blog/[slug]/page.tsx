@@ -29,12 +29,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const p = getPost(slug);
-  if (!p) return pageMeta({ title: "Blog", path: `/blog/${slug}` });
+  // Unknown slug → noindex (matches the category route); the page body 404s.
+  if (!p) return pageMeta({ title: "Blog", path: `/blog/${slug}`, index: false });
   return pageMeta({
     title: p.title,
     description: p.dek.length > 155 ? p.dek.slice(0, 152) + "…" : p.dek,
     path: `/blog/${p.slug}`,
     image: p.image,
+    article: {
+      publishedTime: p.datePublished,
+      modifiedTime: p.dateModified,
+      section: getCategory(p.category)?.title,
+    },
   });
 }
 

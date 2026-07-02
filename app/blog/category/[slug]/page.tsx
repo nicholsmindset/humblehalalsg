@@ -68,11 +68,19 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         </section>
 
         <div className="hh-wrap hh-section">
-          <div className="blog-grid">
-            {posts.map((p, i) => (
-              <BlogCard key={p.slug} post={p} headingLevel="h2" priority={i === 0} />
-            ))}
-          </div>
+          {posts.length === 0 ? (
+            <div className="card" style={{ padding: 32, textAlign: "center" }}>
+              <h2 style={{ fontSize: "1.15rem" }}>No guides in this category yet</h2>
+              <p className="muted" style={{ marginTop: 8 }}>We&apos;re writing more — browse everything on the blog in the meantime.</p>
+              <a className="btn btn-primary" style={{ marginTop: 14, display: "inline-flex" }} href="/blog">All guides &amp; stories</a>
+            </div>
+          ) : (
+            <div className="blog-grid">
+              {posts.map((p, i) => (
+                <BlogCard key={p.slug} post={p} headingLevel="h2" priority={i === 0} />
+              ))}
+            </div>
+          )}
 
           <div className="blog-inline-cta">
             <SponsoredSlot placement="blog_inline" />
