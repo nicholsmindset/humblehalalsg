@@ -172,3 +172,13 @@
 @media (min-width:861px){ .detail-stickybar { display:none; } }
 .detail-stickybar .btn { flex:1; }
 @media (max-width:860px){ .detail-screen.hh-page { padding-bottom: calc(var(--tab-h) + 80px); } }
+
+/* ===================== WIZARD FOOTER (shared CTA row) =====================
+   In-flow on desktop; fixed above the bottom tab bar on mobile so Continue is
+   never below the fold. Pair with .has-wizard-footer on the scrolling page. */
+.wizard-footer { display:flex; gap:10px; margin-top:18px; }
+@media (max-width:860px){
+  .wizard-footer { position:fixed; left:0; right:0; bottom:var(--tab-h); z-index:55; margin:0; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow:0 -6px 20px rgba(31,41,51,.07); }
+  .wizard-footer .btn { flex:1; min-height:48px; }
+  .has-wizard-footer { padding-bottom: calc(var(--tab-h) + 84px); }
+}

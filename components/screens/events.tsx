@@ -21,7 +21,7 @@ import { track, getSessionId } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
-import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
+import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead, WizardSteps } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { Newsletter } from "../newsletter";
 import { EventSeoLinks } from "../events/seo-links";
@@ -1407,17 +1407,7 @@ export function HostEventScreen() {
             Step {step + 1} of {steps.length} — {steps[step]}
           </p>
         </div>
-        <div className="steps wizard-steps">
-          {steps.map((s, i) => (
-            <Fragment key={s}>
-              <div className={`step ${i < step ? "done" : ""} ${i === step ? "active" : ""}`}>
-                <span className="num">{i < step ? <Icon name="check" size={15} /> : i + 1}</span>
-                <span className="lbl hide-mob">{s}</span>
-              </div>
-              {i < steps.length - 1 && <span className={`bar ${i < step ? "done" : ""}`} />}
-            </Fragment>
-          ))}
-        </div>
+        <WizardSteps steps={steps} step={step} />
 
         <div className="card wizard-body">
           {step === 0 && (

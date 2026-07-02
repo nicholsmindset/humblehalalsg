@@ -3,13 +3,13 @@
 Admin-controlled ads: **direct sponsors** (owner-booked, brand-safe) + **Google AdSense**
 fill for unsold inventory. Direct always wins a slot; AdSense backfills; an empty or
 toggled-off slot collapses with no layout shift. Built on migration `0023_ads.sql`,
-extended by `0040_ads_adsense.sql`.
+extended by `0043_ads_adsense.sql`.
 
 ## Architecture at a glance
 
 | Piece | File |
 |---|---|
-| Schema | `supabase/migrations/0023_ads.sql`, `supabase/migrations/0040_ads_adsense.sql` |
+| Schema | `supabase/migrations/0023_ads.sql`, `supabase/migrations/0043_ads_adsense.sql` |
 | Serving component | `components/ads/ad-slot.tsx` (`<AdSlot slot="…" />`) |
 | AdSense loader + unit | `components/ads/adsense.tsx` |
 | Back-compat shim | `components/sponsored-slot.tsx` → delegates to `<AdSlot>` |
@@ -23,7 +23,7 @@ extended by `0040_ads_adsense.sql`.
 
 ## Go-live checklist
 
-1. **Apply the migration.** `supabase db push` (or run `0040_ads_adsense.sql`). It adds
+1. **Apply the migration.** `supabase db push` (or run `0043_ads_adsense.sql`). It adds
    the per-slot serving config + the review gate and seeds two live slots
    (`blog_article_top`, `directory_hub`) plus four inactive future slots. Existing
    campaigns are grandfathered to `review_status='approved'` so nothing goes dark.
