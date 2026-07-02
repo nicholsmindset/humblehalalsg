@@ -19,7 +19,7 @@ const STATS: [string, string][] = [
 /* `product` maps to the server-trusted price map in /api/checkout/promo.
    Sponsored Content is bespoke (no fixed price) → contact instead of checkout. */
 const FORMATS: { icon: string; name: string; desc: string; price: string; product?: string }[] = [
-  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map.", price: "from $89/mo", product: "featured-listing" },
+  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map — our Featured plan.", price: "from $49/mo", product: "featured-listing" },
   { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: "from $450/mo", product: "homepage-spotlight" },
   { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: "from $300/mo", product: "category-sponsorship" },
   { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: "from $250/send", product: "newsletter-sponsorship" },

@@ -83,7 +83,12 @@ export async function getEvents(): Promise<EventItem[]> {
       .select("*")
       .eq("status", "published")
       .order("date_iso", { ascending: true });
-    if (data && data.length) return data.map(rowToEvent);
+    if (data && data.length) {
+      // Never surface seed/demo events publicly (e.g. the "…(Demo)" iftar seeded
+      // by /api/admin/seed-demo). Real events replace these before launch.
+      const isDemo = (e: EventItem) => /\(demo\)|\bdemo\b/i.test(e.title) || /\bdemo\b/i.test(e.organiser || "");
+      return data.map(rowToEvent).filter((e) => !isDemo(e));
+    }
   } catch {
     /* fall back to empty */
   }
