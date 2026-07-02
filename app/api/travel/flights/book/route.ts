@@ -13,6 +13,19 @@ import { flightBookingEmail } from "@/lib/emails/templates";
    and a retry job re-calls the idempotent book endpoint. Gated + graceful. */
 const CONFIRMED = new Set(["CONFIRMED", "TICKETED"]);
 
+/* Sanitize client-reported ledger money (same guards as the hotel book route,
+   security audit M3): reject negatives, absurd amounts and injected currencies
+   before they pollute the flight_bookings ledger. */
+const MONEY_MAX = 1_000_000; // sane per-booking ceiling
+const toMoney = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= MONEY_MAX ? n : null;
+};
+const toCurrency = (v: unknown): string | null => {
+  const c = String(v ?? "").toUpperCase();
+  return /^[A-Z]{3}$/.test(c) ? c : null;
+};
+
 /* Inline fast-path retry. bookFlight is idempotent, so re-calling it resolves the
    common transient case (provider not yet confirmed) WITHIN the request — the
    customer almost never lands in 'confirming'. This keeps flights safe on Vercel
@@ -63,7 +76,9 @@ export async function POST(req: Request) {
   let rowId: string | null = null;
   if (db) {
     try {
-      const { data } = await db
+      const total = toMoney(body.total);
+      const commission = toMoney(body.commissionAmount);
+      const { data, error: insErr } = await db
         .from("flight_bookings")
         .insert({
           user_id: userId,
@@ -78,15 +93,34 @@ export async function POST(req: Request) {
           passengers: Array.isArray(body.passengers) ? body.passengers.slice(0, 9) : [], // L3 cap
 
           contact_email: body.contactEmail ?? null,
-          currency: body.currency ?? null,
-          total: body.total != null ? Number(body.total) : null,
-          commission_amount: body.commissionAmount != null ? Number(body.commissionAmount) : null,
+          currency: toCurrency(body.currency),
+          total,
+          // Commission can never exceed the total — drop tampered values.
+          commission_amount: commission != null && total != null && commission > total ? null : commission,
           status,
           payment_status: outcome.booking?.paymentStatus ?? null,
           last_error: status === "confirming" && outcome.errorCode ? `${outcome.errorCode}: ${outcome.errorMessage || ""}` : null,
         })
         .select("id")
         .single();
+      // Unique violation (23505) = this prebook is already recorded — a double
+      // submit / replay (bookFlight is idempotent upstream). Return the existing
+      // booking and skip the duplicate confirmation email.
+      if (insErr?.code === "23505") {
+        const { data: existing } = await db
+          .from("flight_bookings")
+          .select("id, status, booking_ref, pnr")
+          .eq("prebook_id", prebookId)
+          .maybeSingle();
+        return NextResponse.json({
+          ok: true,
+          status: existing?.status ?? status,
+          id: existing?.id ?? null,
+          bookingRef: existing?.booking_ref ?? outcome.booking?.bookingRef ?? null,
+          pnr: existing?.pnr ?? outcome.booking?.pnr ?? null,
+          duplicate: true,
+        });
+      }
       rowId = data?.id ?? null;
     } catch { /* ledger best-effort */ }
   }

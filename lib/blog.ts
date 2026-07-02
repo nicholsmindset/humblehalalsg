@@ -823,7 +823,8 @@ export function getPost(slug: string): BlogPost | undefined {
 export function relatedPosts(post: BlogPost, limit = 3): BlogPost[] {
   const picked = (post.related || []).map((s) => BY_SLUG.get(s)).filter(Boolean) as BlogPost[];
   if (picked.length >= limit) return picked.slice(0, limit);
-  const rest = posts.filter((p) => p.slug !== post.slug && !picked.includes(p));
+  // Pad the shortfall with the NEWEST posts, not raw authored-array order.
+  const rest = allPosts().filter((p) => p.slug !== post.slug && !picked.includes(p));
   return [...picked, ...rest].slice(0, limit);
 }
 

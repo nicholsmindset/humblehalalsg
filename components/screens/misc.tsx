@@ -898,8 +898,9 @@ export function SeoScreen() {
   const isCategoryPage = !!page.catId && !page.areaId;
   const isFood = !page.catId || page.catId === "restaurants" || page.catId === "cafes";
   const content = categoryContent(page.catId);
-  const filtered = seoListings(page, dir.listings);
-  const results = (filtered.length ? filtered : dir.listings).slice(0, isCategoryPage ? 9 : 6);
+  // No whole-directory fallback: a page with zero real matches renders its
+  // honest "No places yet — suggest one" state instead of unrelated listings.
+  const results = seoListings(page, dir.listings).slice(0, isCategoryPage ? 9 : 6);
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";

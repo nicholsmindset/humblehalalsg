@@ -19,6 +19,9 @@ export const metadata: Metadata = pageMeta({
     "Guides to eating halal in Singapore — what halal means, how MUIS certification works, the best halal restaurants and buffets, and more from the Humble Halal team.",
   path: "/blog",
   image: featured.image,
+  // Title already carries the brand — without this, the root "%s | Humble
+  // Halal" template double-branded it past the ~60-char SERP limit.
+  absoluteTitle: true,
 });
 
 function fmtDate(iso: string) {

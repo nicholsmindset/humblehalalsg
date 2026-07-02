@@ -4,6 +4,7 @@ import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { SITE } from "@/lib/seo";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Listing-plan subscription checkout (Humble Halal is the seller — no Connect).
    Price IDs come from env so they can be swapped per environment. Links the
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
   if (!getServerFlags().paidPlans) {
     return NextResponse.json({ ok: false, reason: "paid_plans_disabled" }, { status: 403 });
   }
+  // Stripe-session factory — rate-limit like /api/donate.
+  const rl = await rateLimit(req, "checkout-plan", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
@@ -27,34 +30,42 @@ export async function POST(req: Request) {
   if (!price) return NextResponse.json({ ok: false, reason: "price_not_configured" });
 
   // Link the signed-in owner's business + Stripe customer so fulfillment + the
-  // billing portal work. Falls back to an anonymous checkout if unauthenticated.
+  // billing portal work. A checkout WITHOUT a resolved business must never be
+  // created: the webhook skips fulfillment on an empty business_id and the
+  // billing portal can't find the customer, so the buyer would pay a recurring
+  // subscription for nothing with no way to self-cancel. Fail closed instead.
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "not_signed_in" }, { status: 401 });
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
+
   let customer: string | undefined;
-  let businessId: string | undefined;
+  let businessId: string;
   try {
-    const { userId } = await auth();
-    const admin = getSupabaseAdmin();
-    if (userId && admin) {
-      const { data: biz } = await admin.from("businesses").select("id, name, stripe_customer_id").eq("owner_id", userId).maybeSingle();
-      if (biz) {
-        businessId = biz.id as string;
-        customer = (biz.stripe_customer_id as string) || undefined;
-        if (!customer) {
-          const cu = await currentUser();
-          const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
-          const created = await stripe.customers.create({ email: email || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
-          customer = created.id;
-          await admin.from("businesses").update({ stripe_customer_id: customer }).eq("id", businessId);
-        }
-      }
+    const { data: biz, error } = await admin.from("businesses").select("id, name, stripe_customer_id").eq("owner_id", userId).maybeSingle();
+    if (error) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
+    if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
+    businessId = biz.id as string;
+    customer = (biz.stripe_customer_id as string) || undefined;
+    if (!customer) {
+      const cu = await currentUser();
+      const email = cu?.primaryEmailAddress?.emailAddress ?? cu?.emailAddresses?.[0]?.emailAddress ?? "";
+      const created = await stripe.customers.create({ email: email || undefined, name: (biz.name as string) || undefined, metadata: { business_id: businessId } });
+      customer = created.id;
+      await admin.from("businesses").update({ stripe_customer_id: customer }).eq("id", businessId);
     }
-  } catch { /* fall through to anonymous checkout */ }
+  } catch {
+    // Transient Clerk/Supabase/Stripe error — refuse rather than risk an
+    // anonymous, unfulfillable subscription charge.
+    return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],
-    ...(customer ? { customer } : {}),
-    metadata: { plan: plan!, business_id: businessId || "" },
-    subscription_data: { metadata: { plan: plan!, business_id: businessId || "" } },
+    customer,
+    metadata: { plan: plan!, business_id: businessId },
+    subscription_data: { metadata: { plan: plan!, business_id: businessId } },
     success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/pricing`,
   });

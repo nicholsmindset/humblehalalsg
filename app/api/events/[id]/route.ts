@@ -50,7 +50,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { error } = await admin.from("events").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
-  revalidatePublic(["/events"]);
+  // Include the detail page — without it, edits/cancellations served stale
+  // ISR HTML until the hourly revalidate (previously: until the next deploy).
+  revalidatePublic(["/events", ...(ev.slug ? [`/events/${ev.slug}`] : [`/events/${id}`])]);
   return NextResponse.json({ ok: true });
 }
 
@@ -130,6 +132,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
   } catch { /* notifications best-effort */ }
 
-  revalidatePublic(["/events"]);
+  revalidatePublic(["/events", ...(a.ev.slug ? [`/events/${a.ev.slug}`] : [`/events/${id}`])]);
   return NextResponse.json({ ok: true, cancelled: true });
 }

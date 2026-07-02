@@ -8,6 +8,11 @@ import { getServerFlags } from "@/lib/flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
+// Hourly ISR: without it these pages were cached FOREVER — edits, sold-out
+// state and cancellations kept serving stale HTML until the next deploy.
+// Mutations also revalidate on-demand (lib/revalidate.ts).
+export const revalidate = 3600;
+
 // Real published events only (Supabase) — no mock. Empty until events are
 // published, so no fabricated event pages are generated or served.
 export async function generateStaticParams() {

@@ -111,8 +111,14 @@
 .ota-cal-nav { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--ink); cursor: pointer; }
 .ota-cal-nav:disabled { opacity: .3; cursor: default; }
 .ota-cal-months { display: flex; gap: 26px; }
-@media (max-width: 620px) { .ota-cal-months { flex-direction: column; gap: 18px; } }
 .ota-cal-month { width: 252px; }
+/* Phones: ONE month + the prev/next nav (two stacked months overflowed the
+   viewport) and ≥44px day cells per the tap-target standard. */
+@media (max-width: 620px) {
+  .ota-cal-months { flex-direction: column; gap: 18px; }
+  .ota-cal-month:nth-child(2) { display: none; }
+  .ota-cal-month { width: min(322px, calc(100vw - 56px)); }
+}
 .ota-cal-title { text-align: center; font-weight: 700; font-size: .96rem; margin-bottom: 8px; font-family: var(--serif); }
 .ota-cal-dows { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
 .ota-cal-dows span { text-align: center; font-size: .68rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; }

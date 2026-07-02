@@ -19,7 +19,16 @@ const addDaysISO = (base: Date, days: number) => {
 export async function POST(req: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) return NextResponse.json({ ok: true, skipped: "not_configured" });
+  if (!stripe || !secret) {
+    // In production a missing secret is a misconfiguration, not a no-op: a 200
+    // here would make Stripe mark every paid event delivered and never retry
+    // (silent permanent loss). 503 keeps deliveries pending until it's fixed —
+    // same fail-closed posture as the Clerk and LiteAPI webhooks.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ ok: false, error: "not_configured" }, { status: 503 });
+    }
+    return NextResponse.json({ ok: true, skipped: "not_configured" });
+  }
 
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
@@ -215,7 +224,11 @@ export async function POST(req: Request) {
         const businessId = sub.metadata?.business_id || undefined;
         const plan = sub.metadata?.plan || null;
         const active = sub.status === "active" || sub.status === "trialing";
-        const cpe = (sub as unknown as { current_period_end?: number }).current_period_end;
+        // Basil API (stripe v22+): current_period_end lives on the subscription
+        // ITEMS; the top-level field only exists on older pinned API versions.
+        const cpe =
+          sub.items?.data?.[0]?.current_period_end ??
+          (sub as unknown as { current_period_end?: number }).current_period_end;
         if (supa && businessId) {
           await supa.from("subscriptions").upsert({
             business_id: businessId,
