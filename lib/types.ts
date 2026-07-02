@@ -211,6 +211,8 @@ export interface EventItem {
   refundPolicy?: string;
   /** When true, RSVPs are join requests the organiser approves before confirming. */
   requiresApproval?: boolean;
+  /** Who pays the booking fee: buyer on top ("pass", default) or organiser ("absorb"). */
+  feeMode?: "pass" | "absorb";
 }
 
 export interface Ticket {

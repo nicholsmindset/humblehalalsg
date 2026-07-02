@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
 import { allSeoPages } from "@/lib/seo-pages";
+import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
 import { allCategories } from "@/lib/blog-categories";
@@ -73,6 +74,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const eventSeoEntries: MetadataRoute.Sitemap = allEventSeoPages().map((p) => ({
+    url: `${base}${eventSeoPath(p)}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
   const brandEntries: MetadataRoute.Sitemap = allBrands().map((b) => ({
     url: `${base}/is-halal/${b.slug}`,
     lastModified: now,
@@ -122,6 +130,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...listingEntries,
     ...eventEntries,
     ...seoEntries,
+    ...eventSeoEntries,
     ...brandEntries,
     ...blogEntries,
     ...blogCatEntries,

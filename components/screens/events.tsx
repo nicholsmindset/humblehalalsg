@@ -4,6 +4,8 @@
    (ported from screens-events.jsx). Owns the shared EventCard / EventPriceTag /
    EventDateChip / EventsStrip used by other screen modules. */
 import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { HHData, spotsLeft } from "@/lib/data";
 import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
@@ -13,12 +15,15 @@ import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
 import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
-import { computeOrder } from "@/lib/fees";
+import { computeOrder, fmtSGD } from "@/lib/fees";
+import { getEventSeoPage, eventSeoPageForArea, eventSeoPath } from "@/lib/event-seo-pages";
+import { track, getSessionId } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
 import { Empty, Icon, ImagePh, MobileHeader, SearchBar, SectionHead } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
+import { EventSeoLinks } from "../events/seo-links";
 
 /* ---------- Islamic-layer helpers ---------- */
 const GENDER_LABELS: Record<string, string> = {
@@ -526,13 +531,17 @@ export function EventsScreen() {
             </div>
           )}
         </section>
+
+        {/* SEO cluster links — every category + area landing page is reachable
+            from the hub, so crawlers (and people) can browse by intent. */}
+        <EventSeoLinks />
       </div>
     </div>
   );
 }
 
 /* ========================= EVENT DETAIL ========================= */
-export function EventDetailScreen() {
+export function EventDetailScreen({ certVerified }: { certVerified?: boolean } = {}) {
   const { navigate, params, state, toggleEventSave, toast, flags } = useApp();
   const { get, list } = useEvents();
   const dir = useDirectory();
@@ -611,6 +620,15 @@ export function EventDetailScreen() {
             )}
           </div>
           <div className="flex g8 wrap" style={{ marginTop: 10 }}>
+            {certVerified && (
+              <span
+                className="tag"
+                style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}
+                title="This organiser holds a current halal certificate, verified by our team (Cert Vault)."
+              >
+                <Icon name="shield" size={13} /> Halal-certified organiser
+              </span>
+            )}
             {season && (
               <span className="tag" style={{ background: "var(--emerald-50)", color: "var(--emerald)", fontWeight: 700 }}>
                 <Icon name="moon" size={13} /> {season.label}
@@ -663,6 +681,20 @@ export function EventDetailScreen() {
           <p style={{ marginTop: 10, color: "var(--ink-soft)", lineHeight: 1.65, fontSize: "1.02rem" }}>
             {ev.blurb} Doors open 30 minutes before start. Come early to settle in and find your seat.
           </p>
+          {(() => {
+            // Cross-links into the SEO cluster (category + area landing pages).
+            const catPage = getEventSeoPage("category", ev.catId);
+            const areaPage = eventSeoPageForArea(ev.area);
+            if (!catPage && !areaPage) return null;
+            return (
+              <p className="muted" style={{ marginTop: 12, fontSize: ".9rem" }}>
+                More:{" "}
+                {catPage && <Link href={eventSeoPath(catPage)}>{catPage.h1}</Link>}
+                {catPage && areaPage && <span> · </span>}
+                {areaPage && <Link href={eventSeoPath(areaPage)}>Halal events in {areaPage.areaName}</Link>}
+              </p>
+            );
+          })()}
 
           <div className="evt-info-grid">
             <div className="evt-info-item">
@@ -838,12 +870,66 @@ export function EventDetailScreen() {
 export function CheckoutScreen() {
   const { navigate, params, bookEvent, state, flags, toast } = useApp();
   const { get, list } = useEvents();
+  const { user: clerkUser } = useUser();
   const ev = get(String(params.id)) || list[0];
   const [tier, setTier] = useState(ev?.tiers ? 0 : -1);
   const [qty, setQty] = useState(1);
   const [name, setName] = useState(state.user.loggedIn ? state.user.name : "");
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  // Promo code: validated live for the price preview; the server re-validates
+  // and recomputes at session creation, so this can never change what's charged.
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discountCents: number } | null>(null);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+
+  // Signed-in buyers skip the typing — prefill from Clerk, never overwrite edits.
+  useEffect(() => {
+    const em = clerkUser?.primaryEmailAddress?.emailAddress;
+    if (em) setEmail((cur) => cur || em);
+    const nm = clerkUser?.fullName;
+    if (nm) setName((cur) => cur || nm);
+  }, [clerkUser]);
+
+  // Funnel middle step (event page_view → checkout_start → purchase).
+  const evKey = ev ? String(ev.slug || ev.id) : "";
+  useEffect(() => {
+    if (evKey) track.checkoutStart(evKey, ev?.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evKey]);
+
+  const validatePromo = async (code: string) => {
+    if (!ev) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    try {
+      const tierName = ev.tiers && tier >= 0 ? ev.tiers[tier].name : "Standard";
+      const r = await fetch("/api/checkout/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: ev.id, code, tier: tierName, qty }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        setPromo({ code: j.code, discountCents: j.discountCents });
+      } else {
+        setPromo(null);
+        setPromoMsg(j.message || "That code isn’t valid.");
+      }
+    } catch {
+      setPromo(null);
+      setPromoMsg("Couldn’t check the code — please try again.");
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
+  // Quantity/tier changes shift the subtotal → re-price an applied code.
+  useEffect(() => {
+    if (promo) void validatePromo(promo.code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qty, tier]);
 
   // No event in context (e.g. /checkout opened directly, or no events published yet).
   if (!ev) return (
@@ -856,9 +942,10 @@ export function CheckoutScreen() {
   // Free unless the event is priced AND paid ticketing is enabled.
   const free = ev.free || !flags.paidTickets;
   const unit = free ? 0 : ev.tiers ? ev.tiers[tier].price : ev.priceFrom;
-  const order = computeOrder(unit * 100, qty); // cents
-  const total = order.subtotalCents / 100;
-  const fee = order.feeCents / 100;
+  // Fee mode is the organiser's choice: "pass" adds the booking fee for the
+  // buyer (default); "absorb" bakes it into the organiser's share.
+  const feeMode = ev.feeMode === "absorb" ? "absorb" : "pass";
+  const order = computeOrder(unit * 100, qty, { feeMode, discountCents: free ? 0 : (promo?.discountCents ?? 0) }); // cents
   const tierName = free ? "RSVP" : ev.tiers ? ev.tiers[tier].name : "Standard";
 
   const confirm = async () => {
@@ -902,11 +989,35 @@ export function CheckoutScreen() {
       const res = await fetch("/api/checkout/ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: ev.id, tier: tierName, qty, name }),
+        body: JSON.stringify({
+          eventId: ev.id,
+          tier: tierName,
+          qty,
+          name,
+          email,
+          promo: promo?.code,
+          sessionId: getSessionId(),
+        }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return;
+      }
+      // 100%-off promo → the server issued the tickets directly, no payment step.
+      if (data.ok && data.comp) {
+        bookEvent(ev.id, tierName, qty);
+        navigate("success", { type: "payment-event", eventId: ev.id });
+        return;
+      }
+      // A rejected promo or sold-out event is a real answer, never demo-success.
+      if (typeof data.reason === "string" && data.reason.startsWith("promo_")) {
+        setPromo(null);
+        setPromoMsg("That code no longer applies — your total has been updated.");
+        return;
+      }
+      if (data.reason === "sold_out" || data.reason === "insufficient_capacity") {
+        toast(data.reason === "sold_out" ? "Sorry — this event just sold out." : `Only ${data.left} spot${data.left === 1 ? "" : "s"} left.`);
         return;
       }
       // not configured / disabled — keep the demo flowing
@@ -979,12 +1090,11 @@ export function CheckoutScreen() {
                 </div>
                 {!free && (
                   <div className="field">
-                    <label>Card details</label>
-                    <div className="card-input">
-                      <Icon name="ticket" size={16} />
-                      <input className="input" style={{ border: "none", padding: 0, boxShadow: "none" }} placeholder="4242 4242 4242 4242" />
-                    </div>
-                    <span className="hint">Secured by Stripe — you’ll complete payment on the next step.</span>
+                    <label>Payment</label>
+                    <p className="hint" style={{ display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                      <Icon name="shield" size={14} /> You’ll pay securely on Stripe’s checkout page — card
+                      {flags.payNow ? " or PayNow" : ""}. We never see your card details.
+                    </p>
                   </div>
                 )}
               </div>
@@ -1007,23 +1117,75 @@ export function CheckoutScreen() {
                   <span className="muted">
                     {tierName} × {qty}
                   </span>
-                  <span style={{ fontWeight: 600 }}>{free ? "Free" : `$${total.toFixed(2)}`}</span>
+                  <span style={{ fontWeight: 600 }}>{free ? "Free" : fmtSGD(order.subtotalCents)}</span>
                 </div>
-                {!free && (
+                {!free && order.discountCents > 0 && (
+                  <div className="flex between">
+                    <span className="muted">Promo ({promo?.code})</span>
+                    <span style={{ fontWeight: 600, color: "var(--emerald)" }}>−{fmtSGD(order.discountCents)}</span>
+                  </div>
+                )}
+                {!free && feeMode === "pass" && (
                   <div className="flex between">
                     <span className="muted">Booking fee</span>
-                    <span style={{ fontWeight: 600 }}>${fee.toFixed(2)}</span>
+                    <span style={{ fontWeight: 600 }}>{fmtSGD(order.feeCents)}</span>
+                  </div>
+                )}
+                {!free && feeMode === "absorb" && (
+                  <div className="flex between">
+                    <span className="muted">Booking fee</span>
+                    <span style={{ fontWeight: 600, color: "var(--emerald)" }}>Included</span>
+                  </div>
+                )}
+                {!free && (
+                  <div className="field" style={{ marginTop: 4 }}>
+                    <label>Promo code</label>
+                    <div className="flex g8">
+                      <input
+                        className="input"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                        placeholder="e.g. EARLYBIRD"
+                        disabled={!!promo || promoBusy}
+                        style={{ textTransform: "uppercase" }}
+                      />
+                      {promo ? (
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => {
+                            setPromo(null);
+                            setPromoInput("");
+                            setPromoMsg(null);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => void validatePromo(promoInput.trim().toUpperCase())}
+                          disabled={promoBusy || !promoInput.trim()}
+                        >
+                          {promoBusy ? "…" : "Apply"}
+                        </button>
+                      )}
+                    </div>
+                    {promoMsg && (
+                      <span className="hint" style={{ color: "var(--danger)" }}>
+                        {promoMsg}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
               <div className="flex between" style={{ paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                 <span style={{ fontWeight: 700 }}>Total</span>
                 <span style={{ fontWeight: 800, fontSize: "1.2rem", fontFamily: "var(--serif)" }}>
-                  {free ? "$0.00" : `$${(total + fee).toFixed(2)}`}
+                  {free ? "$0.00" : fmtSGD(order.totalCents)}
                 </span>
               </div>
               <button className="btn btn-primary btn-block btn-lg mt16" onClick={confirm} disabled={!name || busy}>
-                {busy ? "Redirecting…" : free ? (ev.requiresApproval ? "Request to join" : "Confirm RSVP") : `Pay $${(total + fee).toFixed(2)}`}
+                {busy ? "Redirecting…" : free ? (ev.requiresApproval ? "Request to join" : "Confirm RSVP") : `Pay ${fmtSGD(order.totalCents)}`}
               </button>
               <p className="faint tc" style={{ fontSize: ".76rem", marginTop: 10 }}>
                 {free ? "You can cancel your RSVP any time." : "Secure checkout via Stripe · refundable up to 48h before."}
@@ -1040,7 +1202,7 @@ export function CheckoutScreen() {
 interface HostForm {
   title: string; cat: string; desc: string; date: string; time: string; endTime: string;
   venue: string; area: string; lat: number | null; lng: number | null; coverUrl: string;
-  free: boolean; price: string; tierName: string; cap: string;
+  free: boolean; price: string; tierName: string; cap: string; feeMode: "pass" | "absorb";
   photos: number; prayer: boolean; halal: boolean; prayerNote: string;
   gender: "" | GenderArrangement; seating: string; refundPolicy: string; donation: boolean;
   requiresApproval: boolean;
@@ -1056,7 +1218,7 @@ export function HostEventScreen() {
   const [d, setD] = useState<HostForm>({
     title: "", cat: "", desc: "", date: "", time: "", endTime: "", venue: "", area: "",
     lat: null, lng: null, coverUrl: "",
-    free: true, price: "", tierName: "Standard", cap: "", photos: 0,
+    free: true, price: "", tierName: "Standard", cap: "", feeMode: "pass", photos: 0,
     prayer: false, halal: false, prayerNote: "", gender: "", seating: "", refundPolicy: "", donation: false,
     requiresApproval: false,
   });
@@ -1098,6 +1260,7 @@ export function HostEventScreen() {
           coverUrl: d.coverUrl || undefined,
           free: d.free, price: Number(d.price) || 0,
           tiers: !d.free ? [{ name: d.tierName || "Standard", price: Number(d.price) || 0 }] : undefined,
+          feeMode: !d.free ? d.feeMode : undefined,
           capacity: Number(d.cap) || 0,
           prayerNearby: d.prayer, halalCatering: d.halal, requiresApproval: d.requiresApproval,
           prayerSlotNote: d.prayerNote || undefined,
@@ -1290,6 +1453,22 @@ export function HostEventScreen() {
                     <select className="select" value={d.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)}>
                       {REFUND_POLICIES.map((r) => <option key={r.id || "none"} value={r.id}>{r.label}</option>)}
                     </select>
+                  </div>
+                  <div className="field">
+                    <label>Booking fee (5% + S$0.50/ticket)</label>
+                    <div className="evt-segment lg">
+                      <button className={d.feeMode === "pass" ? "on" : ""} onClick={() => set("feeMode", "pass")}>
+                        Buyer pays it
+                      </button>
+                      <button className={d.feeMode === "absorb" ? "on" : ""} onClick={() => set("feeMode", "absorb")}>
+                        I absorb it
+                      </button>
+                    </div>
+                    <span className="hint">
+                      {d.feeMode === "absorb"
+                        ? "Buyers see your ticket price only — the fee comes out of your payout."
+                        : "The fee is added at checkout — you receive your full ticket price."}
+                    </span>
                   </div>
                 </>
               )}
