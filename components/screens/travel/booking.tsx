@@ -5,7 +5,7 @@
    LiteAPI payment mount and flag gating are unchanged from the original. */
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Icon, Empty, RewardsNote, PromoCode } from "../../ui";
+import { Icon, Empty, Modal, RewardsNote, PromoCode } from "../../ui";
 import { Crumbs } from "./shared";
 import { launchLiteApiPayment } from "@/lib/liteapi-payment-client";
 import type { Prebook, TripBooking } from "./types";
@@ -256,10 +256,17 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
   const [items, setItems] = useState(bookings);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState("");
+  const [notice, setNotice] = useState("");
+  // Styled, accessible dialogs — this used to be window.confirm/prompt/alert.
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [amendId, setAmendId] = useState<string | null>(null);
+  const [amendName, setAmendName] = useState("");
+  const [amendErr, setAmendErr] = useState("");
+
   const cancel = async (id: string) => {
-    if (!window.confirm("Cancel this booking? The hotel's cancellation policy applies.")) return;
+    setCancelId(null);
     setBusy(id);
-    setErr("");
+    setErr(""); setNotice("");
     try {
       const r = await fetch("/api/travel/cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
       const d = await r.json();
@@ -270,16 +277,20 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
     }
     setBusy(null);
   };
-  const amend = async (id: string) => {
-    const name = typeof window !== "undefined" ? window.prompt("Correct the lead guest name (First Last) exactly as on their ID:") : "";
-    if (!name || !name.trim().includes(" ")) { if (name != null) setErr("Enter the full name as First Last."); return; }
-    const [firstName, ...rest] = name.trim().split(/\s+/);
-    setBusy(id); setErr("");
+  const amend = async (e: FormEvent) => {
+    e.preventDefault();
+    const id = amendId;
+    const name = amendName.trim();
+    if (!id) return;
+    if (!name.includes(" ")) { setAmendErr("Enter the full name as First Last."); return; }
+    const [firstName, ...rest] = name.split(/\s+/);
+    setAmendId(null); setAmendName(""); setAmendErr("");
+    setBusy(id); setErr(""); setNotice("");
     try {
       const r = await fetch("/api/travel/amend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, firstName, lastName: rest.join(" ") }) });
       const d = await r.json();
       if (!d.ok) setErr(d.error || "Could not update the name.");
-      else { setErr(""); if (typeof window !== "undefined") window.alert("Name updated on this booking."); }
+      else setNotice("Name updated on this booking.");
     } catch { setErr("Could not update the name."); }
     setBusy(null);
   };
@@ -295,7 +306,8 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
           <Empty icon="bed" title="No bookings yet" body="When you book a halal-friendly stay, it'll show up here." />
         ) : (
           <>
-            {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", marginBottom: 10 }}>{err}</p>}
+            {err && <p role="alert" style={{ color: "var(--danger)", fontSize: ".9rem", marginBottom: 10 }}>{err}</p>}
+            {notice && <p role="status" style={{ color: "var(--emerald)", fontSize: ".9rem", marginBottom: 10 }}>{notice}</p>}
             <div className="trip-list">
               {items.map((b) => (
                 <div key={b.id} className={`trip-card ${b.status !== "confirmed" ? "inactive" : ""}`}>
@@ -311,8 +323,8 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
                     {b.retail_total != null ? <div className="trip-total">{b.currency || ""} {Math.round(Number(b.retail_total))}</div> : null}
                     {b.status === "confirmed" && (
                       <div className="trip-actions">
-                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => amend(b.id)}>Edit name</button>
-                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => cancel(b.id)}>{busy === b.id ? "Working…" : "Cancel"}</button>
+                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => { setAmendId(b.id); setAmendName(""); setAmendErr(""); }}>Edit name</button>
+                        <button className="btn btn-ghost btn-sm" disabled={busy === b.id} onClick={() => setCancelId(b.id)}>{busy === b.id ? "Working…" : "Cancel"}</button>
                       </div>
                     )}
                   </div>
@@ -320,6 +332,33 @@ export function TravelTripsScreen({ loggedIn, bookings }: { loggedIn: boolean; b
               ))}
             </div>
           </>
+        )}
+
+        {cancelId && (
+          <Modal title="Cancel this booking?" onClose={() => setCancelId(null)}>
+            <p className="muted" style={{ fontSize: ".92rem" }}>
+              The hotel&apos;s cancellation policy applies — refundable rates are refunded to your original payment method.
+            </p>
+            <div className="flex g10" style={{ marginTop: 16, justifyContent: "flex-end" }}>
+              <button className="btn btn-soft" onClick={() => setCancelId(null)}>Keep booking</button>
+              <button className="btn btn-primary" onClick={() => cancel(cancelId)}>Cancel booking</button>
+            </div>
+          </Modal>
+        )}
+        {amendId && (
+          <Modal title="Correct the lead guest name" onClose={() => { setAmendId(null); setAmendErr(""); }}>
+            <form onSubmit={amend}>
+              <div className="field">
+                <label htmlFor="amend-name">Full name (First Last), exactly as on their ID</label>
+                <input id="amend-name" className="input" value={amendName} onChange={(e) => setAmendName(e.target.value)} placeholder="e.g. Ahmad Bin Hussain" autoFocus />
+              </div>
+              {amendErr && <p role="alert" style={{ color: "var(--danger)", fontSize: ".85rem", marginTop: 8 }}>{amendErr}</p>}
+              <div className="flex g10" style={{ marginTop: 16, justifyContent: "flex-end" }}>
+                <button type="button" className="btn btn-soft" onClick={() => { setAmendId(null); setAmendErr(""); }}>Back</button>
+                <button type="submit" className="btn btn-primary" disabled={!amendName.trim()}>Update name</button>
+              </div>
+            </form>
+          </Modal>
         )}
       </div>
     </div>
