@@ -1,0 +1,51 @@
+/* Ad slots — CLS-safe reserved boxes for <AdSlot>. Mobile-first: the base rule
+   reserves the mobile height (--ad-h-m); ≥861px (the site's desktop breakpoint)
+   swaps to the desktop height (--ad-h). A slot that renders nothing sets no class,
+   so there is no reserved space (clean empty state). */
+
+.ad-slot {
+  display: block;
+  position: relative;
+  margin: 18px 0;
+  min-height: var(--ad-h-m, 0);
+}
+@media (min-width: 861px) {
+  .ad-slot { min-height: var(--ad-h, 0); }
+}
+
+/* IAB size caps — keep units centred and never wider than their format. */
+.ad-slot.ad-leaderboard { max-width: 728px; margin-left: auto; margin-right: auto; }
+.ad-slot.ad-rectangle,
+.ad-slot.ad-halfpage    { max-width: 300px; margin-left: auto; margin-right: auto; }
+.ad-slot.ad-mobile_banner { max-width: 320px; margin-left: auto; margin-right: auto; }
+
+/* AdSense fill box */
+.ad-slot.ad-adsense {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ad-label {
+  font-size: .58rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted, #9a8f79);
+  margin-bottom: 4px;
+}
+.ad-slot.ad-adsense .adsbygoogle { display: block; width: 100%; }
+
+/* Direct-sponsor banner (image creative for IAB sizes). Fills the reserved box. */
+.ad-banner {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 14px;
+  height: var(--ad-h-m, 90px);
+}
+@media (min-width: 861px) {
+  .ad-banner { height: var(--ad-h, 90px); }
+}
+.ad-banner .sponsored-badge { z-index: 2; }
+.ad-banner:focus-visible { outline: 2px solid var(--gold-700, #8a6d2b); outline-offset: 2px; }

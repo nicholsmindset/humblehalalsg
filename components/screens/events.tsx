@@ -14,6 +14,7 @@ import { screenToPath } from "@/lib/routes";
 import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
 import { computeOrder } from "@/lib/fees";
+import { track } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
@@ -908,6 +909,7 @@ export function CheckoutScreen() {
       } catch { /* network error — keep the local ticket (offline/unconfigured) */ }
       finally { setBusy(false); }
       if (!okFlag) { toast("Couldn't reserve your spot — please try again."); return; }
+      track.eventRsvp(ev.id, ev.title, qty, email);
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "rsvp", eventId: ev.id });
       return;
@@ -926,9 +928,17 @@ export function CheckoutScreen() {
         return;
       }
       // not configured / disabled — keep the demo flowing
+      // Demo/unconfigured path only. When Stripe IS configured the user is
+      // redirected offsite, so the authoritative Purchase must fire server-side
+      // from the Stripe webhook (Phase 2).
+      track.purchase({ transaction_id: `${ev.id}-${Date.now()}`, item_id: ev.id, item_name: ev.title, tier: tierName, quantity: qty, value: total }, { email: email || undefined });
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "payment-event", eventId: ev.id });
     } catch {
+      // Demo/unconfigured path only. When Stripe IS configured the user is
+      // redirected offsite, so the authoritative Purchase must fire server-side
+      // from the Stripe webhook (Phase 2).
+      track.purchase({ transaction_id: `${ev.id}-${Date.now()}`, item_id: ev.id, item_name: ev.title, tier: tierName, quantity: qty, value: total }, { email: email || undefined });
       bookEvent(ev.id, tierName, qty);
       navigate("success", { type: "payment-event", eventId: ev.id });
     } finally {

@@ -23,6 +23,8 @@ import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
 import { Newsletter } from "../newsletter";
+import { AdSlot } from "../ads/ad-slot";
+import { track } from "@/lib/analytics";
 import { NotificationBell } from "../notification-bell";
 import { VERIFY_FAQ } from "@/lib/faq";
 
@@ -71,6 +73,9 @@ export function LoginScreen() {
   // After Clerk activates the session, app-context (useUser) syncs the real
   // user + role; we just route to the right dashboard.
   const afterAuth = () => {
+    // Registration is a conversion; login is not. (Google OAuth signups complete
+    // in the SSO callback route — tracked server-side in Phase 2.)
+    if (mode === "register") track.signUp("email", role, email);
     toast(mode === "login" ? "Welcome back" : "Account created");
     navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
   };
@@ -462,6 +467,7 @@ export function SuggestScreen() {
     try {
       await fetch("/api/submissions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "suggest", name, email: email.trim() || undefined }) });
     } catch { /* graceful */ }
+    track.leadSubmit("suggest", {}, email.trim() ? { email: email.trim() } : undefined);
     navigate("success", { type: "suggest" });
   };
   return (
@@ -546,6 +552,7 @@ export function RequestQuoteScreen() {
       /* graceful — still confirm to the user */
     }
     setSubmitting(false);
+    track.leadSubmit("quote", { listing_category: vertical || undefined }, { email: email || undefined, phone: phone || undefined });
     addRequest("quote", [vertical, area].filter(Boolean).join(" · ") || "Quote request");
     navigate("success", { type: "quote" });
   };
@@ -720,6 +727,7 @@ export function ClaimScreen() {
                 try {
                   await fetch("/api/submissions", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ kind:"claim", businessId: picked.id, name: picked.name, role, message, proofFileName: proof?.name ?? null, proofType: proof?.type ?? null, proofSize: proof?.size ?? null }) });
                 } catch { /* graceful */ }
+                track.leadSubmit("claim", { listing_id: String(picked.id) });
                 addRequest("claim", picked.name);
                 navigate('success',{type:'claim'});
               }}>{submitting ? "Submitting…" : "Submit claim"}</button>
@@ -944,6 +952,10 @@ export function SeoScreen() {
           ) : (
             <Empty icon="search" title="No places yet" body={`We're still adding halal spots for ${page.h1.toLowerCase()}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
           )}
+
+          {/* Directory hub slot (leaderboard) — between the listings and the guide,
+              never interrupting the ranked results. Direct-first, AdSense fill. */}
+          <AdSlot slot="directory_hub" />
 
           {/* collapsible SEO content (crawlable in the DOM) */}
           <div className="seo-prose mt24">

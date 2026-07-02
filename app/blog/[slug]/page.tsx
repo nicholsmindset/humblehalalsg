@@ -11,6 +11,7 @@ import { Newsletter } from "@/components/newsletter";
 import { BlogCard } from "@/components/blog/blog-card";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { SponsoredSlot } from "@/components/sponsored-slot";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 
 export function generateStaticParams() {
@@ -110,6 +111,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <span className="blog-tldr-label">In short</span>
             <p>{p.answer}</p>
           </div>
+
+          {/* Top-of-article slot (leaderboard) — AdSense fill, below the TL;DR so it
+              never sits between the reader and the answer. */}
+          <AdSlot slot="blog_article_top" />
 
           {p.sections.map((s, i) => (
             <Fragment key={s.h2}>

@@ -44,7 +44,7 @@ export function Newsletter({
       });
       const data = await res.json();
       if (data.ok) {
-        if (!data.already) track.newsletterSignup(source);
+        if (!data.already) track.newsletterSignup(source, email);
         setStatus("done");
         setMsg(data.already ? "You're already on the list — jazakallah!" : "You're in! Check your inbox.");
         setEmail("");

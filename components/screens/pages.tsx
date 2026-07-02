@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Icon } from "../ui";
 import { HOME_FAQ, VERIFY_FAQ } from "@/lib/faq";
 import { CONTACT_EMAILS } from "@/lib/contact";
+import { track } from "@/lib/analytics";
 
 function Crumb({ trail }: { trail: { label: string; href?: string }[] }) {
   return (
@@ -78,6 +79,7 @@ export function ContactScreen() {
       const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       const d = await r.json();
       setState(d.ok ? "done" : "error");
+      if (d.ok) track.leadSubmit("contact", {}, { email: form.email || undefined });
     } catch { setState("error"); }
   };
 

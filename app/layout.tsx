@@ -16,11 +16,14 @@ import "../styles/travel.css";
 import "../styles/tools.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
+import "../styles/ads.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
 import { AnalyticsPageView } from "@/components/analytics/page-view";
+import { GoogleTagManager } from "@/components/analytics/gtm";
+import { AdsenseScript } from "@/components/ads/adsense";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
 import { getCategories, getAreas } from "@/lib/catalog";
@@ -134,6 +137,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVars}>
       <body>
+        <GoogleTagManager />
+        <AdsenseScript />
         <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode}>

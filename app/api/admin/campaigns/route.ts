@@ -12,12 +12,18 @@ export async function GET() {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
-  const [{ data: placements }, { data: perf }] = await Promise.all([
+  const [{ data: placements }, { data: perf }, { data: reviews }] = await Promise.all([
     sb.from("ad_placements").select("*").order("sort"),
     sb.from("v_campaign_performance").select("*"),
+    sb.from("ad_campaigns").select("*"),
   ]);
+  // The performance view predates the review gate; merge review_status + creative
+  // image in from ad_campaigns so the admin can approve/reject and preview.
+  const meta = new Map((reviews || []).map((r) => [r.id, r]));
   const rows = (perf || []).map((p) => ({
     ...p,
+    review_status: meta.get(p.campaign_id)?.review_status ?? "approved",
+    image_url: meta.get(p.campaign_id)?.image_url ?? null,
     ctr: p.impressions > 0 ? Math.round((p.clicks / p.impressions) * 1000) / 10 : 0,
   }));
   // Revenue booked = sum of agreed rates across non-draft campaigns.
@@ -53,6 +59,9 @@ export async function POST(req: Request) {
     rate_cents: Math.max(0, Math.round(Number(b.rateCents) || 0)),
     budget_cents: b.budgetCents != null ? Math.max(0, Math.round(Number(b.budgetCents))) : null,
     notes: b.notes ? String(b.notes).slice(0, 500) : null,
+    // Review gate: a new creative is 'pending' until an admin approves it — even
+    // if created with status 'active', it won't serve until review_status='approved'.
+    review_status: "pending",
     created_by: gate.userId,
   }).select("id").single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -73,6 +82,7 @@ export async function PATCH(req: Request) {
   const patch: Record<string, unknown> = {};
   if (typeof b.title === "string" && b.title.trim()) patch.title = b.title.trim();
   if (["draft", "scheduled", "active", "paused", "ended"].includes(String(b.status))) patch.status = b.status;
+  if (["pending", "approved", "rejected"].includes(String(b.reviewStatus))) patch.review_status = b.reviewStatus;
   if (typeof b.body === "string") patch.body = b.body.slice(0, 280);
   if (typeof b.imageUrl === "string") patch.image_url = b.imageUrl.slice(0, 500);
   if (typeof b.targetUrl === "string") patch.target_url = b.targetUrl.slice(0, 500);
