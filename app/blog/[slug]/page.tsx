@@ -130,6 +130,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <p>{p.answer}</p>
           </div>
 
+          {/* Top-of-article slot (leaderboard) — AdSense fill, below the TL;DR so it
+              never sits between the reader and the answer. */}
           <AdSlot slot="blog_article_top" />
 
           <div className="article-body">

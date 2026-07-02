@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Icon } from "../ui";
 import { HOME_FAQ, VERIFY_FAQ } from "@/lib/faq";
 import { CONTACT_EMAILS } from "@/lib/contact";
+import { track } from "@/lib/analytics";
 
 function Crumb({ trail }: { trail: { label: string; href?: string }[] }) {
   return (
@@ -78,6 +79,7 @@ export function ContactScreen() {
       const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       const d = await r.json();
       setState(d.ok ? "done" : "error");
+      if (d.ok) track.leadSubmit("contact", {}, { email: form.email || undefined });
     } catch { setState("error"); }
   };
 
@@ -93,7 +95,7 @@ export function ContactScreen() {
             {state === "done" ? (
               <div className="contact-done"><div className="empty-ico" style={{ background: "var(--emerald-50)", color: "var(--emerald)" }}><Icon name="check" size={26} /></div><h2 style={{ marginTop: 12 }}>Thank you — message received</h2><p className="muted">We've got your message and will reply by email within 1–2 business days, insha'Allah.</p></div>
             ) : (
-              <form onSubmit={submit} className="stack g14">
+              <form onSubmit={submit} noValidate className="stack g14">
                 <h2 style={{ fontSize: "1.15rem" }}>Send us a message</h2>
                 <input type="text" name="website" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden />
                 <div className="form-row">

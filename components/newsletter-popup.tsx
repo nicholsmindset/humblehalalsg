@@ -116,9 +116,6 @@ export function NewsletterPopup() {
         <div style={{ marginTop: 16 }}>
           <Newsletter source="popup" collectName cta="Send me the guide" />
         </div>
-        <p className="muted" style={{ marginTop: 12, fontSize: ".82rem" }}>
-          No spam. Unsubscribe anytime.
-        </p>
       </div>
     </div>
   );

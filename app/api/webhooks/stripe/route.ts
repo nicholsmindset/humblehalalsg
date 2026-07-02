@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { ticketConfirmationEmail, adPurchaseEmail, planStartedEmail } from "@/lib/emails/templates";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
+import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 
 const addDaysISO = (base: Date, days: number) => {
@@ -80,6 +81,10 @@ export async function POST(req: Request) {
               if (to) {
                 const t = planStartedEmail({ name: owner.name || s.customer_details?.name, plan });
                 await sendEmail({ to, subject: t.subject, html: t.html, template: "plan-started", businessId });
+                // Flip the owner's beehiiv lifecycle stage → subscribed so the
+                // abandoned-checkout recovery automation stops and any "upgraded"
+                // nurture can trigger (best-effort, transactional — no welcome).
+                await beehiivSubscribe({ email: to, source: "checkout", stage: "subscribed", sendWelcome: false, extraFields: [{ name: "plan", value: plan }] });
               }
             } catch { /* email best-effort — never affect the webhook ack */ }
           }

@@ -9,6 +9,8 @@ export function Newsletter({
   variant = "inline",
   collectName = false,
   cta = "Subscribe",
+  stage,
+  consent = true,
 }: {
   source?: string;
   variant?: "inline" | "card";
@@ -16,6 +18,10 @@ export function Newsletter({
   collectName?: boolean;
   /** Submit button label. */
   cta?: string;
+  /** Owner-funnel lifecycle stage (lead | listed | claimed) forwarded to beehiiv. */
+  stage?: string;
+  /** Show the PDPA consent + privacy line under the form (default true). */
+  consent?: boolean;
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -34,11 +40,11 @@ export function Newsletter({
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source, ...(collectName && name ? { name } : {}) }),
+        body: JSON.stringify({ email, source, ...(collectName && name ? { name } : {}), ...(stage ? { stage } : {}) }),
       });
       const data = await res.json();
       if (data.ok) {
-        if (!data.already) track.newsletterSignup(source);
+        if (!data.already) track.newsletterSignup(source, email);
         setStatus("done");
         setMsg(data.already ? "You're already on the list — jazakallah!" : "You're in! Check your inbox.");
         setEmail("");
@@ -74,7 +80,7 @@ export function Newsletter({
                 placeholder="First name (optional)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                style={{ marginBottom: 8 }}
+                style={{ marginBottom: 8, fontSize: 16 }}
               />
             </>
           )}
@@ -96,6 +102,7 @@ export function Newsletter({
               }}
               aria-invalid={status === "error"}
               aria-describedby={status === "error" ? `nl-${source}-err` : undefined}
+              style={{ fontSize: 16 }}
             />
             <button className="btn btn-primary" type="submit" disabled={status === "loading"}>
               {status === "loading" ? "Joining…" : cta}
@@ -105,6 +112,12 @@ export function Newsletter({
             <span id={`nl-${source}-err`} className="field-error" style={{ marginTop: 6 }}>
               <Icon name="warning" size={13} /> {msg}
             </span>
+          )}
+          {consent && (
+            <p className="newsletter-consent" style={{ marginTop: 8, fontSize: ".72rem", lineHeight: 1.4, color: "var(--ink-faint)" }}>
+              By subscribing you agree to receive marketing emails from HumbleHalal and accept our{" "}
+              <a href="/privacy">Privacy Policy</a>. We&apos;ll confirm your email first. Unsubscribe anytime.
+            </p>
           )}
         </form>
       )}

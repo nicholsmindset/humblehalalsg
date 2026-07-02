@@ -47,9 +47,6 @@ export default function Page() {
         <div className="hh-wrap hh-section" style={{ maxWidth: 640 }}>
           <div className="newsletter-card">
             <Newsletter source="landing" collectName cta="Subscribe — it's free" />
-            <p className="muted" style={{ marginTop: 12, fontSize: ".84rem" }}>
-              No spam, ever. Unsubscribe in one click.
-            </p>
           </div>
 
           <ul className="subscribe-perks" style={{ marginTop: 24 }}>

@@ -8,6 +8,7 @@ import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
+import { screenToPath } from "@/lib/routes";
 import { UserButton } from "@clerk/nextjs";
 import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";

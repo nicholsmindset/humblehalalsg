@@ -14,6 +14,7 @@ import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locatio
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
 import { Badge, Icon, ImagePh, MobileHeader } from "../ui";
+import { Newsletter } from "../newsletter";
 import { AddressAutocomplete, type AddrPick } from "../biz/address-autocomplete";
 import { MapView } from "../map/map-view";
 import { EventPriceTag } from "./events";
@@ -72,6 +73,21 @@ export function ForBusinessScreen() {
                 <button className="btn btn-lg" style={{ background: "rgba(255,255,255,.12)", color: "#fff" }} onClick={() => navigate("claim")}>Claim existing listing</button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Owner-lead capture: deliver the "Get Your Business Found" starter kit and
+          seed the B2B nurture (source "for-business" → owner segment, stage lead). */}
+      <section className="hh-wrap" style={{ paddingBottom: 56 }}>
+        <div className="newsletter-card" style={{ maxWidth: 640, margin: "0 auto" }}>
+          <span className="eyebrow">📈 For business owners</span>
+          <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Get your business found by halal-seekers</h2>
+          <p className="muted" style={{ marginTop: 8 }}>
+            Free starter kit: how MUIS-verified listings win more customers on HumbleHalal.
+          </p>
+          <div style={{ marginTop: 14 }}>
+            <Newsletter source="for-business" stage="lead" cta="Send the starter kit" />
           </div>
         </div>
       </section>
