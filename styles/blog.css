@@ -177,3 +177,26 @@
   .article-pq { margin: 40px 0; }
   .article-related-h { font-size: 1.35rem; }
 }
+
+/* ── legacy blog article body (restored) ──────────────────────────────────────
+   These .blog-* classes are used by app/blog/[slug]/page.tsx but were deleted
+   from screens2.css by the ad-system PR (#121) and never carried into blog.css,
+   leaving post pages with a giant unconstrained hero image and unstyled body. */
+.blog-byline { margin-top: 14px; font-size: .86rem; color: var(--ink-soft); font-weight: 600; }
+.blog-article { max-width: 760px; }
+.blog-hero-img { position: relative; aspect-ratio: 16/9; width: 100%; margin: 18px 0 0; border-radius: var(--r-lg); overflow: hidden; background: var(--cream); }
+.blog-hero-img img { object-fit: cover; }
+.blog-hero-credit { position: absolute; right: 8px; bottom: 8px; font-size: .7rem; color: #fff; background: rgba(20,30,25,.5); padding: 2px 8px; border-radius: 999px; }
+.blog-tldr { background: var(--emerald-50, #e9f6f0); border: 1px solid var(--emerald-100, #cfe6dc); border-radius: var(--r-md); padding: 16px 18px; margin-bottom: 8px; }
+.blog-tldr-label { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--emerald); margin-bottom: 6px; }
+.blog-tldr p { font-size: 1.05rem; line-height: 1.6; color: var(--ink); }
+.blog-section { margin-top: 28px; }
+.blog-section h2 { font-size: 1.4rem; margin-bottom: 12px; }
+.blog-section h3 { font-size: 1.15rem; margin: 18px 0 8px; }
+.blog-section p { font-size: 1.02rem; line-height: 1.7; color: var(--ink); margin-bottom: 12px; }
+.blog-bullets { list-style: none; padding: 0; margin: 4px 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.blog-bullets li { position: relative; padding-left: 24px; font-size: 1rem; line-height: 1.6; color: var(--ink); }
+.blog-bullets li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--emerald); font-weight: 800; }
+.blog-cta { margin-top: 30px; padding: 22px; border-radius: var(--r-lg); background: var(--cream, #faf7ef); border: 1px solid var(--line); }
+.blog-nl-inline { padding: 18px 20px; border-radius: var(--r-lg); background: var(--cream, #faf7ef); border: 1px solid var(--line); }
+.blog-nl-band { margin-top: 30px; }
