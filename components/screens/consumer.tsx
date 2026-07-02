@@ -885,39 +885,45 @@ export function MapScreen() {
 export function DetailScreen() {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
-  const item = dir.get(String(params.slug || params.id || "")) || dir.listings[0];
-  const saved = state.saved.includes(item.id);
+  // Strict slug/id resolution — the old `|| dir.listings[0]` fallback silently
+  // rendered the FIRST listing for any bad/stale slug instead of a not-found
+  // state (same bug class fixed on the events screens).
+  const item = dir.get(String(params.slug || params.id || ""));
+  const saved = item ? state.saved.includes(item.id) : false;
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);
-  const outlet = item.franchise && item.outlets ? item.outlets[outletIdx] : null;
-  const tabs = item.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
+  const outlet = item?.franchise && item.outlets ? item.outlets[outletIdx] : null;
+  const tabs = item?.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
 
   // Live "open now" — computed client-side (SG time) after mount to avoid SSR
   // hydration mismatch; refreshes each minute.
   const [live, setLive] = useState<{ open: boolean; label: string } | null>(null);
+  const hoursWeek = item?.hoursWeek;
   useEffect(() => {
-    const update = () => setLive(openStatus(item.hoursWeek));
+    if (!hoursWeek) return;
+    const update = () => setLive(openStatus(hoursWeek));
     update();
     const t = setInterval(update, 60000);
     return () => clearInterval(t);
-  }, [item.hoursWeek]);
-  const openNow = live ? live.open : item.open;
-  const hoursLabel = live ? live.label : item.hours;
+  }, [hoursWeek]);
+  const openNow = live ? live.open : item?.open ?? false;
+  const hoursLabel = live ? live.label : item?.hours ?? "";
 
   // Analytics: this listing's stable key + a record that it was viewed.
-  const slug = item.slug || item.id;
+  const slug = item ? item.slug || item.id : "";
+  const catId = item?.catId;
   useEffect(() => {
-    track.listingView(slug, item.catId);
-  }, [slug, item.catId]);
-  const logLead = (type: LeadAction) => track.leadAction(type, slug, item.catId);
+    if (slug && catId) track.listingView(slug, catId);
+  }, [slug, catId]);
+  const logLead = (type: LeadAction) => { if (item) track.leadAction(type, slug, item.catId); };
 
   // Photo lightbox — capped at the business's plan gallery limit (lib/plans).
   // Lower tiers show fewer photos; premium/featured are unaffected (high caps).
-  const galleryImgs = ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item));
+  const galleryImgs = item ? ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item)) : [];
 
   // Verified+ unlocks the rich contact buttons (WhatsApp & directions). Free
   // listings still keep their core contact (phone / website) — never hidden.
-  const richContact = canUse(item, "contact_buttons");
+  const richContact = item ? canUse(item, "contact_buttons") : false;
   const [lb, setLb] = useState<number | null>(null);
   useEffect(() => {
     if (lb === null) return;
@@ -929,6 +935,14 @@ export function DetailScreen() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [lb, galleryImgs.length]);
+
+  // All hooks above run unconditionally; bail to a real not-found state here.
+  if (!item) return (
+    <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
+      <Empty icon="store" title="Listing not found" body="This place isn't in the directory (it may have been removed). Browse or search instead." />
+      <button className="btn btn-primary mt12" onClick={() => navigate("explore")}>Explore places</button>
+    </div>
+  );
 
   // High-ticket service verticals get a "Request a quote" lead CTA (preselects the vertical).
   const QUOTE_VERTICAL: Record<string, string> = {

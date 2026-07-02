@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { DetailScreen } from "@/components/screens/consumer";
 import { getDirectory, getListingBySlug } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
@@ -34,6 +35,7 @@ export async function generateMetadata({
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const l = await getListingBySlug(slug);
+  if (!l) notFound(); // unknown slug → clean 404 (used to render the first listing)
   return (
     <>
       {l && (

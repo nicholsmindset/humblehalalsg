@@ -3,7 +3,8 @@
 //  - data client comes from our null-safe getSb() (empty state in mock mode)
 //  - listing_id in views/RPCs is the LISTING SLUG (see 0010_analytics.sql)
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useSession } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import {
   resolveRange, RANGE_LABELS, LEAD_LABELS, fmt, pct, type RangeKey,
@@ -46,6 +47,9 @@ interface DailyRow { day: string; lead_action_type: string; category: string; ac
 
 export default function Dashboard() {
   const supabase = useSupabaseBrowser();
+  // Don't fire the first fetch before Clerk hydrates — an anon RPC against the
+  // authenticated-only admin_summary would paint a spurious error banner.
+  const { isLoaded: authLoaded } = useSession();
   const [range, setRange] = useState<RangeKey>("30d");
   const [cFrom, setCFrom] = useState("");
   const [cTo, setCTo] = useState("");
@@ -60,10 +64,16 @@ export default function Dashboard() {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [openVendor, setOpenVendor] = useState<VendorRow | null>(null);
 
+  // Custom range only takes effect once BOTH dates are chosen — a half-filled
+  // range used to refetch (and fail) on every date-input change.
   const win = useMemo(
-    () => resolveRange(range, cFrom || undefined, cTo || undefined),
+    () => resolveRange(range, cFrom && cTo ? cFrom : undefined, cFrom && cTo ? cTo : undefined),
     [range, cFrom, cTo],
   );
+
+  // True once any dataset loaded — failed REFRESHES then keep the data on
+  // screen with a soft notice instead of the old red banner over stale tiles.
+  const hasLoaded = useRef(false);
 
   const load = useCallback(async () => {
     const sb = supabase;
@@ -76,21 +86,35 @@ export default function Dashboard() {
     setLoading(true); setErr(null);
     try {
       const { from, to } = win;
-      const [sumRes, vendRes, dailyRes, searchRes, journeyRes] = await Promise.all([
+      const results = await Promise.all([
         sb.rpc("admin_summary", { p_from: from, p_to: to }),
         sb.from("v_vendor_leads").select("*"),
         sb.from("v_daily_lead_actions").select("*").gte("day", from.slice(0, 10)).lte("day", to.slice(0, 10)),
         sb.from("v_search_intelligence").select("*").limit(25),
         sb.rpc("admin_recent_journeys", { p_from: from, p_to: to, p_limit: 50 }),
-      ]);
-      if (sumRes.error) throw sumRes.error;
-      setSummary(Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data);
-      setVendors((vendRes.data as VendorRow[]) ?? []);
-      setDaily((dailyRes.data as DailyRow[]) ?? []);
-      setSearches((searchRes.data as SearchRow[]) ?? []);
-      setJourneys((journeyRes.data as Journey[]) ?? []);
+      ] as const);
+      const [sumRes, vendRes, dailyRes, searchRes, journeyRes] = results;
+      // Apply each successful dataset; every .error is inspected (view errors
+      // used to be silently swallowed) and failures never clobber loaded data.
+      if (!sumRes.error) setSummary(Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data);
+      if (!vendRes.error) setVendors((vendRes.data as VendorRow[]) ?? []);
+      if (!dailyRes.error) setDaily((dailyRes.data as DailyRow[]) ?? []);
+      if (!searchRes.error) setSearches((searchRes.data as SearchRow[]) ?? []);
+      if (!journeyRes.error) setJourneys((journeyRes.data as Journey[]) ?? []);
+      const failed = results.filter((r) => r.error).length;
+      if (failed === 0) {
+        hasLoaded.current = true;
+        setErr(null);
+      } else if (failed < results.length || hasLoaded.current) {
+        setErr(`Couldn't refresh ${failed === results.length ? "the data" : `${failed} of ${results.length} sections`} — showing the last loaded numbers. Retry with the range buttons.`);
+      } else {
+        setErr(sumRes.error?.message || "Failed to load analytics");
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to load analytics");
+      // Network-level failure: keep whatever is on screen.
+      setErr(hasLoaded.current
+        ? "Couldn't refresh — showing the last loaded numbers."
+        : e instanceof Error ? e.message : "Failed to load analytics");
     } finally {
       setLoading(false);
     }
@@ -99,7 +123,7 @@ export default function Dashboard() {
   // Reload whenever the resolved window changes. load() drives its own loading
   // state; this is an external-fetch effect, not derived state.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (authLoaded) load(); }, [load, authLoaded]);
 
   return (
     <div style={S.page}>
@@ -120,7 +144,7 @@ export default function Dashboard() {
 
       {err && <div style={S.error}>⚠ {err}</div>}
 
-      <Cards summary={summary} loading={loading} />
+      <Cards summary={summary} loading={loading && !hasLoaded.current} />
 
       <nav style={S.tabs}>
         {(["overview", "vendors", "search", "journeys"] as Tab[]).map((t) => (
@@ -133,7 +157,7 @@ export default function Dashboard() {
       </nav>
 
       <section>
-        {loading ? <Skeleton /> : (
+        {loading && !hasLoaded.current ? <Skeleton /> : (
           <>
             {tab === "overview" && <Overview daily={daily} vendors={vendors} />}
             {tab === "vendors" && (openVendor

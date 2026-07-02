@@ -421,7 +421,7 @@ export function AdminOverview({ setSection }: { setSection: (s: string) => void 
       <div className="card mt20" style={{padding:20}}>
         <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Needs your attention</h3>
         <div className="stack g10">
-          {([['Listings awaiting approval','approvals','doc'],['Reports to review','reports','flag'],['Ownership claims','approvals','building'],['Verification requests','verification','shield-check']] as [string, string, string][]).map(([t,sec,icon])=>(
+          {([['Listings awaiting approval','approvals','doc'],['Reports to review','reports','flag'],['Ownership claims','claims','building'],['Verification requests','verification','shield-check']] as [string, string, string][]).map(([t,sec,icon])=>(
             <button key={t} className="attn-row" onClick={()=>setSection(sec)}><span className="flex g10 center"><span className="attn-ico"><Icon name={icon} size={17}/></span>{t}</span><Icon name="chevron" size={17}/></button>
           ))}
         </div>
@@ -444,19 +444,21 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
       }));
     });
   }, []);
+  const [q, setQ] = useState("");
   const act = async (id: string, action: string) => {
     if (live) { const res = await queueAct("listings", id, action === "approve" ? "approve" : "reject"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Listing published':'Listing rejected');
   };
+  const shown = q ? rows.filter(r=>`${r.name} ${r.cat} ${r.area}`.toLowerCase().includes(q.toLowerCase())) : rows;
   return (
     <div className="card" style={{overflow:'hidden'}}>
       <div className="admin-tablehead"><div className="flex g8 center"><span className="tag">{rows.length} pending</span></div>
-        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search…" style={{fontSize:'.86rem'}}/></div></div>
+        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search…" style={{fontSize:'.86rem'}} value={q} onChange={(e)=>setQ(e.target.value)} aria-label="Search pending listings"/></div></div>
       <div className="tbl-scroll">
         <table className="tbl">
           <thead><tr><th>Business</th><th>Type</th><th>Area</th><th>Halal claim</th><th>Submitted</th><th>Action</th></tr></thead>
           <tbody>
-            {rows.map(r=>(
+            {shown.map(r=>(
               <tr key={r.id} className="rowhover">
                 <td><div className="flex g10 center"><ImagePh label="" tone={r.tone} src={r.image} style={{width:38,height:38,borderRadius:8,flex:'none'}}/><div><div style={{fontWeight:700}}>{r.name}</div><div className="faint" style={{fontSize:'.78rem'}}>{r.cat}</div></div></div></td>
                 <td><span className={`pill-tag ${r.status==='claim'?'amber':'blue'}`}>{r.status==='claim'?'Claim':'New listing'}</span></td>
@@ -470,7 +472,7 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
                 </div></td>
               </tr>
             ))}
-            {rows.length===0 && <tr><td colSpan={6}><Empty icon="check" title="All caught up" body="No listings awaiting approval." /></td></tr>}
+            {shown.length===0 && <tr><td colSpan={6}><Empty icon="check" title={q ? "No matches" : "All caught up"} body={q ? `Nothing pending matches "${q}".` : "No listings awaiting approval."} /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -503,21 +505,23 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
       }));
     });
   }, []);
+  const [q, setQ] = useState("");
   const act = async (id: string, action: string) => {
     if (live) { const res = await queueAct("events", id, action === "approve" ? "approve" : "reject"); if (!res.ok) { toast(queueErr(res.error)); return; } }
     setRows(r=>r.filter(x=>x.id!==id)); toast(action==='approve'?'Event approved & published':'Event rejected');
   };
+  const shown = q ? rows.filter(r=>`${r.title} ${r.cat} ${r.organiser}`.toLowerCase().includes(q.toLowerCase())) : rows;
   return (
     <div className="card" style={{overflow:'hidden'}}>
       <div className="admin-tablehead">
         <div className="flex g8 center"><span className="tag">{rows.length} pending</span><span className="faint" style={{fontSize:'.82rem'}}>Review before events go live</span></div>
-        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search events…" style={{fontSize:'.86rem'}}/></div>
+        <div className="searchbar" style={{maxWidth:240, padding:'4px 4px 4px 12px'}}><Icon name="search" className="lead" size={16}/><input placeholder="Search events…" style={{fontSize:'.86rem'}} value={q} onChange={(e)=>setQ(e.target.value)} aria-label="Search pending events"/></div>
       </div>
       <div className="tbl-scroll">
         <table className="tbl">
           <thead><tr><th>Event</th><th>Category</th><th>Date</th><th>Pricing</th><th>Host</th><th>Submitted</th><th>Action</th></tr></thead>
           <tbody>
-            {rows.map(r=>(
+            {shown.map(r=>(
               <tr key={r.id} className="rowhover">
                 <td><div className="flex g10 center"><ImagePh label="" tone={r.tone} src={r.img} style={{width:40,height:32,borderRadius:7,flex:'none'}}/><div style={{fontWeight:700, maxWidth:200}}>{r.title}</div></div></td>
                 <td className="muted">{r.cat}</td>
@@ -532,7 +536,7 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
                 </div></td>
               </tr>
             ))}
-            {rows.length===0 && <tr><td colSpan={7}><Empty icon="check" title="All caught up" body="No events awaiting approval." /></td></tr>}
+            {shown.length===0 && <tr><td colSpan={7}><Empty icon="check" title={q ? "No matches" : "All caught up"} body={q ? `Nothing pending matches "${q}".` : "No events awaiting approval."} /></td></tr>}
           </tbody>
         </table>
       </div>
@@ -1555,28 +1559,35 @@ function VoucherCreator() {
 }
 
 export function AdminAudit() {
-  const mock: [string, string, string, string][]=[['Approved listing','Madinah Spice Kitchen','admin@hh.sg','2 min ago'],['Granted MUIS Certified','Warung Bumbu Rempah','admin@hh.sg','18 min ago'],['Resolved report','Tok Tok Mee Pok','mod@hh.sg','1h ago'],['Removed review','Kopi & Kueh','mod@hh.sg','3h ago'],['Suspended user','imran@email.com','admin@hh.sg','5h ago'],['Featured listing','Qahwa & Co.','admin@hh.sg','1d ago']];
-  const [logs, setLogs] = useState<[string, string, string, string][]>(mock);
+  // Real data only — this used to seed six MOCK rows as initial state, so a
+  // failed/absent API rendered a fabricated audit trail as if it were real.
+  const [logs, setLogs] = useState<[string, string, string, string][] | null>(null);
   useEffect(() => {
     (async () => {
       try {
         const r = await fetch("/api/admin/audit");
-        if (!r.ok) return;
+        if (!r.ok) { setLogs([]); return; }
         const d = await r.json();
-        if (d.ok && Array.isArray(d.items)) {
-          setLogs(d.items.map((l: Record<string, unknown>) => [String(l.action ?? "—"), String(l.target ?? "").slice(0, 12) || "—", "admin", timeAgo(l.created_at)] as [string, string, string, string]));
-        }
-      } catch { /* keep mock */ }
+        setLogs(d.ok && Array.isArray(d.items)
+          ? d.items.map((l: Record<string, unknown>) => [String(l.action ?? "—"), String(l.target ?? "").slice(0, 12) || "—", "admin", timeAgo(l.created_at)] as [string, string, string, string])
+          : []);
+      } catch { setLogs([]); }
     })();
   }, []);
   return (
     <div className="card" style={{padding:20}}>
       <h3 style={{fontSize:'1.1rem', marginBottom:14}}>Audit log</h3>
-      <div className="audit-list">
-        {logs.map(([action,target,who,time],i)=>(
-          <div key={i} className="audit-row"><span className="audit-dot"/><div className="f1"><div><strong>{action}</strong> · <span className="muted">{target}</span></div><div className="faint" style={{fontSize:'.8rem'}}>{who} · {time}</div></div></div>
-        ))}
-      </div>
+      {logs === null ? (
+        <p className="faint" style={{fontSize:'.88rem'}}>Loading audit log…</p>
+      ) : logs.length === 0 ? (
+        <Empty icon="doc" title="No audit entries yet" body="Admin actions (approvals, verifications, removals) appear here as they happen." />
+      ) : (
+        <div className="audit-list">
+          {logs.map(([action,target,who,time],i)=>(
+            <div key={i} className="audit-row"><span className="audit-dot"/><div className="f1"><div><strong>{action}</strong> · <span className="muted">{target}</span></div><div className="faint" style={{fontSize:'.8rem'}}>{who} · {time}</div></div></div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -511,8 +511,6 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
     }
   };
 
-  const a = HHData.analytics;
-  const grossCents = 0; // from DB once live
   return (
     <div className="dash-pane stack g16">
       {!flags.paidTickets && (
@@ -539,9 +537,10 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
           <button className="btn btn-primary" disabled={loading} onClick={setup}>
             <Icon name="shield-check" size={17} /> {loading ? "Starting…" : "Set up payouts"}
           </button>
-          <button className="btn btn-outline" onClick={() => toast("Express dashboard opens once onboarding is complete")}>
+          <button className="btn btn-outline" disabled aria-disabled="true">
             Stripe dashboard
           </button>
+          <span className="faint" style={{ fontSize: ".8rem", alignSelf: "center" }}>Dashboard unlocks after onboarding.</span>
         </div>
       </div>
 
@@ -554,13 +553,11 @@ function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { p
         </ol>
       </div>
 
-      <div className="admin-statgrid">
-        {([["Gross sales", grossCents], ["Paid out", 0], ["Pending", 0], ["Tickets sold", 0]] as [string, number][]).map(([l, v]) => (
-          <div key={l} className="stat"><div className="v">{l === "Tickets sold" ? v : `$${(v / 100).toFixed(2)}`}</div><div className="l">{l}</div></div>
-        ))}
-      </div>
+      {/* No fake stat grid: gross/paid-out/pending were hardcoded zeros (and the
+          footer quoted MOCK analytics) presented as live numbers. Real figures
+          render here once ticket sales are wired to the DB. */}
       <p className="faint" style={{ fontSize: ".82rem" }}>
-        Last 30 days · {a.views.toLocaleString()} profile views drove {a.directions} direction taps. Sales appear here once paid tickets go live.
+        Sales, payout and ticket numbers will appear here once paid ticketing is live.
       </p>
     </div>
   );
