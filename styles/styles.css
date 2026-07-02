@@ -711,6 +711,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 }
 .hh-pin-wrap:hover .hh-pin { transform: rotate(-45deg) scale(1.12); }
 .hh-pin-active { background: var(--gold); width: 28px; height: 28px; z-index: 5; }
+/* Cluster badge: one circle with a count instead of N overlapping teardrops. */
+.hh-cluster {
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--emerald); color: #fff; font-weight: 800; font-size: .82rem;
+  border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(15,110,86,.25), 0 2px 8px rgba(31,41,51,.35);
+  cursor: pointer; transition: transform .12s;
+}
+.hh-pin-wrap:hover .hh-cluster { transform: scale(1.08); }
 /* Mosque markers: round gold badge with a dark centre — distinct from eatery teardrops. */
 .hh-mosque-pin {
   display: block; width: 22px; height: 22px; border-radius: 50%;
