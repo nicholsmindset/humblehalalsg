@@ -1,0 +1,97 @@
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getServerFlags } from "@/lib/flags";
+import { remainingQuota } from "@/lib/lead-routing";
+import { maskName, maskEmail, maskPhone } from "@/lib/lead-mask";
+import { verticalLabel } from "@/lib/lead-verticals";
+import { leadPlan } from "@/lib/lead-plans";
+
+/* Owner leads inbox. Returns routed leads for the businesses the caller owns,
+   with consumer PII MASKED until a route is accepted (accept consumes quota).
+   Marks freshly-seen routes as viewed. Ownership enforced via owner_id OR
+   claimed_by === Clerk userId; the service-role client is used only after. */
+export const dynamic = "force-dynamic";
+
+type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+
+async function ownedBusinessIds(db: Db, userId: string): Promise<string[]> {
+  const { data } = await db
+    .from("businesses")
+    .select("id")
+    .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`);
+  return (data || []).map((b) => b.id);
+}
+
+export async function GET() {
+  const { leadRouting, paidLeads } = getServerFlags();
+  if (!leadRouting) return NextResponse.json({ ok: true, enabled: false, routes: [] });
+
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  const db = getSupabaseAdmin();
+  if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
+
+  const bizIds = await ownedBusinessIds(db, userId);
+  if (bizIds.length === 0) return NextResponse.json({ ok: true, enabled: true, paidLeads, routes: [], quota: null });
+
+  const { data: routes } = await db
+    .from("lead_routes")
+    .select("id, lead_id, business_id, status, accepted_at, sent_at, viewed_at, leads(name,email,phone,vertical_id,area,budget,event_date,details,created_at)")
+    .in("business_id", bizIds)
+    .neq("status", "expired")
+    .order("sent_at", { ascending: false })
+    .limit(100);
+
+  // Mark unseen as viewed (best-effort).
+  const unseen = (routes || []).filter((r) => !r.viewed_at).map((r) => r.id);
+  if (unseen.length) {
+    try { await db.from("lead_routes").update({ status: "viewed", viewed_at: new Date().toISOString() }).in("id", unseen).eq("status", "sent"); } catch { /* noop */ }
+  }
+
+  const shaped = (routes || []).map((r) => {
+    const raw = r.leads as unknown;
+    const lead = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | undefined ?? {};
+    const accepted = r.status === "accepted" || r.status === "contacted" || r.status === "won" || r.status === "lost";
+    const vertical = lead.vertical_id ? verticalLabel(String(lead.vertical_id)) : "Enquiry";
+    return {
+      id: r.id,
+      businessId: r.business_id,
+      status: r.status,
+      sentAt: r.sent_at,
+      vertical,
+      area: lead.area ?? null,
+      budget: lead.budget ?? null,
+      when: lead.event_date ?? null,
+      details: lead.details ?? null,
+      // PII only after acceptance.
+      name: accepted ? (lead.name ?? null) : maskName(lead.name as string),
+      email: accepted ? (lead.email ?? null) : maskEmail(lead.email as string),
+      phone: accepted ? (lead.phone ?? null) : maskPhone(lead.phone as string),
+      accepted,
+    };
+  });
+
+  // Quota — summed across the owner's businesses (typically one).
+  const remaining = await remainingQuota(db, bizIds);
+  const { data: subs } = await db
+    .from("subscriptions")
+    .select("business_id, plan, status, monthly_quota, current_period_end")
+    .eq("kind", "leads")
+    .in("business_id", bizIds);
+  const activeSub = (subs || []).find((s) => s.status === "active" || s.status === "trialing") || null;
+  const plan = activeSub ? leadPlan(activeSub.plan) : null;
+  const monthly = activeSub?.monthly_quota ?? plan?.quota ?? 0;
+  const remainingTotal = bizIds.reduce((n, id) => n + (remaining[id] ?? 0), 0);
+
+  const quota = {
+    active: !!activeSub,
+    planName: plan?.name ?? null,
+    monthly,
+    remaining: remainingTotal,
+    used: Math.max(0, monthly - remainingTotal),
+    periodEnd: activeSub?.current_period_end ?? null,
+  };
+
+  return NextResponse.json({ ok: true, enabled: true, paidLeads, routes: shaped, quota });
+}

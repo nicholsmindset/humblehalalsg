@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
-import { ticketConfirmationEmail, adPurchaseEmail, planStartedEmail } from "@/lib/emails/templates";
+import { ticketConfirmationEmail, adPurchaseEmail, planStartedEmail, leadPlanStartedEmail } from "@/lib/emails/templates";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
@@ -61,6 +61,30 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
+        // Lead-subscription checkout (kind=leads) — a SEPARATE product that must
+        // NOT touch businesses.plan (that column is the listing plan). Handled
+        // first so the plan block below never sees it.
+        if (s.mode === "subscription" && s.metadata?.kind === "leads" && supa) {
+          const businessId = s.metadata?.business_id || undefined;
+          const leadPlan = s.metadata?.lead_plan || undefined;
+          const quota = parseInt(s.metadata?.monthly_quota || "0", 10) || null;
+          const subscription = typeof s.subscription === "string" ? s.subscription : undefined;
+          if (businessId && subscription) {
+            await supa.from("subscriptions").upsert({
+              business_id: businessId, stripe_subscription_id: subscription,
+              kind: "leads", plan: leadPlan, status: "active", monthly_quota: quota,
+            }, { onConflict: "stripe_subscription_id" });
+            try {
+              const owner = await emailForBusinessOwner(supa, businessId);
+              const to = owner.email || s.customer_details?.email || null;
+              if (to) {
+                const t = leadPlanStartedEmail({ name: owner.name || s.customer_details?.name, quota: quota || 15 });
+                await sendEmail({ to, subject: t.subject, html: t.html, template: "lead-plan-started", businessId });
+              }
+            } catch { /* email best-effort */ }
+          }
+          break;
+        }
         // Subscription checkout (listing plans).
         if (s.mode === "subscription" && supa) {
           const businessId = s.metadata?.business_id || undefined;
@@ -295,6 +319,29 @@ export async function POST(req: Request) {
         const cpe =
           sub.items?.data?.[0]?.current_period_end ??
           (sub as unknown as { current_period_end?: number }).current_period_end;
+        // LEADS subscription — update ITS row (kind/period/quota) and STOP.
+        // Must run before the plan block below: that block would otherwise set
+        // businesses.plan = 'free' (no plan metadata on a leads sub), silently
+        // downgrading a paying listing plan.
+        if (sub.metadata?.kind === "leads") {
+          if (supa && businessId) {
+            const cps =
+              sub.items?.data?.[0]?.current_period_start ??
+              (sub as unknown as { current_period_start?: number }).current_period_start;
+            const quota = parseInt(sub.metadata?.monthly_quota || "0", 10) || null;
+            await supa.from("subscriptions").upsert({
+              business_id: businessId,
+              stripe_subscription_id: sub.id,
+              kind: "leads",
+              plan: sub.metadata?.lead_plan || null,
+              status: sub.status,
+              monthly_quota: quota,
+              current_period_start: cps ? new Date(cps * 1000).toISOString() : null,
+              current_period_end: cpe ? new Date(cpe * 1000).toISOString() : null,
+            }, { onConflict: "stripe_subscription_id" });
+          }
+          break;
+        }
         if (supa && businessId) {
           await supa.from("subscriptions").upsert({
             business_id: businessId,

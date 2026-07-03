@@ -24,7 +24,7 @@ export function ReviewRequestCard({ biz }: { biz: BizLite[] | null }) {
     } catch { /* clipboard blocked */ }
   };
 
-  const downloadQr = async (slug: string, name: string) => {
+  const downloadQr = async (slug: string) => {
     try {
       const { default: QRCode } = await import("qrcode");
       const url = await QRCode.toDataURL(`${SITE}/r/${slug}`, { margin: 1, width: 640, errorCorrectionLevel: "M" });
@@ -59,7 +59,7 @@ export function ReviewRequestCard({ biz }: { biz: BizLite[] | null }) {
                 <div className="flex g8 wrap">
                   <button className="btn btn-soft btn-sm" onClick={() => copy(b.slug)}><Icon name={copied === b.slug ? "check" : "doc"} size={15} /> {copied === b.slug ? "Copied" : "Copy link"}</button>
                   <a className="btn btn-soft btn-sm" href={waMsg(b.name, b.slug)} target="_blank" rel="noopener"><Icon name="whatsapp" size={15} /> Share</a>
-                  <button className="btn btn-soft btn-sm" onClick={() => downloadQr(b.slug, b.name)}><Icon name="upload" size={15} /> QR image</button>
+                  <button className="btn btn-soft btn-sm" onClick={() => downloadQr(b.slug)}><Icon name="upload" size={15} /> QR image</button>
                   <a className="btn btn-ghost btn-sm" href={`/business/${b.slug}/poster#review`} target="_blank" rel="noopener"><Icon name="external" size={15} /> Poster</a>
                 </div>
               </div>
