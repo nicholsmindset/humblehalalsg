@@ -2,11 +2,12 @@ import { redirect } from "next/navigation";
 import { AdminScreen } from "@/components/screens/admin";
 import { pageMeta } from "@/lib/seo";
 import { isAdminOrUnconfigured } from "@/lib/admin-auth";
+import { getServerFlags } from "@/lib/flags";
 
 export const metadata = pageMeta({ title: "Admin console", description: "Humble Halal administration.", path: "/admin", index: false });
 
 export default async function Page() {
   // Live backend → admins only. No backend (dev/demo) → open so the mock UI works.
   if (!(await isAdminOrUnconfigured())) redirect("/login?next=/admin");
-  return <AdminScreen />;
+  return <AdminScreen leadRoutingEnabled={getServerFlags().leadRouting} />;
 }

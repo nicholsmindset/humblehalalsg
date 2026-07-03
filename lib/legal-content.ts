@@ -145,6 +145,13 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
+        h2: "Quote requests & sharing with providers",
+        body: [
+          "When you submit a quote request (\"Request a quote\"), you explicitly consent to us sharing your request and contact details with up to five matching halal providers so they can quote you directly. We only share with providers relevant to your request (by category and area) and never sell your details for unrelated marketing.",
+          "Providers see your enquiry but only unlock your contact details when they accept your request. Providers are independent businesses; once you engage one, their own privacy practices apply. You can withdraw consent at any time (see below), and we anonymise quote requests on a schedule: enquiries we've closed after 180 days, and any enquiry after 12 months.",
+        ],
+      },
+      {
         h2: "Accuracy",
         body: [
           "We make reasonable efforts to keep the personal data we use accurate and complete, and you can ask us to correct it at any time (see below).",

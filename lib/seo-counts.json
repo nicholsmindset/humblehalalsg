@@ -1,0 +1,291 @@
+{
+  "byAreaCat": {
+    "One-North": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Tanjong Pagar": {
+      "cafes": 2,
+      "restaurants": 2
+    },
+    "Keppel Bay": {
+      "cafes": 1
+    },
+    "Raffles Place": {
+      "restaurants": 1
+    },
+    "CBD": {
+      "cafes": 1
+    },
+    "City Hall": {
+      "restaurants": 1
+    },
+    "Outram": {
+      "restaurants": 1
+    },
+    "Sentosa": {
+      "restaurants": 2
+    },
+    "Harbourfront": {
+      "cafes": 1
+    },
+    "Bras Basah": {
+      "restaurants": 2
+    },
+    "Kampong Glam": {
+      "cafes": 12,
+      "restaurants": 13
+    },
+    "Arab Street": {
+      "cafes": 3,
+      "beauty": 1,
+      "health": 1,
+      "restaurants": 1
+    },
+    "Bugis": {
+      "cafes": 3,
+      "restaurants": 1
+    },
+    "Haji Lane": {
+      "cafes": 3,
+      "restaurants": 1
+    },
+    "Golden Mile": {
+      "restaurants": 1
+    },
+    "Sultan Gate": {
+      "restaurants": 1
+    },
+    "Marina Bay": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Boat Quay": {
+      "restaurants": 1
+    },
+    "Shenton Way": {
+      "beauty": 1
+    },
+    "Bali Lane": {
+      "cafes": 2
+    },
+    "Tampines": {
+      "cafes": 4,
+      "beauty": 2,
+      "restaurants": 2,
+      "groceries": 3
+    },
+    "Beach Road": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Geylang Serai": {
+      "cafes": 2,
+      "restaurants": 1,
+      "fashion": 1
+    },
+    "Jalan Kledek": {
+      "beauty": 1
+    },
+    "Telok Ayer": {
+      "cafes": 1
+    },
+    "Dempsey": {
+      "restaurants": 1,
+      "cafes": 2
+    },
+    "Bayshore": {
+      "cafes": 1
+    },
+    "Changi Village": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Dhoby Ghaut": {
+      "beauty": 1
+    },
+    "Toa Payoh": {
+      "beauty": 1
+    },
+    "Jewel Changi": {
+      "cafes": 1
+    },
+    "Little India": {
+      "restaurants": 3,
+      "cafes": 1
+    },
+    "Chai Chee": {
+      "beauty": 1
+    },
+    "Changi": {
+      "cafes": 1,
+      "groceries": 1
+    },
+    "Siglap": {
+      "cafes": 2
+    },
+    "Tiong Bahru": {
+      "cafes": 1
+    },
+    "Tanglin": {
+      "restaurants": 1
+    },
+    "Telok Blangah": {
+      "restaurants": 1
+    },
+    "Our Tampines Hub": {
+      "restaurants": 1,
+      "beauty": 1,
+      "cafes": 1
+    },
+    "Bukit Merah": {
+      "cafes": 1
+    },
+    "Geylang": {
+      "beauty": 2,
+      "groceries": 1,
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Race Course Road": {
+      "restaurants": 5,
+      "cafes": 1
+    },
+    "Islandwide": {
+      "services": 3,
+      "groceries": 2
+    },
+    "East Coast": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Bussorah Street": {
+      "beauty": 1
+    },
+    "Marine Parade": {
+      "cafes": 1
+    },
+    "Mandarin Gallery": {
+      "beauty": 2
+    },
+    "Pasir Ris": {
+      "cafes": 1
+    },
+    "Dunlop Street": {
+      "restaurants": 3
+    },
+    "Lavender": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Jalan Kayu": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Farrer Park": {
+      "restaurants": 1,
+      "cafes": 1
+    },
+    "Orchard": {
+      "restaurants": 3,
+      "cafes": 1
+    },
+    "Somerset": {
+      "cafes": 1,
+      "restaurants": 2
+    },
+    "Zion Road": {
+      "restaurants": 1
+    },
+    "Macpherson": {
+      "cafes": 2
+    },
+    "Bedok": {
+      "cafes": 1
+    },
+    "Adam Road": {
+      "restaurants": 1
+    },
+    "Botanic Gardens": {
+      "restaurants": 1
+    },
+    "Bukit Timah": {
+      "cafes": 2,
+      "restaurants": 1
+    },
+    "Ang Mo Kio": {
+      "restaurants": 1
+    },
+    "Bishan": {
+      "cafes": 1
+    },
+    "Jurong East": {
+      "cafes": 1,
+      "restaurants": 1
+    },
+    "Choa Chu Kang": {
+      "cafes": 1
+    },
+    "Clementi": {
+      "cafes": 1,
+      "services": 1,
+      "beauty": 1
+    },
+    "Woodlands": {
+      "cafes": 1
+    },
+    "Seletar": {
+      "cafes": 1
+    },
+    "Yishun": {
+      "cafes": 2
+    },
+    "Sunset Way": {
+      "groceries": 1
+    },
+    "Jurong": {
+      "groceries": 2
+    },
+    "Paya Lebar / East Coast": {
+      "groceries": 1
+    },
+    "Eunos": {
+      "groceries": 1
+    },
+    "Pahang Street": {
+      "beauty": 1,
+      "health": 1
+    },
+    "North Bridge Road": {
+      "beauty": 2
+    },
+    "Jalan Besar": {
+      "beauty": 1
+    },
+    "Ngee Ann City": {
+      "beauty": 1
+    },
+    "Golden Landmark": {
+      "fashion": 2
+    },
+    "Cluny Court": {
+      "fashion": 1
+    },
+    "Joo Chiat": {
+      "fashion": 1
+    },
+    "Downtown East": {
+      "restaurants": 1
+    }
+  },
+  "byCat": {
+    "cafes": 96,
+    "restaurants": 125,
+    "muslim-owned": 1,
+    "fashion": 32,
+    "beauty": 24,
+    "groceries": 17,
+    "health": 2,
+    "services": 4
+  }
+}

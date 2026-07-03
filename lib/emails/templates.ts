@@ -228,6 +228,30 @@ export function leadConfirmationEmail(o: { name?: string | null }): Out {
     { label: "Explore Humble Halal", url: `${U}/explore` },
   );
 }
+/* ── Lead marketplace ────────────────────────────────────────────────── */
+export function leadRoutedEmail(o: { name?: string | null; vertical: string; area?: string | null; budget?: string | null; when?: string | null }): Out {
+  // NEVER include the consumer's PII — the owner unmasks it in-app on accept.
+  const bits = [o.area && `in ${esc(o.area)}`, o.budget && `budget ${esc(o.budget)}`, o.when && `for ${esc(o.when)}`].filter(Boolean).join(" · ");
+  return wrap(
+    `New ${o.vertical} enquiry for you`,
+    "You've got a new lead",
+    greet(o.name) +
+      p(`A customer is looking for <strong>${esc(o.vertical)}</strong>${bits ? ` — ${bits}` : ""} and we've matched them to your business on Humble Halal.`) +
+      p(`Open your dashboard to see the full request and accept it to unlock their contact details. Leads are shared with a few providers, so quick replies win.`),
+    { label: "View this lead", url: `${U}/owner?tab=leads` },
+    `You're receiving this because your listing matched this request. Manage your lead preferences in your dashboard.`,
+  );
+}
+export function leadPlanStartedEmail(o: { name?: string | null; quota: number }): Out {
+  return wrap(
+    "Your Lead Inbox is active",
+    "You're set to receive leads",
+    greet(o.name) +
+      p(`Your <strong>Lead Inbox</strong> is now active — you can accept up to <strong>${o.quota}</strong> matched leads this month. We'll email you whenever a new enquiry matches your categories and areas.`) +
+      p(`Set your categories and coverage areas in your dashboard so we only send you the leads you want.`),
+    { label: "Open your leads", url: `${U}/owner?tab=leads` },
+  );
+}
 export function payoutConnectedEmail(o: { name?: string | null }): Out {
   return wrap(
     "Your payout account is ready",
