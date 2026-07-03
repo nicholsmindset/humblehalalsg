@@ -30,6 +30,11 @@ const HOOKS: Record<string, { title: string; blurb: string; cta: string }> = {
     blurb: "Annual salah times plus a weekly halal guide — new MUIS-verified spots, mosque events and deals.",
     cta: "Email me the guide",
   },
+  "ingredient-checker": {
+    title: "Shop halal with confidence",
+    blurb: "Get our weekly halal guide for Singapore — new MUIS-verified finds, label tips and deals. We add new ingredients to this checker regularly.",
+    cta: "Get the weekly guide",
+  },
 };
 
 const DEFAULT = {

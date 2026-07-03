@@ -95,6 +95,14 @@ export const TOOLS: Tool[] = [
     live: true,
   },
   {
+    slug: "ingredient-checker",
+    title: "Is this ingredient halal?",
+    blurb: "Look up any E-number or food additive's halal status.",
+    icon: "search",
+    category: "Knowledge",
+    live: true,
+  },
+  {
     slug: "date-converter",
     title: "Hijri Date Converter",
     blurb: "Convert between Hijri and Gregorian dates.",
