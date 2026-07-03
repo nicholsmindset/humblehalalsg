@@ -21,6 +21,9 @@ type ClerkUserEvent = {
     primary_email_address_id?: string | null;
     first_name?: string | null;
     last_name?: string | null;
+    /** Client-set at signup (LoginScreen role picker) — accountType "owner"
+     *  provisions the business-owner role from the first session. */
+    unsafe_metadata?: { accountType?: string } | null;
   };
 };
 
@@ -57,10 +60,13 @@ export async function POST(req: Request) {
     const email = primary?.email_address ?? null;
     const name = [d.first_name, d.last_name].filter(Boolean).join(" ") || null;
     if (evt.type === "user.created") {
-      // New user → provision profile with the default role. ignoreDuplicates so
-      // a replayed/redelivered user.created can never overwrite an existing row
-      // (it would reset a promoted admin's role back to 'user').
-      await admin.from("profiles").upsert({ id: d.id, email, name, role: "user" }, { onConflict: "id", ignoreDuplicates: true });
+      // New user → provision profile. Role comes from the signup account-type
+      // choice (unsafeMetadata.accountType: "owner" | "user"); anything else
+      // defaults to 'user'. ignoreDuplicates so a replayed/redelivered
+      // user.created can never overwrite an existing row (it would reset a
+      // promoted admin's role back to 'user').
+      const role = d.unsafe_metadata?.accountType === "owner" ? "owner" : "user";
+      await admin.from("profiles").upsert({ id: d.id, email, name, role }, { onConflict: "id", ignoreDuplicates: true });
     } else {
       // Existing user → refresh contact fields only; never touch role.
       await admin.from("profiles").update({ email, name }).eq("id", d.id);

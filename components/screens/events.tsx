@@ -1309,6 +1309,8 @@ const REFUND_POLICIES = [
   { id: "flexible", label: "Flexible — full refund up to 48h before" },
   { id: "moderate", label: "Moderate — 50% refund up to 7 days before" },
 ];
+const EVENT_DRAFT_KEY = "hh-draft-event";
+
 export function HostEventScreen() {
   const { navigate, flags, toast } = useApp();
   const [step, setStep] = useState(0);
@@ -1323,6 +1325,22 @@ export function HostEventScreen() {
   const steps = ["Details", "Date & venue", "Tickets", "Photos", "Review"];
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [stepErr, setStepErr] = useState("");
+  const [draftAvailable, setDraftAvailable] = useState<{ step: number; data: HostForm } | null>(null);
+
+  // Draft persistence — abandoning the 5-step wizard used to lose everything.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(EVENT_DRAFT_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { step?: number; data?: HostForm };
+      if (saved?.data?.title) setDraftAvailable({ step: saved.step || 0, data: saved.data });
+    } catch { /* corrupt draft — ignore */ }
+  }, []);
+  useEffect(() => {
+    if (!d.title.trim()) return;
+    try { localStorage.setItem(EVENT_DRAFT_KEY, JSON.stringify({ step, data: d })); } catch { /* storage full/private */ }
+  }, [step, d]);
   const uploadCover = async (file: File) => {
     setUploading(true);
     try {
@@ -1392,13 +1410,37 @@ export function HostEventScreen() {
       return;
     }
     setSubmitting(false);
+    try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
     navigate("success", { type: "event-listing" });
   };
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submitEvent());
-  const prev = () => (step > 0 ? setStep(step - 1) : navigate("events"));
+
+  // Per-step gate — Continue used to be always-enabled.
+  const validateStep = (s: number): string => {
+    if (s === 0) {
+      if (d.title.trim().length < 3) return "Give your event a title to continue.";
+      if (!d.cat) return "Pick the category that fits best.";
+    }
+    if (s === 1) {
+      if (!d.date) return "Choose the event date.";
+      if (!d.venue.trim()) return "Add the venue so guests know where to go.";
+    }
+    if (s === 2 && !d.free) {
+      const price = Number(d.price);
+      if (!Number.isFinite(price) || price <= 0) return "Enter a ticket price (or switch to free RSVP).";
+    }
+    return "";
+  };
+  const next = () => {
+    const err = validateStep(step);
+    if (err) { setStepErr(err); return; }
+    setStepErr("");
+    if (step < steps.length - 1) setStep(step + 1);
+    else submitEvent();
+  };
+  const prev = () => { setStepErr(""); return step > 0 ? setStep(step - 1) : navigate("events"); };
 
   return (
-    <div className="screen-in hh-page">
+    <div className="screen-in hh-page has-wizard-footer">
       <MobileHeader title="Host an event" onBack={prev} />
       <div className="wizard">
         <div className="wizard-head hide-mob">
@@ -1408,6 +1450,17 @@ export function HostEventScreen() {
           </p>
         </div>
         <WizardSteps steps={steps} step={step} />
+
+        {draftAvailable && (
+          <div className="notice" role="status" style={{ marginBottom: 12 }}>
+            <Icon name="info" size={17} />
+            <span className="f1">Pick up where you left off? We saved your draft for <strong>{draftAvailable.data.title}</strong>.</span>
+            <div className="flex g6">
+              <button className="btn btn-primary btn-sm" onClick={() => { setD(draftAvailable.data); setStep(Math.min(draftAvailable.step, steps.length - 1)); setDraftAvailable(null); }}>Restore</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setDraftAvailable(null); try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ } }}>Discard</button>
+            </div>
+          </div>
+        )}
 
         <div className="card wizard-body">
           {step === 0 && (
@@ -1662,7 +1715,13 @@ export function HostEventScreen() {
           )}
         </div>
 
-        <div className="wizard-foot">
+        {stepErr && (
+          <div className="notice notice-warn" role="alert" style={{ marginTop: 12 }}>
+            <Icon name="warning" size={17} /> <span>{stepErr}</span>
+          </div>
+        )}
+
+        <div className="wizard-foot wizard-footer">
           <button className="btn btn-ghost" onClick={prev}>
             {step === 0 ? "Cancel" : "Back"}
           </button>

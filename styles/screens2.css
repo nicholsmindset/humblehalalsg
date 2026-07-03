@@ -297,6 +297,11 @@
 .audit-row:last-child { border-bottom:none; }
 .audit-dot { width:9px; height:9px; border-radius:50%; background:var(--emerald); margin-top:5px; flex:none; box-shadow:0 0 0 3px var(--emerald-50); }
 
+/* =========================== SUCCESS "WHAT'S NEXT" =========================== */
+.success-next { list-style:none; margin:18px auto 0; padding:14px 16px; max-width:440px; text-align:left; background:var(--emerald-50); border-radius:12px; display:flex; flex-direction:column; gap:10px; }
+.success-next li { display:flex; gap:10px; align-items:flex-start; font-size:.88rem; line-height:1.45; }
+.sn-num { flex:none; width:22px; height:22px; border-radius:50%; background:var(--emerald); color:#fff; font-size:.72rem; font-weight:800; display:grid; place-items:center; margin-top:1px; }
+
 /* =========================== OWNER LISTING EDITOR =========================== */
 .ed-nav { display:flex; gap:6px; flex-wrap:wrap; }
 .ed-chip { border:1px solid var(--line); background:var(--white); border-radius:999px; padding:7px 13px; font-size:.8rem; font-weight:700; color:var(--ink-soft); cursor:pointer; transition:all .14s; min-height:36px; }

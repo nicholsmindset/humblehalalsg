@@ -21,6 +21,8 @@ import { PayoutsPanel } from "../owner/payouts";
 import { CertVault } from "../owner/cert-vault";
 import { OwnerAds } from "../owner/ads-tab";
 import { OwnerInsights } from "../owner/insights";
+import { PendingSubmissions, type PendingSubmission } from "../owner/pending-submissions";
+import { ActivationChecklist } from "../owner/activation-checklist";
 import type { OwnerBiz, OwnerEvent } from "../owner/types";
 
 // MUIS certifies food & beverage — so only these categories get the
@@ -214,14 +216,33 @@ interface ListingForm {
   outlets: ListingOutlet[];
 }
 const emptyOutlet = (): ListingOutlet => ({ name: "", address: "", region: "", town: "", postal: "" });
+const LISTING_DRAFT_KEY = "hh-draft-listing";
+
 export function AddListingScreen() {
   const { navigate, toast } = useApp();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ListingForm>({ name: "", desc: "", phone: "", whatsapp: "", cat: "", address: "", region: "", town: "", postal: "", halal: "", certNo: "", photos: 0, photoUrls: [], proofName: "", franchise: false, outlets: [emptyOutlet()] });
   const set = <K extends keyof ListingForm>(k: K, v: ListingForm[K]) => setData((d) => ({ ...d, [k]: v }));
   const [uploading, setUploading] = useState(false);
+  const [stepErr, setStepErr] = useState("");
+  const [draftAvailable, setDraftAvailable] = useState<{ step: number; data: ListingForm } | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const proofInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Draft persistence — abandoning a 6-step wizard used to lose everything.
+  // Saved per step-change/edit; offered back on return; cleared on submit.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LISTING_DRAFT_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { step?: number; data?: ListingForm };
+      if (saved?.data?.name) setDraftAvailable({ step: saved.step || 0, data: saved.data });
+    } catch { /* corrupt draft — ignore */ }
+  }, []);
+  useEffect(() => {
+    if (!data.name.trim()) return; // nothing worth saving yet
+    try { localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify({ step, data })); } catch { /* storage full/private */ }
+  }, [step, data]);
 
   // Real photo upload — one request per file to /api/owner/photos (authed,
   // rate-limited; business-photos bucket). Skips files that fail; caps at 6 —
@@ -308,13 +329,40 @@ export function AddListingScreen() {
     } catch {
       /* graceful — still confirm to the user */
     }
+    try { localStorage.removeItem(LISTING_DRAFT_KEY); } catch { /* ignore */ }
     navigate("success", { type: "listing" });
   };
-  const next = () => (step < steps.length - 1 ? setStep(step + 1) : submitListing());
-  const prev = () => (step > 0 ? setStep(step - 1) : navigate("for-business"));
+
+  // Per-step gate — Continue used to be always-enabled, so incomplete
+  // submissions sailed through to moderation. Empty string = step is fine.
+  const validateStep = (s: number): string => {
+    if (s === 0) {
+      if (data.name.trim().length < 2) return "Enter your business name to continue.";
+      if (data.phone && data.phone.replace(/\D/g, "").length < 8) return "That phone number looks too short.";
+    }
+    if (s === 1) {
+      if (data.franchise) {
+        if (!data.outlets.some((o) => o.address.trim())) return "Add at least one outlet address.";
+      } else {
+        if (!data.address.trim()) return "Add your address so customers can find you.";
+        if (data.postal && !/^\d{6}$/.test(data.postal)) return "Postal code should be 6 digits.";
+      }
+    }
+    if (s === 2 && !data.cat) return "Pick the category that fits best.";
+    if (s === 3 && !data.halal) return "Choose your halal status to continue.";
+    return "";
+  };
+  const next = () => {
+    const err = validateStep(step);
+    if (err) { setStepErr(err); return; }
+    setStepErr("");
+    if (step < steps.length - 1) setStep(step + 1);
+    else submitListing();
+  };
+  const prev = () => { setStepErr(""); return step > 0 ? setStep(step - 1) : navigate("for-business"); };
 
   return (
-    <div className="screen-in hh-page">
+    <div className="screen-in hh-page has-wizard-footer">
       <MobileHeader title="Add your business" onBack={prev} />
       <div className="wizard">
         <div className="wizard-head hide-mob">
@@ -322,6 +370,17 @@ export function AddListingScreen() {
           <p className="muted">Step {step + 1} of {steps.length} — {steps[step]}</p>
         </div>
         <WizardSteps steps={steps} step={step} />
+
+        {draftAvailable && (
+          <div className="notice" role="status" style={{ marginBottom: 12 }}>
+            <Icon name="info" size={17} />
+            <span className="f1">Pick up where you left off? We saved your draft for <strong>{draftAvailable.data.name}</strong>.</span>
+            <div className="flex g6">
+              <button className="btn btn-primary btn-sm" onClick={() => { setData(draftAvailable.data); setStep(Math.min(draftAvailable.step, steps.length - 1)); setDraftAvailable(null); }}>Restore</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setDraftAvailable(null); try { localStorage.removeItem(LISTING_DRAFT_KEY); } catch { /* ignore */ } }}>Discard</button>
+            </div>
+          </div>
+        )}
 
         <div className="card wizard-body">
           {step === 0 && (
@@ -484,7 +543,13 @@ export function AddListingScreen() {
           )}
         </div>
 
-        <div className="wizard-foot">
+        {stepErr && (
+          <div className="notice notice-warn" role="alert" style={{ marginTop: 12 }}>
+            <Icon name="warning" size={17} /> <span>{stepErr}</span>
+          </div>
+        )}
+
+        <div className="wizard-foot wizard-footer">
           <button className="btn btn-ghost" onClick={prev}>{step === 0 ? "Cancel" : "Back"}</button>
           <button className="btn btn-primary" onClick={next}>{step === steps.length - 1 ? "Submit for review" : "Continue"}<Icon name="arrow" size={17} /></button>
         </div>
@@ -527,6 +592,7 @@ export function OwnerDashboardScreen() {
   const live = supabaseConfigured;
   const [biz, setBiz] = useState<OwnerBiz[] | null>(null); // null = loading
   const [ownerEvents, setOwnerEvents] = useState<OwnerEvent[] | null>(null);
+  const [pending, setPending] = useState<PendingSubmission[]>([]); // in-review submissions
   const [editingId, setEditingId] = useState<string | null>(null); // listing being edited inline
 
   // Reload the owner's businesses (id-only refresh keeps card metadata current
@@ -545,13 +611,19 @@ export function OwnerDashboardScreen() {
     (async () => {
       const sb = supabase;
       if (!sb) return; // mock mode
-      if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); } return; }
+      if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); setPending([]); } return; }
       const list = await loadBiz();
       if (!alive) return;
       if (list.length) {
         const { data: ed } = await sb.from("events").select("id, slug, title, status, taken, capacity, is_free, date_iso, display").in("business_id", list.map((b) => b.id)).order("date_iso", { ascending: false });
         if (alive) setOwnerEvents((ed as OwnerEvent[]) || []);
       } else if (alive) setOwnerEvents([]);
+      // In-flight submissions (pending listings + claims) → "In review" cards.
+      try {
+        const res = await fetch("/api/owner/submissions");
+        const j = await res.json().catch(() => ({}));
+        if (alive && j?.ok && Array.isArray(j.submissions)) setPending(j.submissions as PendingSubmission[]);
+      } catch { /* cards just don't render */ }
     })();
     return () => { alive = false; };
   }, [supabase, user, loadBiz]);
@@ -659,6 +731,18 @@ export function OwnerDashboardScreen() {
                 </div>
               );
             })()}
+            {/* Pending submissions + first-run checklist: a fresh owner sees a
+                guided path (and their in-review items) instead of bare stats. */}
+            {live && <PendingSubmissions items={pending} />}
+            {live && biz !== null && biz.length === 0 && (
+              <ActivationChecklist
+                hasLive={false}
+                pendingCount={pending.length}
+                certVault={flags.certVault}
+                onGoTab={setTab}
+                onAddListing={() => navigate("add-listing")}
+              />
+            )}
             <OwnerInsights />
           </div>
         )}
@@ -678,11 +762,16 @@ export function OwnerDashboardScreen() {
             ) : biz === null ? (
               <div className="card" style={{ padding: 24, height: 90, opacity: 0.5 }} aria-busy="true" />
             ) : biz.length === 0 ? (
-              <div className="card" style={{ padding: 28, textAlign: "center" }}>
-                <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="store" size={24} /></div>
-                <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No listings yet</h3>
-                <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Add your business so customers can find you in the directory.</p>
-              </div>
+              <>
+                <PendingSubmissions items={pending} />
+                {pending.length === 0 && (
+                  <div className="card" style={{ padding: 28, textAlign: "center" }}>
+                    <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="store" size={24} /></div>
+                    <h3 style={{ fontSize: "1.15rem", marginBottom: 6 }}>No listings yet</h3>
+                    <p className="faint" style={{ fontSize: ".9rem", maxWidth: 420, margin: "0 auto" }}>Add your business so customers can find you in the directory.</p>
+                  </div>
+                )}
+              </>
             ) : (
               biz.map((b) => (
                 <div key={b.id} className="card" style={{ padding: 0, overflow: "hidden" }}>
