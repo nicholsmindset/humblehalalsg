@@ -12,7 +12,27 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: { baseURL, trace: "on-first-retry" },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Desktop smoke suite (everything except the mobile guard).
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /mobile\.spec\.ts/ },
+    // Mobile regression guard (e2e/mobile.spec.ts only). All chromium —
+    // device presets default to webkit, but CI installs chromium only.
+    {
+      name: "mobile-320",
+      testMatch: /mobile\.spec\.ts/,
+      use: { browserName: "chromium", viewport: { width: 320, height: 693 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+    },
+    {
+      name: "mobile-390",
+      testMatch: /mobile\.spec\.ts/,
+      use: { ...devices["iPhone 12"], browserName: "chromium" },
+    },
+    {
+      name: "tablet-768",
+      testMatch: /mobile\.spec\.ts/,
+      use: { ...devices["iPad Mini"], browserName: "chromium" },
+    },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {

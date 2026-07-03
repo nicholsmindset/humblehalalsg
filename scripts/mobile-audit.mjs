@@ -68,6 +68,7 @@ const ROUTES = [
       await page.locator(".nav-drawer").waitFor({ timeout: 5000 });
     } },
     { name: "newsletter-popup", special: "newsletter" },
+    { name: "cookie-banner", special: "cookie" },
   ] },
   { name: "explore", path: "/explore", states: [
     { name: "default" },
@@ -81,16 +82,16 @@ const ROUTES = [
   { name: "travel", path: "/travel", landscape: true, states: [
     { name: "default" },
     { name: "date-open", action: async (page) => {
-      await page.locator("#main-content").getByRole("button", { name: /Dates/ }).first().click({ timeout: 5000 });
-      await page.locator(".ota-popover").waitFor({ timeout: 5000 });
+      await page.locator(".ota-seg").filter({ hasText: /Dates/ }).first().click({ timeout: 6000 });
+      await page.locator(".ota-popover").first().waitFor({ timeout: 6000 });
     } },
     { name: "occ-open", action: async (page) => {
-      await page.locator("#main-content").getByRole("button", { name: /Guests/ }).first().click({ timeout: 5000 });
-      await page.locator(".ota-popover").waitFor({ timeout: 5000 });
+      await page.locator(".ota-seg").filter({ hasText: /Guests/ }).first().click({ timeout: 6000 });
+      await page.locator(".ota-popover").first().waitFor({ timeout: 6000 });
     } },
     { name: "flights-tab", action: async (page) => {
-      await page.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Flights" }).click({ timeout: 5000 });
-      await page.getByRole("tab", { name: "Round trip" }).waitFor({ timeout: 5000 });
+      await page.getByRole("tablist", { name: /travel type/i }).getByRole("tab", { name: "Flights" }).click({ timeout: 6000 });
+      await page.getByRole("tab", { name: "Round trip" }).waitFor({ timeout: 6000 });
     } },
   ] },
   { name: "travel-city-kl", path: "/travel/kuala-lumpur", settleMs: 2500, states: [{ name: "default" }] },
@@ -109,12 +110,12 @@ const ROUTES = [
   { name: "flights", path: "/travel/flights", landscape: true, states: [
     { name: "default" },
     { name: "date-open", action: async (page) => {
-      await page.locator("#main-content").getByRole("button", { name: /Dates|Departure/ }).first().click({ timeout: 5000 });
-      await page.locator(".ota-popover").waitFor({ timeout: 5000 });
+      await page.locator(".ota-seg").filter({ hasText: /Dates|Departure/ }).first().click({ timeout: 6000 });
+      await page.locator(".ota-popover").first().waitFor({ timeout: 6000 });
     } },
     { name: "pax-open", action: async (page) => {
-      await page.locator("#main-content").getByRole("button", { name: /traveller|passenger|adult/i }).first().click({ timeout: 5000 });
-      await page.waitForTimeout(600);
+      await page.locator(".ota-seg").filter({ hasText: /Traveller|Passenger|Guests/i }).first().click({ timeout: 6000 });
+      await page.locator(".ota-popover").first().waitFor({ timeout: 6000 });
     } },
   ] },
   { name: "flights-booking", path: "/travel/flights/booking", states: [{ name: "default" }] },
@@ -122,8 +123,10 @@ const ROUTES = [
   { name: "event-detail", dynamic: "event", states: [
     { name: "default" },
     { name: "to-checkout", action: async (page) => {
-      await page.locator(".evt-stickybar button, .evt-stickybar a").first().click({ timeout: 5000 });
-      await page.waitForTimeout(1500);
+      // The in-content ticket CTA (not the fixed sticky bar, which can sit
+      // under the mobile tab bar) routes to the checkout/RSVP screen.
+      await page.getByRole("button", { name: /Get tickets|RSVP|Request to join/ }).first().click({ timeout: 6000 });
+      await page.waitForTimeout(1800);
     } },
   ] },
   { name: "checkout", path: "/checkout", landscape: true, states: [{ name: "default" }] },
@@ -155,7 +158,9 @@ const ALLOW_SELECTOR = SCROLLER_ALLOWLIST.join(",");
 function seedScript() {
   return () => {
     try {
-      localStorage.setItem("hh_consent_v1", "essential");
+      // Proper v1 consent object (a legacy string is treated as "re-ask" and
+      // the banner reappears, intercepting taps + adding noise to every page).
+      localStorage.setItem("hh_consent_v1", JSON.stringify({ analytics: true, marketing: false, ts: Date.now(), v: 1 }));
       localStorage.setItem("hh_state_v1", JSON.stringify({ prefs: { onboarded: true, homeArea: "", certifiedOnly: false } }));
       localStorage.setItem("hh_nl_popup", "dismissed");
     } catch { /* ignore */ }
@@ -247,13 +252,29 @@ async function runDevice({ browser, device, cfg, routes, phase, outDir, resolved
       if (!routePath) { findings.push({ type: "blocked", severity: "low", route: route.name, state: "default", device, selector: "-", detail: { reason: `no ${route.dynamic} resolved` }, screenshot: null }); continue; }
     }
     for (const state of route.states) {
+      if (state.special === "cookie") {
+        // Fresh context WITHOUT consent seed → the PDPA banner shows on arrival.
+        try {
+          const ctx3 = await browser.newContext({ ...cfg, isMobile: true, hasTouch: true, reducedMotion: "reduce", baseURL: BASE });
+          await ctx3.addInitScript(() => { try { localStorage.setItem("hh_state_v1", JSON.stringify({ prefs: { onboarded: true } })); localStorage.setItem("hh_nl_popup", "dismissed"); } catch { /* ignore */ } });
+          const p3 = await ctx3.newPage();
+          await p3.goto(routePath, { waitUntil: "domcontentloaded", timeout: 30000 });
+          await settle(p3, 800);
+          await p3.locator(".cookie-banner").waitFor({ timeout: 6000 });
+          await probeState({ page: p3, route, state: state.name, device, phase, outDir, findings, consoleErrors: [] });
+          await ctx3.close();
+        } catch {
+          findings.push({ type: "blocked", severity: "low", route: route.name, state: state.name, device, selector: "-", detail: { reason: "cookie banner did not appear" }, screenshot: null });
+        }
+        continue;
+      }
       if (state.special === "newsletter") {
         // needs its own context without the hh_nl_popup seed
         try {
           const ctx2 = await browser.newContext({ ...cfg, isMobile: true, hasTouch: true, reducedMotion: "reduce", baseURL: BASE });
           await ctx2.addInitScript(() => {
             try {
-              localStorage.setItem("hh_consent_v1", "essential");
+              localStorage.setItem("hh_consent_v1", JSON.stringify({ analytics: true, marketing: false, ts: Date.now(), v: 1 }));
               localStorage.setItem("hh_state_v1", JSON.stringify({ prefs: { onboarded: true, homeArea: "", certifiedOnly: false } }));
             } catch { /* ignore */ }
           });

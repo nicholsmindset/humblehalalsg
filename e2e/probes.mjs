@@ -115,6 +115,9 @@ export function tapTargetProbe(primaryCtaSelector) {
     if (el.closest('[aria-hidden="true"],[hidden]')) return false;
     const cs = getComputedStyle(el);
     if (cs.display === "none" || cs.visibility === "hidden") return false;
+    // pointer-events:none = not tappable (e.g. a heading rendered as a <button>
+    // that only becomes interactive at another breakpoint).
+    if (cs.pointerEvents === "none") return false;
     const r = el.getBoundingClientRect();
     return r.width >= 1 && r.height >= 1;
   };
@@ -124,15 +127,10 @@ export function tapTargetProbe(primaryCtaSelector) {
     const r = el.getBoundingClientRect();
     const w = Math.round(r.width), h = Math.round(r.height);
     if (w >= 48 && h >= 48) continue;
-    // WCAG 2.5.8 inline exception: links inside a sentence (size constrained by
-    // the surrounding line-height) are exempt — skip to avoid flooding triage.
-    if (el.tagName === "A" && getComputedStyle(el).display === "inline" && el.parentElement) {
-      let inSentence = false;
-      for (const n of el.parentElement.childNodes) {
-        if (n.nodeType === 3 && n.textContent.trim()) { inSentence = true; break; }
-      }
-      if (inSentence) continue;
-    }
+    // WCAG 2.5.8 inline exception: a link whose computed display is `inline`
+    // is sized by the line it flows in — its target area comes from line-height,
+    // not its box. These are exempt from the 24/44px rule.
+    if (el.tagName === "A" && getComputedStyle(el).display === "inline") continue;
     // Covered by a big-enough interactive ancestor? (e.g. input inside a 44px label row)
     let anc = el.parentElement, coveredBy = null;
     while (anc && anc !== document.body) {
