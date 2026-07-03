@@ -593,6 +593,11 @@ export function OwnerDashboardScreen() {
     else url.searchParams.set("tab", id);
     window.history.replaceState(null, "", url.toString());
   };
+  // The tab strip scrolls horizontally on mobile — deep-linked tabs (?tab=ads,
+  // ?tab=billing) can sit off-screen, so bring the active one into view.
+  useEffect(() => {
+    document.querySelector(".dash-tabs button.on")?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [tab]);
   const demoListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
 
   // Real owner data when Supabase is live + the user is signed in; otherwise

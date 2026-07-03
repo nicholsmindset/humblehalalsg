@@ -579,27 +579,30 @@ export function MobileBar() {
               ))}
             </nav>
 
+            {/* Real anchors (crawlable, middle-clickable — audit #167); still
+                close the drawer on tap. */}
             <div className="nav-drawer-cta">
               {user.loggedIn ? (
                 <>
-                  <button
+                  <ScreenLink
+                    screen={user.role === "owner" ? "owner-dashboard" : "user-dashboard"}
                     className="btn btn-primary btn-block"
-                    onClick={() => go(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+                    onClick={close}
                   >
                     <Icon name="user" size={18} /> {user.name || "Dashboard"}
-                  </button>
-                  <button className="btn btn-gold btn-block" onClick={() => go("add-listing")}>
+                  </ScreenLink>
+                  <ScreenLink screen="add-listing" className="btn btn-gold btn-block" onClick={close}>
                     <Icon name="plus" size={18} /> Add listing
-                  </button>
+                  </ScreenLink>
                 </>
               ) : (
                 <>
-                  <button className="btn btn-primary btn-block" onClick={() => go("for-business")}>
+                  <ScreenLink screen="for-business" className="btn btn-primary btn-block" onClick={close}>
                     {t("nav.listBusiness")}
-                  </button>
-                  <button className="btn btn-outline btn-block" onClick={() => go("login")}>
+                  </ScreenLink>
+                  <ScreenLink screen="login" className="btn btn-outline btn-block" onClick={close}>
                     {t("nav.login")}
-                  </button>
+                  </ScreenLink>
                 </>
               )}
             </div>

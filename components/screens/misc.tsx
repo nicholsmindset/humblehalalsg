@@ -355,7 +355,7 @@ export function UserDashboardScreen() {
           <div className="flex g14 center">
             <span className="avatar" style={{width:56,height:56,fontSize:'1.4rem',background:'var(--gold)',color:'#3a2c08'}}>{(state.user.name||'A')[0]}</span>
             <div><h1 style={{color:'#fff', fontSize:'1.6rem'}}>{state.user.loggedIn?state.user.name:'Guest'}</h1>
-              <p style={{color:'#CFE0DA', fontSize:'.9rem'}}>{state.user.loggedIn?'Member since 2025':'Log in to sync across devices'}</p></div>
+              <p style={{color:'#CFE0DA', fontSize:'.9rem'}}>{state.user.loggedIn?'Assalamualaikum 👋':'Log in to sync your saves across devices'}</p></div>
           </div>
           <div className="flex g10 center">
             {state.user.loggedIn && <NotificationBell />}
