@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Icon, useDialog } from "./ui";
+import { Icon, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 
 const STORE_KEY = "hh_nl_popup"; // "dismissed" | "subscribed"
@@ -46,6 +46,7 @@ export function NewsletterPopup() {
     mark("dismissed");
   };
   useDialog(ref, close);
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (suppressed || alreadyHandled() || shownRef.current) return;

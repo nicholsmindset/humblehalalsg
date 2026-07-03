@@ -71,11 +71,20 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* iOS Safari inflates text on orientation change without this. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 /* Safety net: never allow horizontal scroll on mobile. `clip` (not `hidden`)
    does not create a scroll container, so sticky headers keep working. */
 html { overflow-x: clip; }
 body { overflow-x: clip; max-width: 100%; }
+
+/* Body scroll lock while a full-screen overlay is open (useBodyScrollLock).
+   overflow:hidden on html preserves the scroll position; the gutter var
+   compensates the vanished desktop scrollbar so layout doesn't shift. */
+html.scroll-locked { overflow: hidden; }
+html.scroll-locked body { padding-right: var(--scroll-lock-gutter, 0px); }
 
 h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; color: var(--ink); margin: 0; line-height: 1.12; letter-spacing: -.01em; }
 p { margin: 0; }

@@ -50,11 +50,21 @@ function FitOrCenter({ center, zoom, points, fit }: { center: LatLng; zoom: numb
   const key = points.map((p) => p.id).join(",");
   useEffect(() => {
     map.invalidateSize();
+    // flyTo/fitBounds interpolate using the container size; on a zero-size
+    // container (mounted in a grid/flex cell that lays out AFTER the map) the
+    // projection divides by zero → "Invalid LatLng (NaN,NaN)" thrown from an
+    // effect (uncaught, not catchable by the React error boundary). Fall back
+    // to an instant, size-independent setView until the container has a size.
+    const size = map.getSize();
+    const sized = size.x > 0 && size.y > 0;
     if (fit && points.length > 1) {
       const b = L.latLngBounds(points.map((p) => [p.coords.lat, p.coords.lng] as [number, number]));
-      map.fitBounds(b, { padding: [48, 48], maxZoom: 15, animate: false });
-    } else {
+      if (sized) map.fitBounds(b, { padding: [48, 48], maxZoom: 15, animate: false });
+      else map.setView(b.getCenter(), zoom, { animate: false });
+    } else if (sized) {
       map.flyTo([center.lat, center.lng], zoom, { duration: 0.5 });
+    } else {
+      map.setView([center.lat, center.lng], zoom, { animate: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fit, key, points.length, center.lat, center.lng, zoom, map]);

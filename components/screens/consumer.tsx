@@ -17,7 +17,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
+import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -534,7 +534,7 @@ export function ExploreScreen() {
               </button>
               <div className="sortwrap">
                 <Icon name="sort" size={16} style={{ color: "var(--ink-soft)" }} />
-                <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <select className="sort-select" aria-label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)}>
                   <option value="featured">Featured</option>
                   <option value="rating">Top rated</option>
                   <option value="nearest">Nearest</option>
@@ -619,6 +619,17 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClear: () => void;
 }) {
   const { categories: catCategories, areas: catAreas } = useCatalog();
+  // ≤860px the panel is a fixed full-screen sheet (screens.css) — freeze the
+  // page behind it. On desktop it's an inline aside, so no lock.
+  const [isSheet, setIsSheet] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)");
+    const update = () => setIsSheet(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useBodyScrollLock(isSheet);
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
   );

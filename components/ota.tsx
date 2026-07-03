@@ -172,7 +172,9 @@ export function Carousel({
           </div>
         </div>
       )}
-      <div className="ota-track" ref={track} role="list">
+      {/* Horizontal scroll rail. No role="list" — the children are arbitrary
+          cards, not listitems, which trips axe's aria-required-children. */}
+      <div className="ota-track" ref={track}>
         {children}
       </div>
     </section>

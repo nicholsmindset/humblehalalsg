@@ -158,6 +158,9 @@
 
 .hotel-detail-grid { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
 @media (max-width: 900px) { .hotel-detail-grid { grid-template-columns: 1fr; } .reserve-box { order: -1; } }
+/* min-width:0 so neither column (the room list or the reserve box) can force
+   the grid wider than a narrow phone and clip at the page edge. */
+.hotel-detail-grid > * { min-width: 0; }
 .reserve-box { position: sticky; top: 84px; }
 .reserve-price { font-size: 1.5rem; font-weight: 800; color: var(--ink, #1f2933); }
 .reserve-price small { font-size: .82rem; font-weight: 600; color: var(--ink-soft, #5a6470); }

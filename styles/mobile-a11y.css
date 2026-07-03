@@ -161,3 +161,108 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
     mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 26px), transparent);
   }
 }
+
+/* ============================================================
+   Matrix-audit round (2026-07) — full device-matrix sweep
+   ============================================================ */
+
+/* ---- Overlays: stop iOS scroll chaining to the page behind. The page
+   itself is frozen by html.scroll-locked (see styles.css + useBodyScrollLock);
+   containment keeps rubber-band scrolls inside the sheet. ---- */
+.modal-veil, .modal, .nav-drawer-veil, .nav-drawer, .filter-panel {
+  overscroll-behavior: contain;
+}
+
+/* ---- Cut-off content (element-level overflow found across the device
+   matrix at 320–430px). Each reflows the offending element instead of
+   letting the page-edge overflow:clip hide it. ---- */
+
+/* Cookie-consent action row: 3 buttons (Essential only / Customize / Accept
+   all) didn't fit ≤344px and "Essential only" was clipped off the left. */
+.cookie-actions { flex-wrap: wrap; }
+
+/* Explore toolbar left group (Filters + sort + cert toggle) overflowed ~20px
+   at 320px — let it wrap onto a second line on the narrowest phones. */
+@media (max-width: 360px) {
+  .explore-toolbar > .flex { flex-wrap: wrap; }
+}
+
+/* Date-range calendar: the 2-month view (~530px) overflowed on tablet and
+   landscape when the trigger sat mid-row. Collapse to a single month (the
+   month-nav arrows still reach later dates) and cap the popover to the
+   viewport for everything below desktop. Desktop (≥961px) keeps two months. */
+@media (max-width: 960px) {
+  .ota-popover { max-width: calc(100vw - 24px); }
+  .ota-cal-months { flex-direction: column; gap: 16px; }
+  .ota-cal-month { width: min(322px, calc(100vw - 40px)); }
+  .ota-cal-month:nth-child(2) { display: none; }
+}
+
+/* Prayer-strip mosque button + Quran surah-nav links grazed the edge (3–5px)
+   at exactly 320px. Give the mosque label more room to truncate (its span
+   already ellipsis-clips) and let the surah-nav buttons shrink + truncate. */
+@media (max-width: 340px) {
+  .prayer-mosque { max-width: 64%; }
+  .quran-nav a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ---- Tablet (768px) touch targets: the footer 44px tap-row rule capped at
+   700px, so on an iPad the footer nav/legal links reverted to ~20px tall.
+   Extend the touch-row + text floor to any coarse-pointer device. ---- */
+@media (pointer: coarse) {
+  .hh-footer-col a, .hh-footer-catlinks a, .hh-footer-legal a {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+  .eyebrow, .filter-count, .pop-badge, .badge,
+  .map-cc-dist, .map-mrt, .tbl th { font-size: .75rem; }
+
+  /* Breadcrumb links (SEO hero, travel, article) rendered ~20px tall — make
+     each a 44px hit row (they flex-wrap, so taller rows are fine). */
+  [aria-label="Breadcrumb"] a, .article-crumb a {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+  /* "How we verify" trust-strip button was 20px tall. */
+  .hts-link { min-height: 44px; }
+  /* Leaflet zoom +/- were 30px; bump for touch. */
+  .leaflet-control-zoom a { width: 40px; height: 40px; line-height: 40px; }
+}
+
+/* ---- Legible-text floor round 2 (≤12px content found in the sweep). The
+   recurring content-bearing classes rise to 12px on touch widths; purely
+   decorative micro-labels (bottom-tab icons, photo credits) stay as-is. ---- */
+@media (max-width: 700px) {
+  .newsletter-consent, .ota-seg-label, .dest-go, .dest-country,
+  .halal-flag, .halal-chip, .frc-tag, .dest-tag, .trv-trust-pill,
+  .standfirst-lbl, .save-pill, .secure-pill, .evt-cat, .blog-card-tag,
+  .article-kicker, .verified, .aa-beta { font-size: .75rem; }
+  /* Logo subtitle "SINGAPORE" was 9.3px — smallest text on the site. */
+  .hh-logo .name small { font-size: .66rem; letter-spacing: .16em; }
+}
+
+/* ---- iOS zoom-on-focus: Safari zooms the page when a focused text control
+   computes < 16px. Each selector below has a sub-16px size at its source
+   (kept for desktop density); on touch devices raise them all to 1rem.
+   Selectors replicate the source rules at equal-or-higher specificity so
+   the cascade (this file loads later) wins. ---- */
+@media (pointer: coarse) {
+  .input, .select, .textarea,          /* styles.css .95rem — global form controls */
+  .searchbar input,                    /* styles.css .98rem — home/explore search */
+  .ota-seg input,                      /* ota.css .98rem — stays/flights segments */
+  .ac > input,                         /* travel.css .92rem — destination autocomplete */
+  .ota-seg-where .ac > input,
+  .flt-hero .ota-seg-where .ac > input,
+  .occ-row select,                     /* travel.css .84rem — occupancy selects */
+  .booking-form input,                 /* travel.css .92rem — hotel guest details */
+  .ask-ai .aa-form input,              /* travel.css .92rem — Ask-AI query */
+  .pax-card input, .pax-card select,   /* travel.css .92rem — flight passengers */
+  .flt-track-form input,               /* travel.css .88rem — fare-watch email */
+  .promo-row input,                    /* travel.css .86rem — promo code */
+  .contact-grid input, .contact-grid select, .contact-grid textarea, /* screens2.css .92rem */
+  .sort-select,                        /* screens.css .86rem — explore sort */
+  .flt-cabin-row select,               /* travel.css .9rem — cabin class */
+  .cncg-input input,                   /* travel.css .92rem — concierge chat */
+  .aa-form input,                      /* travel.css .92rem — Ask-AI (any context) */
+  .field input, .field select, .field textarea { /* catch-all for bare .field controls */
+    font-size: 1rem; /* 16px */
+  }
+}
