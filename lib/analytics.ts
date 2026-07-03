@@ -77,7 +77,12 @@ export type LeadAction =
   | "call"
   | "website"
   | "directions"
-  | "shortlist";
+  | "shortlist"
+  | "share"
+  | "claim"
+  | "booking"
+  | "menu"
+  | "cert_view";
 
 const SESSION_KEY = "hh_sid";
 
@@ -114,7 +119,23 @@ type EventArgs = {
   p_query?: string | null;
   p_path?: string | null;
   p_referrer?: string | null;
+  p_area?: string | null;
+  p_device?: string | null;
+  p_results_count?: number | null;
 };
+
+// Params added by 0045 — stripped and retried if the DB predates the migration
+// (PGRST202 = no matching function), so the deploy-before-migration window
+// still records the legacy shape instead of dropping events.
+const V2_KEYS = ["p_area", "p_device", "p_results_count"] as const;
+
+function device(): string {
+  try {
+    return window.matchMedia("(max-width: 768px)").matches ? "mobile" : "desktop";
+  } catch {
+    return "desktop";
+  }
+}
 
 function emit(args: Partial<EventArgs> & { p_event_type: string }) {
   const sb = getSupabaseBrowser();
@@ -123,10 +144,17 @@ function emit(args: Partial<EventArgs> & { p_event_type: string }) {
     p_session_id: sessionId(),
     p_path: window.location.pathname,
     p_referrer: document.referrer || null,
+    p_device: device(),
     ...args,
   };
   // fire-and-forget; swallow all errors so analytics never affects UX
   void sb.rpc("track_event", payload).then(({ error }) => {
+    if (error?.code === "PGRST202") {
+      const legacy = { ...payload };
+      for (const k of V2_KEYS) delete legacy[k];
+      void sb.rpc("track_event", legacy).then(() => {});
+      return;
+    }
     if (error && process.env.NODE_ENV === "development") {
       console.debug("[analytics] track_event failed:", error.message);
     }
@@ -146,11 +174,11 @@ export const track = {
       page_title: typeof document !== "undefined" ? document.title : undefined,
     });
   },
-  impression(slug: string, category?: string) {
-    emit({ p_event_type: "impression", p_listing_slug: slug, p_category: category ?? null });
+  impression(slug: string, category?: string, area?: string) {
+    emit({ p_event_type: "impression", p_listing_slug: slug, p_category: category ?? null, p_area: area ?? null });
   },
   listingView(slug: string, category?: string, meta?: ListingMeta) {
-    emit({ p_event_type: "listing_view", p_listing_slug: slug, p_category: category ?? null });
+    emit({ p_event_type: "listing_view", p_listing_slug: slug, p_category: category ?? null, p_area: meta?.area ?? null });
     dl({
       event: "view_listing",
       listing_id: slug,
@@ -160,10 +188,35 @@ export const track = {
       listing_certified: meta?.certified,
     });
   },
-  search(query: string) {
+  search(query: string, resultsCount?: number) {
     if (!query.trim()) return;
-    emit({ p_event_type: "search", p_query: query });
-    dl({ event: "search", search_term: query });
+    emit({ p_event_type: "search", p_query: query, ...(typeof resultsCount === "number" ? { p_results_count: resultsCount } : {}) });
+    dl({ event: "search", search_term: query, results_count: resultsCount });
+  },
+  // A search-results card was opened — powers search→click rate and, per
+  // session, the owner-facing "search terms that led to your listing".
+  searchResultClick(slug: string, category?: string, query?: string) {
+    emit({ p_event_type: "search_result_click", p_listing_slug: slug, p_category: category ?? null, p_query: query ?? null });
+    dl({ event: "search_result_click", listing_id: slug, search_term: query });
+  },
+  // Commercial-intent filters: near_me, open_now, prayer_space, muis_certified,
+  // muslim_owned, halal_friendly, family_friendly, hotels, mosques, …
+  filterUse(key: string) {
+    emit({ p_event_type: "filter_use", p_query: key });
+    dl({ event: "filter_use", filter_key: key });
+  },
+  mapOpen() {
+    emit({ p_event_type: "map_open" });
+    dl({ event: "map_open" });
+  },
+  aiQuery(query: string) {
+    if (!query.trim()) return;
+    emit({ p_event_type: "ai_query", p_query: query.slice(0, 300) });
+    dl({ event: "ai_query" }); // no query text to third parties
+  },
+  aiResultClick(slug: string, category?: string) {
+    emit({ p_event_type: "ai_result_click", p_listing_slug: slug, p_category: category ?? null });
+    dl({ event: "ai_result_click", listing_id: slug });
   },
   leadAction(type: LeadAction, slug: string, category?: string) {
     emit({
@@ -181,6 +234,12 @@ export const track = {
       postServerEvent("lead_submit", eventId, { custom_data: { lead_type: "enquiry", content_ids: [slug], content_category: category } });
     } else if (type === "shortlist") {
       dl({ event: "save_listing", listing_id: slug, listing_category: category ?? undefined });
+    } else if (type === "share") {
+      dl({ event: "share", listing_id: slug, listing_category: category ?? undefined });
+    } else if (type === "claim") {
+      dl({ event: "claim_click", listing_id: slug, listing_category: category ?? undefined });
+    } else if (type === "cert_view") {
+      dl({ event: "cert_view", listing_id: slug, listing_category: category ?? undefined });
     } else {
       const eventId = newEventId();
       dl({ event: "contact_click", contact_method: type, listing_id: slug, listing_category: category ?? undefined, event_id: eventId });

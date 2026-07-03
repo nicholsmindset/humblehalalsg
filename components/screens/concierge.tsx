@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { track } from "@/lib/analytics";
 import type { Listing } from "@/lib/types";
 import type { Hotel } from "@/lib/halal-hotels";
 import type { ConciergeUIMessage } from "@/lib/concierge-agent";
@@ -34,7 +35,7 @@ function DirectoryResults({ out }: { out: DirOut }) {
   return (
     <div className="cncg-cards">
       {out.places.map((p) => (
-        <Link key={p.slug} href={p.url} className="cncg-card">
+        <Link key={p.slug} href={p.url} className="cncg-card" onClick={() => { if (p.slug) track.aiResultClick(p.slug, p.category); }}>
           <ImagePh label={p.category.toLowerCase()} src={p.image} style={{ width: 84, height: 96, flex: "none" }} icon="utensils" />
           <div className="cncg-card-body">
             <strong className="cncg-card-name">{p.name}</strong>
@@ -88,6 +89,7 @@ function SingleShotConcierge() {
   const ask = async (question?: string) => {
     const query = (question ?? q).trim();
     if (query.length < 2) return;
+    track.aiQuery(query);
     if (question) setQ(question);
     setLoading(true);
     setAsked(true);
@@ -140,7 +142,7 @@ function SingleShotConcierge() {
         )}
         {!loading && results.length > 0 && (
           <div className="grid-cards" style={{ marginTop: 16 }}>
-            {results.map((l) => <ListingCard key={l.id} item={l} />)}
+            {results.map((l) => <ListingCard key={l.id} item={l} onOpen={() => track.aiResultClick(l.slug || l.id, l.catId)} />)}
           </div>
         )}
         {!loading && hotels.length > 0 && (
@@ -187,10 +189,11 @@ function ChatConcierge({ onUnavailable }: { onUnavailable: () => void }) {
     e.preventDefault();
     const text = input.trim();
     if (!text || busy) return;
+    track.aiQuery(text);
     sendMessage({ text });
     setInput("");
   };
-  const ask = (text: string) => { if (!busy) sendMessage({ text }); };
+  const ask = (text: string) => { if (!busy) { track.aiQuery(text); sendMessage({ text }); } };
 
   return (
     <div className="cncg">

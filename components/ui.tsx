@@ -11,6 +11,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { track } from "@/lib/analytics";
 import { badgeMeta, HHData } from "@/lib/data";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 import type { BadgeKey, Listing } from "@/lib/types";
@@ -265,9 +266,12 @@ export function ImagePh({
 export function ListingCard({
   item,
   variant = "standard",
+  onOpen,
 }: {
   item: Listing;
   variant?: "standard" | "featured" | "row";
+  /** Optional analytics hook — fired alongside trackRecent when the card's main link is opened. */
+  onOpen?: () => void;
 }) {
   const { navigate, trackRecent, toggleSave, state } = useApp();
   const saved = state.saved.includes(item.id);
@@ -279,7 +283,7 @@ export function ListingCard({
       params={{ id: item.id }}
       className="card-stretch"
       intent
-      onClick={() => trackRecent(item.id)}
+      onClick={() => { trackRecent(item.id); onOpen?.(); }}
       aria-label={joinParts([item.name, joinParts([item.cuisine, item.area], ", ")], " — ")}
     />
   );
@@ -307,7 +311,7 @@ export function ListingCard({
     <button
       className="claim-chip"
       title="Own this business? Claim your free listing"
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate("claim", { id: item.slug || item.id }); }}
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); track.leadAction("claim", item.slug || item.id, item.catId); navigate("claim", { id: item.slug || item.id }); }}
       style={{ position: "relative", zIndex: 2, fontSize: ".72rem", fontWeight: 700, color: "var(--ink-soft)", background: "var(--cream-200)", border: "1px solid var(--line)", borderRadius: 999, padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}
     >
       <Icon name="building" size={11} /> Claim
