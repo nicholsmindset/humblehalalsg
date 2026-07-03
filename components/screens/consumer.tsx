@@ -886,15 +886,15 @@ export function MapScreen() {
           </div>
           {!chips.mosque && (
             <div className="flex g8 wrap" style={{ marginTop: 8 }}>
-              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, padding: "7px 10px" }}>
                 <option value="">All categories</option>
                 {catCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
-              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, padding: "7px 10px" }}>
                 <option value="">All areas</option>
                 {catAreas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select>
-              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, padding: "7px 10px" }}>
                 <option value="">Any halal status</option>
                 <option value="certified">Certified / verified</option>
                 <option value="muis">MUIS certified</option>
