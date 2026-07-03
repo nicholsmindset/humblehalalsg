@@ -1364,7 +1364,7 @@ type AdCampaign = {
   campaign_id: string; title: string; placement_key: string; status: string;
   advertiser_name: string | null; rate_cents: number; starts_on: string | null; ends_on: string | null;
   impressions: number; clicks: number; ctr: number;
-  review_status?: string; image_url?: string | null;
+  review_status?: string; image_url?: string | null; created_via?: string;
 };
 const STATUS_TAG: Record<string, string> = { active: "green", paused: "amber", scheduled: "blue", draft: "", ended: "" };
 const REVIEW_TAG: Record<string, string> = { approved: "green", pending: "amber", rejected: "" };
@@ -1567,7 +1567,13 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
             <thead><tr><th>Campaign</th><th>Placement</th><th>Status</th><th>Review</th><th>Impr.</th><th>Clicks</th><th>CTR</th><th>Rate</th><th>Actions</th></tr></thead>
             <tbody>{campaigns.map((c) => (
               <tr key={c.campaign_id} className="rowhover">
-                <td><div style={{ fontWeight: 700 }}>{c.title}</div><div className="faint" style={{ fontSize: ".78rem" }}>{c.advertiser_name || "—"}</div></td>
+                <td>
+                  <div className="flex g6 center wrap" style={{ fontWeight: 700 }}>
+                    {c.title}
+                    {c.created_via === "self_serve" && <span className="pill-tag blue" style={{ fontSize: ".68rem" }}>Self-serve</span>}
+                  </div>
+                  <div className="faint" style={{ fontSize: ".78rem" }}>{c.advertiser_name || "—"}{c.starts_on ? ` · ${c.starts_on} → ${c.ends_on || "—"}` : ""}</div>
+                </td>
                 <td className="muted">{placements.find((p) => p.key === c.placement_key)?.label || c.placement_key}</td>
                 <td><span className={`pill-tag ${STATUS_TAG[c.status] || ""}`}>{c.status}</span></td>
                 <td><span className={`pill-tag ${REVIEW_TAG[c.review_status || "approved"] || ""}`}>{c.review_status || "approved"}</span></td>

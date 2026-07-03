@@ -881,7 +881,7 @@ export function OwnerDashboardScreen() {
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
 
-        {tab === "ads" && <OwnerAds navigate={navigate} />}
+        {tab === "ads" && <OwnerAds navigate={navigate} biz={live ? myBiz : null} />}
 
         {tab === "billing" && (
           <div className="dash-pane stack g16">

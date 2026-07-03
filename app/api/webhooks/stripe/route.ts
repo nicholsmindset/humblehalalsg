@@ -204,6 +204,58 @@ export async function POST(req: Request) {
             }
           }
         }
+        // Self-serve campaign purchase → flip the pre-created draft to
+        // 'scheduled' (serves at starts_on once an admin approves the creative)
+        // + record the revenue. Replays are no-ops: the status guard plus the
+        // unique stripe_payment_intent index (0044) make this idempotent.
+        else if (s.mode === "payment" && s.metadata?.kind === "ad_selfserve" && supa) {
+          const m = s.metadata;
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          const campaignId = m.campaignId || "";
+          if (campaignId) {
+            const { data: updated } = await supa
+              .from("ad_campaigns")
+              .update({ status: "scheduled", stripe_payment_intent: pi })
+              .eq("id", campaignId)
+              .eq("status", "draft") // replay guard
+              .select("id, title, placement_key, rate_cents, starts_on, ends_on")
+              .maybeSingle();
+
+            // Revenue ledger row (same shape as legacy ad purchases; unique PI
+            // makes a replayed insert fail silently → catch + ignore).
+            try {
+              await supa.from("ad_orders").insert({
+                business_id: m.businessId || null,
+                product: `selfserve:${updated?.placement_key || "campaign"}`,
+                amount_cents: s.amount_total ?? 0,
+                stripe_payment_intent: pi,
+                status: "paid",
+              });
+            } catch { /* replay or ledger drift — campaign update is authoritative */ }
+
+            const buyerEmail = s.customer_details?.email || null;
+            if (updated && buyerEmail) {
+              try {
+                const currency = (s.currency || "sgd").toUpperCase();
+                const amount = s.amount_total ? `${currency} ${(s.amount_total / 100).toFixed(2)}` : undefined;
+                const t = adPurchaseEmail({ productName: `${updated.title} (${updated.starts_on} → ${updated.ends_on})`, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
+                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
+              } catch { /* email best-effort */ }
+            }
+            // Nudge the review queue — payment is confirmed, creative awaits approval.
+            if (updated) {
+              try {
+                const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+                await sendEmail({
+                  to: inbox,
+                  subject: `Paid self-serve campaign awaiting review: ${updated.title}`,
+                  template: "ad-selfserve-review",
+                  html: `<p>A self-serve campaign has been PAID and is waiting for creative review in the admin dashboard.</p><p><strong>${updated.title}</strong> · ${updated.placement_key} · ${updated.starts_on} → ${updated.ends_on}</p>`,
+                });
+              } catch { /* alert best-effort */ }
+            }
+          }
+        }
         // Sponsored-ad / promo purchase → record the ad order (revenue ledger).
         else if (s.mode === "payment" && s.metadata?.kind === "ad" && supa) {
           const m = s.metadata;
