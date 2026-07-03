@@ -1065,7 +1065,7 @@ export function DetailScreen() {
   return (
     <div className="screen-in detail-screen hh-page">
       <MobileHeader title="" onBack={() => navigate("explore")}
-        right={<button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
+        right={<button className="btn btn-ghost" style={{ padding: 8 }} aria-label={saved ? "Remove from saved" : "Save this place"} aria-pressed={saved} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
           <Icon name="heart" size={22} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : "var(--ink-soft)" }} /></button>} />
 
       {/* cover */}

@@ -223,7 +223,7 @@
 
 .muslim-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
 @media (max-width: 560px) { .muslim-cards { grid-template-columns: 1fr; } }
-.muslim-card { background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df); border-radius: var(--r-md, 14px); padding: 14px; }
+.muslim-card { min-width: 0; overflow-wrap: anywhere; background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df); border-radius: var(--r-md, 14px); padding: 14px; }
 .muslim-card-h { display: flex; align-items: center; gap: 7px; font-size: .92rem; color: var(--emerald, #0f5c4a); margin-bottom: 10px; }
 .muslim-card-f { font-size: .76rem; color: var(--ink-soft, #5a6470); margin-top: 10px; }
 .prayer-row { display: flex; justify-content: space-between; gap: 6px; }

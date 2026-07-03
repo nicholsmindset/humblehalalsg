@@ -206,10 +206,10 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
   .quran-nav a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
-/* ---- Tablet (768px) touch targets: the footer 44px tap-row rule capped at
+/* ---- Tablet (≤820px) touch targets: the footer 44px tap-row rule capped at
    700px, so on an iPad the footer nav/legal links reverted to ~20px tall.
-   Extend the touch-row + text floor to any coarse-pointer device. ---- */
-@media (pointer: coarse) {
+   Extend the touch-row + text floor to touch OR tablet-width viewports. ---- */
+@media (pointer: coarse), (max-width: 820px) {
   .hh-footer-col a, .hh-footer-catlinks a, .hh-footer-legal a {
     display: inline-flex; align-items: center; min-height: 44px;
   }
@@ -223,6 +223,11 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
   }
   /* "How we verify" trust-strip button was 20px tall. */
   .hts-link { min-height: 44px; }
+  /* Booking summary disclosures ("Have a promo code?", "How Rewards works")
+     were ~20px tall. */
+  .promo-toggle, .rewards-how summary { min-height: 44px; }
+  /* Hotel-detail inline nav links ("See all properties", "Show map"). */
+  .hotel-back, .hotel-head .loc a { min-height: 44px; }
   /* Leaflet zoom +/- were 30px; bump for touch. */
   .leaflet-control-zoom a { width: 40px; height: 40px; line-height: 40px; }
 }
@@ -241,10 +246,11 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
 
 /* ---- iOS zoom-on-focus: Safari zooms the page when a focused text control
    computes < 16px. Each selector below has a sub-16px size at its source
-   (kept for desktop density); on touch devices raise them all to 1rem.
-   Selectors replicate the source rules at equal-or-higher specificity so
-   the cascade (this file loads later) wins. ---- */
-@media (pointer: coarse) {
+   (kept for desktop density); on touch OR mobile-width viewports raise them
+   all to 1rem. (The width clause is belt-and-suspenders: Playwright's raw
+   mobile emulation doesn't report `pointer: coarse`, so a coarse-only query
+   would leave the CI guard seeing sub-16px inputs on real fixes.) ---- */
+@media (pointer: coarse), (max-width: 900px) {
   .input, .select, .textarea,          /* styles.css .95rem — global form controls */
   .searchbar input,                    /* styles.css .98rem — home/explore search */
   .ota-seg input,                      /* ota.css .98rem — stays/flights segments */
