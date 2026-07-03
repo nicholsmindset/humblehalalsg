@@ -4,6 +4,7 @@
    (ported from screens-misc.jsx). */
 import { useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -440,7 +441,7 @@ export function UserDashboardScreen() {
               <div className="stack g14 mt16">
                 <div className="field"><label htmlFor="set-name">Display name</label><input id="set-name" className="input" value={pName} onChange={(e)=>setPName(e.target.value)} /></div>
                 <div className="field"><label htmlFor="set-email">Email</label><input id="set-email" className="input" placeholder="Managed by your sign-in" disabled /></div>
-                <div className="field"><label htmlFor="set-area">Home area</label><select id="set-area" className="select" value={pArea} onChange={(e)=>setPArea(e.target.value)}><option value="">Select your area</option>{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                <div className="field"><label htmlFor="set-area">Home area</label><select id="set-area" className="select" value={pArea} onChange={(e)=>setPArea(e.target.value)}><option value="">Select your area</option>{REGIONS.map(r=><optgroup key={r} label={r}>{townsInRegion(r).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
                 <button className="btn btn-primary" onClick={saveProfile} disabled={pSaving}>{pSaving ? "Saving…" : "Save changes"}</button>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { auth } from "@clerk/nextjs/server";
+import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { joinApprovedEmail, joinDeclinedEmail } from "@/lib/emails/templates";
@@ -78,8 +78,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // approve → confirm the order, issue tickets, bump taken
   const { error: uErr } = await admin.from("orders").update({ status: "confirmed" }).eq("id", orderId).eq("status", "pending");
   if (uErr) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
-  const tix = Array.from({ length: qty }, () => ({ order_id: orderId, event_id: ev.id, tier: "RSVP", qr_ref: randomUUID() }));
-  await admin.from("tickets").insert(tix);
+  // Human-friendly qr_refs (lib/ticket-ref) — same format as direct RSVPs.
+  let approvedRef = makeOrderRef("RSVP");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const tix = ticketRefs(approvedRef, qty).map((qr) => ({ order_id: orderId, event_id: ev.id, tier: "RSVP", qr_ref: qr }));
+    const { error: tixErr } = await admin.from("tickets").insert(tix);
+    if (!tixErr) break;
+    if (tixErr.code !== "23505" || attempt === 2) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    approvedRef = makeOrderRef("RSVP");
+  }
   const { error: incErr } = await admin.rpc("increment_event_taken", { p_event_id: ev.id, p_qty: qty });
   if (incErr) {
     const { data: e2 } = await admin.from("events").select("taken").eq("id", ev.id).maybeSingle();

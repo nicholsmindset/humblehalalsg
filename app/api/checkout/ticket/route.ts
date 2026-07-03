@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { getServerFlags } from "@/lib/flags";
 import { getStripe } from "@/lib/stripe";
 import { computeOrder, CURRENCY, type FeeMode } from "@/lib/fees";
@@ -8,6 +7,7 @@ import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { validatePromoCode, normalizePromoCode, type PromoCheck } from "@/lib/promo";
 import { parseAttributionCookie } from "@/lib/attribution";
 import { sendEmail } from "@/lib/email";
@@ -140,14 +140,22 @@ export async function POST(req: Request) {
       .single();
     if (error || !ord) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
 
-    const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: dbEvent.id, tier: tier?.name ?? "Standard", qr_ref: randomUUID() }));
-    await supa.from("tickets").insert(tix);
+    // Human-friendly qr_refs (lib/ticket-ref) — the emailed reference IS the
+    // scannable/typable door code (the old order-id prefix matched nothing).
+    let compRef = makeOrderRef("TKT");
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const tix = ticketRefs(compRef, qty).map((qr) => ({ order_id: ord.id, event_id: dbEvent.id, tier: tier?.name ?? "Standard", qr_ref: qr }));
+      const { error: tixErr } = await supa.from("tickets").insert(tix);
+      if (!tixErr) break;
+      if (tixErr.code !== "23505" || attempt === 2) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+      compRef = makeOrderRef("TKT");
+    }
     const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: dbEvent.id, p_qty: qty });
     if (incErr) await supa.from("events").update({ taken: (Number(dbEvent.taken) || 0) + qty }).eq("id", dbEvent.id);
     if (promo) await supa.rpc("redeem_promo", { p_id: promo.promoId });
     if (body.email) {
       try {
-        const t = ticketConfirmationEmail({ eventTitle: ev.title, qty, ref: String(ord.id).slice(0, 8).toUpperCase() });
+        const t = ticketConfirmationEmail({ eventTitle: ev.title, qty, ref: compRef });
         await sendEmail({ to: body.email, subject: t.subject, html: t.html, template: "ticket-confirmation" });
       } catch { /* email best-effort */ }
     }

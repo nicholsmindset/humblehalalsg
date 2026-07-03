@@ -21,12 +21,39 @@ export async function POST(req: Request) {
   const qrRef = String(body.qrRef || "").trim();
   if (!qrRef) return NextResponse.json({ ok: false, reason: "no_code" }, { status: 422 });
 
-  // Load the ticket + its event/order context.
-  const { data: t } = await admin
-    .from("tickets")
-    .select("id, status, event_id, order_id, tier, checked_in_at")
-    .eq("qr_ref", qrRef)
-    .maybeSingle();
+  // Escape ilike wildcards so a typed code can't turn into a pattern match.
+  const esc = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+  type TicketRow = { id: string; status: string; event_id: string | null; order_id: string | null; tier: string | null; checked_in_at: string | null };
+  const SELECT = "id, status, event_id, order_id, tier, checked_in_at";
+
+  // Resolve the ticket generously — door staff type what the email shows:
+  //  1. exact qr_ref (QR scan payload / new HH-XXX-YYYYYY refs)
+  //  2. case-insensitive match (typed in the wrong case)
+  //  3. order reference (HH-RSVP-ABC123 for a multi-ticket order whose tickets
+  //     are -1…-n): admit the order's next unused ticket per entry
+  //  4. legacy 8-char prefix from old resend emails (UUID qr_refs)
+  let t: TicketRow | null = null;
+  {
+    const { data } = await admin.from("tickets").select(SELECT).eq("qr_ref", qrRef).maybeSingle();
+    t = (data as TicketRow | null) ?? null;
+  }
+  if (!t) {
+    const { data } = await admin.from("tickets").select(SELECT).ilike("qr_ref", esc(qrRef)).limit(2);
+    if (data?.length === 1) t = data[0] as TicketRow;
+  }
+  if (!t && /^HH-(RSVP|TKT)-[A-Z0-9]+$/i.test(qrRef)) {
+    const { data } = await admin
+      .from("tickets").select(SELECT)
+      .ilike("qr_ref", `${esc(qrRef)}-%`)
+      .order("qr_ref")
+      .limit(20);
+    const group = (data as TicketRow[] | null) || [];
+    t = group.find((x) => x.status === "valid") || group[0] || null;
+  }
+  if (!t && /^[0-9A-F]{8}$/i.test(qrRef)) {
+    const { data } = await admin.from("tickets").select(SELECT).ilike("qr_ref", `${esc(qrRef)}%`).limit(2);
+    if (data?.length === 1) t = data[0] as TicketRow;
+  }
   if (!t) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
 
   // Authorise: admin OR the owner of the event's business.

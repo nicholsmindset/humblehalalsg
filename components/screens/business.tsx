@@ -6,7 +6,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { HHData } from "@/lib/data";
 import type { Listing, LatLng } from "@/lib/types";
-import { planKey, PLANS, PLAN_LIST } from "@/lib/plans";
+import { planKey, PLANS, PLAN_LIST, FOUNDING } from "@/lib/plans";
 import { useUser } from "@clerk/nextjs";
 import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
@@ -107,7 +107,7 @@ export function ForBusinessScreen() {
 export function PricingScreen() {
   const { navigate, toast, flags } = useApp();
   const [yearly, setYearly] = useState(false);
-  const choosePlan = async (id: string) => {
+  const choosePlan = async (id: string, founding = false) => {
     if (id === "free") return navigate("add-listing");
     if (!flags.paidPlans) {
       toast("Paid plans are coming soon — get listed free today");
@@ -117,11 +117,16 @@ export function PricingScreen() {
       const res = await fetch("/api/checkout/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: id, yearly }),
+        // founding forces yearly billing at the locked founding rate.
+        body: JSON.stringify({ plan: id, yearly: founding || yearly, founding }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+        return;
+      }
+      if (founding && data.reason === "founding_not_available") {
+        toast("The founding rate is fully claimed — standard plans below.");
         return;
       }
     } catch {
@@ -158,9 +163,12 @@ export function PricingScreen() {
           <div className="fb-ico"><Icon name="crescent" size={20} /></div>
           <div className="fb-text">
             <strong>Founding member offer</strong>
-            <span>First 200 businesses lock in <b>Verified at $120/year</b> ($10/mo) — grandfathered for life.</span>
+            <span>
+              First {FOUNDING.cap} businesses lock in <b>{PLANS[FOUNDING.plan].name} at S${FOUNDING.yearly}/year</b>
+              {" "}(usually S${PLANS[FOUNDING.plan].yearly}/yr) — grandfathered for life.
+            </span>
           </div>
-          <button className="btn btn-gold btn-sm fb-cta" onClick={() => choosePlan("verified")}>Claim founding rate</button>
+          <button className="btn btn-gold btn-sm fb-cta" onClick={() => choosePlan(FOUNDING.plan, true)}>Claim founding rate</button>
         </div>
         <div className="pricing-grid">
           {tiers.map((t) => (

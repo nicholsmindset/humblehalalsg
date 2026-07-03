@@ -4,6 +4,7 @@
    PrayerStrip, Onboarding, CertifiedToggle. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
@@ -241,6 +242,7 @@ export function PrayerStrip({
 export function Onboarding() {
   const { setPref, toast } = useApp();
   const [step, setStep] = useState(0);
+  const [region, setRegion] = useState<(typeof REGIONS)[number]>("Central");
   const [area, setArea] = useState("");
   const [strict, setStrict] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -310,14 +312,29 @@ export function Onboarding() {
             <p className="muted" style={{ marginTop: 6 }}>
               We’ll surface halal spots and mosques near you first.
             </p>
-            <div className="onboard-areas">
-              {HHData.areas.map((a) => (
+            {/* Region → town, covering all of Singapore (lib/sg-locations) —
+                the old picker offered just six hardcoded areas. */}
+            <div className="onboard-regions" role="tablist" aria-label="Region">
+              {REGIONS.map((r) => (
                 <button
-                  key={a.id}
-                  className={`onboard-chip ${area === a.id ? "on" : ""}`}
-                  onClick={() => setArea(a.id)}
+                  key={r}
+                  role="tab"
+                  aria-selected={region === r}
+                  className={`onboard-chip region ${region === r ? "on" : ""}`}
+                  onClick={() => setRegion(r)}
                 >
-                  {a.name}
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="onboard-areas">
+              {townsInRegion(region).map((t) => (
+                <button
+                  key={t.id}
+                  className={`onboard-chip ${area === t.id ? "on" : ""}`}
+                  onClick={() => setArea(t.id)}
+                >
+                  {t.name}
                 </button>
               ))}
             </div>
@@ -327,6 +344,9 @@ export function Onboarding() {
               onClick={() => setStep(2)}
             >
               Continue <Icon name="arrow" size={17} />
+            </button>
+            <button className="btn btn-ghost btn-block btn-sm mt8" onClick={() => setStep(2)}>
+              Skip — I move around
             </button>
           </div>
         )}

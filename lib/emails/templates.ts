@@ -93,7 +93,8 @@ export function rsvpConfirmationEmail(o: { name?: string | null; eventTitle: str
     "Your RSVP is confirmed",
     greet(o.name) +
       p(`You're confirmed for <strong>${esc(o.eventTitle)}</strong>.`) +
-      p(`${o.dateLabel ? `📅 ${esc(o.dateLabel)}<br>` : ""}${o.venue ? `📍 ${esc(o.venue)}<br>` : ""}${o.ref ? `Reference: <strong>${esc(o.ref)}</strong>` : ""}`),
+      p(`${o.dateLabel ? `📅 ${esc(o.dateLabel)}<br>` : ""}${o.venue ? `📍 ${esc(o.venue)}<br>` : ""}${o.ref ? `Reference: <strong>${esc(o.ref)}</strong>` : ""}`) +
+      (o.ref ? p(`At the door, show the QR code on your ticket — or just give this reference to be checked in.`) : ""),
     { label: "View your ticket", url: `${U}/dashboard?tab=tickets` },
     `Can't make it? You can release your spot from your tickets.`,
   );
@@ -103,7 +104,7 @@ export function ticketConfirmationEmail(o: { eventTitle: string; qty?: number; r
     `Your tickets for ${o.eventTitle}`,
     "Your tickets are confirmed",
     p(`Thank you for your booking. Your ${o.qty && o.qty > 1 ? `${o.qty} tickets are` : "ticket is"} confirmed for <strong>${esc(o.eventTitle)}</strong>.`) +
-      p(`${o.ref ? `Reference: <strong>${esc(o.ref)}</strong><br>` : ""}Show the QR code from your tickets at the door.`),
+      p(`${o.ref ? `Reference: <strong>${esc(o.ref)}</strong><br>` : ""}Show the QR code from your tickets at the door — or give the reference above to be checked in.`),
     { label: "Open my tickets", url: `${U}/dashboard?tab=tickets` },
   );
 }
