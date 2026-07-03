@@ -13,6 +13,7 @@ import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
+import { AdminVerdicts } from "./admin-verdicts";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -81,7 +82,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen() {
+export function AdminScreen({ halalVerdictsEnabled = false }: { halalVerdictsEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -99,6 +100,7 @@ export function AdminScreen() {
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
+    ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as [string, string, string]] : []),
     ["hotels", "Hotel verification", "bed"],
     ["reviews", "Review moderation", "star"],
     ["reports", "Reports & corrections", "flag"],
@@ -147,6 +149,7 @@ export function AdminScreen() {
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
+          {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}

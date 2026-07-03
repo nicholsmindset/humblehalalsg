@@ -15,6 +15,7 @@ export interface Flags {
   certVault: boolean;
   semanticSearch: boolean;
   aiConcierge: boolean;
+  halalVerdicts: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -40,7 +41,11 @@ export function getServerFlags(): Flags {
     // AI travel concierge (agentic chat over hotels + flights). Default OFF; gates
     // the chat surface + /api/travel/concierge. Search/advise only — no payment.
     aiConcierge: truthy(process.env.AI_CONCIERGE_ENABLED),
+    // AI-drafted halal verdicts (brand/ingredient pages). Default OFF (ship dark).
+    // Gates the admin drafter + the rich public verdict template. NEVER
+    // auto-publishes — a human approves each verdict first. Not a payment route.
+    halalVerdicts: truthy(process.env.HALAL_VERDICTS_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false };
