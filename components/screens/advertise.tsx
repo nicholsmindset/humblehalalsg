@@ -2,10 +2,12 @@
 
 /* Humble Halal — Advertise with us (advertising sales page). */
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
 import { CONTACT_EMAILS } from "@/lib/contact";
+import { PRODUCT_PLACEMENT } from "@/lib/ad-products";
 
 /* Honest, defensible value props — not fabricated metrics. Current audience
    figures are shared in the media kit once they can be reported accurately. */
@@ -29,12 +31,20 @@ const FORMATS: { icon: string; name: string; desc: string; price: string; produc
 
 export function AdvertiseScreen() {
   const { navigate, toast } = useApp();
+  const { isSignedIn } = useUser();
   const [buying, setBuying] = useState<string | null>(null);
 
-  // Start a Stripe Checkout for a fixed-price ad package (reuses /api/checkout/promo).
+  // Signed-in owners get the full self-serve builder (placement + dates +
+  // creative + review gate) in their dashboard; anonymous visitors keep the
+  // legacy one-click checkout that records an ad_orders lead.
   async function handleBuy(f: (typeof FORMATS)[number]) {
     if (!f.product) {
       window.location.assign(`mailto:${CONTACT_EMAILS.partners}?subject=${encodeURIComponent("Sponsored Content enquiry")}&body=${encodeURIComponent("Hi Humble Halal, I'd like to discuss a Sponsored Content campaign.")}`);
+      return;
+    }
+    if (isSignedIn) {
+      const placement = PRODUCT_PLACEMENT[f.product];
+      navigate("owner-dashboard", { tab: "ads", new: "1", ...(placement ? { placement } : {}) });
       return;
     }
     setBuying(f.product);

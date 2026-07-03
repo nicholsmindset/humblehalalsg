@@ -24,6 +24,9 @@ export async function GET() {
     ...p,
     review_status: meta.get(p.campaign_id)?.review_status ?? "approved",
     image_url: meta.get(p.campaign_id)?.image_url ?? null,
+    created_via: meta.get(p.campaign_id)?.created_via ?? "admin",
+    starts_on: meta.get(p.campaign_id)?.starts_on ?? null,
+    ends_on: meta.get(p.campaign_id)?.ends_on ?? null,
     ctr: p.impressions > 0 ? Math.round((p.clicks / p.impressions) * 1000) / 10 : 0,
   }));
   // Revenue booked = sum of agreed rates across non-draft campaigns.

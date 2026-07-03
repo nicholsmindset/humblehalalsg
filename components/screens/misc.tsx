@@ -4,6 +4,7 @@
    (ported from screens-misc.jsx). */
 import { useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -94,7 +95,10 @@ export function LoginScreen() {
         await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
       } else {
         if (!suLoaded || !signUp) throw new Error("not_ready");
-        await signUp.create({ emailAddress: email });
+        // accountType rides Clerk unsafeMetadata → the user.created webhook
+        // provisions profiles.role, so business owners land in the right
+        // dashboard from their very first session.
+        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role } });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       }
       setCodeSent(true);
@@ -161,6 +165,20 @@ export function LoginScreen() {
       return;
     }
     try {
+      // Stash the account-type choice for the post-redirect fallback
+      // (app-context reads it after the OAuth round-trip in case the
+      // metadata path doesn't stick, e.g. sign-up transferred to sign-in).
+      try { sessionStorage.setItem("hh-account-type", role); } catch { /* private mode */ }
+      if (mode === "register") {
+        if (!suLoaded || !signUp) return;
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
+          redirectUrlComplete: `${window.location.origin}/`,
+          unsafeMetadata: { accountType: role },
+        });
+        return;
+      }
       if (!siLoaded || !signIn) return;
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
@@ -241,13 +259,13 @@ export function LoginScreen() {
               </div>
             )}
 
-            {mode==='register' && !clerkConfigured && (
+            {mode==='register' && (
               <div>
                 <label style={{fontWeight:600, fontSize:'.88rem'}}>I’m joining as</label>
                 <div className="role-grid mt8">
-                  <button type="button" className={`role-opt ${role==='user'?'on':''}`} onClick={()=>setRole('user')}>
+                  <button type="button" className={`role-opt ${role==='user'?'on':''}`} aria-pressed={role==='user'} onClick={()=>setRole('user')}>
                     <Icon name="user" size={22}/><div style={{fontWeight:700,marginTop:6}}>I’m a user</div><span className="faint" style={{fontSize:'.78rem'}}>Discover &amp; save places</span></button>
-                  <button type="button" className={`role-opt ${role==='owner'?'on':''}`} onClick={()=>setRole('owner')}>
+                  <button type="button" className={`role-opt ${role==='owner'?'on':''}`} aria-pressed={role==='owner'} onClick={()=>setRole('owner')}>
                     <Icon name="store" size={22}/><div style={{fontWeight:700,marginTop:6}}>I’m a business owner</div><span className="faint" style={{fontSize:'.78rem'}}>List &amp; manage a business</span></button>
                 </div>
               </div>
@@ -337,7 +355,7 @@ export function UserDashboardScreen() {
           <div className="flex g14 center">
             <span className="avatar" style={{width:56,height:56,fontSize:'1.4rem',background:'var(--gold)',color:'#3a2c08'}}>{(state.user.name||'A')[0]}</span>
             <div><h1 style={{color:'#fff', fontSize:'1.6rem'}}>{state.user.loggedIn?state.user.name:'Guest'}</h1>
-              <p style={{color:'#CFE0DA', fontSize:'.9rem'}}>{state.user.loggedIn?'Member since 2025':'Log in to sync across devices'}</p></div>
+              <p style={{color:'#CFE0DA', fontSize:'.9rem'}}>{state.user.loggedIn?'Assalamualaikum 👋':'Log in to sync your saves across devices'}</p></div>
           </div>
           <div className="flex g10 center">
             {state.user.loggedIn && <NotificationBell />}
@@ -423,7 +441,7 @@ export function UserDashboardScreen() {
               <div className="stack g14 mt16">
                 <div className="field"><label htmlFor="set-name">Display name</label><input id="set-name" className="input" value={pName} onChange={(e)=>setPName(e.target.value)} /></div>
                 <div className="field"><label htmlFor="set-email">Email</label><input id="set-email" className="input" placeholder="Managed by your sign-in" disabled /></div>
-                <div className="field"><label htmlFor="set-area">Home area</label><select id="set-area" className="select" value={pArea} onChange={(e)=>setPArea(e.target.value)}><option value="">Select your area</option>{HHData.areas.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+                <div className="field"><label htmlFor="set-area">Home area</label><select id="set-area" className="select" value={pArea} onChange={(e)=>setPArea(e.target.value)}><option value="">Select your area</option>{REGIONS.map(r=><optgroup key={r} label={r}>{townsInRegion(r).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
                 <button className="btn btn-primary" onClick={saveProfile} disabled={pSaving}>{pSaving ? "Saving…" : "Save changes"}</button>
               </div>
             </div>
@@ -1056,12 +1074,31 @@ export function SuccessScreen() {
   // Owner-lifecycle capture: at the moment a business is listed/claimed, seed the
   // B2B nurture (source "for-business" → owner segment) with the lifecycle stage.
   const ownerStage = params.type === "listing" ? "listed" : params.type === "claim" ? "claimed" : null;
+  // "What happens next" — the review flows are async and used to end in a void;
+  // a 3-step timeline sets expectations and points back at the dashboard where
+  // the new "In review" card is waiting.
+  const NEXT_STEPS: Record<string, [string, string, string]> = {
+    listing: ["Our team reviews your details (1–2 business days)", "You get an email the moment it's approved", "Your listing appears in the directory — add photos & hours from your dashboard"],
+    claim: ["We verify your ownership (3–5 business days)", "You get an email once it's confirmed", "Manage your listing, reply to reviews and see insights from your dashboard"],
+    "event-listing": ["Our team reviews your event (usually within a day)", "You get an email when it goes live", "Track RSVPs, check-ins and sales from My events"],
+  };
+  const nextSteps = NEXT_STEPS[params.type as string];
   return (
     <div className="state-screen">
       <div className="state-card">
         <div className="success-check"><Icon name="check" size={48} strokeWidth={2.4}/></div>
         <h1 style={{fontSize:'1.9rem', marginTop:20}}>{s.t}</h1>
         <p className="muted" style={{marginTop:10, maxWidth:420}}>{s.d}</p>
+        {nextSteps && (
+          <ol className="success-next" aria-label="What happens next">
+            {nextSteps.map((step, i) => (
+              <li key={i}>
+                <span className="sn-num">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        )}
         <div className="flex g10 center" style={{justifyContent:'center', marginTop:22}}>
           <button className="btn btn-primary btn-lg" onClick={()=>navigate(s.go)}>{s.cta}</button>
           <button className="btn btn-ghost" onClick={()=>navigate('home')}>Home</button>

@@ -30,7 +30,10 @@ export function rowToListing(r: Row): Listing {
   if (tags.some((t) => /family/i.test(t))) badges.push("family");
   if (badges.length === 0) badges.push("friendly");
 
-  const photos = Array.isArray(r.photos) ? (r.photos as { url?: string }[]) : [];
+  const photos = Array.isArray(r.photos) ? (r.photos as { url?: string; caption?: string }[]) : [];
+  const gallery = photos
+    .filter((p): p is { url: string; caption?: string } => typeof p?.url === "string" && !!p.url)
+    .map((p) => (p.caption ? { url: p.url, caption: String(p.caption) } : { url: p.url }));
   const oh = Array.isArray(r.opening_hours) ? (r.opening_hours as { open?: string; close?: string }[]) : [];
   const hoursWeek: WeekHours | undefined =
     oh.length === 7 ? oh.map((d) => (d?.open && d?.close ? { open: d.open, close: d.close } : null)) : undefined;
@@ -68,7 +71,8 @@ export function rowToListing(r: Row): Listing {
     address: str(r.address),
     postal: str(r.postal) || undefined,
     tags,
-    image: photos[0]?.url || undefined,
+    image: gallery[0]?.url || undefined,
+    photos: gallery.length ? gallery : undefined,
     coords: r.lat != null && r.lng != null ? { lat: num(r.lat), lng: num(r.lng) } : undefined,
     hoursWeek,
     certified,

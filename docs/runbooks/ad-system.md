@@ -3,13 +3,13 @@
 Admin-controlled ads: **direct sponsors** (owner-booked, brand-safe) + **Google AdSense**
 fill for unsold inventory. Direct always wins a slot; AdSense backfills; an empty or
 toggled-off slot collapses with no layout shift. Built on migration `0023_ads.sql`,
-extended by `0040_ads_adsense.sql`.
+extended by `0043_ads_adsense.sql`.
 
 ## Architecture at a glance
 
 | Piece | File |
 |---|---|
-| Schema | `supabase/migrations/0023_ads.sql`, `supabase/migrations/0040_ads_adsense.sql` |
+| Schema | `supabase/migrations/0023_ads.sql`, `supabase/migrations/0043_ads_adsense.sql` |
 | Serving component | `components/ads/ad-slot.tsx` (`<AdSlot slot="…" />`) |
 | AdSense loader + unit | `components/ads/adsense.tsx` |
 | Back-compat shim | `components/sponsored-slot.tsx` → delegates to `<AdSlot>` |
@@ -23,7 +23,7 @@ extended by `0040_ads_adsense.sql`.
 
 ## Go-live checklist
 
-1. **Apply the migration.** `supabase db push` (or run `0040_ads_adsense.sql`). It adds
+1. **Apply the migration.** `supabase db push` (or run `0043_ads_adsense.sql`). It adds
    the per-slot serving config + the review gate and seeds two live slots
    (`blog_article_top`, `directory_hub`) plus four inactive future slots. Existing
    campaigns are grandfathered to `review_status='approved'` so nothing goes dark.
@@ -71,8 +71,24 @@ Future (seeded inactive — flip `active=true` in the Placements panel and drop
 `<AdSlot slot="…"/>` into the template): `directory_hub_side`, `business_detail_mid`,
 `tools_inline`, `travel_promo`.
 
-## Later: auto-activation on payment
+## Self-serve campaigns (owner dashboard → Sponsored ads tab)
 
-No schema change needed. A Stripe-webhook path can set a booked campaign's
-`review_status='approved'` + `status='active'` on payment (the columns already exist).
-Until then, activation is the manual Approve step above.
+Owners book campaigns end-to-end from `/owner?tab=ads` (migration 0044):
+
+1. **Builder** (placement → dates → creative → review) creates the campaign as
+   `status='draft'`, `review_status='pending'`, `created_via='self_serve'`.
+   Price = `ad_placements.monthly_rate_cents × months` (1–3), server-computed.
+2. **Payment** — `/api/owner/ads/checkout` opens Stripe; the webhook
+   (`kind="ad_selfserve"`) flips `draft → scheduled`, stores the unique
+   `stripe_payment_intent` (replay-safe) and records the `ad_orders` ledger row.
+   With `PAID_ADS_ENABLED` off, the builder files a request instead (campaign
+   row + email to `CONTACT_INBOX`) for manual invoicing.
+3. **Review** — the campaign appears in this admin queue with a *Self-serve*
+   badge. Approve (`review_status='approved'`) and it serves automatically from
+   `starts_on`: `/api/ads/active` includes `status IN ('active','scheduled')`
+   and gates on the date window, so no activation step or cron is needed.
+   Reject → the owner sees "Rejected" in their tab; refund manually in Stripe
+   (v1 policy) and reply to the buyer.
+
+Anonymous `/advertise` purchases still use the legacy `/api/checkout/promo`
+lead flow; signed-in owners are deep-linked into the builder instead.

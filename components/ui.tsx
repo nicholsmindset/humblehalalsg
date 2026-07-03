@@ -3,6 +3,7 @@
 /* Humble Halal — shared UI components (ported from components.jsx) */
 import Image from "next/image";
 import {
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -52,6 +53,7 @@ const ICONS: Record<string, string> = {
   sort: "M7 4v16M7 20l-3-3M7 4l3 3M17 20V4M17 4l-3 3M17 20l3-3",
   chevron: "M9 6l6 6-6 6",
   chevdown: "M6 9l6 6 6-6",
+  lock: "M7 11V7a5 5 0 0110 0v4M5 11h14v10H5V11zm7 4v3",
   back: "M15 6l-6 6 6 6",
   x: "M6 6l12 12M18 6L6 18",
   arrow: "M5 12h14M13 6l6 6-6 6",
@@ -830,4 +832,30 @@ export function MobileHeader({
       <div style={{ minWidth: 40, display: "flex", justifyContent: "flex-end" }}>{right}</div>
     </div>
   );
+}
+
+/* ---------------------------------------------------------------
+   WIZARD CHROME (shared by add-listing, host-event, campaign builder)
+--------------------------------------------------------------- */
+export function WizardSteps({ steps, step }: { steps: readonly string[]; step: number }) {
+  return (
+    <div className="steps wizard-steps">
+      {steps.map((s, i) => (
+        <Fragment key={s}>
+          <div className={`step ${i < step ? "done" : ""} ${i === step ? "active" : ""}`}>
+            <span className="num">{i < step ? <Icon name="check" size={15} /> : i + 1}</span>
+            <span className="lbl hide-mob">{s}</span>
+          </div>
+          {i < steps.length - 1 && <span className={`bar ${i < step ? "done" : ""}`} />}
+        </Fragment>
+      ))}
+    </div>
+  );
+}
+
+/** Wizard action row: in-flow on desktop, sticky above the tab bar on mobile so
+    Continue is never below the fold on long steps. Give the scrolling parent
+    the `has-wizard-footer` class so content clears the fixed bar. */
+export function WizardFooter({ children }: { children: ReactNode }) {
+  return <div className="wizard-footer">{children}</div>;
 }

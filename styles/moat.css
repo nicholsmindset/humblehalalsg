@@ -132,7 +132,9 @@
 .onboard-head .mark { width:38px; height:38px; border-radius:11px; background:var(--emerald); color:var(--gold); display:grid; place-items:center; }
 .onboard-feats { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
 .onboard-feat { display:flex; align-items:center; gap:11px; font-weight:600; font-size:.92rem; }
-.onboard-areas { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.onboard-regions { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.onboard-chip.region { padding:7px 13px; font-size:.82rem; }
+.onboard-areas { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; max-height:220px; overflow-y:auto; padding-bottom:4px; align-content:flex-start; }
 .onboard-chip { border:1px solid var(--line-strong); background:var(--white); border-radius:var(--r-pill); padding:9px 15px; font-size:.88rem; font-weight:600; color:var(--ink-soft); cursor:pointer; transition:all .14s; }
 .onboard-chip:hover { border-color:var(--emerald-300); }
 .onboard-chip.on { background:var(--emerald); color:var(--cream); border-color:var(--emerald); }
@@ -172,3 +174,13 @@
 @media (min-width:861px){ .detail-stickybar { display:none; } }
 .detail-stickybar .btn { flex:1; }
 @media (max-width:860px){ .detail-screen.hh-page { padding-bottom: calc(var(--tab-h) + 80px); } }
+
+/* ===================== WIZARD FOOTER (shared CTA row) =====================
+   In-flow on desktop; fixed above the bottom tab bar on mobile so Continue is
+   never below the fold. Pair with .has-wizard-footer on the scrolling page. */
+.wizard-footer { display:flex; gap:10px; margin-top:18px; }
+@media (max-width:860px){
+  .wizard-footer { position:fixed; left:0; right:0; bottom:var(--tab-h); z-index:55; margin:0; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); border-top:1px solid var(--line); padding:10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow:0 -6px 20px rgba(31,41,51,.07); }
+  .wizard-footer .btn { flex:1; min-height:48px; }
+  .has-wizard-footer { padding-bottom: calc(var(--tab-h) + 84px); }
+}

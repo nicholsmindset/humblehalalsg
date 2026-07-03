@@ -134,3 +134,30 @@
    (e.g. flights "Non-stop only", whose control rendered ~13×13px). */
 label:has(> input[type="checkbox"]),
 label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+
+/* ── UX-overhaul round: audit stragglers ─────────────────────────────────── */
+
+/* Log in / Sign up segmented tabs were 35px tall (audit #183). */
+.auth-tabs button { min-height: 44px; }
+
+/* Drawer chrome: close button was 36px; CTA rows 38px (audit #168/#169). */
+.nav-drawer-head .btn { min-width: 44px; min-height: 44px; }
+.nav-drawer-cta .btn { min-height: 48px; }
+
+/* Legible-font floor (audit 1.5 / §Design-system): the recurring <12px text
+   classes get bumped to 12px on touch widths. Desktop keeps the tighter
+   original scale. .66rem bottom-tab labels + .64rem photo credits stay tiny
+   by design (icon-labels / non-essential), everything readable rises. */
+@media (max-width: 700px) {
+  .eyebrow, .filter-count, .pop-badge, .badge,
+  .map-cc-dist, .map-mrt, .tbl th { font-size: .75rem; }
+}
+
+/* Owner dashboard tab strip scrolls horizontally — fade both edges so
+   off-screen tabs (Ads, Billing) are discoverable (audit: no affordance). */
+@media (max-width: 860px) {
+  .dash-tabs {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 26px), transparent);
+  }
+}

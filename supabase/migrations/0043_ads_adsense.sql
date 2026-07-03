@@ -1,4 +1,4 @@
--- 0040_ads_adsense.sql — Phase 3: dual-source ad serving (direct sponsor + AdSense fill).
+-- 0043_ads_adsense.sql — Phase 3: dual-source ad serving (direct sponsor + AdSense fill).
 -- Extends the existing direct-sponsor system (0023_ads.sql). No rebuild:
 --  • ad_placements gains per-slot serving config (size, fill mode, AdSense slot,
 --    reserved height for CLS, lazy flag) so the admin controls each slot's behaviour.

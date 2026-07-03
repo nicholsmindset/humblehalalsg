@@ -136,6 +136,18 @@ export const PLANS: Record<PlanKey, Plan> = {
 
 export const PLAN_LIST: Plan[] = PLAN_KEYS.map((k) => PLANS[k]);
 
+/** Founding-member launch offer — Verified, billed yearly, at a locked rate
+    for the first `cap` businesses. Single source of truth for the pricing-page
+    banner AND checkout: /api/checkout/plan only honours it when
+    STRIPE_PRICE_VERIFIED_FOUNDING_Y is configured, and the banner copy derives
+    every number from here + PLANS (the old banner hardcoded "$120/year
+    ($10/mo)" next to a "$19/mo" card with nothing explaining the gap). */
+export const FOUNDING = {
+  plan: "verified" as PlanKey,
+  yearly: 120, // SGD / year, grandfathered
+  cap: 200,
+} as const;
+
 /** Normalize any plan-ish input to a known PlanKey (defaults to "free"). */
 export function planKey(input: PlanKey | { plan?: string | null } | string | null | undefined): PlanKey {
   const raw = typeof input === "string" ? input : input && typeof input === "object" ? input.plan : input;

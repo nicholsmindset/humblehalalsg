@@ -47,7 +47,10 @@ export async function POST(req: Request) {
 
   const tickets = valid.map((t) => {
     const title = t.event_id ? titles.get(t.event_id) || "Event" : "Event";
-    const ref = String(t.qr_ref || "").slice(0, 8).toUpperCase();
+    const raw = String(t.qr_ref || "");
+    // New human refs (HH-…) go out whole — they're what the door accepts.
+    // Legacy UUID refs shorten to the 8-char prefix check-in resolves.
+    const ref = raw.startsWith("HH-") ? raw : raw.slice(0, 8).toUpperCase();
     return { title, ref };
   });
 

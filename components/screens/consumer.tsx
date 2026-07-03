@@ -987,9 +987,16 @@ export function DetailScreen() {
   }, [slug, catId]);
   const logLead = (type: LeadAction) => { if (item) track.leadAction(type, slug, item.catId); };
 
-  // Photo lightbox — capped at the business's plan gallery limit (lib/plans).
-  // Lower tiers show fewer photos; premium/featured are unaffected (high caps).
-  const galleryImgs = item ? ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item)) : [];
+  // Gallery — the owner's real photos when they've uploaded any (cover first,
+  // capped at the plan's gallery limit); decorative stock ONLY as a fallback
+  // for listings with no photos, so unclaimed pages don't render bare.
+  const hasRealPhotos = !!item?.photos?.length;
+  const gallery: { url: string; caption?: string }[] = !item
+    ? []
+    : hasRealPhotos
+      ? item.photos!.slice(0, galleryMax(item))
+      : ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item)).map((url) => ({ url }));
+  const galleryImgs = gallery.map((g) => g.url);
 
   // Verified+ unlocks the rich contact buttons (WhatsApp & directions). Free
   // listings still keep their core contact (phone / website) — never hidden.
@@ -1047,14 +1054,24 @@ export function DetailScreen() {
       {/* cover */}
       <div className="detail-cover">
         <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" />
-        <div className="detail-gallery">
-          {["interior", "dish detail", "storefront"].map((g, gi) => (
-            <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
-              <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
+        {(!hasRealPhotos || gallery.length > 1) && (
+          <div className="detail-gallery">
+            {hasRealPhotos
+              ? gallery.slice(1, 4).map((g, gi) => (
+                  <button key={g.url} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 2}`}>
+                    <ImagePh label={g.caption || `photo ${gi + 2}`} tone="cream" src={g.url} style={{ width: 64, height: 48, borderRadius: 8 }} />
+                  </button>
+                ))
+              : ["interior", "dish detail", "storefront"].map((g, gi) => (
+                  <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
+                    <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
+                  </button>
+                ))}
+            <button className="gallery-more" onClick={() => setLb(0)} aria-label={`View all ${galleryImgs.length} photos`}>
+              {hasRealPhotos ? `${galleryImgs.length} photos` : `+${Math.max(1, galleryImgs.length - 3)}`}
             </button>
-          ))}
-          <button className="gallery-more" onClick={() => setLb(0)} aria-label="View all photos">+{Math.max(1, galleryImgs.length - 3)}</button>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="hh-wrap" style={{ paddingTop: 14 }}>
@@ -1311,10 +1328,11 @@ export function DetailScreen() {
             <button className="lightbox-nav prev" aria-label="Previous photo" onClick={(e) => { e.stopPropagation(); setLb((i) => (i === null ? 0 : (i + galleryImgs.length - 1) % galleryImgs.length)); }}><Icon name="chevron" size={30} style={{ transform: "rotate(90deg)" }} /></button>
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="lightbox-img" src={galleryImgs[lb]} alt={`${item.name} photo ${lb + 1}`} onClick={(e) => e.stopPropagation()} />
+          <img className="lightbox-img" src={galleryImgs[lb]} alt={gallery[lb]?.caption || `${item.name} photo ${lb + 1}`} onClick={(e) => e.stopPropagation()} />
           {galleryImgs.length > 1 && (
             <button className="lightbox-nav next" aria-label="Next photo" onClick={(e) => { e.stopPropagation(); setLb((i) => (i === null ? 0 : (i + 1) % galleryImgs.length)); }}><Icon name="chevron" size={30} style={{ transform: "rotate(-90deg)" }} /></button>
           )}
+          {gallery[lb]?.caption && <div className="lightbox-cap">{gallery[lb].caption}</div>}
           <div className="lightbox-count">{lb + 1} / {galleryImgs.length}</div>
         </div>
       )}
@@ -1563,9 +1581,16 @@ export function DetailOverview({ item }: { item: Listing }) {
       </div>
       <h3 style={{ marginTop: 24, fontSize: "1.2rem" }}>Gallery</h3>
       <div className="gallery-grid mt12">
-        {["signature dish", "interior", "counter", "dessert", "team", "exterior"].map((g, gi) => (
-          <ImagePh key={g} label={g} tone={gi % 2 ? "gold" : "cream"} src={HHData.gallery[gi]} ratio="1" />
-        ))}
+        {item.photos?.length
+          ? item.photos.slice(0, galleryMax(item)).map((p, pi) => (
+              <figure key={p.url} style={{ margin: 0 }}>
+                <ImagePh label={p.caption || `photo ${pi + 1}`} tone={pi % 2 ? "gold" : "cream"} src={p.url} ratio="1" />
+                {p.caption && <figcaption className="faint" style={{ fontSize: ".78rem", marginTop: 4 }}>{p.caption}</figcaption>}
+              </figure>
+            ))
+          : ["signature dish", "interior", "counter", "dessert", "team", "exterior"].map((g, gi) => (
+              <ImagePh key={g} label={g} tone={gi % 2 ? "gold" : "cream"} src={HHData.gallery[gi]} ratio="1" />
+            ))}
       </div>
     </div>
   );

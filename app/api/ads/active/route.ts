@@ -63,11 +63,14 @@ export async function GET(req: Request) {
     // select("*") so review_status is read defensively: pre-migration the column is
     // absent (undefined) and the campaign is grandfathered as approved; post-migration
     // only review_status='approved' serves (the brand-safety review gate).
+    // 'scheduled' is included so a PAID self-serve campaign starts serving at
+    // its starts_on the moment an admin approves it — the date-window filter
+    // below is what actually gates rendering (no activation cron needed).
     const { data } = await sb
       .from("ad_campaigns")
       .select("*")
       .eq("placement_key", key)
-      .eq("status", "active")
+      .in("status", ["active", "scheduled"])
       .order("created_at", { ascending: true });
 
     const cap = Math.max(1, Number(placementRow?.inventory_cap) || 1);

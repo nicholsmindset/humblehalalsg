@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
@@ -8,6 +7,7 @@ import { ticketConfirmationEmail, adPurchaseEmail, planStartedEmail } from "@/li
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
+import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 
 const addDaysISO = (base: Date, days: number) => {
   const d = new Date(base);
@@ -148,8 +148,17 @@ export async function POST(req: Request) {
           }
 
           if (ord?.id) {
-            const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: dbEvent?.id ?? null, tier: m.tier || null, qr_ref: randomUUID() }));
-            await supa.from("tickets").insert(tix);
+            // Human-friendly qr_refs (lib/ticket-ref) — the emailed reference IS
+            // the scannable/typable door code (the old order-id prefix matched
+            // nothing at check-in).
+            let paidRef = makeOrderRef("TKT");
+            for (let attempt = 0; attempt < 3; attempt++) {
+              const tix = ticketRefs(paidRef, qty).map((qr) => ({ order_id: ord.id, event_id: dbEvent?.id ?? null, tier: m.tier || null, qr_ref: qr }));
+              const { error: tixErr } = await supa.from("tickets").insert(tix);
+              if (!tixErr) break;
+              if (tixErr.code !== "23505" || attempt === 2) break; // order recorded; tickets recoverable via resend/admin
+              paidRef = makeOrderRef("TKT");
+            }
             // Atomic increment (security audit M2) so concurrent settlements don't
             // lose updates; fall back to read+write if the RPC isn't deployed yet.
             if (dbEvent?.id) {
@@ -161,7 +170,7 @@ export async function POST(req: Request) {
                 const t = ticketConfirmationEmail({
                   eventTitle: m.eventTitle || m.tier || "Event",
                   qty,
-                  ref: String(ord.id).slice(0, 8).toUpperCase(),
+                  ref: paidRef,
                 });
                 await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ticket-confirmation" });
               } catch { /* email best-effort */ }
@@ -192,6 +201,58 @@ export async function POST(req: Request) {
               const disp = (evRow?.display && typeof evRow.display === "object" ? evRow.display : {}) as Record<string, unknown>;
               const prev = Number(disp.donationRaisedCents) || 0;
               await supa.from("events").update({ display: { ...disp, donationRaisedCents: prev + amount } }).eq("id", m.eventId);
+            }
+          }
+        }
+        // Self-serve campaign purchase → flip the pre-created draft to
+        // 'scheduled' (serves at starts_on once an admin approves the creative)
+        // + record the revenue. Replays are no-ops: the status guard plus the
+        // unique stripe_payment_intent index (0044) make this idempotent.
+        else if (s.mode === "payment" && s.metadata?.kind === "ad_selfserve" && supa) {
+          const m = s.metadata;
+          const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
+          const campaignId = m.campaignId || "";
+          if (campaignId) {
+            const { data: updated } = await supa
+              .from("ad_campaigns")
+              .update({ status: "scheduled", stripe_payment_intent: pi })
+              .eq("id", campaignId)
+              .eq("status", "draft") // replay guard
+              .select("id, title, placement_key, rate_cents, starts_on, ends_on")
+              .maybeSingle();
+
+            // Revenue ledger row (same shape as legacy ad purchases; unique PI
+            // makes a replayed insert fail silently → catch + ignore).
+            try {
+              await supa.from("ad_orders").insert({
+                business_id: m.businessId || null,
+                product: `selfserve:${updated?.placement_key || "campaign"}`,
+                amount_cents: s.amount_total ?? 0,
+                stripe_payment_intent: pi,
+                status: "paid",
+              });
+            } catch { /* replay or ledger drift — campaign update is authoritative */ }
+
+            const buyerEmail = s.customer_details?.email || null;
+            if (updated && buyerEmail) {
+              try {
+                const currency = (s.currency || "sgd").toUpperCase();
+                const amount = s.amount_total ? `${currency} ${(s.amount_total / 100).toFixed(2)}` : undefined;
+                const t = adPurchaseEmail({ productName: `${updated.title} (${updated.starts_on} → ${updated.ends_on})`, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
+                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
+              } catch { /* email best-effort */ }
+            }
+            // Nudge the review queue — payment is confirmed, creative awaits approval.
+            if (updated) {
+              try {
+                const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+                await sendEmail({
+                  to: inbox,
+                  subject: `Paid self-serve campaign awaiting review: ${updated.title}`,
+                  template: "ad-selfserve-review",
+                  html: `<p>A self-serve campaign has been PAID and is waiting for creative review in the admin dashboard.</p><p><strong>${updated.title}</strong> · ${updated.placement_key} · ${updated.starts_on} → ${updated.ends_on}</p>`,
+                });
+              } catch { /* alert best-effort */ }
             }
           }
         }

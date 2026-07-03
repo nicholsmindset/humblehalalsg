@@ -68,23 +68,72 @@ export function CheckinScanner({ slug }: { slug: string }) {
   // Camera scan loop (best-effort; manual entry always works).
   useEffect(() => {
     if (!scanning) return;
-    const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
-    if (!Ctor) { setCamError("This browser can’t scan — type the code instead."); setScanning(false); return; }
     let raf = 0;
-    let detector: BarcodeDetectorLike;
-    try { detector = new Ctor({ formats: ["qr_code"] }); } catch { setCamError("Scanner unavailable."); setScanning(false); return; }
     let alive = true;
     (async () => {
+      // Camera requires a secure context (https / localhost) — say so instead
+      // of a generic "blocked" when that's the actual problem.
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        setCamError("Camera needs a secure (https) connection — type the code instead.");
+        setScanning(false);
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCamError("This browser can’t open the camera — type the code instead.");
+        setScanning(false);
+        return;
+      }
+
+      // Decoder: native BarcodeDetector (Chrome/Android), else jsQR via a
+      // canvas so iPhone Safari and Firefox can scan too.
+      const Ctor = (window as unknown as { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+      let detector: BarcodeDetectorLike | null = null;
+      if (Ctor) { try { detector = new Ctor({ formats: ["qr_code"] }); } catch { detector = null; } }
+      let jsqr: typeof import("jsqr").default | null = null;
+      if (!detector) {
+        try { jsqr = (await import("jsqr")).default; } catch {
+          setCamError("This browser can’t scan — type the code instead.");
+          setScanning(false);
+          return;
+        }
+      }
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         streamRef.current = stream;
         if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
-      } catch { setCamError("Camera blocked — allow access or type the code."); setScanning(false); return; }
+      } catch (err) {
+        const name = (err as { name?: string })?.name;
+        setCamError(
+          name === "NotAllowedError"
+            ? "Camera permission denied — enable it for this site in your browser settings (iPhone: Settings → Safari → Camera), or type the code."
+            : name === "NotFoundError"
+              ? "No camera found on this device — type the code instead."
+              : "Couldn’t open the camera — type the code instead.",
+        );
+        setScanning(false);
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       const tick = async () => {
         if (!alive || !videoRef.current) return;
+        const video = videoRef.current;
         try {
-          const codes = await detector.detect(videoRef.current);
-          if (codes[0]?.rawValue) submit(codes[0].rawValue);
+          if (detector) {
+            const codes = await detector.detect(video);
+            if (codes[0]?.rawValue) submit(codes[0].rawValue);
+          } else if (jsqr && ctx && video.videoWidth) {
+            // Downscale for decode speed — jsQR is fine at ~480px wide.
+            const w = Math.min(480, video.videoWidth);
+            const h = Math.round((video.videoHeight / video.videoWidth) * w) || w;
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            const img = ctx.getImageData(0, 0, w, h);
+            const hit = jsqr(img.data, w, h, { inversionAttempts: "dontInvert" });
+            if (hit?.data) submit(hit.data);
+          }
         } catch { /* transient */ }
         raf = requestAnimationFrame(tick);
       };

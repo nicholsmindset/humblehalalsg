@@ -4,6 +4,7 @@
    PrayerStrip, Onboarding, CertifiedToggle. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
+import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
@@ -241,6 +242,7 @@ export function PrayerStrip({
 export function Onboarding() {
   const { setPref, toast } = useApp();
   const [step, setStep] = useState(0);
+  const [region, setRegion] = useState<(typeof REGIONS)[number]>("Central");
   const [area, setArea] = useState("");
   const [strict, setStrict] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -310,14 +312,29 @@ export function Onboarding() {
             <p className="muted" style={{ marginTop: 6 }}>
               We’ll surface halal spots and mosques near you first.
             </p>
-            <div className="onboard-areas">
-              {HHData.areas.map((a) => (
+            {/* Region → town, covering all of Singapore (lib/sg-locations) —
+                the old picker offered just six hardcoded areas. */}
+            <div className="onboard-regions" role="tablist" aria-label="Region">
+              {REGIONS.map((r) => (
                 <button
-                  key={a.id}
-                  className={`onboard-chip ${area === a.id ? "on" : ""}`}
-                  onClick={() => setArea(a.id)}
+                  key={r}
+                  role="tab"
+                  aria-selected={region === r}
+                  className={`onboard-chip region ${region === r ? "on" : ""}`}
+                  onClick={() => setRegion(r)}
                 >
-                  {a.name}
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="onboard-areas">
+              {townsInRegion(region).map((t) => (
+                <button
+                  key={t.id}
+                  className={`onboard-chip ${area === t.id ? "on" : ""}`}
+                  onClick={() => setArea(t.id)}
+                >
+                  {t.name}
                 </button>
               ))}
             </div>
@@ -327,6 +344,9 @@ export function Onboarding() {
               onClick={() => setStep(2)}
             >
               Continue <Icon name="arrow" size={17} />
+            </button>
+            <button className="btn btn-ghost btn-block btn-sm mt8" onClick={() => setStep(2)}>
+              Skip — I move around
             </button>
           </div>
         )}
@@ -559,27 +579,30 @@ export function MobileBar() {
               ))}
             </nav>
 
+            {/* Real anchors (crawlable, middle-clickable — audit #167); still
+                close the drawer on tap. */}
             <div className="nav-drawer-cta">
               {user.loggedIn ? (
                 <>
-                  <button
+                  <ScreenLink
+                    screen={user.role === "owner" ? "owner-dashboard" : "user-dashboard"}
                     className="btn btn-primary btn-block"
-                    onClick={() => go(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+                    onClick={close}
                   >
                     <Icon name="user" size={18} /> {user.name || "Dashboard"}
-                  </button>
-                  <button className="btn btn-gold btn-block" onClick={() => go("add-listing")}>
+                  </ScreenLink>
+                  <ScreenLink screen="add-listing" className="btn btn-gold btn-block" onClick={close}>
                     <Icon name="plus" size={18} /> Add listing
-                  </button>
+                  </ScreenLink>
                 </>
               ) : (
                 <>
-                  <button className="btn btn-primary btn-block" onClick={() => go("for-business")}>
+                  <ScreenLink screen="for-business" className="btn btn-primary btn-block" onClick={close}>
                     {t("nav.listBusiness")}
-                  </button>
-                  <button className="btn btn-outline btn-block" onClick={() => go("login")}>
+                  </ScreenLink>
+                  <ScreenLink screen="login" className="btn btn-outline btn-block" onClick={close}>
                     {t("nav.login")}
-                  </button>
+                  </ScreenLink>
                 </>
               )}
             </div>
@@ -652,10 +675,29 @@ function LangToggle() {
   );
 }
 
+/** Footer link group: plain heading + list on desktop; tap-to-expand accordion
+    on ≤700px so the stacked footer stays short. The heading stays an <h2> for
+    screen-reader outline; the toggle button only acts on small screens (CSS
+    disables it above the breakpoint, where lists are forced visible). */
+function FooterSection({ title, cloud, children }: { title: string; cloud?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={`${cloud ? "hh-wrap hh-footer-cats" : "hh-footer-col"} ${open ? "open" : ""}`}>
+      <h2 className="hh-footer-title">
+        <button type="button" className="hh-footer-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {title}
+          <span className="ftr-chev" aria-hidden="true"><Icon name="chevdown" size={15} /></span>
+        </button>
+      </h2>
+      <ul className={cloud ? "hh-footer-catlinks" : "hh-footer-list"}>{children}</ul>
+    </section>
+  );
+}
+
 export function Footer() {
   const { navigate } = useApp();
-  // Five balanced columns (≤6 links each) so the footer reads short + organised
-  // — the old single "Discover" column had 12 items and made it very tall.
+  // Five balanced columns (≤6 links each) so the footer reads short + organised.
+  // "Halal disclaimer" lives in the legal row only (it was duplicated here).
   const cols: [string, [string, string][]][] = [
     [
       "Discover",
@@ -692,7 +734,6 @@ export function Footer() {
       [
         ["How we verify", "verify"],
         ["Is it halal? checker", "is-halal"],
-        ["Halal disclaimer", "disclaimer"],
         ["Report an issue", "report"],
         ["Suggest a place", "suggest"],
       ],
@@ -707,76 +748,73 @@ export function Footer() {
       ],
     ],
   ];
+  // Category cloud: top links only + "All categories" — the full list made the
+  // mobile footer scroll for screens.
+  const catPages = allSeoPages().filter((p) => p.catId && !p.areaId).slice(0, 12);
   return (
     <footer className="hh-footer">
-      <div className="hh-wrap hh-footer-grid">
-        <div className="hh-footer-brand">
-          <Logo light onClick={() => navigate("home")} />
-          <p>
-            Singapore’s most trusted halal &amp; Muslim-owned business directory. A discovery
-            platform — not a certifier.
-          </p>
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontWeight: 700, color: "#fff", marginBottom: 8 }}>
-              Get the weekly halal guide
+      <nav aria-label="Footer">
+        <div className="hh-wrap hh-footer-grid">
+          <div className="hh-footer-brand">
+            <Logo light onClick={() => navigate("home")} />
+            <p>
+              Singapore’s most trusted halal &amp; Muslim-owned business directory. A discovery
+              platform — not a certifier.
+            </p>
+            <div style={{ marginTop: 16 }}>
+              <h2 className="hh-footer-title" style={{ marginBottom: 8 }}>Get the weekly halal guide</h2>
+              <Newsletter source="footer" />
             </div>
-            <Newsletter source="footer" />
+            <div className="flex g8 wrap" style={{ marginTop: 16 }}>
+              <Badge type="muis" />
+              <Badge type="owned" />
+            </div>
+            <address className="hh-footer-addr">
+              Operated by <strong>{SITE.org.legalName}</strong>
+              <br />
+              {SITE.org.streetAddress}
+              <br />
+              {SITE.org.addressLocality} {SITE.org.postalCode}
+            </address>
           </div>
-          <div className="flex g8 wrap" style={{ marginTop: 16 }}>
-            <Badge type="muis" />
-            <Badge type="owned" />
-          </div>
-          <address className="hh-footer-addr">
-            Operated by <strong>{SITE.org.legalName}</strong>
-            <br />
-            {SITE.org.streetAddress}
-            <br />
-            {SITE.org.addressLocality} {SITE.org.postalCode}
-          </address>
-        </div>
-        {cols.map(([title, links]) => (
-          <div key={title} className="hh-footer-col">
-            <div className="hh-footer-title">{title}</div>
-            {links.map(([label, screen]) => (
-              <ScreenLink key={label} screen={screen}>
-                {label}
-              </ScreenLink>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="hh-wrap hh-footer-cats">
-        <span className="hh-footer-title">Browse by category</span>
-        <div className="hh-footer-catlinks">
-          <ScreenLink screen="seo" params={{ slug: "halal-food-in-tampines" }}>Halal directory</ScreenLink>
-          {allSeoPages()
-            .filter((p) => p.catId && !p.areaId)
-            .map((p) => {
-              const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
-              return (
-                <ScreenLink key={p.slug} screen="seo" params={{ slug: p.slug }}>
-                  Halal {label}
-                </ScreenLink>
-              );
-            })}
-        </div>
-      </div>
-      <div className="hh-wrap hh-footer-cats">
-        <span className="hh-footer-title">Halal guides</span>
-        <div className="hh-footer-catlinks">
-          <Link href="/blog">All guides</Link>
-          {allCategories().map((c) => (
-            <Link key={c.slug} href={`/blog/category/${c.slug}`}>{c.name}</Link>
+          {cols.map(([title, links]) => (
+            <FooterSection key={title} title={title}>
+              {links.map(([label, screen]) => (
+                <li key={label}>
+                  <ScreenLink screen={screen}>{label}</ScreenLink>
+                </li>
+              ))}
+            </FooterSection>
           ))}
         </div>
-      </div>
+        <FooterSection title="Browse by category" cloud>
+          <li><Link href="/halal">Halal directory</Link></li>
+          {catPages.map((p) => {
+            const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
+            return (
+              <li key={p.slug}>
+                <ScreenLink screen="seo" params={{ slug: p.slug }}>Halal {label}</ScreenLink>
+              </li>
+            );
+          })}
+          <li><Link href="/halal">All categories →</Link></li>
+        </FooterSection>
+        <FooterSection title="Halal guides" cloud>
+          <li><Link href="/blog">All guides</Link></li>
+          {allCategories().map((c) => (
+            <li key={c.slug}>
+              <Link href={`/blog/category/${c.slug}`}>{c.name}</Link>
+            </li>
+          ))}
+        </FooterSection>
+      </nav>
       <nav className="hh-wrap hh-footer-legal" aria-label="Legal">
-        <a href="/terms">Terms</a>
-        <a href="/privacy">Privacy</a>
-        <a href="/pdpa">PDPA</a>
-        <a href="/cookies">Cookies</a>
-        <a href="/accessibility">Accessibility</a>
-        <a href="/disclaimer">Halal disclaimer</a>
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/pdpa">PDPA</Link>
+        <Link href="/cookies">Cookies</Link>
+        <Link href="/accessibility">Accessibility</Link>
+        <Link href="/disclaimer">Halal disclaimer</Link>
       </nav>
       <div className="hh-wrap hh-footer-base">
         <span>© 2026 Humble Halal. Built for the Singapore Muslim community.</span>

@@ -92,6 +92,9 @@ export interface Listing {
   tags: string[];
   // enrichment (added at module load)
   image?: string;
+  /** Owner-uploaded gallery ({url, caption?}, cover first). The public page
+   *  renders these; stock imagery is only a fallback when this is empty. */
+  photos?: { url: string; caption?: string }[];
   certified?: boolean;
   certBody?: string | null;
   /** True when an owner has claimed this business (owner_id or claimed_by set).

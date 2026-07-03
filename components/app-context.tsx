@@ -191,6 +191,24 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       } catch {
         /* ignore */
       }
+      // Post-OAuth fallback for the signup account-type choice: the Google
+      // redirect stashes it in sessionStorage before leaving (LoginScreen).
+      // If the choice was "owner" but the profile came back as a plain user
+      // (metadata didn't reach the webhook, e.g. sign-up transferred to
+      // sign-in), upgrade via the one-way /api/profile/role endpoint.
+      try {
+        const chosen = sessionStorage.getItem("hh-account-type");
+        if (chosen) {
+          sessionStorage.removeItem("hh-account-type"); // one-shot, never loops
+          if (chosen === "owner" && role !== "owner") {
+            const res = await fetch("/api/profile/role", { method: "POST" });
+            const j = await res.json().catch(() => ({}));
+            if (j?.ok) role = "owner";
+          }
+        }
+      } catch {
+        /* private mode / fetch failure — the user can still upgrade later */
+      }
       const base = (clerkUser.primaryEmailAddress?.emailAddress || clerkUser.firstName || "You").split("@")[0] || "You";
       if (active) setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
     })();

@@ -108,6 +108,12 @@ export async function POST(req: Request) {
       }
       const { error } = await sb.from(table).insert(row);
       if (!error) {
+        // Submitting a listing makes the user a business owner → grant the role
+        // (same as hosting an event) so the nav + dashboard recognise them
+        // while the listing sits in review. Best-effort; never touches admin.
+        if (kind === "listing" && userId) {
+          try { await sb.from("profiles").update({ role: "owner" }).eq("id", userId).eq("role", "user"); } catch { /* best-effort */ }
+        }
         // Best-effort acknowledgement emails — never affect the API response.
         try {
           if (kind === "claim" && userId) {

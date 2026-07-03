@@ -16,6 +16,11 @@ const PRICE_ENV: Record<string, { monthly?: string; yearly?: string }> = {
   featured: { monthly: process.env.STRIPE_PRICE_FEATURED_M, yearly: process.env.STRIPE_PRICE_FEATURED_Y },
   premium: { monthly: process.env.STRIPE_PRICE_PREMIUM_M, yearly: process.env.STRIPE_PRICE_PREMIUM_Y },
 };
+// Founding-member rate (lib/plans FOUNDING): Verified billed yearly at the
+// locked launch price. Only claimable when this dedicated Stripe price is
+// configured — otherwise the API refuses rather than silently charging the
+// standard rate the banner didn't promise.
+const PRICE_FOUNDING_Y = process.env.STRIPE_PRICE_VERIFIED_FOUNDING_Y;
 
 export async function POST(req: Request) {
   if (!getServerFlags().paidPlans) {
@@ -26,8 +31,14 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
-  const { plan, yearly } = (await req.json().catch(() => ({}))) as { plan?: string; yearly?: boolean };
-  const price = plan ? PRICE_ENV[plan]?.[yearly ? "yearly" : "monthly"] : undefined;
+  const { plan, yearly, founding } = (await req.json().catch(() => ({}))) as { plan?: string; yearly?: boolean; founding?: boolean };
+  let price = plan ? PRICE_ENV[plan]?.[yearly ? "yearly" : "monthly"] : undefined;
+  if (founding) {
+    if (plan !== "verified" || !PRICE_FOUNDING_Y) {
+      return NextResponse.json({ ok: false, reason: "founding_not_available" }, { status: 409 });
+    }
+    price = PRICE_FOUNDING_Y;
+  }
   if (!price) return NextResponse.json({ ok: false, reason: "price_not_configured" });
 
   // Link the signed-in owner's business + Stripe customer so fulfillment + the

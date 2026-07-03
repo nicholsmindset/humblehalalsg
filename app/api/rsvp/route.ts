@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getEvent } from "@/lib/data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { todaySG } from "@/lib/events-source";
 import { sendEmail } from "@/lib/email";
 import { rsvpConfirmationEmail } from "@/lib/emails/templates";
@@ -30,7 +30,9 @@ export async function POST(req: Request) {
   }
 
   const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
-  const ref = "HH-RSVP-" + Math.floor(1000 + Math.random() * 9000);
+  // The emailed reference IS the ticket qr_ref (lib/ticket-ref) — it used to be
+  // a decorative random number stored nowhere, so door check-in never matched.
+  const ref = makeOrderRef("RSVP");
 
   const supa = getSupabaseAdmin();
   if (!supa) {
@@ -85,8 +87,18 @@ export async function POST(req: Request) {
   if (error || !ord) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
 
   // Issue QR tickets + decrement capacity atomically (fall back to read+write).
-  const tix = Array.from({ length: qty }, () => ({ order_id: ord.id, event_id: row.id, tier: "RSVP", qr_ref: randomUUID() }));
-  await supa.from("tickets").insert(tix);
+  // qr_refs derive from the emailed ref; on the (rare) unique collision of the
+  // 6-char code, retry with a fresh ref so the insert always lands.
+  let issuedRef = ref;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const tix = ticketRefs(issuedRef, qty).map((qr) => ({ order_id: ord.id, event_id: row.id, tier: "RSVP", qr_ref: qr }));
+    const { error: tixErr } = await supa.from("tickets").insert(tix);
+    if (!tixErr) break;
+    if (tixErr.code !== "23505" || attempt === 2) {
+      return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    }
+    issuedRef = makeOrderRef("RSVP");
+  }
   const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: row.id, p_qty: qty });
   if (incErr) await supa.from("events").update({ taken: taken + qty }).eq("id", row.id);
 
@@ -96,10 +108,10 @@ export async function POST(req: Request) {
       const eventTitle = String((row as { title?: string }).title || mockEv?.title || "your event");
       const dateLabel = String((row as { date_iso?: string }).date_iso || mockEv?.dateLabel || "") || undefined;
       const venue = mockEv?.venue || undefined;
-      const t = rsvpConfirmationEmail({ name: body.name, eventTitle, dateLabel, venue, ref });
+      const t = rsvpConfirmationEmail({ name: body.name, eventTitle, dateLabel, venue, ref: issuedRef });
       await sendEmail({ to: body.email, subject: t.subject, html: t.html, template: "rsvp-confirmation", businessId: (row.business_id as string | null) || undefined });
     } catch { /* email best-effort */ }
   }
 
-  return NextResponse.json({ ok: true, ref });
+  return NextResponse.json({ ok: true, ref: issuedRef });
 }
