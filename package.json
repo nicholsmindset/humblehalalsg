@@ -15,7 +15,8 @@
     "deploy:functions": "supabase functions deploy on-event-published on-review-created --project-ref vzlcplizpkmvjspmqwns",
     "functions:serve": "supabase functions serve --env-file supabase/functions/.env.local",
     "flight:check": "tsx scripts/flight-sandbox-check.ts",
-    "geocode:listings": "node --env-file=.env.local scripts/geocode-listings.mjs"
+    "geocode:listings": "node --env-file=.env.local scripts/geocode-listings.mjs",
+    "seo:counts": "node scripts/gen-seo-counts.mjs"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.4",

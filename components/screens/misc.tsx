@@ -18,6 +18,7 @@ import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
+import { LEAD_VERTICALS, LEAD_CONSENT_VERSION, LEAD_ROUTE_CAP, verticalForCatId } from "@/lib/lead-verticals";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
@@ -525,18 +526,7 @@ export function SuggestScreen() {
 /* =============================================================
    REQUEST A QUOTE (lead-gen for high-ticket verticals)
 ============================================================= */
-const QUOTE_VERTICALS = [
-  "Event & buffet catering",
-  "Wedding & bridal (MUA, deco, hantaran)",
-  "Umrah & Hajj travel",
-  "Islamic finance & takaful",
-  "Home services (renovation, cleaning, aircon)",
-  "Automotive (servicing, detailing)",
-  "Photography & videography",
-  "Professional services (legal, accounting, marketing)",
-  "Quran & tuition / education",
-  "Something else",
-];
+const QUOTE_VERTICALS = LEAD_VERTICALS.map((v) => v.label);
 const QUOTE_BUDGETS = ["Under $500", "$500–$2,000", "$2,000–$5,000", "$5,000+", "Not sure yet"];
 
 export function RequestQuoteScreen() {
@@ -549,23 +539,34 @@ export function RequestQuoteScreen() {
   const [budget, setBudget] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [details, setDetails] = useState("");
+  const [consent, setConsent] = useState(false);
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Where the CTA came from — a listing detail page and/or a pSEO page.
+  const businessSlug = String(params.business || "");
+  const sourcePath = String(params.source || "");
 
   const nameErr = !name.trim() ? "Please enter your name" : "";
   const contactErr = !email.trim() && !phone.trim() ? "Add an email or phone so vendors can reach you" : "";
   const emailErr =
     email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? "Please enter a valid email" : "";
+  const consentErr = !consent ? "Please tick the box so providers are allowed to contact you" : "";
 
   const submit = async () => {
     setTouched(true);
-    if (nameErr || contactErr || emailErr) return;
+    if (nameErr || contactErr || emailErr || consentErr) return;
     setSubmitting(true);
     try {
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, category: vertical, area, budget, eventDate, details }),
+        body: JSON.stringify({
+          name, email, phone, category: vertical, area, budget, eventDate, details,
+          businessSlug: businessSlug || undefined,
+          sourcePath: sourcePath || undefined,
+          consent: true,
+          consentVersion: LEAD_CONSENT_VERSION,
+        }),
       });
     } catch {
       /* graceful — still confirm to the user */
@@ -643,11 +644,28 @@ export function RequestQuoteScreen() {
               <label htmlFor="rq-details">Details</label>
               <textarea id="rq-details" className="textarea" placeholder="e.g. iftar buffet for 80 pax, MUIS-certified, in Tampines on 14 Mar" value={details} onChange={(e) => setDetails(e.target.value)} />
             </div>
+            <div className="field">
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontWeight: 400 }}>
+                <input
+                  type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                  aria-required="true" aria-invalid={touched && !!consentErr}
+                  aria-describedby={touched && consentErr ? "rq-consent-err" : undefined}
+                  style={{ marginTop: 3, flexShrink: 0 }}
+                />
+                <span style={{ fontSize: ".86rem" }}>
+                  I agree that Humble Halal may share my request and contact details with up to {LEAD_ROUTE_CAP} matching
+                  halal providers, who may contact me directly about this request.
+                </span>
+              </label>
+              {touched && consentErr && <span id="rq-consent-err" className="field-error"><Icon name="warning" size={13} /> {consentErr}</span>}
+            </div>
             <button className="btn btn-primary btn-lg" disabled={submitting} onClick={submit}>
               {submitting ? "Sending…" : "Get my quotes"}
             </button>
             <p className="faint tc" style={{ fontSize: ".82rem" }}>
-              By submitting you agree to be contacted by matched providers (typically within 1–2 business days). We only share your request with relevant Muslim-owned &amp; halal-friendly providers — no spam, and you’re never charged by Humble Halal. Vendors are independent; please do your own checks before engaging them.
+              Quotes typically arrive within 1–2 business days. Free for you — always; no spam. We keep your request
+              only as long as needed to arrange quotes (see our <a href="/pdpa" style={{ textDecoration: "underline" }}>PDPA policy</a>).
+              Vendors are independent; please do your own checks before engaging them.
             </p>
           </div>
         </div>
@@ -971,6 +989,22 @@ export function SeoScreen() {
             <div className="grid-cards">{results.map((l) => <ListingCard key={l.id} item={l} />)}</div>
           ) : (
             <Empty icon="search" title="No places yet" body={`We're still adding halal spots for ${page.h1.toLowerCase()}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
+          )}
+
+          {/* Lead-gen banner for high-ticket verticals (weddings, umrah, services…). */}
+          {verticalForCatId(page.catId) && (
+            <div className="card mt16" style={{ padding: "18px 20px", display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ minWidth: 220, flex: 1 }}>
+                <strong style={{ fontSize: "1.02rem" }}>Planning something? Get up to {LEAD_ROUTE_CAP} free quotes</strong>
+                <p className="muted" style={{ marginTop: 4, fontSize: ".88rem" }}>Tell us what you need once — trusted halal {noun} send you quotes. Free, no obligation.</p>
+              </div>
+              <button
+                className="btn btn-gold"
+                onClick={() => { track.leadAction("enquiry_form", page.slug, page.catId); navigate("request-quote", { category: verticalForCatId(page.catId)!.label, source: page.slug }); }}
+              >
+                <Icon name="doc" size={17} /> Request quotes
+              </button>
+            </div>
           )}
 
           {/* Directory hub slot (leaderboard) — between the listings and the guide,
