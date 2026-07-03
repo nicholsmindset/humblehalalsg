@@ -3,7 +3,7 @@
 **Date:** 2026-07-02
 **Status:** implementation blueprint. **Extends (does not replace)** `docs/roadmap/events-ticketing-roadmap.md` (2026-06-27), which holds the competitive gap analysis vs Eventbrite/Eventsize and the QW/BB tagging. This document is the concrete build spec: routes, DDL, component names, money flow, and phased execution for turning humblehalal.com into the best halal event marketplace in Singapore.
 **Audience:** site owner (technical) + future Claude Code sessions implementing later phases.
-**Branch:** `feat/events-marketplace` (Phase 1 in flight). Latest applied migration at time of writing: `0040_ads_adsense.sql`.
+**Branch:** `feat/events-marketplace` (Phase 1 in flight). Latest applied migration at time of writing: `0043_ads_adsense.sql` (renamed from 0040 after colliding with master's `0040_booking_idempotency.sql`).
 
 ---
 
