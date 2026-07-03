@@ -51,10 +51,14 @@ const EXTRA_AREAS: SeoArea[] = [
   { id: "jurong-east", name: "Jurong East", mrt: "Jurong East", match: ["Jurong"] },
   { id: "sembawang", name: "Sembawang", mrt: "Sembawang", match: [] },
   { id: "punggol", name: "Punggol", mrt: "Punggol", match: [] },
-  { id: "arab-street", name: "Arab Street", mrt: "Bugis", match: ["Bugis"] },
+  { id: "arab-street", name: "Arab Street", mrt: "Bugis", match: ["Arab Street", "Bugis"] },
   { id: "changi-airport", name: "Changi Airport", mrt: "Changi Airport", match: [] },
   { id: "sentosa", name: "Sentosa", mrt: "HarbourFront", match: [] },
   { id: "novena", name: "Novena", mrt: "Novena", match: [] },
+  // 301 targets for legacy truncated slugs (next.config.ts) + top keyword adds.
+  { id: "kampong-glam", name: "Kampong Glam", mrt: "Bugis", match: ["Kampong Glam"] },
+  { id: "marine-parade", name: "Marine Parade", mrt: "Marine Parade", match: ["Marine Parade"] },
+  { id: "botanic-gardens", name: "Botanic Gardens", mrt: "Botanic Gardens", match: ["Botanic Gardens"] },
 ];
 
 /* ---- Malls / venues (KD≈0, high-volume `{venue} halal food` cluster).

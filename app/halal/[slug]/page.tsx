@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { SeoScreen } from "@/components/screens/misc";
 import { allSeoPages, getSeoPage, seoListings, seoFaqItems } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
@@ -28,8 +29,11 @@ export async function generateMetadata({
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const p = getSeoPage(slug);
-  const all = p ? await getDirectory() : [];
-  const matched = p ? seoListings(p, all) : [];
+  // Unknown slugs used to render page-0's content with a 200 (soft duplicate).
+  // Hard 404 instead — same pattern as /is-halal/[brand].
+  if (!p) notFound();
+  const all = await getDirectory();
+  const matched = seoListings(p, all);
   return (
     <>
       {p && (

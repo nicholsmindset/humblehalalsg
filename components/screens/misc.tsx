@@ -917,7 +917,10 @@ export function DisclaimerScreen() {
 export function SeoScreen() {
   const { navigate, params } = useApp();
   const dir = useDirectory();
-  const page = getSeoPage(String(params.slug || "")) || allSeoPages()[0];
+  // Server route 404s unknown slugs; this guard covers SPA navigation. The old
+  // `|| allSeoPages()[0]` fallback silently rendered page-0 content instead.
+  const page = getSeoPage(String(params.slug || ""));
+  if (!page) return <NotFoundScreen />;
   const areaName = page.areaName || "Singapore";
   const cat = page.catId ? HHData.categories.find((c) => c.id === page.catId) : null;
   const isCategoryPage = !!page.catId && !page.areaId;
