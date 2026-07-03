@@ -18,6 +18,7 @@ import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
+import { areaProfile, nearbyAreaIds } from "@/lib/area-content";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
@@ -933,6 +934,20 @@ export function SeoScreen() {
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";
 
+  // Hand-written area profile (area-content.ts) powers the v2 area template:
+  // unique local intro (already on page.intro), MRT + landmark blocks, and
+  // area-specific FAQs. Only area/mrt pages that have a profile get the extras.
+  const profile = areaProfile(page.areaId);
+  // Related areas → only link to areas that actually have a generated page.
+  const areaSlugs = new Set(allSeoPages().filter((p) => p.kind === "area").map((p) => p.areaId));
+  const relatedAreas = profile
+    ? nearbyAreaIds(profile.id, 10).filter((a) => areaSlugs.has(a.id)).slice(0, 6)
+    : [];
+  // Landmark cards deep-link into an existing venue page when we have one.
+  const venueSlugs = new Set(allSeoPages().filter((p) => p.kind === "venue").map((p) => p.slug));
+  // Area FAQ (specific first) merged with the global halal FAQ for the page.
+  const faqItems = profile ? [...profile.faqs, ...content.faq] : content.faq;
+
   // Category page → links to this category in each area; sibling category pages.
   const areaLinks = isCategoryPage
     ? allSeoPages().filter((p) => p.catId === page.catId && p.areaId)
@@ -980,6 +995,44 @@ export function SeoScreen() {
               never interrupting the ranked results. Direct-first, AdSense fill. */}
           <AdSlot slot="directory_hub" />
 
+          {/* ---- Area template v2: MRT + landmark discovery blocks ---- */}
+          {profile && profile.mrts.length > 0 && (
+            <section className="mt24">
+              <h2 style={{ fontSize: "1.4rem", marginBottom: 4 }}>Near the MRT</h2>
+              <p className="muted" style={{ marginBottom: 14 }}>Halal spots you can reach on foot from {areaName}&apos;s stations.</p>
+              <div className="flex g8 wrap">
+                {profile.mrts.map((m) => (
+                  <button key={m} className="chip" style={{ cursor: "pointer" }} onClick={() => navigate("explore", { q: `${m} halal` })}>
+                    <Icon name="map" size={14} /> {m} MRT
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {profile && profile.landmarks.length > 0 && (
+            <section className="mt24">
+              <h2 style={{ fontSize: "1.4rem", marginBottom: 4 }}>Malls, hawker centres &amp; landmarks</h2>
+              <p className="muted" style={{ marginBottom: 14 }}>Where halal food clusters in {areaName}.</p>
+              <div className="seo-linkgrid">
+                {profile.landmarks.map((lm) => {
+                  const venueSlug = lm.venueId ? `halal-food-at-${lm.venueId}` : null;
+                  const inner = (
+                    <>
+                      <span><strong>{lm.name}</strong><span className="faint" style={{ display: "block", fontSize: ".78rem", textTransform: "capitalize" }}>{lm.type}</span></span>
+                      {venueSlug && venueSlugs.has(venueSlug) && <Icon name="arrow" size={15} />}
+                    </>
+                  );
+                  return venueSlug && venueSlugs.has(venueSlug) ? (
+                    <a key={lm.name} className="related-link" {...link("seo", { slug: venueSlug })}>{inner}</a>
+                  ) : (
+                    <div key={lm.name} className="related-link" style={{ cursor: "default" }}>{inner}</div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* collapsible SEO content (crawlable in the DOM) */}
           <div className="seo-prose mt24">
             <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>{isCategoryPage ? `Choosing halal ${noun} in Singapore` : `Halal ${noun} ${placeLabel}`}</h2>
@@ -1013,12 +1066,18 @@ export function SeoScreen() {
             </div>
           </section>
 
-          <Faq items={content.faq} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
+          <Faq items={faqItems} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
         </div>
 
         <aside className="seo-side">
-          {related.length > 0 && (
+          {relatedAreas.length > 0 && (
             <div className="card" style={{ padding: 18 }}>
+              <h3 style={{ fontSize: "1.05rem" }}>Nearby areas</h3>
+              <div className="stack g8 mt12">{relatedAreas.map((a) => (<a key={a.id} className="related-link" {...link("seo", { slug: `halal-food-in-${a.id}` })}>Halal Food in {a.name}<Icon name="arrow" size={16} /></a>))}</div>
+            </div>
+          )}
+          {related.length > 0 && (
+            <div className="card" style={{ padding: 18, marginTop: relatedAreas.length ? 16 : 0 }}>
               <h3 style={{ fontSize: "1.05rem" }}>Related searches</h3>
               <div className="stack g8 mt12">{related.map((r) => (<a key={r.slug} className="related-link" {...link("seo", { slug: r.slug })}>{r.h1}<Icon name="arrow" size={16} /></a>))}</div>
             </div>
