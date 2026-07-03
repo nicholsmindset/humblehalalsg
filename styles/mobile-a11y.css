@@ -217,8 +217,10 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
   .map-cc-dist, .map-mrt, .tbl th { font-size: .75rem; }
 
   /* Breadcrumb links (SEO hero, travel, article) rendered ~20px tall — make
-     each a 44px hit row (they flex-wrap, so taller rows are fine). */
-  [aria-label="Breadcrumb"] a, .article-crumb a {
+     each a 44px hit row (they flex-wrap, so taller rows are fine). The
+     .seo-hero .flex clause covers the landing-page breadcrumbs that are still
+     plain divs rather than labelled <nav>s. */
+  [aria-label="Breadcrumb"] a, .article-crumb a, .seo-hero .flex a.link-inline {
     display: inline-flex; align-items: center; min-height: 44px;
   }
   /* "How we verify" trust-strip button was 20px tall. */
