@@ -14,10 +14,14 @@ type OwnerRow = {
   listing_views: number; enquiries: number; whatsapp_clicks: number;
   calls: number; directions: number; shortlists: number;
 };
+type DailyRow = { day: string; listing_views: number; lead_actions: number };
+type QueryRow = { query: string; searches: number };
 
 export function OwnerInsights() {
   const supabase = useSupabaseBrowser();
   const [rows, setRows] = useState<OwnerRow[] | null>(null);
+  const [daily, setDaily] = useState<DailyRow[]>([]);
+  const [queries, setQueries] = useState<QueryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState(false);
 
@@ -27,10 +31,17 @@ export function OwnerInsights() {
       const sb = supabase;
       if (!sb) { if (alive) setLoading(false); return; }
       const { from, to } = resolveRange("30d");
-      const { data, error } = await sb.rpc("owner_listing_analytics", { p_from: from, p_to: to });
+      // Trend + top-queries are additive (0045) — their failure never blocks the cards.
+      const [main, trend, q] = await Promise.all([
+        sb.rpc("owner_listing_analytics", { p_from: from, p_to: to }),
+        sb.rpc("owner_listing_daily", { p_from: from, p_to: to }),
+        sb.rpc("owner_top_queries", { p_from: from, p_to: to, p_limit: 6 }),
+      ]);
       if (alive) {
-        if (!error && Array.isArray(data)) setRows(data as OwnerRow[]);
-        else if (error) setLoadErr(true); // was silently swallowed → looked like "no activity"
+        if (!main.error && Array.isArray(main.data)) setRows(main.data as OwnerRow[]);
+        else if (main.error) setLoadErr(true); // was silently swallowed → looked like "no activity"
+        if (!trend.error && Array.isArray(trend.data)) setDaily(trend.data as DailyRow[]);
+        if (!q.error && Array.isArray(q.data)) setQueries(q.data as QueryRow[]);
         setLoading(false);
       }
     })();
@@ -76,6 +87,8 @@ export function OwnerInsights() {
     ["Directions", total.directions],
     ["Shortlisted", total.saves],
   ];
+  const trend = daily.map((d) => d.listing_views + d.lead_actions);
+  const maxQ = Math.max(...queries.map((q) => q.searches), 1);
   return (
     <div className="mt20">
       <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>Last 30 days · across your listings</p>
@@ -84,6 +97,32 @@ export function OwnerInsights() {
           <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
         ))}
       </div>
+      {trend.length >= 2 && (
+        <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
+          <p className="faint" style={{ fontSize: ".82rem", margin: 0 }}>Views &amp; lead actions per day</p>
+          <Sparkline data={trend} />
+        </div>
+      )}
+      {queries.length > 0 && (
+        <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
+          <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>What people searched before finding you</p>
+          <div className="stack g8">
+            {queries.map((q) => (
+              <div key={q.query} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: ".88rem", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>&ldquo;{q.query}&rdquo;</span>
+                <div style={{ flex: 2, height: 8, background: "var(--emerald-50)", borderRadius: 99 }}>
+                  <div style={{ width: `${Math.round((100 * q.searches) / maxQ)}%`, height: "100%", background: "var(--emerald)", borderRadius: 99 }} />
+                </div>
+                <span className="faint" style={{ fontSize: ".8rem", width: 24, textAlign: "right" }}>{fmt(q.searches)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <p className="faint" style={{ fontSize: ".78rem", marginTop: 12 }}>
+        Profile views are people opening your listing. Enquiries, WhatsApp taps, calls and directions are high-intent actions —
+        each one is a potential customer Humble Halal sent your way.
+      </p>
     </div>
   );
 }
