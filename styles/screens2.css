@@ -297,6 +297,24 @@
 .audit-row:last-child { border-bottom:none; }
 .audit-dot { width:9px; height:9px; border-radius:50%; background:var(--emerald); margin-top:5px; flex:none; box-shadow:0 0 0 3px var(--emerald-50); }
 
+/* =========================== OWNER LISTING EDITOR =========================== */
+.ed-nav { display:flex; gap:6px; flex-wrap:wrap; }
+.ed-chip { border:1px solid var(--line); background:var(--white); border-radius:999px; padding:7px 13px; font-size:.8rem; font-weight:700; color:var(--ink-soft); cursor:pointer; transition:all .14s; min-height:36px; }
+.ed-chip:hover { border-color:var(--emerald); color:var(--emerald); }
+.ed-section { scroll-margin-top:84px; padding:14px 0 4px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:12px; }
+.ed-section:first-of-type { border-top:none; }
+.ed-h { font-size:1.02rem; margin:0; }
+.ed-locked { background:var(--cream-200, #efe7d6); border-radius:10px; padding:12px 14px; }
+.ed-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:640px){ .ed-grid2 { grid-template-columns:1fr; } }
+.ed-amenities { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:8px; }
+.ed-amenity { display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--white); cursor:pointer; font-size:.88rem; min-height:44px; transition:all .14s; }
+.ed-amenity input { width:18px; height:18px; accent-color:var(--emerald); }
+.ed-amenity.on { border-color:var(--emerald); background:var(--emerald-50); font-weight:600; }
+.ed-savebar { align-items:center; }
+.ed-dirty-hint { font-size:.82rem; font-weight:600; }
+@media (max-width:860px){ .ed-dirty-hint { display:none; } .ed-root { padding-bottom: 76px; } }
+
 /* =========================== OWNER PHOTO MANAGER =========================== */
 .photo-mgr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
 .photo-mgr-card { border:1px solid var(--line); border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:8px; background:var(--white); }

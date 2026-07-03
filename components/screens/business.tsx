@@ -6,7 +6,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { HHData } from "@/lib/data";
 import type { Listing, LatLng } from "@/lib/types";
-import { planKey, PLAN_LIST } from "@/lib/plans";
+import { planKey, PLANS, PLAN_LIST } from "@/lib/plans";
 import { useUser } from "@clerk/nextjs";
 import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
@@ -787,10 +787,45 @@ export function OwnerDashboardScreen() {
         {tab === "ads" && <OwnerAds navigate={navigate} />}
 
         {tab === "billing" && (
-          <div className="dash-pane">
+          <div className="dash-pane stack g16">
             <div className="card" style={{ padding: 22 }}>
-              <div className="flex between center wrap g12"><div><span className="eyebrow">Billing &amp; subscription</span><h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>Manage your plan</h3><p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to view your current plan, update your card, download invoices, change plan or cancel.</p></div>
-                <div className="flex g8 wrap"><button className="btn btn-gold" onClick={manageBilling}><Icon name="settings" size={16} /> Manage subscription</button><button className="btn btn-soft" onClick={() => navigate("pricing")}>View plans</button></div></div>
+              <div className="flex between center wrap g12">
+                <div>
+                  <span className="eyebrow">Billing &amp; subscription</span>
+                  <h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>
+                    You&rsquo;re on the {currentPlanLabel} plan
+                    {PLANS[currentPlan].monthly > 0 && <span className="faint" style={{ fontSize: ".95rem", fontWeight: 400 }}> · S${PLANS[currentPlan].monthly}/mo</span>}
+                  </h3>
+                  <p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to update your card, download invoices, change plan or cancel.</p>
+                </div>
+                <div className="flex g8 wrap"><button className="btn btn-gold" onClick={manageBilling}><Icon name="settings" size={16} /> Manage subscription</button><button className="btn btn-soft" onClick={() => navigate("pricing")}>View plans</button></div>
+              </div>
+            </div>
+            {/* At-a-glance plan ladder so upgrading doesn't require leaving the
+                dashboard to discover what the next tier adds. */}
+            <div className="grid-cards">
+              {PLAN_LIST.map((p) => {
+                const isCurrent = p.key === currentPlan;
+                return (
+                  <div key={p.key} className="card" style={{ padding: 16, outline: isCurrent ? "2px solid var(--emerald)" : undefined }}>
+                    <div className="flex between center g8">
+                      <div style={{ fontWeight: 800 }}>{p.name}</div>
+                      {isCurrent ? <span className="pill-tag green">Current</span> : <span className="faint" style={{ fontSize: ".8rem" }}>{p.tag}</span>}
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: "1.2rem", marginTop: 6 }}>
+                      {p.monthly === 0 ? "Free" : `S$${p.monthly}`}<span className="faint" style={{ fontSize: ".78rem", fontWeight: 400 }}>{p.monthly === 0 ? "" : "/mo"}</span>
+                    </div>
+                    <ul className="faint" style={{ fontSize: ".8rem", margin: "8px 0 0", paddingLeft: 18, display: "grid", gap: 3 }}>
+                      {p.bullets.slice(0, 3).map((b) => <li key={b}>{b}</li>)}
+                    </ul>
+                    {!isCurrent && (
+                      <button className="btn btn-outline btn-sm btn-block" style={{ marginTop: 12 }} onClick={() => navigate("pricing")}>
+                        {PLAN_LIST.indexOf(p) > PLAN_LIST.findIndex((x) => x.key === currentPlan) ? "Upgrade" : "Compare"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

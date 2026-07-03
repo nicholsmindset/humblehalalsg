@@ -53,6 +53,7 @@ const ICONS: Record<string, string> = {
   sort: "M7 4v16M7 20l-3-3M7 4l3 3M17 20V4M17 4l-3 3M17 20l3-3",
   chevron: "M9 6l6 6-6 6",
   chevdown: "M6 9l6 6 6-6",
+  lock: "M7 11V7a5 5 0 0110 0v4M5 11h14v10H5V11zm7 4v3",
   back: "M15 6l-6 6 6 6",
   x: "M6 6l12 12M18 6L6 18",
   arrow: "M5 12h14M13 6l6 6-6 6",

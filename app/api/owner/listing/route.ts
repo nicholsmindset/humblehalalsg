@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { revalidatePublic } from "@/lib/revalidate";
 import { galleryMax } from "@/lib/plans";
+import { sanitizeAttributes } from "@/lib/attributes";
 
 /* Owner self-service listing editor. GET returns the editable fields for a
    business the caller owns; PATCH updates a whitelist of fields. Ownership is
@@ -11,8 +12,9 @@ import { galleryMax } from "@/lib/plans";
 export const dynamic = "force-dynamic";
 
 // Fields a claimed owner may edit. Excludes name/halal_tier/status/featured/plan
-// (identity + trust + billing stay admin-controlled).
-const EDITABLE = ["phone", "website", "address", "postal", "description", "price_level", "opening_hours", "socials", "photos"] as const;
+// (identity + trust + billing stay admin-controlled). `attributes` is vetted
+// against the fixed amenity vocabulary (lib/attributes) — no free-form tags.
+const EDITABLE = ["phone", "website", "address", "postal", "description", "price_level", "opening_hours", "socials", "photos", "attributes"] as const;
 
 // Coerce an incoming `photos` value into the jsonb shape rowToListing reads:
 // an array of { url, caption? } with string urls. Anything malformed is dropped.
@@ -75,6 +77,7 @@ export async function PATCH(req: Request) {
   for (const k of EDITABLE) {
     if (!(k in body)) continue;
     if (k === "photos") { patch.photos = sanitizePhotos(body.photos, galleryMax(row.plan)); continue; }
+    if (k === "attributes") { patch.attributes = sanitizeAttributes(body.attributes); continue; }
     patch[k] = body[k] === "" ? null : body[k];
   }
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, error: "no_fields" }, { status: 400 });
