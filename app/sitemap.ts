@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
-import { allSeoPages } from "@/lib/seo-pages";
+import { allSeoPages, seoPageIndexable } from "@/lib/seo-pages";
 import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
@@ -71,12 +71,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     images: e.img ? [e.img] : undefined,
   }));
 
-  const seoEntries: MetadataRoute.Sitemap = allSeoPages().map((p) => ({
-    url: `${base}/halal/${p.slug}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  // Only indexable SEO pages belong in the sitemap — thin place-pages below the
+  // real-listing threshold carry robots:noindex, so listing them would be a
+  // mixed signal. (Expect deliberate sitemap-diff churn as coverage changes.)
+  const seoEntries: MetadataRoute.Sitemap = allSeoPages()
+    .filter((p) => seoPageIndexable(p, listings))
+    .map((p) => ({
+      url: `${base}/halal/${p.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
 
   const eventSeoEntries: MetadataRoute.Sitemap = allEventSeoPages().map((p) => ({
     url: `${base}${eventSeoPath(p)}`,
