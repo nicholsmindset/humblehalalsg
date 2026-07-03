@@ -269,11 +269,11 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
   const dir = useDirectory();
   const quickChips = (
     <div className="pillbar" style={{ marginTop: 16, justifyContent: variant === "classic" ? "center" : "flex-start" }}>
-      <button className="chip" onClick={() => navigate("map")}><Icon name="near" size={16} /> {t("chip.nearMe")}</button>
-      <button className="chip" onClick={() => navigate("explore", { open: true })}>{t("chip.openNow")}</button>
-      <button className="chip" onClick={() => navigate("explore", { prayer: true })}><Icon name="mosque" size={15} /> {t("chip.prayer")}</button>
-      <button className="chip" onClick={() => navigate("travel")}><Icon name="globe" size={15} /> Halal-friendly hotels</button>
-      <button className="chip" onClick={() => navigate("mosques")}><Icon name="crescent" size={15} /> Mosques</button>
+      <button className="chip" onClick={() => { track.filterUse("near_me"); navigate("map"); }}><Icon name="near" size={16} /> {t("chip.nearMe")}</button>
+      <button className="chip" onClick={() => { track.filterUse("open_now"); navigate("explore", { open: true }); }}>{t("chip.openNow")}</button>
+      <button className="chip" onClick={() => { track.filterUse("prayer_space"); navigate("explore", { prayer: true }); }}><Icon name="mosque" size={15} /> {t("chip.prayer")}</button>
+      <button className="chip" onClick={() => { track.filterUse("hotels"); navigate("travel"); }}><Icon name="globe" size={15} /> Halal-friendly hotels</button>
+      <button className="chip" onClick={() => { track.filterUse("mosques"); navigate("mosques"); }}><Icon name="crescent" size={15} /> Mosques</button>
     </div>
   );
 
@@ -504,8 +504,9 @@ export function ExploreScreen() {
   useEffect(() => {
     const term = q.trim();
     if (!term) return;
-    const id = setTimeout(() => track.search(term), 700);
+    const id = setTimeout(() => track.search(term, results.length), 700);
     return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- count is a per-query snapshot; re-firing on filter changes would duplicate the search event
   }, [q]);
 
   // Analytics: record an impression once per listing per session as it surfaces
@@ -586,7 +587,7 @@ export function ExploreScreen() {
               <div className="grid-cards">
                 {results.slice(0, visible).map((l, i) => (
                   <Fragment key={l.id}>
-                    <ListingCard item={l} />
+                    <ListingCard item={l} onOpen={() => { const term = q.trim(); if (term) track.searchResultClick(l.slug || l.id, l.catId, term); }} />
                     {i === 5 && <SponsoredSlot placement="directory_inline" />}
                   </Fragment>
                 ))}
@@ -606,6 +607,11 @@ export function ExploreScreen() {
   );
 }
 
+// Canonical analytics keys for the commercial-intent feature toggles.
+const FILTER_EVENT_KEY: Record<"owned" | "prayer" | "family" | "delivery" | "open", string> = {
+  owned: "muslim_owned", prayer: "prayer_space", family: "family_friendly", delivery: "delivery", open: "open_now",
+};
+
 export function FilterPanel({ filters, setF, onClose, onClear }: {
   filters: ExploreFilters;
   setF: <K extends keyof ExploreFilters>(k: K, v: ExploreFilters[K]) => void;
@@ -620,7 +626,7 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
     <button className={`fp-opt ${filters[k] === v ? "on" : ""}`} onClick={() => setF(k, filters[k] === v ? "" : v)}>{label}</button>
   );
   const Toggle = ({ k, label, icon }: { k: "owned" | "prayer" | "family" | "delivery" | "open"; label: string; icon: string }) => (
-    <button className={`fp-toggle ${filters[k] ? "on" : ""}`} onClick={() => setF(k, !filters[k])}>
+    <button className={`fp-toggle ${filters[k] ? "on" : ""}`} onClick={() => { if (!filters[k]) track.filterUse(FILTER_EVENT_KEY[k]); setF(k, !filters[k]); }}>
       <span className="flex g8 center"><Icon name={icon} size={17} /> {label}</span>
       <span className="switch" />
     </button>
@@ -736,7 +742,7 @@ export function MapScreen() {
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
-  useEffect(() => setMapMounted(true), []);
+  useEffect(() => { setMapMounted(true); track.mapOpen(); }, []);
   const tog = (k: keyof typeof chips) => setChips((c) => ({ ...c, [k]: !c[k] }));
   const clearAll = () => { setCat(""); setArea(""); setHalal(""); setQ(""); setChips((c) => ({ ...c, open: false, prayer: false, family: false })); };
   const hasFilters = !!(cat || area || halal || q || chips.open || chips.prayer || chips.family);
@@ -1161,7 +1167,7 @@ export function DetailScreen() {
                   <div className="muted" style={{ fontSize: ".9rem" }}>Claim your free listing to manage details, reply to reviews and add photos.</div>
                 </div>
               </div>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate("claim", { id: item.slug || item.id })}><Icon name="shield-check" size={15} /> Claim this listing</button>
+              <button className="btn btn-primary btn-sm" onClick={() => { logLead("claim"); navigate("claim", { id: item.slug || item.id }); }}><Icon name="shield-check" size={15} /> Claim this listing</button>
             </div>
           )}
 
@@ -1184,6 +1190,7 @@ export function DetailScreen() {
             <button
               className="btn btn-ghost"
               onClick={async () => {
+                logLead("share");
                 const r = await shareOrCopy({ title: item.name, text: item.blurb, path: `/business/${item.slug}` });
                 toast(r === "shared" ? "Shared" : r === "copied" ? "Link copied to clipboard" : "Couldn't share");
               }}
@@ -1194,7 +1201,7 @@ export function DetailScreen() {
               <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>
-            {!item.claimed && <button className="btn btn-outline" onClick={() => navigate("claim", { id: item.slug || item.id })}><Icon name="building" size={17} /> Claim this business</button>}
+            {!item.claimed && <button className="btn btn-outline" onClick={() => { logLead("claim"); navigate("claim", { id: item.slug || item.id }); }}><Icon name="building" size={17} /> Claim this business</button>}
           </div>
 
           {/* internal linking: related places + landing pages */}
@@ -1460,7 +1467,7 @@ export function VerificationCard({ item, navigate, toast }: {
       </div>
       <div className="verif-card-foot">
         {muisClaim && (
-          <a className="btn btn-soft btn-sm" href={halalSgVerifyUrl(undefined, item.name)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={15} /> Check HalalSG register</a>
+          <a className="btn btn-soft btn-sm" href={halalSgVerifyUrl(undefined, item.name)} target="_blank" rel="noopener noreferrer" onClick={() => track.leadAction("cert_view", item.slug || item.id, item.catId)}><Icon name="external" size={15} /> Check HalalSG register</a>
         )}
         <button className={`btn btn-sm ${confirmed ? "btn-primary" : "btn-outline"}`} onClick={async () => {
           if (confirmed) return;
