@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const period = new URL(req.url).searchParams.get("period") === "all" ? "all" : "month";
   const { data } = await db.rpc("passport_leaderboard", { p_period: period, p_limit: 25 });
-  const board = (data || []).map((r: { rank: number; user_id: string; display_name: string; points: number; is_public: boolean }) => ({
+  const board = (data || []).map((r: { rank: number; display_name: string; points: number; is_public: boolean }) => ({
     rank: r.rank, name: r.display_name, points: r.points, isPublic: r.is_public,
   }));
 

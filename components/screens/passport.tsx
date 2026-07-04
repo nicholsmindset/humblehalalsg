@@ -281,9 +281,13 @@ function LocalPerks({ toast, onChange }: { toast: (m: string) => void; onChange:
   const redeem = async (id: string) => {
     setBusy(id);
     try {
-      const res = await fetch("/api/passport/perks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perkId: id }) });
+      // One stable token per click (button disables while busy) so a network
+      // retry can't double-charge / issue two vouchers.
+      const idempotencyKey = crypto.randomUUID();
+      const res = await fetch("/api/passport/perks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perkId: id, idempotencyKey }) });
       const d = await res.json();
       if (res.status === 402) toast("Not enough points for this perk yet");
+      else if (d?.error === "duplicate") { await load(); onChange(); }
       else if (!res.ok || !d.ok) toast("Couldn't redeem — perk may be unavailable");
       else { toast(`Voucher: ${d.voucher} 🎟️`); await load(); onChange(); }
     } catch { toast("Couldn't redeem"); }

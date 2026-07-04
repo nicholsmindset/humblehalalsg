@@ -32,7 +32,11 @@ export async function POST(req: Request) {
 
   try {
     if (save) {
-      await db.from("saved_places").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
+      // The upsert FK-fails on a bogus business_id — check the error rather than
+      // swallowing it, so a fake UUID can't (a) silently no-op or (b) still earn
+      // points (the ledger has no FK). Only award after a real save landed.
+      const { error } = await db.from("saved_places").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
+      if (error) return NextResponse.json({ ok: false, reason: "invalid_business" }, { status: 422 });
       if (getServerFlags().passport) {
         try {
           const { awardDailyCapped, loadStats, emitProgress } = await import("@/lib/passport-server");

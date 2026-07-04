@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
-/* Consumer referral link: /i/[code] → 302 home (or /sign-in?signup=1) and
+/* Consumer referral link: /i/[code] → 302 home (or /login?signup=1) and
    stamp an `hh_ref` cookie carrying ONLY the referral code (no PII). LoginScreen
    reads it on signup and passes it through Clerk unsafeMetadata; the Clerk
    webhook credits the referrer. Best-effort click count. Always redirects —
@@ -15,7 +15,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
   const url = new URL(req.url);
   const safe = CODE_RE.test(code) ? code.toLowerCase() : "";
   const signup = url.searchParams.get("signup") === "1";
-  const dest = new URL(signup ? "/sign-in?signup=1" : "/", url.origin);
+  // The in-app login screen lives at /login (NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login);
+  // /sign-in is NOT a route (only /sign-in/sso-callback) and would 404.
+  const dest = new URL(signup ? "/login?signup=1" : "/", url.origin);
 
   const rl = await rateLimit(req, "refclick", 60, 3600);
   if (!rl.ok) return tooMany(rl.retryAfter);

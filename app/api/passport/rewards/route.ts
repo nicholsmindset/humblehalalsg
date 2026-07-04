@@ -4,17 +4,13 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { getServerFlags } from "@/lib/flags";
 import { REWARDS, rewardById } from "@/lib/passport-rewards";
+import { balanceOf } from "@/lib/passport-server";
 
 /* Rewards store. GET → catalogue + owned + spendable balance. POST → redeem
    (spends points via the atomic redeem_reward RPC; one-time rewards dedupe by
    redeem:<id>). Digital effects (badge/spotlight/early-access) are applied best-
    effort on success. */
 export const dynamic = "force-dynamic";
-
-async function balanceOf(db: NonNullable<ReturnType<typeof getSupabaseAdmin>>, userId: string): Promise<number> {
-  const { data } = await db.from("passport_points").select("delta").eq("user_id", userId).limit(2000);
-  return (data || []).reduce((n, r) => n + (r.delta as number), 0);
-}
 
 export async function GET() {
   if (!getServerFlags().passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
@@ -54,6 +50,7 @@ export async function POST(req: Request) {
   });
   if (result === "insufficient") return NextResponse.json({ ok: false, error: "insufficient" }, { status: 402 });
   if (result === "duplicate") return NextResponse.json({ ok: false, error: "already_owned" }, { status: 409 });
+  if (result === "blocked") return NextResponse.json({ ok: false, error: "unavailable" }, { status: 409 });
   if (result !== "ok") return NextResponse.json({ ok: false, error: "redeem_failed" }, { status: 502 });
 
   // Best-effort digital effects.

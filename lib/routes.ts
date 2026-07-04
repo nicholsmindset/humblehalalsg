@@ -104,6 +104,10 @@ export function pathToScreen(pathname: string): ScreenName {
   if (pathname.startsWith("/travel/")) return "travel-city";
   if (pathname.startsWith("/owner")) return "owner-dashboard";
   if (pathname.startsWith("/dashboard")) return "user-dashboard";
+  // More specific prefix first — the generic scan below matches /passport before
+  // /passport/leaderboard by insertion order, mis-highlighting the nav.
+  if (pathname.startsWith("/passport/leaderboard")) return "passport-leaderboard";
+  if (pathname.startsWith("/passport")) return "passport";
   const hit = Object.entries(BASE_PATH).find(
     ([, p]) => p !== "/" && pathname.startsWith(p),
   );

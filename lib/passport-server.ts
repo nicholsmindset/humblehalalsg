@@ -57,7 +57,12 @@ export async function awardDailyCapped(
   return award(db, a);
 }
 
-/** Load a user's passport stats from the ledger (summed; no stored balance). */
+/** Load a user's passport stats from the ledger (summed; no stored balance).
+   Stats (earned/balance/counts/streak) are aggregated over the FULL ledger via
+   the passport_stats RPC — never a truncated window — so an active user's tier,
+   badges and balance stay correct and consistent across every screen. The rows
+   returned are a recent window used ONLY for weekly quest evaluation (a week is
+   far fewer than this many rows). */
 export async function loadStats(db: Db, userId: string): Promise<PassportStats & { rows: LedgerRow[] }> {
   const { data } = await db
     .from("passport_points")
@@ -66,6 +71,29 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
     .order("created_at", { ascending: false })
     .limit(500);
   const rows = (data || []) as LedgerRow[];
+
+  // Authoritative full-ledger aggregates (sum/count/distinct/streak, DB-side).
+  try {
+    const { data: agg, error } = await db.rpc("passport_stats", { p_user_id: userId });
+    const s = (Array.isArray(agg) ? agg[0] : agg) as
+      | { earned: number; balance: number; review_count: number; visit_count: number; follow_count: number; streak_days: number; qualified_referrals: number }
+      | null;
+    if (!error && s) {
+      return {
+        totalPoints: s.earned,        // lifetime earned → tier + badges
+        balance: s.balance,           // net spendable wallet
+        reviewCount: s.review_count,
+        visitCount: s.visit_count,
+        followCount: s.follow_count,
+        streakDays: s.streak_days,
+        qualifiedReferrals: s.qualified_referrals,
+        rows,
+      };
+    }
+  } catch { /* RPC unavailable (pre-migration) — fall back to the window below */ }
+
+  // Fallback: derive from the recent window. May under-count for very active
+  // users, so this path is only for environments where passport_stats is absent.
   const count = (t: string) => rows.filter((r) => r.source_type === t).length;
   const visitIds = new Set(rows.filter((r) => r.source_type === "visit").map((r) => r.source_id));
   const activeDates = [...new Set(rows.map((r) => sgtDate(r.created_at)))];
@@ -77,8 +105,8 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
     qualifiedReferrals = qc || 0;
   } catch { /* table may be pre-migration */ }
   return {
-    totalPoints: earnedPoints(rows), // lifetime earned → tier + badges
-    balance: totalPoints(rows),      // net spendable wallet
+    totalPoints: earnedPoints(rows),
+    balance: totalPoints(rows),
     reviewCount: count("review"),
     visitCount: visitIds.size,
     followCount: count("follow"),
@@ -89,6 +117,21 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
 }
 
 export interface LedgerRow { delta: number; source_type: string; source_id: string | null; reason: string; created_at: string }
+
+/** The caller's authoritative spendable BALANCE — net of the FULL ledger,
+   aggregated DB-side. Every screen that shows or gates on balance should use
+   this so reads agree and none is truncated by a row window (rewards, giveaway
+   and perks previously each summed a 2000-row window → drift for heavy users).
+   Falls back to a summed window only if the RPC is unavailable (pre-migration). */
+export async function balanceOf(db: Db, userId: string): Promise<number> {
+  try {
+    const { data, error } = await db.rpc("passport_stats", { p_user_id: userId });
+    const s = (Array.isArray(data) ? data[0] : data) as { balance?: number } | null;
+    if (!error && s && typeof s.balance === "number") return s.balance;
+  } catch { /* fall through to the window */ }
+  const { data } = await db.from("passport_points").select("delta").eq("user_id", userId).limit(5000);
+  return (data || []).reduce((n, r) => n + (r.delta as number), 0);
+}
 
 /** Award the bonus for any of the user's PERSONALISED quests completed this
    week (idempotent by quest+week). Only the user's selected quests can award. */

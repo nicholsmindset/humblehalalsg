@@ -26,6 +26,7 @@ const PUBLIC_STATIC = [
   "/ramadan",
   "/hari-raya",
   "/for-business",
+  "/partners",
   "/advertise",
   "/pricing",
   "/quotes",

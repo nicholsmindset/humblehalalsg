@@ -35,9 +35,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
   const { userId } = await auth();
   if (!userId) {
-    // Send to sign-in and come back to collect after auth (carry the token).
+    // Send to the login screen (/login — /sign-in is not a route, it 404s) and
+    // come back to collect after auth (carry the token).
     const back = `/c/${safe}${token ? `?k=${encodeURIComponent(token)}` : ""}`;
-    return NextResponse.redirect(new URL(`/sign-in?redirect=${encodeURIComponent(back)}`, url.origin), 302);
+    return NextResponse.redirect(new URL(`/login?redirect=${encodeURIComponent(back)}`, url.origin), 302);
   }
 
   const db = getSupabaseAdmin();

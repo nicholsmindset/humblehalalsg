@@ -54,10 +54,13 @@ function readRefCode(): string | undefined {
 }
 
 export function LoginScreen() {
-  const { navigate, setUser, toast } = useApp();
+  const { navigate, setUser, toast, params } = useApp();
   const { isLoaded: siLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
   const { isLoaded: suLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
-  const [mode, setMode] = useState("login");
+  // Deep-link intents: /login?signup=1 opens in register mode; ?redirect=<path>
+  // (e.g. the collect link /c/<slug>?k=…) sends the user back there after auth.
+  const redirectTo = typeof params.redirect === "string" && params.redirect.startsWith("/") && !params.redirect.startsWith("//") ? params.redirect : "";
+  const [mode, setMode] = useState(params.signup === "1" ? "register" : "login");
   const [role, setRole] = useState<"user" | "owner">("user");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -79,21 +82,28 @@ export function LoginScreen() {
   const pwErr = !pw ? "Enter your password" : pw.length < 6 ? "At least 6 characters" : "";
   const codeErr = code.trim().length < 6 ? "Enter the 6-digit code" : "";
 
+  // Send the user onward after auth: back to ?redirect= if present (full nav,
+  // since it may be a route handler like /c/…), else the right dashboard.
+  const routeOnward = () => {
+    if (redirectTo) { window.location.href = redirectTo; return; }
+    navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
+  };
+
   const finish = () => {
     const first = email.split("@")[0];
     setUser({ loggedIn: true, role, name: first ? first[0].toUpperCase() + first.slice(1) : "Aisyah" });
     toast(mode === "login" ? "Welcome back" : "Account created");
-    navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
+    routeOnward();
   };
 
   // After Clerk activates the session, app-context (useUser) syncs the real
-  // user + role; we just route to the right dashboard.
+  // user + role; we just route onward.
   const afterAuth = () => {
     // Registration is a conversion; login is not. (Google OAuth signups complete
     // in the SSO callback route — tracked server-side in Phase 2.)
     if (mode === "register") track.signUp("email", role, email);
     toast(mode === "login" ? "Welcome back" : "Account created");
-    navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
+    routeOnward();
   };
 
   // Step 1 — email the 6-digit code (sign-in) or create the sign-up + send code.
@@ -192,7 +202,7 @@ export function LoginScreen() {
         await signUp.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
-          redirectUrlComplete: `${window.location.origin}/`,
+          redirectUrlComplete: `${window.location.origin}${redirectTo || "/"}`,
           unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) },
         });
         return;
@@ -201,7 +211,7 @@ export function LoginScreen() {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}/`,
+        redirectUrlComplete: `${window.location.origin}${redirectTo || "/"}`,
       });
     } catch (err) {
       const msg = clerkErr(err) || "Google sign-in failed — please try again.";

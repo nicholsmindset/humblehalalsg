@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { getServerFlags } from "@/lib/flags";
+import { balanceOf } from "@/lib/passport-server";
 
 /* Monthly giveaway. GET → the current open giveaway + my entries + total +
    spendable balance. POST → buy one entry (spends points via enter_giveaway). */
@@ -26,12 +27,11 @@ export async function GET() {
   const g = await currentGiveaway(db);
   if (!g) return NextResponse.json({ ok: true, giveaway: null });
 
-  const [{ data: mine }, { count: totalEntrants }, { data: bal }] = await Promise.all([
+  const [{ data: mine }, { count: totalEntrants }, balance] = await Promise.all([
     db.from("giveaway_entries").select("entries").eq("giveaway_id", g.id).eq("user_id", userId).maybeSingle(),
     db.from("giveaway_entries").select("user_id", { count: "exact", head: true }).eq("giveaway_id", g.id),
-    db.from("passport_points").select("delta").eq("user_id", userId).limit(2000),
+    balanceOf(db, userId),
   ]);
-  const balance = (bal || []).reduce((n, r) => n + (r.delta as number), 0);
   return NextResponse.json({
     ok: true,
     giveaway: { id: g.id, title: g.title, description: g.description, entryCost: g.entry_cost, month: g.period_month },
@@ -55,6 +55,7 @@ export async function POST(req: Request) {
   const { data: result } = await db.rpc("enter_giveaway", { p_user_id: userId, p_giveaway_id: g.id, p_dedupe: `enter:${g.id}:${randomUUID()}` });
   if (result === "insufficient") return NextResponse.json({ ok: false, error: "insufficient" }, { status: 402 });
   if (result === "closed") return NextResponse.json({ ok: false, error: "closed" }, { status: 409 });
+  if (result === "blocked") return NextResponse.json({ ok: false, error: "unavailable" }, { status: 409 });
   if (result !== "ok") return NextResponse.json({ ok: false, error: "enter_failed" }, { status: 502 });
   return NextResponse.json({ ok: true });
 }

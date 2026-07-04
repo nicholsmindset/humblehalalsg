@@ -100,8 +100,12 @@ grant  execute on function public.enter_giveaway(text,uuid,text) to service_role
 -- ── 3. Leaderboard (EARNED points; opt-in names via passport_settings) ───────
 -- period: 'month' (current SGT month) | 'all'. Returns top N with a display name
 -- only when the user opted their passport public; else 'A Humble Halal member'.
+-- Does NOT return user_id (the Clerk sub = app identity key) — it is never
+-- consumed by the API and must not leak. Called ONLY by the server via the
+-- service-role client, so grant service_role only (a direct anon/authenticated
+-- call could otherwise enumerate identities). Stable tiebreaker for tied ranks.
 create or replace function public.passport_leaderboard(p_period text, p_limit int)
-returns table (rank int, user_id text, display_name text, points int, is_public boolean)
+returns table (rank int, display_name text, points int, is_public boolean)
 language sql stable security definer set search_path = public as $$
   with earned as (
     select pp.user_id, sum(pp.delta)::int as points
@@ -112,8 +116,7 @@ language sql stable security definer set search_path = public as $$
              = to_char(now() at time zone 'Asia/Singapore','YYYY-MM'))
      group by pp.user_id
   )
-  select (row_number() over (order by e.points desc))::int as rank,
-         e.user_id,
+  select (row_number() over (order by e.points desc, e.user_id))::int as rank,
          case when coalesce(ps.is_public,false)
               then coalesce(nullif(ps.display_name,''), nullif(split_part(coalesce(p.name,''),' ',1),''), 'A Humble Halal member')
               else 'A Humble Halal member' end as display_name,
@@ -122,13 +125,17 @@ language sql stable security definer set search_path = public as $$
     from earned e
     join profiles p on p.id = e.user_id
     left join passport_settings ps on ps.user_id = e.user_id
-   order by e.points desc
+   order by e.points desc, e.user_id
    limit greatest(1, least(p_limit, 100));
 $$;
 revoke execute on function public.passport_leaderboard(text,int) from public;
-grant  execute on function public.passport_leaderboard(text,int) to anon, authenticated, service_role;
+revoke execute on function public.passport_leaderboard(text,int) from anon, authenticated;
+grant  execute on function public.passport_leaderboard(text,int) to service_role;
 
--- The caller's own rank + points for a period (so a mid-pack user sees where they stand).
+-- The caller's own rank + points for a period. Called ONLY server-side via the
+-- service-role client (which passes the already-authenticated caller's own id),
+-- so grant service_role only — this closes the IDOR where an authenticated user
+-- could otherwise pass another user's id and read their points/rank.
 create or replace function public.my_passport_rank(p_user_id text, p_period text)
 returns table (rank int, points int)
 language sql stable security definer set search_path = public as $$
@@ -141,12 +148,13 @@ language sql stable security definer set search_path = public as $$
              = to_char(now() at time zone 'Asia/Singapore','YYYY-MM'))
      group by pp.user_id
   ), ranked as (
-    select user_id, points, (row_number() over (order by points desc))::int as rank from earned
+    select user_id, points, (row_number() over (order by points desc, user_id))::int as rank from earned
   )
   select rank, points from ranked where user_id = p_user_id;
 $$;
 revoke execute on function public.my_passport_rank(text,text) from public;
-grant  execute on function public.my_passport_rank(text,text) to authenticated, service_role;
+revoke execute on function public.my_passport_rank(text,text) from authenticated;
+grant  execute on function public.my_passport_rank(text,text) to service_role;
 
 -- ── 4. Public passport by token → use EARNED points (spending never lowers it) ─
 create or replace function public.public_passport_by_token(p_token text)
@@ -165,3 +173,59 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke execute on function public.public_passport_by_token(text) from public;
 grant  execute on function public.public_passport_by_token(text) to anon, authenticated, service_role;
+
+-- ── 5. Full-ledger stats for the caller (tier/badges/balance/streak) ─────────
+-- Aggregates the WHOLE ledger in SQL (sum/count/distinct/streak) so an active
+-- user's tier, badges and balance never regress from a truncated JS window.
+-- EARNED = sum of positive deltas (tiers/badges); BALANCE = net (spendable).
+-- streak_days = length of the consecutive run of active SGT days ending today
+-- (or yesterday, so a not-yet-active today doesn't reset a live streak) — the
+-- gaps-and-islands trick: for dates ordered desc, (d + rownum) is constant only
+-- within the contiguous run anchored at the top. Server-only (service_role).
+create or replace function public.passport_stats(p_user_id text)
+returns table (
+  earned int, balance int,
+  review_count int, visit_count int, follow_count int,
+  streak_days int, qualified_referrals int
+)
+language sql stable security definer set search_path = public as $$
+  with agg as (
+    select
+      coalesce(sum(delta) filter (where delta > 0), 0)::int as earned,
+      coalesce(sum(delta), 0)::int as balance,
+      count(*) filter (where source_type = 'review')::int as review_count,
+      count(distinct source_id) filter (where source_type = 'visit')::int as visit_count,
+      count(*) filter (where source_type = 'follow')::int as follow_count
+    from passport_points where user_id = p_user_id
+  ),
+  dates as (
+    select distinct (created_at at time zone 'Asia/Singapore')::date as d
+      from passport_points where user_id = p_user_id
+  ),
+  anchor as (
+    select case
+      when exists (select 1 from dates where d = (now() at time zone 'Asia/Singapore')::date)
+        then (now() at time zone 'Asia/Singapore')::date
+      when exists (select 1 from dates where d = ((now() at time zone 'Asia/Singapore')::date - 1))
+        then ((now() at time zone 'Asia/Singapore')::date - 1)
+      else null::date end as a
+  ),
+  run as (
+    select d, (row_number() over (order by d desc))::int as rn
+      from dates, anchor
+     where anchor.a is not null and d <= anchor.a
+  ),
+  streak as (
+    select coalesce((
+      select count(*)::int from run, anchor
+       where anchor.a is not null and (run.d + run.rn) = (anchor.a + 1)
+    ), 0) as streak_days
+  )
+  select agg.earned, agg.balance, agg.review_count, agg.visit_count, agg.follow_count,
+         streak.streak_days,
+         coalesce((select count(*)::int from referrals r
+                    where r.referrer_id = p_user_id and r.status = 'qualified'), 0)
+    from agg, streak;
+$$;
+revoke execute on function public.passport_stats(text) from public;
+grant  execute on function public.passport_stats(text) to service_role;

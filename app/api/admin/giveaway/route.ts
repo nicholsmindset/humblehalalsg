@@ -63,8 +63,12 @@ export async function POST(req: Request) {
     let winner = pool[0].user_id as string;
     for (const e of pool) { pick -= e.entries as number; if (pick < 0) { winner = e.user_id as string; break; } }
 
-    const { error } = await db.from("giveaways").update({ status: "drawn", winner_user_id: winner, drawn_at: new Date().toISOString() }).eq("id", id).eq("status", "open");
+    // Status-guarded flip; confirm a row actually changed so a concurrent /
+    // double-click draw (which computes its OWN random winner) can't proceed to
+    // notify + email a second, wrong "winner".
+    const { data: drawn, error } = await db.from("giveaways").update({ status: "drawn", winner_user_id: winner, drawn_at: new Date().toISOString() }).eq("id", id).eq("status", "open").select("id");
     if (error) return NextResponse.json({ ok: false, error: "draw_failed" }, { status: 502 });
+    if (!drawn || drawn.length === 0) return NextResponse.json({ ok: false, error: "already_drawn" }, { status: 409 });
 
     // Notify + email the winner (best-effort).
     try {

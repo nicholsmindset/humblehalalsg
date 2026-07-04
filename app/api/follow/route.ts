@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   const follow = b.follow !== false;
 
   if (follow) {
-    await server.from("organizer_follows").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
+    // FK-fails on a bogus business_id — inspect the error so a fake UUID can't
+    // still earn a point (the passport ledger has no FK). Award only on success.
+    const { error } = await server.from("organizer_follows").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
+    if (error) return NextResponse.json({ ok: false, reason: "invalid_business" }, { status: 422 });
   } else {
     await server.from("organizer_follows").delete().eq("user_id", userId).eq("business_id", businessId);
   }

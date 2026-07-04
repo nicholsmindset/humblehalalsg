@@ -52,8 +52,16 @@ create policy perk_redemptions_owner_read on public.perk_redemptions for select 
           and (b.owner_id = (auth.jwt() ->> 'sub') or b.claimed_by = (auth.jwt() ->> 'sub'))));
 
 -- Atomic perk redemption: advisory-lock the user, check BALANCE, write the
--- negative ledger row + the voucher. Returns the voucher code, or '' on failure.
-create or replace function public.redeem_perk(p_user_id text, p_perk_id uuid, p_code text)
+-- negative ledger row + the voucher. Returns the voucher code, or a sentinel:
+--   ''           unknown / withdrawn perk
+--   'INSUFFICIENT' not enough points
+--   'DUPLICATE'  already redeemed with this idempotency token (replay/double-submit)
+--   'RETRY'      voucher-code collision — caller retries with a fresh code
+-- Idempotency is keyed on the CLIENT's token (p_idem), NOT the per-attempt
+-- voucher code — a fresh code per attempt could otherwise double-charge on a
+-- retry/double-click. The charge + voucher insert share one subtransaction so a
+-- voucher-code clash rolls BOTH back (no points lost) and returns 'RETRY'.
+create or replace function public.redeem_perk(p_user_id text, p_perk_id uuid, p_code text, p_idem text)
 returns text language plpgsql security definer set search_path = public as $$
 declare bal int; v_cost int; v_biz uuid; v_title text; v_active boolean; n int;
 begin
@@ -64,17 +72,21 @@ begin
   perform pg_advisory_xact_lock(hashtext('passport:' || p_user_id));
   select coalesce(sum(delta),0) into bal from passport_points where user_id = p_user_id;
   if bal < v_cost then return 'INSUFFICIENT'; end if;
-  insert into passport_points (user_id, delta, reason, source_type, source_id, dedupe_key)
-  values (p_user_id, -v_cost, 'Perk: ' || v_title, 'redeem', p_perk_id::text, 'perk:' || p_code)
-  on conflict (user_id, dedupe_key) do nothing;
-  get diagnostics n = row_count;
-  if n = 0 then return ''; end if;                  -- duplicate submit
-  insert into perk_redemptions (perk_id, business_id, user_id, voucher_code, title, cost)
-  values (p_perk_id, v_biz, p_user_id, p_code, v_title, v_cost);
-  return p_code;
+  begin
+    insert into passport_points (user_id, delta, reason, source_type, source_id, dedupe_key)
+    values (p_user_id, -v_cost, 'Perk: ' || v_title, 'redeem', p_perk_id::text, 'perk:' || p_idem)
+    on conflict (user_id, dedupe_key) do nothing;
+    get diagnostics n = row_count;
+    if n = 0 then return 'DUPLICATE'; end if;        -- replay of the same token
+    insert into perk_redemptions (perk_id, business_id, user_id, voucher_code, title, cost)
+    values (p_perk_id, v_biz, p_user_id, p_code, v_title, v_cost);
+    return p_code;
+  exception when unique_violation then
+    return 'RETRY';                                  -- voucher code clash; both rolled back
+  end;
 end; $$;
-revoke execute on function public.redeem_perk(text,uuid,text) from public;
-grant  execute on function public.redeem_perk(text,uuid,text) to service_role;
+revoke execute on function public.redeem_perk(text,uuid,text,text) from public;
+grant  execute on function public.redeem_perk(text,uuid,text,text) to service_role;
 
 -- ── 3. Saved places (server sync; was localStorage-only) ─────────────────────
 create table if not exists public.saved_places (

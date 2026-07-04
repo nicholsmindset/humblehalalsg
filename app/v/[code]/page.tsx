@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags } from "@/lib/flags";
+import { rateLimit } from "@/lib/ratelimit";
 import { pageMeta } from "@/lib/seo";
 import { VoucherView } from "@/components/passport/voucher-view";
 
@@ -19,6 +21,11 @@ export default async function Page({ params }: { params: Promise<{ code: string 
   if (!getServerFlags().passport) notFound();
   const norm = decodeURIComponent(code).toUpperCase();
   if (!CODE_RE.test(norm)) notFound();
+
+  // Parity rate-limit (codes are high-entropy + non-PII, so this is generous —
+  // just caps enumeration/scraping). rateLimit only reads req.headers.get().
+  const rl = await rateLimit({ headers: await headers() } as unknown as Request, "voucher", 100, 60);
+  if (!rl.ok) notFound();
 
   const db = getSupabaseAdmin();
   if (!db) notFound();

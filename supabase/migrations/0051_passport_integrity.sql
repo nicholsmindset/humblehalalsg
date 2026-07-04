@@ -37,6 +37,84 @@ end; $$;
 revoke execute on function public.award_points(text,int,text,text,text,text) from public;
 grant  execute on function public.award_points(text,int,text,text,text,text) to service_role;
 
+-- ── 2b. Spending is frozen for blocked accounts too ──────────────────────────
+-- award_points (above) refuses NEW earns from a blocked farmer, but they could
+-- still cash out points banked before the block. Re-create each spend RPC with
+-- the same block guard (bodies otherwise identical to 0049/0050) so a flagged
+-- account can neither earn nor spend. Signatures unchanged → clean replace.
+create or replace function public.redeem_reward(
+  p_user_id text, p_reward_id text, p_cost int, p_dedupe text, p_reason text
+) returns text language plpgsql security definer set search_path = public as $$
+declare bal int; n int;
+begin
+  if exists (select 1 from passport_blocks where user_id = p_user_id) then return 'blocked'; end if;
+  if p_cost <= 0 then return 'insufficient'; end if;
+  perform pg_advisory_xact_lock(hashtext('passport:' || p_user_id));
+  select coalesce(sum(delta),0) into bal from passport_points where user_id = p_user_id;
+  if bal < p_cost then return 'insufficient'; end if;
+  insert into passport_points (user_id, delta, reason, source_type, source_id, dedupe_key)
+  values (p_user_id, -p_cost, p_reason, 'redeem', p_reward_id, p_dedupe)
+  on conflict (user_id, dedupe_key) do nothing;
+  get diagnostics n = row_count;
+  if n = 0 then return 'duplicate'; end if;
+  insert into passport_redemptions (user_id, reward_id, cost) values (p_user_id, p_reward_id, p_cost);
+  return 'ok';
+end; $$;
+revoke execute on function public.redeem_reward(text,text,int,text,text) from public;
+grant  execute on function public.redeem_reward(text,text,int,text,text) to service_role;
+
+create or replace function public.enter_giveaway(p_user_id text, p_giveaway_id uuid, p_dedupe text)
+returns text language plpgsql security definer set search_path = public as $$
+declare bal int; v_cost int; v_status text; n int;
+begin
+  if exists (select 1 from passport_blocks where user_id = p_user_id) then return 'blocked'; end if;
+  select entry_cost, status into v_cost, v_status from giveaways where id = p_giveaway_id;
+  if v_cost is null then return 'no_giveaway'; end if;
+  if v_status <> 'open' then return 'closed'; end if;
+  perform pg_advisory_xact_lock(hashtext('passport:' || p_user_id));
+  select coalesce(sum(delta),0) into bal from passport_points where user_id = p_user_id;
+  if bal < v_cost then return 'insufficient'; end if;
+  insert into passport_points (user_id, delta, reason, source_type, source_id, dedupe_key)
+  values (p_user_id, -v_cost, 'Giveaway entry', 'redeem', p_giveaway_id::text, p_dedupe)
+  on conflict (user_id, dedupe_key) do nothing;
+  get diagnostics n = row_count;
+  if n = 0 then return 'closed'; end if; -- duplicate submit
+  insert into giveaway_entries (giveaway_id, user_id, entries)
+  values (p_giveaway_id, p_user_id, 1)
+  on conflict (giveaway_id, user_id) do update set entries = giveaway_entries.entries + 1, updated_at = now();
+  return 'ok';
+end; $$;
+revoke execute on function public.enter_giveaway(text,uuid,text) from public;
+grant  execute on function public.enter_giveaway(text,uuid,text) to service_role;
+
+create or replace function public.redeem_perk(p_user_id text, p_perk_id uuid, p_code text, p_idem text)
+returns text language plpgsql security definer set search_path = public as $$
+declare bal int; v_cost int; v_biz uuid; v_title text; v_active boolean; n int;
+begin
+  if exists (select 1 from passport_blocks where user_id = p_user_id) then return 'BLOCKED'; end if;
+  select points_cost, business_id, title, active into v_cost, v_biz, v_title, v_active
+    from business_perks where id = p_perk_id;
+  if v_cost is null then return ''; end if;
+  if not v_active then return ''; end if;
+  perform pg_advisory_xact_lock(hashtext('passport:' || p_user_id));
+  select coalesce(sum(delta),0) into bal from passport_points where user_id = p_user_id;
+  if bal < v_cost then return 'INSUFFICIENT'; end if;
+  begin
+    insert into passport_points (user_id, delta, reason, source_type, source_id, dedupe_key)
+    values (p_user_id, -v_cost, 'Perk: ' || v_title, 'redeem', p_perk_id::text, 'perk:' || p_idem)
+    on conflict (user_id, dedupe_key) do nothing;
+    get diagnostics n = row_count;
+    if n = 0 then return 'DUPLICATE'; end if;
+    insert into perk_redemptions (perk_id, business_id, user_id, voucher_code, title, cost)
+    values (p_perk_id, v_biz, p_user_id, p_code, v_title, v_cost);
+    return p_code;
+  exception when unique_violation then
+    return 'RETRY';
+  end;
+end; $$;
+revoke execute on function public.redeem_perk(text,uuid,text,text) from public;
+grant  execute on function public.redeem_perk(text,uuid,text,text) to service_role;
+
 -- ── 3. Integrity aggregation for admins ──────────────────────────────────────
 -- Per-user earning velocity + source breakdown over the last p_days, ranked by
 -- recent earned points (the farming signal). is_admin() gate + service role.
