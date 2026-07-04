@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { remainingQuota } from "@/lib/lead-routing";
 
 /* Accept a routed lead → unmask the consumer's contact details. This is the
@@ -28,7 +28,7 @@ async function ownsBusiness(db: Db, businessId: string, userId: string): Promise
 }
 
 export async function POST(req: Request) {
-  const { leadRouting, paidLeads } = getServerFlags();
+  const { leadRouting, paidLeads } = await getServerFlags();
   if (!leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
 
   const { userId } = await auth();

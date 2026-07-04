@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { POINTS, sgtDate } from "@/lib/passport";
 
 /* Daily check-in: awards a small "active today" point once per SGT day so a
@@ -10,7 +10,7 @@ import { POINTS, sgtDate } from "@/lib/passport";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  if (!getServerFlags().passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const rl = await rateLimit(req, "checkin", 20, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });

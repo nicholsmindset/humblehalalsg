@@ -1,5 +1,5 @@
 import { TravelBookingScreen } from "@/components/screens/travel";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta({ title: "Complete your booking", description: "Complete your halal-friendly hotel booking.", path: "/travel/booking", index: false });
@@ -12,7 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       hotelId={String(sp.hotelId || "")}
       hotelName={String(sp.hotel || "your hotel")}
       city={String(sp.city || "")}
-      bookingEnabled={getServerFlags().paidHotels}
+      bookingEnabled={(await getServerFlags()).paidHotels}
       paymentMode={process.env.LITEAPI_ENV === "prod" ? "live" : "sandbox"}
     />
   );

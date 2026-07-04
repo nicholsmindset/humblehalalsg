@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 
 /* Returns (or mints) the caller's referral code + share link + live counts.
    One code per user. Codes are lowercase [a-z0-9]{6}, collision-checked. */
@@ -22,7 +22,7 @@ function genCode(seed: number): string {
 }
 
 export async function GET(req: Request) {
-  if (!getServerFlags().passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const rl = await rateLimit(req, "refcode", 10, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });

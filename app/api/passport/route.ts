@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { tierFor, nextTier, badgesFor, BADGES, TIERS, POINTS } from "@/lib/passport";
 
 /* GET the signed-in user's Halal Passport: total points, tier + progress,
@@ -9,7 +9,7 @@ import { tierFor, nextTier, badgesFor, BADGES, TIERS, POINTS } from "@/lib/passp
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!getServerFlags().passport) return NextResponse.json({ ok: true, enabled: false });
+  if (!(await getServerFlags()).passport) return NextResponse.json({ ok: true, enabled: false });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();

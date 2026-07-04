@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { liteapiConfigured, prebookFlight, LiteApiError } from "@/lib/liteapi";
 import type { FlightContactInput, FlightPassengerInput } from "@/lib/liteapi-types";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
@@ -11,7 +11,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "flight-prebook", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
-  if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
+  if (!(await getServerFlags()).paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 
   const body = (await req.json().catch(() => ({}))) as { offerId?: string; contact?: FlightContactInput; passengers?: FlightPassengerInput[] };

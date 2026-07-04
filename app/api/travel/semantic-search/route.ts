@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { runSemanticDiscovery } from "@/lib/travel-data";
 
@@ -10,7 +10,7 @@ import { runSemanticDiscovery } from "@/lib/travel-data";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  if (!getServerFlags().semanticSearch) {
+  if (!(await getServerFlags()).semanticSearch) {
     return NextResponse.json({ ok: false, reason: "semantic_search_disabled" }, { status: 403 });
   }
   const rl = await rateLimit(req, "semantic-travel", 20, 60);

@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { tierFor } from "@/lib/passport";
 
@@ -10,7 +10,7 @@ export const alt = "Halal Passport on Humble Halal";
 type Row = { display_name: string; total_points: number; visit_count: number; review_count: number };
 
 async function load(token: string): Promise<Row | null> {
-  if (!getServerFlags().passport) return null;
+  if (!(await getServerFlags()).passport) return null;
   const db = getSupabaseAdmin();
   if (!db) return null;
   try {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { POINTS } from "@/lib/passport";
 
 /* Follow / unfollow an organiser (business). Auth required; RLS scopes rows to
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   // Halal Passport: award once per business followed (dedupe = no toggle farming;
   // no claw-back on unfollow). Best-effort, service-role.
-  if (follow && getServerFlags().passport) {
+  if (follow && (await getServerFlags()).passport) {
     const sb = getSupabaseAdmin();
     if (sb) {
       try {

@@ -1,6 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import type { Verdict, Confidence, PageType } from "@/lib/verdicts";
 
 /* Server-only read helpers for APPROVED halal verdicts. All guarded: when the
@@ -34,7 +34,7 @@ const SELECT =
 
 /** The approved verdict for a slug, or null. Off-flag / no-DB → null. */
 export async function getApprovedVerdict(slug: string): Promise<StoredVerdict | null> {
-  if (!getServerFlags().halalVerdicts) return null;
+  if (!(await getServerFlags()).halalVerdicts) return null;
   const db = getSupabaseAdmin();
   if (!db) return null;
   try {
@@ -47,7 +47,7 @@ export async function getApprovedVerdict(slug: string): Promise<StoredVerdict | 
 
 /** All approved verdict slugs (for generateStaticParams). Off-flag / no-DB → []. */
 export async function approvedVerdictSlugs(): Promise<string[]> {
-  if (!getServerFlags().halalVerdicts) return [];
+  if (!(await getServerFlags()).halalVerdicts) return [];
   const db = getSupabaseAdmin();
   if (!db) return [];
   try {

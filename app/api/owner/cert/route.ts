@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
@@ -46,7 +46,7 @@ type CertRow = {
 
 export async function POST(req: Request) {
   // Pilot kill-switch — the feature surface is off until explicitly enabled.
-  if (!getServerFlags().certVault) {
+  if (!(await getServerFlags()).certVault) {
     return NextResponse.json({ ok: false, reason: "cert_vault_disabled" }, { status: 403 });
   }
 

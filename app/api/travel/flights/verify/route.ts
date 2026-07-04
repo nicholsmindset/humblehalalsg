@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { liteapiConfigured, verifyFlight } from "@/lib/liteapi";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
@@ -8,7 +8,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    PAID_FLIGHTS_ENABLED; graceful without a key. */
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "flight-verify", 30, 60); if (!rl.ok) return tooMany(rl.retryAfter);
-  if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
+  if (!(await getServerFlags()).paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 
   const body = (await req.json().catch(() => ({}))) as { offerId?: string };

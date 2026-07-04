@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { pageMeta } from "@/lib/seo";
 import { tierFor, badgesFor, BADGES } from "@/lib/passport";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 type Row = { display_name: string; total_points: number; visit_count: number; review_count: number; follow_count: number; joined_month: string };
 
 async function load(token: string): Promise<Row | null> {
-  if (!getServerFlags().passport) return null;
+  if (!(await getServerFlags()).passport) return null;
   const db = getSupabaseAdmin();
   if (!db) return null;
   try {
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
 export default async function Page({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  if (!getServerFlags().passport) notFound();
+  if (!(await getServerFlags()).passport) notFound();
   const row = await load(token);
   if (!row) {
     return (

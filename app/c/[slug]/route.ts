@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { POINTS, sgtDate } from "@/lib/passport";
 
 /* Collect-stamp short link: /c/[slug] → award a Halal Passport "visit" stamp
@@ -24,7 +24,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const rl = await rateLimit(req, "collect", 30, 3600);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
-  if (!safe || !getServerFlags().passport) return NextResponse.redirect(listing, 302);
+  if (!safe || !(await getServerFlags()).passport) return NextResponse.redirect(listing, 302);
 
   const { userId } = await auth();
   if (!userId) {

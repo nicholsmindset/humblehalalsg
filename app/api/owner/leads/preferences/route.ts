@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { LEAD_VERTICAL_IDS } from "@/lib/lead-verticals";
 import { HHData } from "@/lib/data";
 
@@ -22,7 +22,7 @@ async function firstOwnedBusiness(db: Db, userId: string) {
 }
 
 export async function GET() {
-  if (!getServerFlags().leadRouting) return NextResponse.json({ ok: true, enabled: false });
+  if (!(await getServerFlags()).leadRouting) return NextResponse.json({ ok: true, enabled: false });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();
@@ -41,7 +41,7 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  if (!getServerFlags().leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();

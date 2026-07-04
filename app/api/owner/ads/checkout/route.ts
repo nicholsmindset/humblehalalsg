@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   end.setUTCDate(end.getUTCDate() - 1);
   const endsOn = end.toISOString().slice(0, 10);
 
-  const flags = getServerFlags();
+  const flags = await getServerFlags();
 
   const { data: campaign, error } = await sb
     .from("ad_campaigns")

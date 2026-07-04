@@ -2,7 +2,7 @@ import { UnifiedTravelScreen } from "@/components/screens/travel";
 import { allTravelHubs, getTravelHub } from "@/lib/travel-hubs";
 import { cityHotels } from "@/lib/travel-data";
 import { curatedFlightDeals } from "@/lib/flights-data";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { TRAVEL_LANDING_FAQ } from "@/lib/travel-content";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
@@ -33,7 +33,7 @@ export default async function Page() {
     url: `${SITE.url}/travel`,
     description: "Muslim-friendly hotels and flights for Umrah, Hajj and Muslim travel destinations.",
   };
-  const flags = getServerFlags();
+  const flags = await getServerFlags();
   return (
     <>
       <JsonLd data={[collection, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }]), faqJsonLd(TRAVEL_LANDING_FAQ)]} />

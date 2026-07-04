@@ -1,5 +1,5 @@
 import { FlightBookingScreen } from "@/components/screens/flights";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta({ title: "Complete your flight booking", description: "Book your flight.", path: "/travel/flights/booking", index: false });
@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       adults={Math.min(9, Math.max(1, Number(sp.adults) || 1))}
       roundTrip={sp.rt === "1"}
       returnDate={String(sp.rdate || "")}
-      bookingEnabled={getServerFlags().paidFlights}
+      bookingEnabled={(await getServerFlags()).paidFlights}
       paymentMode={process.env.LITEAPI_ENV === "prod" ? "live" : "sandbox"}
     />
   );

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { liteapiConfigured, book } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
@@ -33,7 +33,7 @@ const toPct = (v: unknown): number | null => {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
-  if (!getServerFlags().paidHotels) {
+  if (!(await getServerFlags()).paidHotels) {
     return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
   }
   const rl = await rateLimit(req, "hotel-book", 10, 600); if (!rl.ok) return tooMany(rl.retryAfter);
