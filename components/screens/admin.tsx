@@ -328,12 +328,23 @@ export function AdminMonetization() {
 }
 
 /* ── Per-business feature overrides ─────────────────────────────────────────
-   The five owner-scoped flags (paidPlans, paidAds, certVault, leadRouting,
-   paidLeads) can be forced on/off for a single business — e.g. beta-test a
-   feature with select businesses while it's globally off, or comp/restrict one
-   business without touching the site-wide switch. A "Default" state clears the
-   override so the business falls back to the global/env value. */
-const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidPlans", "paidAds", "certVault", "leadRouting", "paidLeads"];
+   These owner-scoped flags can be forced on/off for a single business — e.g.
+   beta-test a feature with select businesses while it's globally off, or
+   comp/restrict one business without touching the site-wide switch. A
+   "Default" state clears the override so the business falls back to the
+   global/env value.
+
+   Only THREE flags are shown here — the ones `resolveBusinessFlag` actually
+   reads server-side (see app/api/owner/ads/checkout, app/api/owner/cert,
+   app/api/owner/leads/accept). `leadRouting` and `paidPlans` are intentionally
+   excluded: their gates are evaluated before a businessId is resolvable
+   (e.g. at enquiry-submission/pricing time), so a per-business override would
+   never be read — showing a toggle for them would be misleading UI. They
+   remain enforceable globally only for now; per-business enforcement is
+   deferred until those call sites are refactored to resolve a businessId
+   first. The API's FEATURES array and DB constraint intentionally still allow
+   all 5 keys, forward-compatible with that future work. */
+const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidAds", "certVault", "paidLeads"];
 
 /* One feature's 3-state control: Default (defer to global) / On (forced) /
    Off (forced). Uses the same `chip`/`chip.active` styling as the role/status
@@ -373,6 +384,12 @@ function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toas
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    // Reset synchronously (before the async fetch below resolves) so switching
+    // businesses never briefly shows the PREVIOUS business's On/Off state —
+    // every row starts at Default until this business's real overrides load.
+    const cleared: Record<string, boolean | null> = {};
+    for (const k of BUSINESS_FEATURE_KEYS) cleared[k] = null;
+    setValues(cleared);
     (async () => {
       const base: Record<string, boolean | null> = {};
       for (const k of BUSINESS_FEATURE_KEYS) base[k] = null;
