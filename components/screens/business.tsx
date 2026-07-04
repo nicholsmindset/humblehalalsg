@@ -23,6 +23,8 @@ import { OwnerAds } from "../owner/ads-tab";
 import { OwnerInsights } from "../owner/insights";
 import { PendingSubmissions, type PendingSubmission } from "../owner/pending-submissions";
 import { ActivationChecklist } from "../owner/activation-checklist";
+import { ReviewRequestCard } from "../owner/review-request-card";
+import { OwnerLeads } from "../owner/leads-tab";
 import type { OwnerBiz, OwnerEvent } from "../owner/types";
 
 // MUIS certifies food & beverage — so only these categories get the
@@ -569,10 +571,10 @@ export function AddListingScreen() {
 /* =============================================================
    OWNER DASHBOARD
 ============================================================= */
-const DASH_TABS = ["overview", "listings", "cert", "events", "payouts", "reviews", "ads", "billing"] as const;
+const DASH_TABS = ["overview", "listings", "cert", "events", "payouts", "reviews", "ads", "leads", "billing"] as const;
 const isDashTab = (v: unknown): v is (typeof DASH_TABS)[number] => DASH_TABS.includes(v as (typeof DASH_TABS)[number]);
 
-export function OwnerDashboardScreen() {
+export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled?: boolean }) {
   const { navigate, toast, flags, params } = useApp();
   const dir = useDirectory();
   const { user } = useUser();
@@ -674,7 +676,7 @@ export function OwnerDashboardScreen() {
     } catch { toast("Couldn’t cancel — try again"); }
   };
 
-  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ["billing", "Billing", "settings"]];
+  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
 
   // One-time success toasts after returning from Stripe (Connect onboarding /
   // billing portal). Query params arrive via `params`; guard so it fires once.
@@ -797,6 +799,12 @@ export function OwnerDashboardScreen() {
                       <button className="btn btn-soft btn-sm" aria-expanded={editingId === b.id} onClick={() => setEditingId((cur) => (cur === b.id ? null : b.id))}><Icon name="edit" size={16} /> {editingId === b.id ? "Close" : "Edit"}</button>
                     </div>
                   </div>
+                  {/* Free growth tools — drive customers back to the listing. */}
+                  <div className="flex g8 wrap" style={{ padding: "0 14px 14px", borderTop: "1px solid var(--line,#eee)", paddingTop: 12 }}>
+                    <a className="btn btn-ghost btn-sm" href={`/for-business/badge?slug=${encodeURIComponent(b.slug)}`}><Icon name="badge-check" size={15} /> Website badge</a>
+                    <a className="btn btn-ghost btn-sm" href={`/business/${b.slug}/poster`} target="_blank" rel="noopener"><Icon name="external" size={15} /> QR poster</a>
+                    <a className="btn btn-ghost btn-sm" href={`/business/${b.slug}/poster#review`} target="_blank" rel="noopener"><Icon name="star" size={15} /> Review link</a>
+                  </div>
                   {editingId === b.id && (
                     <OwnerListingEditor
                       id={b.id}
@@ -882,7 +890,14 @@ export function OwnerDashboardScreen() {
 
         {tab === "cert" && <CertVault toast={toast} navigate={navigate} live={live} certVaultEnabled={flags.certVault} biz={myBiz} />}
 
-        {tab === "reviews" && <OwnerReviews toast={toast} />}
+        {tab === "reviews" && (
+          <>
+            {live && biz && biz.length > 0 && <ReviewRequestCard biz={biz.map((b) => ({ id: b.id, slug: b.slug, name: b.name }))} />}
+            <OwnerReviews toast={toast} />
+          </>
+        )}
+
+        {tab === "leads" && leadRoutingEnabled && <OwnerLeads toast={toast} live={live} navigate={navigate} />}
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
 

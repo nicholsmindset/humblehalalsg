@@ -514,6 +514,7 @@ export function MobileBar() {
   ];
   const more: [string, string, string][] = [
     ["mosques", "Mosques near me", "mosque"],
+    ["prayer-rooms", "Prayer rooms & musollahs", "mosque"],
     ["request-quote", "Request a quote", "doc"],
     ["advertise", "Advertise with us", "megaphone"],
     ["host-event", "Host an event", "ticket"],
@@ -707,6 +708,7 @@ export function Footer() {
         ["Islamic tools", "tools"],
         ["Map view", "map"],
         ["Mosques in Singapore", "mosques"],
+        ["Prayer rooms (musollah)", "prayer-rooms"],
         ["Saved places", "saved"],
       ],
     ],

@@ -28,6 +28,7 @@ import { HomeSeoContent } from "./home-seo";
 import { HOME_FAQ } from "@/lib/faq";
 import { Breadcrumbs } from "../breadcrumbs";
 import { Newsletter } from "../newsletter";
+import { verticalForCatId } from "@/lib/lead-verticals";
 
 /* =============================================================
    HOME
@@ -971,6 +972,14 @@ export function DetailScreen() {
   const outlet = item?.franchise && item.outlets ? item.outlets[outletIdx] : null;
   const tabs = item?.franchise ? ["overview", "locations", "reviews", "info"] : ["overview", "reviews", "info"];
 
+  // Deep-link support: /business/[slug]?tab=reviews (review-request links,
+  // /r/[slug] redirect) opens straight on the reviews tab.
+  const tabParam = String(params.tab || "");
+  useEffect(() => {
+    if (tabParam && tabs.includes(tabParam)) setTab(tabParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+
   // Live "open now" — computed client-side (SG time) after mount to avoid SSR
   // hydration mismatch; refreshes each minute.
   const [live, setLive] = useState<{ open: boolean; label: string } | null>(null);
@@ -1028,15 +1037,7 @@ export function DetailScreen() {
   );
 
   // High-ticket service verticals get a "Request a quote" lead CTA (preselects the vertical).
-  const QUOTE_VERTICAL: Record<string, string> = {
-    weddings: "Wedding & bridal (MUA, deco, hantaran)",
-    travel: "Umrah & Hajj travel",
-    services: "Home services (renovation, cleaning, aircon)",
-    automotive: "Automotive (servicing, detailing)",
-    professional: "Professional services (legal, accounting, marketing)",
-    education: "Quran & tuition / education",
-  };
-  const quoteVertical = QUOTE_VERTICAL[item.catId];
+  const quoteVertical = verticalForCatId(item.catId)?.label;
 
   const dirHref = item.coords
     ? directionsUrl(item.coords)
@@ -1198,7 +1199,7 @@ export function DetailScreen() {
               <Icon name="share" size={17} /> Share
             </button>
             {quoteVertical && (
-              <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical }); }}><Icon name="doc" size={17} /> Request a quote</button>
+              <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical, business: item.slug }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>
             {!item.claimed && <button className="btn btn-outline" onClick={() => { logLead("claim"); navigate("claim", { id: item.slug || item.id }); }}><Icon name="building" size={17} /> Claim this business</button>}

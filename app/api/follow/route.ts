@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseServer, getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { getServerFlags } from "@/lib/flags";
+import { POINTS } from "@/lib/passport";
 
 /* Follow / unfollow an organiser (business). Auth required; RLS scopes rows to
    the caller. Returns the new follow state + public follower count. */
@@ -22,6 +24,20 @@ export async function POST(req: Request) {
     await server.from("organizer_follows").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
   } else {
     await server.from("organizer_follows").delete().eq("user_id", userId).eq("business_id", businessId);
+  }
+
+  // Halal Passport: award once per business followed (dedupe = no toggle farming;
+  // no claw-back on unfollow). Best-effort, service-role.
+  if (follow && getServerFlags().passport) {
+    const sb = getSupabaseAdmin();
+    if (sb) {
+      try {
+        const { award, loadStats, emitProgress } = await import("@/lib/passport-server");
+        const before = await loadStats(sb, userId);
+        await award(sb, { userId, source: "follow", sourceId: businessId, points: POINTS.follow, reason: "Followed a place", dedupeKey: `follow:${businessId}` });
+        await emitProgress(sb, userId, before, await loadStats(sb, userId));
+      } catch { /* passport best-effort */ }
+    }
   }
 
   // Public follower count (SECURITY DEFINER RPC; falls back gracefully).

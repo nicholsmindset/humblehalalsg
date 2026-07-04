@@ -65,6 +65,10 @@ export default function Page() {
                 Find mosques near you on the map →
               </Link>
             </div>
+            <p className="muted" style={{ marginTop: 12, fontSize: ".92rem" }}>
+              Looking for a musollah instead? See{" "}
+              <Link className="link-inline" href="/prayer-rooms">prayer rooms in malls, MRT &amp; more →</Link>
+            </p>
             {/* Jump-nav: keeps a long list scannable */}
             <nav className="mosque-jump" aria-label="Jump to region">
               {grouped.map((g) => (

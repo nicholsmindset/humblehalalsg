@@ -228,6 +228,30 @@ export function leadConfirmationEmail(o: { name?: string | null }): Out {
     { label: "Explore Humble Halal", url: `${U}/explore` },
   );
 }
+/* ── Lead marketplace ────────────────────────────────────────────────── */
+export function leadRoutedEmail(o: { name?: string | null; vertical: string; area?: string | null; budget?: string | null; when?: string | null }): Out {
+  // NEVER include the consumer's PII — the owner unmasks it in-app on accept.
+  const bits = [o.area && `in ${esc(o.area)}`, o.budget && `budget ${esc(o.budget)}`, o.when && `for ${esc(o.when)}`].filter(Boolean).join(" · ");
+  return wrap(
+    `New ${o.vertical} enquiry for you`,
+    "You've got a new lead",
+    greet(o.name) +
+      p(`A customer is looking for <strong>${esc(o.vertical)}</strong>${bits ? ` — ${bits}` : ""} and we've matched them to your business on Humble Halal.`) +
+      p(`Open your dashboard to see the full request and accept it to unlock their contact details. Leads are shared with a few providers, so quick replies win.`),
+    { label: "View this lead", url: `${U}/owner?tab=leads` },
+    `You're receiving this because your listing matched this request. Manage your lead preferences in your dashboard.`,
+  );
+}
+export function leadPlanStartedEmail(o: { name?: string | null; quota: number }): Out {
+  return wrap(
+    "Your Lead Inbox is active",
+    "You're set to receive leads",
+    greet(o.name) +
+      p(`Your <strong>Lead Inbox</strong> is now active — you can accept up to <strong>${o.quota}</strong> matched leads this month. We'll email you whenever a new enquiry matches your categories and areas.`) +
+      p(`Set your categories and coverage areas in your dashboard so we only send you the leads you want.`),
+    { label: "Open your leads", url: `${U}/owner?tab=leads` },
+  );
+}
 export function payoutConnectedEmail(o: { name?: string | null }): Out {
   return wrap(
     "Your payout account is ready",
@@ -244,6 +268,45 @@ export function planStartedEmail(o: { name?: string | null; plan: string }): Out
     greet(o.name) +
       p(`Your <strong>${esc(o.plan)}</strong> plan is now active — thank you for supporting Humble Halal and Singapore's halal community. You can view invoices, update your card or change plan anytime.`),
     { label: "Manage billing", url: `${U}/owner` },
+  );
+}
+
+/* ── Halal Passport (loyalty + referrals) ────────────────────────────── */
+export function referralJoinedEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "A friend joined with your invite 🎉",
+    "Your invite worked",
+    greet(o.name) +
+      p(`Good news — a friend just joined Humble Halal using your invite link. You'll both earn Halal Passport points as soon as they leave their first review or collect their first stamp.`) +
+      p(`Keep sharing your link to climb toward the <strong>Community Ambassador</strong> badge.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
+export function referralQualifiedEmail(o: { name?: string | null; points: number }): Out {
+  return wrap(
+    `You earned ${o.points} Passport points`,
+    "Referral reward unlocked",
+    greet(o.name) +
+      p(`Your invited friend just made their first move on Humble Halal — so <strong>${o.points} Halal Passport points</strong> have landed in your account. Thank you for growing the community.`),
+    { label: "See your points", url: `${U}/passport` },
+  );
+}
+export function badgeEarnedEmail(o: { name?: string | null; badge: string }): Out {
+  return wrap(
+    `You unlocked the ${o.badge} badge`,
+    `New badge: ${esc(o.badge)}`,
+    greet(o.name) +
+      p(`Nice work — you just earned the <strong>${esc(o.badge)}</strong> badge on your Halal Passport. Show it off or keep collecting.`),
+    { label: "View your badges", url: `${U}/passport` },
+  );
+}
+export function tierUpEmail(o: { name?: string | null; tier: string }): Out {
+  return wrap(
+    `You reached ${o.tier} on Humble Halal`,
+    `Welcome to ${esc(o.tier)}`,
+    greet(o.name) +
+      p(`You've levelled up to <strong>${esc(o.tier)}</strong> on your Halal Passport. Keep reviewing, collecting stamps and inviting friends to reach the next tier.`),
+    { label: "Open your Passport", url: `${U}/passport` },
   );
 }
 

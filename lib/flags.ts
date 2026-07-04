@@ -16,6 +16,9 @@ export interface Flags {
   semanticSearch: boolean;
   aiConcierge: boolean;
   halalVerdicts: boolean;
+  leadRouting: boolean;
+  paidLeads: boolean;
+  passport: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -45,7 +48,18 @@ export function getServerFlags(): Flags {
     // Gates the admin drafter + the rich public verdict template. NEVER
     // auto-publishes — a human approves each verdict first. Not a payment route.
     halalVerdicts: truthy(process.env.HALAL_VERDICTS_ENABLED),
+    // Lead marketplace routing engine — owner leads tab, admin leads pipeline,
+    // and quote→vendor routing. Default OFF (ship dark). Not a payment route;
+    // when on but paidLeads off, leads route free during the beta.
+    leadRouting: truthy(process.env.LEAD_ROUTING_ENABLED),
+    // Paid lead subscriptions (Stripe). Default OFF → leads route free (beta).
+    // Gates /api/checkout/leads and the quota-enforcement branch on acceptance.
+    paidLeads: truthy(process.env.PAID_LEADS_ENABLED),
+    // Halal Passport loyalty + consumer referrals. Default OFF (ship dark).
+    // Gates all point awards, the referral credit, /passport + /api/passport*,
+    // the poster collect-QR and the signup refCode read. Not a payment route.
+    passport: truthy(process.env.PASSPORT_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false, leadRouting: false, paidLeads: false, passport: false };

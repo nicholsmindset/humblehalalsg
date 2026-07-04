@@ -14,6 +14,7 @@ import { fmtSGD } from "@/lib/fees";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminVerdicts } from "./admin-verdicts";
+import { AdminLeads } from "./admin-leads";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -82,7 +83,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen({ halalVerdictsEnabled = false }: { halalVerdictsEnabled?: boolean }) {
+export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled = false }: { halalVerdictsEnabled?: boolean; leadRoutingEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -96,6 +97,7 @@ export function AdminScreen({ halalVerdictsEnabled = false }: { halalVerdictsEna
     ["revenue", "Revenue (P&L)", "trend"],
     ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
+    ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
@@ -145,6 +147,7 @@ export function AdminScreen({ halalVerdictsEnabled = false }: { halalVerdictsEna
           {section==='revenue' && <AdminRevenue />}
           {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
+          {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}

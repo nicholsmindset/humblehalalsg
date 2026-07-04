@@ -6,6 +6,7 @@ import { areas, categories, listings } from "./data";
 import type { Listing } from "./types";
 import type { QA } from "./faq";
 import { categoryContent, cuisineContent, CATEGORY_PAGE_IDS } from "./category-content";
+import seoCounts from "./seo-counts.json";
 import { areaProfile } from "./area-content";
 
 /** Bump annually. Used in SEO titles only (keeps visible H1 evergreen). */
@@ -111,9 +112,18 @@ const CUISINES: Cuisine[] = [
   { id: "catering", label: "Catering", match: ["catering", "buffet", "event"] },
 ];
 
-// only generate a category×area page when it has real content.
+/* Only generate a category×area page when it has real content. Counts come
+   from the LIVE directory snapshot (scripts/gen-seo-counts.mjs → seo-counts.json,
+   regenerate before deploys) with the mock seed as a floor so no
+   already-indexed page ever disappears between snapshot refreshes. */
+const liveCounts: { byAreaCat: Record<string, Record<string, number>>; byCat: Record<string, number> } = seoCounts;
 const countIn = (areaName: string, catId: string) =>
-  listings.filter((l) => l.area === areaName && l.catId === catId).length;
+  Math.max(
+    liveCounts.byAreaCat[areaName]?.[catId] ?? 0,
+    listings.filter((l) => l.area === areaName && l.catId === catId).length,
+  );
+const countCat = (catId: string) =>
+  Math.max(liveCounts.byCat[catId] ?? 0, listings.filter((l) => l.catId === catId).length);
 
 /* ---- Indexation gating (B4). Place-tied pages earn indexation only once they
    have real listing coverage; below the threshold they still render (and stay
@@ -233,7 +243,7 @@ function build(): SeoPage[] {
   for (const catId of CATEGORY_PAGE_IDS) {
     const cat = categories.find((c) => c.id === catId);
     if (!cat) continue;
-    if (listings.filter((l) => l.catId === catId).length < 1) continue;
+    if (countCat(catId) < 1) continue;
     const cc = categoryContent(catId);
     pages.push({
       slug: `halal-${cat.id}-singapore`,
