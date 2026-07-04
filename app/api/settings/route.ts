@@ -21,7 +21,15 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const patch: Record<string, boolean | null> = {};
-  for (const k of ALLOWED) if (k in body) patch[k] = body[k] === null ? null : !!body[k];
+  for (const k of ALLOWED) {
+    if (k in body) {
+      if (k === "ramadan_mode_enabled") {
+        patch[k] = !!body[k];
+      } else {
+        patch[k] = body[k] === null ? null : !!body[k];
+      }
+    }
+  }
   if (Object.keys(patch).length === 0) return NextResponse.json({ ok: false, reason: "no_changes" }, { status: 400 });
 
   const { error } = await admin.from("platform_settings").update(patch).eq("id", 1);

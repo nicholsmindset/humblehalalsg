@@ -19,6 +19,9 @@ export async function POST(req: Request) {
   if (!businessId || !FEATURES.includes(feature)) {
     return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
   }
+  if (typeof b.enabled !== "boolean" && b.enabled !== null) {
+    return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
+  }
   // enabled === null  → clear the override (defer to global)
   if (b.enabled === null) {
     const { error } = await admin.from("business_feature_overrides")
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
   } else {
     const { error } = await admin.from("business_feature_overrides")
-      .upsert({ business_id: businessId, feature_key: feature, enabled: !!b.enabled, updated_at: new Date().toISOString() });
+      .upsert({ business_id: businessId, feature_key: feature, enabled: !!b.enabled, updated_at: new Date().toISOString() }, { onConflict: "business_id,feature_key" });
     if (error) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
   }
   bustFlagCache();
