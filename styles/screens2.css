@@ -178,6 +178,21 @@
 .mosque-region { scroll-margin-top:90px; margin-bottom:30px; }
 .mosque-region-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:1.3rem; margin-bottom:14px; }
 .mosque-region-count { font-size:.8rem; font-weight:600; color:var(--ink-soft); }
+
+/* ===== Prayer-rooms (musollah) directory cards ===== */
+/* Vertical card in a .hub-grid: name, chip row, location, notes, Map link.
+   min-width:0 + overflow-wrap keep long text from clipping at the page edge. */
+.prayer-card { display:flex; flex-direction:column; min-width:0; padding:15px 17px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); }
+.prayer-card-name { font-weight:700; font-size:.98rem; line-height:1.3; overflow-wrap:anywhere; }
+.prayer-card-meta { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin-top:7px; }
+.prayer-chip { display:inline-flex; align-items:center; padding:2px 9px; border-radius:999px; background:var(--emerald-50,#e9f6f0); color:var(--emerald); font-size:.74rem; font-weight:700; }
+.prayer-card-type { font-size:.78rem; color:var(--ink-soft); }
+.prayer-card-loc { font-size:.86rem; color:var(--ink); margin-top:9px; overflow-wrap:anywhere; }
+.prayer-card-notes { font-size:.82rem; color:var(--ink-soft); line-height:1.5; margin-top:6px; overflow-wrap:anywhere; }
+.prayer-card-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.prayer-card-src { font-size:.72rem; color:var(--ink-faint); overflow-wrap:anywhere; }
+.prayer-card-dir { flex:none; min-height:44px; display:inline-flex; align-items:center; color:var(--emerald); font-weight:700; font-size:.86rem; white-space:nowrap; }
+.prayer-card-dir:hover { text-decoration:underline; }
 /* ===== "Is it halal?" brand checker ===== */
 .hs-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); transition:border-color .14s, transform .14s; }
 .hs-row:hover { border-color:var(--emerald-300); transform:translateY(-1px); }

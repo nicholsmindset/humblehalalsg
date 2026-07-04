@@ -6,6 +6,8 @@ import { areas, categories, listings } from "./data";
 import type { Listing } from "./types";
 import type { QA } from "./faq";
 import { categoryContent, cuisineContent, CATEGORY_PAGE_IDS } from "./category-content";
+import seoCounts from "./seo-counts.json";
+import { areaProfile } from "./area-content";
 
 /** Bump annually. Used in SEO titles only (keeps visible H1 evergreen). */
 export const SEO_YEAR = 2026;
@@ -51,10 +53,14 @@ const EXTRA_AREAS: SeoArea[] = [
   { id: "jurong-east", name: "Jurong East", mrt: "Jurong East", match: ["Jurong"] },
   { id: "sembawang", name: "Sembawang", mrt: "Sembawang", match: [] },
   { id: "punggol", name: "Punggol", mrt: "Punggol", match: [] },
-  { id: "arab-street", name: "Arab Street", mrt: "Bugis", match: ["Bugis"] },
+  { id: "arab-street", name: "Arab Street", mrt: "Bugis", match: ["Arab Street", "Bugis"] },
   { id: "changi-airport", name: "Changi Airport", mrt: "Changi Airport", match: [] },
   { id: "sentosa", name: "Sentosa", mrt: "HarbourFront", match: [] },
   { id: "novena", name: "Novena", mrt: "Novena", match: [] },
+  // 301 targets for legacy truncated slugs (next.config.ts) + top keyword adds.
+  { id: "kampong-glam", name: "Kampong Glam", mrt: "Bugis", match: ["Kampong Glam"] },
+  { id: "marine-parade", name: "Marine Parade", mrt: "Marine Parade", match: ["Marine Parade"] },
+  { id: "botanic-gardens", name: "Botanic Gardens", mrt: "Botanic Gardens", match: ["Botanic Gardens"] },
 ];
 
 /* ---- Malls / venues (KD≈0, high-volume `{venue} halal food` cluster).
@@ -106,11 +112,43 @@ const CUISINES: Cuisine[] = [
   { id: "catering", label: "Catering", match: ["catering", "buffet", "event"] },
 ];
 
-// only generate a category×area page when it has real content.
+/* Only generate a category×area page when it has real content. Counts come
+   from the LIVE directory snapshot (scripts/gen-seo-counts.mjs → seo-counts.json,
+   regenerate before deploys) with the mock seed as a floor so no
+   already-indexed page ever disappears between snapshot refreshes. */
+const liveCounts: { byAreaCat: Record<string, Record<string, number>>; byCat: Record<string, number> } = seoCounts;
 const countIn = (areaName: string, catId: string) =>
-  listings.filter((l) => l.area === areaName && l.catId === catId).length;
+  Math.max(
+    liveCounts.byAreaCat[areaName]?.[catId] ?? 0,
+    listings.filter((l) => l.area === areaName && l.catId === catId).length,
+  );
+const countCat = (catId: string) =>
+  Math.max(liveCounts.byCat[catId] ?? 0, listings.filter((l) => l.catId === catId).length);
 
-function titleArea(name: string) {
+/* ---- Indexation gating (B4). Place-tied pages earn indexation only once they
+   have real listing coverage; below the threshold they still render (and stay
+   in generateStaticParams) but carry robots:noindex so thin pages don't dilute
+   the site — the programmatic-SEO quality gate. Cuisine + Singapore-wide
+   category pages aggregate island-wide with editorial content and stay indexed
+   regardless. Counts are against the REAL directory, passed in by the caller
+   (generateMetadata / sitemap already fetch getDirectory()). */
+const PLACE_KINDS = new Set<string>(["area", "mrt", "venue", "muslim-owned", "area-cat"]);
+export const AREA_INDEX_MIN = 3;
+
+export function seoPageIndexable(page: SeoPage, realListings: Listing[]): boolean {
+  if (!PLACE_KINDS.has(page.kind ?? "")) return true;
+  // No real directory to judge against (backend unconfigured / mock-mode build,
+  // e.g. CI without Supabase) → don't gate, so we never noindex/drop the whole
+  // area set. The gate only bites when real coverage data is present.
+  if (realListings.length === 0) return true;
+  return seoListings(page, realListings).length >= AREA_INDEX_MIN;
+}
+
+function titleArea(name: string, id?: string) {
+  // Profiled areas name their top landmark for a richer, entity-led SERP title;
+  // others keep the evergreen formula. Both stay ≤60 chars via clip().
+  const lm = areaProfile(id)?.landmarks.find((l) => l.type === "mall" || l.type === "mosque");
+  if (lm) return clip(`Halal Food in ${name}: Near ${lm.name} & More (${SEO_YEAR})`);
   return clip(`Halal Food in ${name} — Best Halal Eats (${SEO_YEAR})`);
 }
 function titleVenue(name: string) {
@@ -130,9 +168,12 @@ function build(): SeoPage[] {
   for (const a of areas) {
     pages.push({
       slug: `halal-food-in-${a.id}`,
-      title: titleArea(a.name),
+      title: titleArea(a.name, a.id),
       h1: `Halal Food in ${a.name}`,
-      intro: `Discover the best halal food in ${a.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries, each with a halal-confidence score, reviews and directions.`,
+      // Hand-written local intro (area-content.ts) when authored — the pSEO
+      // uniqueness bar — else the evergreen formula.
+      intro: areaProfile(a.id)?.intro
+        ?? `Discover the best halal food in ${a.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries, each with a halal-confidence score, reviews and directions.`,
       areaId: a.id, areaName: a.name, kind: "area",
     });
     pages.push({
@@ -167,10 +208,12 @@ function build(): SeoPage[] {
   for (const d of EXTRA_AREAS) {
     pages.push({
       slug: `halal-food-in-${d.id}`,
-      title: titleArea(d.name),
+      title: titleArea(d.name, d.id),
       h1: `Halal Food in ${d.name}`,
-      intro: `Discover the best halal food in ${d.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries${d.mrt ? `, all within reach of ${d.mrt}` : ""}, with halal status, reviews and directions.`,
-      areaName: d.name, areaNames: d.match, kind: "area",
+      // Hand-written local intro when authored; else the evergreen formula.
+      intro: areaProfile(d.id)?.intro
+        ?? `Discover the best halal food in ${d.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries${d.mrt ? `, all within reach of ${d.mrt}` : ""}, with halal status, reviews and directions.`,
+      areaId: d.id, areaName: d.name, areaNames: d.match, kind: "area",
     });
   }
 
@@ -200,7 +243,7 @@ function build(): SeoPage[] {
   for (const catId of CATEGORY_PAGE_IDS) {
     const cat = categories.find((c) => c.id === catId);
     if (!cat) continue;
-    if (listings.filter((l) => l.catId === catId).length < 1) continue;
+    if (countCat(catId) < 1) continue;
     const cc = categoryContent(catId);
     pages.push({
       slug: `halal-${cat.id}-singapore`,
@@ -213,10 +256,15 @@ function build(): SeoPage[] {
   return pages;
 }
 
-/** FAQ items for a SEO page (category/cuisine-aware) — used for FAQ + FAQPage schema. */
+/** FAQ items for a SEO page (category/cuisine-aware) — used for FAQ + FAQPage
+ *  schema. Must stay in sync with what SeoScreen renders (Google requires
+ *  FAQPage markup to match visible content): area-specific FAQs are prepended
+ *  for area/mrt pages, mirroring the template. */
 export function seoFaqItems(page: SeoPage): QA[] {
   if (page.cuisineId) return cuisineContent(page.cuisineId).faq;
-  return categoryContent(page.catId).faq;
+  const base = categoryContent(page.catId).faq;
+  const area = areaProfile(page.areaId)?.faqs;
+  return area ? [...area, ...base] : base;
 }
 
 const PAGES = build();

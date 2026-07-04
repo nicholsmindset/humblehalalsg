@@ -16,7 +16,8 @@
     "functions:serve": "supabase functions serve --env-file supabase/functions/.env.local",
     "flight:check": "tsx scripts/flight-sandbox-check.ts",
     "geocode:listings": "node --env-file=.env.local scripts/geocode-listings.mjs",
-    "audit:mobile": "node scripts/mobile-audit.mjs"
+    "audit:mobile": "node scripts/mobile-audit.mjs",
+    "seo:counts": "node scripts/gen-seo-counts.mjs"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.4",

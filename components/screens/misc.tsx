@@ -18,6 +18,8 @@ import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
+import { LEAD_VERTICALS, LEAD_CONSENT_VERSION, LEAD_ROUTE_CAP, verticalForCatId } from "@/lib/lead-verticals";
+import { areaProfile, nearbyAreaIds } from "@/lib/area-content";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
@@ -27,6 +29,7 @@ import { AdSlot } from "../ads/ad-slot";
 import { track } from "@/lib/analytics";
 import { NotificationBell } from "../notification-bell";
 import { VERIFY_FAQ } from "@/lib/faq";
+import { PassportScreen } from "./passport";
 
 /* =============================================================
    LOGIN / REGISTER
@@ -35,6 +38,19 @@ import { VERIFY_FAQ } from "@/lib/faq";
 function clerkErr(err: unknown): string {
   const e = err as { errors?: Array<{ longMessage?: string; message?: string }> };
   return e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || "";
+}
+
+/* Halal Passport referral: read the `hh_ref` cookie (set by /i/[code]) so it can
+   ride Clerk unsafeMetadata through signup. Guarded like captureAttribution. */
+function readRefCode(): string | undefined {
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)hh_ref=([a-z0-9]{4,12})(?:;|$)/);
+    if (m) return m[1];
+    const s = sessionStorage.getItem("hh-ref");
+    return s && /^[a-z0-9]{4,12}$/.test(s) ? s : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function LoginScreen() {
@@ -97,8 +113,9 @@ export function LoginScreen() {
         if (!suLoaded || !signUp) throw new Error("not_ready");
         // accountType rides Clerk unsafeMetadata → the user.created webhook
         // provisions profiles.role, so business owners land in the right
-        // dashboard from their very first session.
-        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role } });
+        // dashboard from their very first session. refCode credits a referral.
+        const refCode = readRefCode();
+        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) } });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       }
       setCodeSent(true);
@@ -171,11 +188,12 @@ export function LoginScreen() {
       try { sessionStorage.setItem("hh-account-type", role); } catch { /* private mode */ }
       if (mode === "register") {
         if (!suLoaded || !signUp) return;
+        const refCode = readRefCode();
         await signUp.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
           redirectUrlComplete: `${window.location.origin}/`,
-          unsafeMetadata: { accountType: role },
+          unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) },
         });
         return;
       }
@@ -284,7 +302,7 @@ export function LoginScreen() {
 /* =============================================================
    USER DASHBOARD
 ============================================================= */
-export function UserDashboardScreen() {
+export function UserDashboardScreen({ passportEnabled = false }: { passportEnabled?: boolean }) {
   const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
   const { signOut } = useClerk();
@@ -297,11 +315,11 @@ export function UserDashboardScreen() {
     navigate("home");
   };
   // Deep-linkable tab (email CTAs use /dashboard?tab=tickets).
-  const TAB_IDS = ["saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
-  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : "saved");
+  const TAB_IDS = [...(passportEnabled ? ["passport"] : []), "saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
+  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : (passportEnabled ? "passport" : "saved"));
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
-  const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
+  const tabs: [string, string, string][] = [...(passportEnabled ? [['passport','Passport','trophy'] as [string,string,string]] : []),['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
 
   // Profile settings — real save to /api/user/update (display name) + client pref (home area).
@@ -414,6 +432,7 @@ export function UserDashboardScreen() {
           )}
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
           {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
+          {tab==='passport' && <PassportScreen />}
           {tab==='reviews' && (
             reviewsLoaded && myReviews.length===0
               ? <Empty icon="star" title="No reviews yet" body="You haven’t written any reviews yet. Explore places and share your experience." action="Start exploring" onAction={()=>navigate('explore')} />
@@ -525,18 +544,7 @@ export function SuggestScreen() {
 /* =============================================================
    REQUEST A QUOTE (lead-gen for high-ticket verticals)
 ============================================================= */
-const QUOTE_VERTICALS = [
-  "Event & buffet catering",
-  "Wedding & bridal (MUA, deco, hantaran)",
-  "Umrah & Hajj travel",
-  "Islamic finance & takaful",
-  "Home services (renovation, cleaning, aircon)",
-  "Automotive (servicing, detailing)",
-  "Photography & videography",
-  "Professional services (legal, accounting, marketing)",
-  "Quran & tuition / education",
-  "Something else",
-];
+const QUOTE_VERTICALS = LEAD_VERTICALS.map((v) => v.label);
 const QUOTE_BUDGETS = ["Under $500", "$500–$2,000", "$2,000–$5,000", "$5,000+", "Not sure yet"];
 
 export function RequestQuoteScreen() {
@@ -549,23 +557,34 @@ export function RequestQuoteScreen() {
   const [budget, setBudget] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [details, setDetails] = useState("");
+  const [consent, setConsent] = useState(false);
   const [touched, setTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Where the CTA came from — a listing detail page and/or a pSEO page.
+  const businessSlug = String(params.business || "");
+  const sourcePath = String(params.source || "");
 
   const nameErr = !name.trim() ? "Please enter your name" : "";
   const contactErr = !email.trim() && !phone.trim() ? "Add an email or phone so vendors can reach you" : "";
   const emailErr =
     email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? "Please enter a valid email" : "";
+  const consentErr = !consent ? "Please tick the box so providers are allowed to contact you" : "";
 
   const submit = async () => {
     setTouched(true);
-    if (nameErr || contactErr || emailErr) return;
+    if (nameErr || contactErr || emailErr || consentErr) return;
     setSubmitting(true);
     try {
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, category: vertical, area, budget, eventDate, details }),
+        body: JSON.stringify({
+          name, email, phone, category: vertical, area, budget, eventDate, details,
+          businessSlug: businessSlug || undefined,
+          sourcePath: sourcePath || undefined,
+          consent: true,
+          consentVersion: LEAD_CONSENT_VERSION,
+        }),
       });
     } catch {
       /* graceful — still confirm to the user */
@@ -643,11 +662,28 @@ export function RequestQuoteScreen() {
               <label htmlFor="rq-details">Details</label>
               <textarea id="rq-details" className="textarea" placeholder="e.g. iftar buffet for 80 pax, MUIS-certified, in Tampines on 14 Mar" value={details} onChange={(e) => setDetails(e.target.value)} />
             </div>
+            <div className="field">
+              <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontWeight: 400 }}>
+                <input
+                  type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)}
+                  aria-required="true" aria-invalid={touched && !!consentErr}
+                  aria-describedby={touched && consentErr ? "rq-consent-err" : undefined}
+                  style={{ marginTop: 3, flexShrink: 0 }}
+                />
+                <span style={{ fontSize: ".86rem" }}>
+                  I agree that Humble Halal may share my request and contact details with up to {LEAD_ROUTE_CAP} matching
+                  halal providers, who may contact me directly about this request.
+                </span>
+              </label>
+              {touched && consentErr && <span id="rq-consent-err" className="field-error"><Icon name="warning" size={13} /> {consentErr}</span>}
+            </div>
             <button className="btn btn-primary btn-lg" disabled={submitting} onClick={submit}>
               {submitting ? "Sending…" : "Get my quotes"}
             </button>
             <p className="faint tc" style={{ fontSize: ".82rem" }}>
-              By submitting you agree to be contacted by matched providers (typically within 1–2 business days). We only share your request with relevant Muslim-owned &amp; halal-friendly providers — no spam, and you’re never charged by Humble Halal. Vendors are independent; please do your own checks before engaging them.
+              Quotes typically arrive within 1–2 business days. Free for you — always; no spam. We keep your request
+              only as long as needed to arrange quotes (see our <a href="/pdpa" style={{ textDecoration: "underline" }}>PDPA policy</a>).
+              Vendors are independent; please do your own checks before engaging them.
             </p>
           </div>
         </div>
@@ -917,7 +953,10 @@ export function DisclaimerScreen() {
 export function SeoScreen() {
   const { navigate, params } = useApp();
   const dir = useDirectory();
-  const page = getSeoPage(String(params.slug || "")) || allSeoPages()[0];
+  // Server route 404s unknown slugs; this guard covers SPA navigation. The old
+  // `|| allSeoPages()[0]` fallback silently rendered page-0 content instead.
+  const page = getSeoPage(String(params.slug || ""));
+  if (!page) return <NotFoundScreen />;
   const areaName = page.areaName || "Singapore";
   const cat = page.catId ? HHData.categories.find((c) => c.id === page.catId) : null;
   const isCategoryPage = !!page.catId && !page.areaId;
@@ -929,6 +968,20 @@ export function SeoScreen() {
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";
+
+  // Hand-written area profile (area-content.ts) powers the v2 area template:
+  // unique local intro (already on page.intro), MRT + landmark blocks, and
+  // area-specific FAQs. Only area/mrt pages that have a profile get the extras.
+  const profile = areaProfile(page.areaId);
+  // Related areas → only link to areas that actually have a generated page.
+  const areaSlugs = new Set(allSeoPages().filter((p) => p.kind === "area").map((p) => p.areaId));
+  const relatedAreas = profile
+    ? nearbyAreaIds(profile.id, 10).filter((a) => areaSlugs.has(a.id)).slice(0, 6)
+    : [];
+  // Landmark cards deep-link into an existing venue page when we have one.
+  const venueSlugs = new Set(allSeoPages().filter((p) => p.kind === "venue").map((p) => p.slug));
+  // Area FAQ (specific first) merged with the global halal FAQ for the page.
+  const faqItems = profile ? [...profile.faqs, ...content.faq] : content.faq;
 
   // Category page → links to this category in each area; sibling category pages.
   const areaLinks = isCategoryPage
@@ -973,9 +1026,63 @@ export function SeoScreen() {
             <Empty icon="search" title="No places yet" body={`We're still adding halal spots for ${page.h1.toLowerCase()}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
           )}
 
+          {/* Lead-gen banner for high-ticket verticals (weddings, umrah, services…). */}
+          {verticalForCatId(page.catId) && (
+            <div className="card mt16" style={{ padding: "18px 20px", display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ minWidth: 220, flex: 1 }}>
+                <strong style={{ fontSize: "1.02rem" }}>Planning something? Get up to {LEAD_ROUTE_CAP} free quotes</strong>
+                <p className="muted" style={{ marginTop: 4, fontSize: ".88rem" }}>Tell us what you need once — trusted halal {noun} send you quotes. Free, no obligation.</p>
+              </div>
+              <button
+                className="btn btn-gold"
+                onClick={() => { track.leadAction("enquiry_form", page.slug, page.catId); navigate("request-quote", { category: verticalForCatId(page.catId)!.label, source: page.slug }); }}
+              >
+                <Icon name="doc" size={17} /> Request quotes
+              </button>
+            </div>
+          )}
+
           {/* Directory hub slot (leaderboard) — between the listings and the guide,
               never interrupting the ranked results. Direct-first, AdSense fill. */}
           <AdSlot slot="directory_hub" />
+
+          {/* ---- Area template v2: MRT + landmark discovery blocks ---- */}
+          {profile && profile.mrts.length > 0 && (
+            <section className="mt24">
+              <h2 style={{ fontSize: "1.4rem", marginBottom: 4 }}>Near the MRT</h2>
+              <p className="muted" style={{ marginBottom: 14 }}>Halal spots you can reach on foot from {areaName}&apos;s stations.</p>
+              <div className="flex g8 wrap">
+                {profile.mrts.map((m) => (
+                  <button key={m} className="chip" style={{ cursor: "pointer" }} onClick={() => navigate("explore", { q: `${m} halal` })}>
+                    <Icon name="map" size={14} /> {m} MRT
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {profile && profile.landmarks.length > 0 && (
+            <section className="mt24">
+              <h2 style={{ fontSize: "1.4rem", marginBottom: 4 }}>Malls, hawker centres &amp; landmarks</h2>
+              <p className="muted" style={{ marginBottom: 14 }}>Where halal food clusters in {areaName}.</p>
+              <div className="seo-linkgrid">
+                {profile.landmarks.map((lm) => {
+                  const venueSlug = lm.venueId ? `halal-food-at-${lm.venueId}` : null;
+                  const inner = (
+                    <>
+                      <span><strong>{lm.name}</strong><span className="faint" style={{ display: "block", fontSize: ".78rem", textTransform: "capitalize" }}>{lm.type}</span></span>
+                      {venueSlug && venueSlugs.has(venueSlug) && <Icon name="arrow" size={15} />}
+                    </>
+                  );
+                  return venueSlug && venueSlugs.has(venueSlug) ? (
+                    <a key={lm.name} className="related-link" {...link("seo", { slug: venueSlug })}>{inner}</a>
+                  ) : (
+                    <div key={lm.name} className="related-link" style={{ cursor: "default" }}>{inner}</div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* collapsible SEO content (crawlable in the DOM) */}
           <div className="seo-prose mt24">
@@ -1010,12 +1117,18 @@ export function SeoScreen() {
             </div>
           </section>
 
-          <Faq items={content.faq} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
+          <Faq items={faqItems} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
         </div>
 
         <aside className="seo-side">
-          {related.length > 0 && (
+          {relatedAreas.length > 0 && (
             <div className="card" style={{ padding: 18 }}>
+              <h3 style={{ fontSize: "1.05rem" }}>Nearby areas</h3>
+              <div className="stack g8 mt12">{relatedAreas.map((a) => (<a key={a.id} className="related-link" {...link("seo", { slug: `halal-food-in-${a.id}` })}>Halal Food in {a.name}<Icon name="arrow" size={16} /></a>))}</div>
+            </div>
+          )}
+          {related.length > 0 && (
+            <div className="card" style={{ padding: 18, marginTop: relatedAreas.length ? 16 : 0 }}>
               <h3 style={{ fontSize: "1.05rem" }}>Related searches</h3>
               <div className="stack g8 mt12">{related.map((r) => (<a key={r.slug} className="related-link" {...link("seo", { slug: r.slug })}>{r.h1}<Icon name="arrow" size={16} /></a>))}</div>
             </div>

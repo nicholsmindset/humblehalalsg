@@ -4,6 +4,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { leadConfirmationEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
 import { beehiivSubscribe } from "@/lib/beehiiv";
+import { verticalIdFromLabel, LEAD_CONSENT_VERSION } from "@/lib/lead-verticals";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -13,6 +14,7 @@ import { beehiivSubscribe } from "@/lib/beehiiv";
    If a MailerLite key is set, the contact email is also captured. */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLUG_RE = /^[a-z0-9-]{1,80}$/;
 
 type LeadBody = {
   name?: string;
@@ -23,6 +25,10 @@ type LeadBody = {
   budget?: string;
   eventDate?: string;
   details?: string;
+  businessSlug?: string;
+  sourcePath?: string;
+  consent?: boolean;
+  consentVersion?: string;
 };
 
 export async function POST(req: Request) {
@@ -70,8 +76,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, simulated: true });
   }
 
+  // Marketplace context (migration 0046): consent + source attribution + vertical.
+  // Only routed to vendors when consent was explicitly given on the form.
+  const rawSlug = String(body.businessSlug || "").trim();
+  let sourceListingSlug: string | null = null;
+  if (rawSlug && SLUG_RE.test(rawSlug)) {
+    const { data: biz } = await db
+      .from("businesses").select("slug").eq("slug", rawSlug).eq("status", "published").maybeSingle();
+    if (biz) sourceListingSlug = biz.slug;
+  }
+  const marketplace = {
+    vertical_id: verticalIdFromLabel(category),
+    source_listing_slug: sourceListingSlug,
+    source_path: String(body.sourcePath || "").trim().slice(0, 200) || null,
+    consent_contact: body.consent === true,
+    consent_version: body.consent === true ? String(body.consentVersion || LEAD_CONSENT_VERSION).slice(0, 40) : null,
+    consented_at: body.consent === true ? new Date().toISOString() : null,
+  };
+
   try {
-    const { error } = await db.from("leads").insert(lead);
+    let { error } = await db.from("leads").insert({ ...lead, ...marketplace });
+    // Never drop a lead because the 0046 columns aren't live yet — fall back
+    // to the legacy shape if the insert failed on a missing column.
+    if (error && /column|schema cache/i.test(error.message || "")) {
+      ({ error } = await db.from("leads").insert(lead));
+    }
     if (error) {
       return NextResponse.json({ ok: false, error: "Could not submit request" }, { status: 502 });
     }
