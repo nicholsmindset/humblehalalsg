@@ -11,6 +11,7 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
+import { FLAG_COLUMN, type FlagKey } from "@/lib/flags";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminVerdicts } from "./admin-verdicts";
@@ -169,10 +170,78 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
   );
 }
 
+/* Global flag → readable copy for the Monetization toggles. Order within each
+   group below is the display order. */
+const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
+  paidTickets: { title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
+  paidAds: { title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
+  paidPlans: { title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
+  paidHotels: { title: "Paid hotel bookings", desc: "Enable live hotel payments via LiteAPI. When OFF, hotel search stays browse-only (no checkout)." },
+  paidFlights: { title: "Paid flight bookings", desc: "Enable live flight payments via LiteAPI. Requires Vercel Pro for the 10-minute retry cron before going live." },
+  payNow: { title: "PayNow", desc: "Accept PayNow as a checkout method alongside cards, where supported." },
+  paidLeads: { title: "Paid lead marketplace", desc: "Businesses pay to receive routed customer leads instead of receiving them for free." },
+  certVault: { title: "Cert Vault", desc: "Certificate upload & verification vault for businesses claiming halal certification." },
+  semanticSearch: { title: "Semantic search", desc: "AI-powered semantic search across listings and travel results." },
+  aiConcierge: { title: "AI concierge", desc: "The AI concierge / Ask-Hotel assistant surfaced to visitors." },
+  halalVerdicts: { title: "Halal verdicts", desc: "Admin halal-verdict workflow surfaced on listing pages." },
+  leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
+  passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
+};
+const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"];
+const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k));
+
+/* Single flag row — reuses the cert-toggle/cert-switch/cert-knob switch markup
+   used elsewhere in this file (Ramadan mode, Cert Vault, etc). `value` is the
+   platform_settings column value: true/false = explicit override, null = no
+   override (falls back to the env var server-side). */
+function GlobalFlagRow({ flagKey, value, onToggle }: { flagKey: FlagKey; value: boolean | null; onToggle: (next: boolean) => void }) {
+  const { title, desc } = FLAG_COPY[flagKey];
+  const on = value === true;
+  return (
+    <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ flex: 1 }}>
+        <div className="flex g8 center" style={{ marginBottom: 4 }}>
+          <h3 style={{ fontSize: "1.05rem" }}>{title}</h3>
+          <span className="tag" style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
+            {on ? "Live" : "Off"}
+          </span>
+          {value === null && <span className="faint" style={{ fontSize: ".72rem", fontStyle: "italic" }}>using env default</span>}
+        </div>
+        <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{desc}</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={`${on ? "Disable" : "Enable"} ${title}`}
+        className={`cert-toggle ${on ? "on" : ""}`}
+        style={{ flex: "none" }}
+        onClick={() => onToggle(!on)}
+      >
+        <span className="cert-switch"><span className="cert-knob" /></span>
+      </button>
+    </div>
+  );
+}
+
 export function AdminMonetization() {
-  const { flags, setFlag, toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  const { toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  // Global flag overrides — hydrated from platform_settings on mount so every
+  // toggle reflects the persisted (server) state, not client-only demo state.
+  const [values, setValues] = useState<Record<string, boolean | null>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/settings");
+        const d = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        const next: Record<string, boolean | null> = {};
+        for (const col of Object.values(FLAG_COLUMN)) next[col] = col in d ? (d[col] === null ? null : !!d[col]) : null;
+        setValues(next);
+      } catch { /* keep defaults — rows show "using env default" */ }
+    })();
+  }, []);
+
   // Ramadan mode persists to platform_settings so EVERY visitor sees it (server-
-  // hydrated), unlike the demo paid-flag toggles which are client-side only.
+  // hydrated), same pattern the flags above now follow.
   const toggleRamadan = async () => {
     const next = !ramadanModeEnabled;
     setRamadanModeEnabled(next);
@@ -181,11 +250,29 @@ export function AdminMonetization() {
       await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ramadan_mode_enabled: next }) });
     } catch { /* optimistic; admin can retry */ }
   };
-  const rows: { key: "paidTickets" | "paidAds" | "paidPlans"; title: string; desc: string }[] = [
-    { key: "paidTickets", title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
-    { key: "paidAds", title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
-    { key: "paidPlans", title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
-  ];
+
+  // Persist a global flag override. Payment flags require an explicit confirm
+  // before flipping ON, since they gate LIVE charging flows.
+  async function setGlobalFlag(flagKey: FlagKey, next: boolean, isPayment: boolean) {
+    if (isPayment && next && !confirm("This enables a LIVE payment/charging flow. Continue?")) return;
+    const column = FLAG_COLUMN[flagKey];
+    const prev = values[column] ?? null;
+    setValues((v) => ({ ...v, [column]: next })); // optimistic
+    try {
+      const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [column]: next }) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [column]: prev }));
+        toast("Couldn't save — try again.");
+      } else {
+        toast(`${FLAG_COPY[flagKey].title} ${next ? "enabled" : "disabled"}`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [column]: prev }));
+      toast("Couldn't save — try again.");
+    }
+  }
+
   return (
     <div style={{ maxWidth: 720 }}>
       <div className="notice notice-warn" style={{ marginBottom: 18 }}>
@@ -195,37 +282,22 @@ export function AdminMonetization() {
           Paid flows also require Stripe keys + each business to complete payout onboarding.
         </span>
       </div>
-      <div className="stack g12">
-        {rows.map((r) => {
-          const on = flags[r.key];
-          return (
-            <div key={r.key} className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div style={{ flex: 1 }}>
-                <div className="flex g8 center" style={{ marginBottom: 4 }}>
-                  <h3 style={{ fontSize: "1.05rem" }}>{r.title}</h3>
-                  <span className={`tag ${on ? "" : ""}`} style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
-                    {on ? "Live" : "Off"}
-                  </span>
-                </div>
-                <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{r.desc}</p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={on}
-                aria-label={`${on ? "Disable" : "Enable"} ${r.title}`}
-                className={`cert-toggle ${on ? "on" : ""}`}
-                style={{ flex: "none" }}
-                onClick={() => {
-                  setFlag(r.key, !on);
-                  toast(`${r.title} ${!on ? "enabled" : "disabled"}`);
-                }}
-              >
-                <span className="cert-switch"><span className="cert-knob" /></span>
-              </button>
-            </div>
-          );
-        })}
 
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Payments</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {PAYMENT_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, true)} />
+        ))}
+      </div>
+
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Features</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {FEATURE_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, false)} />
+        ))}
+      </div>
+
+      <div className="stack g12">
         {/* Ramadan mode — seasonal, persisted globally */}
         <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", borderColor: "var(--emerald-200)" }}>
           <div style={{ flex: 1 }}>
