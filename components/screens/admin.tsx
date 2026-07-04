@@ -15,6 +15,7 @@ import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminLeads } from "./admin-leads";
 import { AdminGiveaways } from "./admin-giveaways";
+import { AdminPassportIntegrity } from "./admin-passport-integrity";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -98,7 +99,7 @@ export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = fals
     ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
-    ...(passportEnabled ? [["giveaways", "Passport giveaways", "trophy"] as [string, string, string]] : []),
+    ...(passportEnabled ? [["giveaways", "Passport giveaways", "trophy"] as [string, string, string], ["passport-integrity", "Passport integrity", "shield"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
@@ -149,6 +150,7 @@ export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = fals
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='giveaways' && passportEnabled && <AdminGiveaways toast={toast} />}
+          {section==='passport-integrity' && passportEnabled && <AdminPassportIntegrity toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
