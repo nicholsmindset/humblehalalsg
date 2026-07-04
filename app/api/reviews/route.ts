@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { reviewReceivedEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
+import { getServerFlags } from "@/lib/flags";
+import { POINTS } from "@/lib/passport";
 
 /* Review submission. Graceful-degradation: validates + accepts now (returns
    simulated), and is the single integration point to persist to Supabase
@@ -74,9 +77,14 @@ export async function POST(req: Request) {
       }
       // No matching business row yet (e.g. unseeded) → accept as simulated.
       if (!id) return NextResponse.json({ ok: true, simulated: true });
-      const { error } = await sb
+      // Tie the review to the signed-in user (if any) so "My reviews" works AND
+      // Halal Passport points can be awarded. Anonymous reviews stay allowed.
+      const { userId } = await auth();
+      const { data: inserted, error } = await sb
         .from("reviews")
-        .insert({ business_id: id, rating, text, status: "pending" });
+        .insert({ business_id: id, user_id: userId || null, rating, text, status: "pending" })
+        .select("id")
+        .maybeSingle();
       if (!error) {
         // Notify the business owner of the new (pending) review (best-effort).
         try {
@@ -86,6 +94,16 @@ export async function POST(req: Request) {
             await sendEmail({ to: email, subject: t.subject, html: t.html, template: "review-received", businessId: id });
           }
         } catch { /* email best-effort — never affect the API response */ }
+        // Halal Passport: award for the review + qualify any pending referral.
+        if (userId && getServerFlags().passport && inserted?.id) {
+          try {
+            const { award, qualifyReferralIfPending, loadStats, emitProgress } = await import("@/lib/passport-server");
+            const before = await loadStats(sb, userId);
+            await award(sb, { userId, source: "review", sourceId: inserted.id, points: POINTS.review, reason: "Wrote a review", dedupeKey: `review:${inserted.id}` });
+            await qualifyReferralIfPending(sb, userId);
+            await emitProgress(sb, userId, before, await loadStats(sb, userId));
+          } catch { /* passport best-effort — never affect the review response */ }
+        }
         return NextResponse.json({ ok: true, simulated: false, pending: true });
       }
     }

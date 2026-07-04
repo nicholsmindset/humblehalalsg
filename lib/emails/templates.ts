@@ -271,6 +271,45 @@ export function planStartedEmail(o: { name?: string | null; plan: string }): Out
   );
 }
 
+/* ── Halal Passport (loyalty + referrals) ────────────────────────────── */
+export function referralJoinedEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "A friend joined with your invite 🎉",
+    "Your invite worked",
+    greet(o.name) +
+      p(`Good news — a friend just joined Humble Halal using your invite link. You'll both earn Halal Passport points as soon as they leave their first review or collect their first stamp.`) +
+      p(`Keep sharing your link to climb toward the <strong>Community Ambassador</strong> badge.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
+export function referralQualifiedEmail(o: { name?: string | null; points: number }): Out {
+  return wrap(
+    `You earned ${o.points} Passport points`,
+    "Referral reward unlocked",
+    greet(o.name) +
+      p(`Your invited friend just made their first move on Humble Halal — so <strong>${o.points} Halal Passport points</strong> have landed in your account. Thank you for growing the community.`),
+    { label: "See your points", url: `${U}/passport` },
+  );
+}
+export function badgeEarnedEmail(o: { name?: string | null; badge: string }): Out {
+  return wrap(
+    `You unlocked the ${o.badge} badge`,
+    `New badge: ${esc(o.badge)}`,
+    greet(o.name) +
+      p(`Nice work — you just earned the <strong>${esc(o.badge)}</strong> badge on your Halal Passport. Show it off or keep collecting.`),
+    { label: "View your badges", url: `${U}/passport` },
+  );
+}
+export function tierUpEmail(o: { name?: string | null; tier: string }): Out {
+  return wrap(
+    `You reached ${o.tier} on Humble Halal`,
+    `Welcome to ${esc(o.tier)}`,
+    greet(o.name) +
+      p(`You've levelled up to <strong>${esc(o.tier)}</strong> on your Halal Passport. Keep reviewing, collecting stamps and inviting friends to reach the next tier.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
+
 /* ═══ Rebrands of the existing inline-HTML emails ══════════════════════ */
 export function fareAlertEmail(o: { route: string; oldPrice: string; newPrice: string; url?: string }): Out {
   return wrap(

@@ -17,6 +17,7 @@ export interface Flags {
   aiConcierge: boolean;
   leadRouting: boolean;
   paidLeads: boolean;
+  passport: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -49,7 +50,11 @@ export function getServerFlags(): Flags {
     // Paid lead subscriptions (Stripe). Default OFF → leads route free (beta).
     // Gates /api/checkout/leads and the quota-enforcement branch on acceptance.
     paidLeads: truthy(process.env.PAID_LEADS_ENABLED),
+    // Halal Passport loyalty + consumer referrals. Default OFF (ship dark).
+    // Gates all point awards, the referral credit, /passport + /api/passport*,
+    // the poster collect-QR and the signup refCode read. Not a payment route.
+    passport: truthy(process.env.PASSPORT_ENABLED),
   };
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, leadRouting: false, paidLeads: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, leadRouting: false, paidLeads: false, passport: false };

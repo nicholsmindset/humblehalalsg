@@ -24,9 +24,10 @@ function QR({ value, size = 220 }: { value: string; size?: number }) {
   return <img src={url} alt="" width={size} height={size} style={{ display: "block", borderRadius: 12 }} />;
 }
 
-export function PosterClient({ slug, name, statusLabel }: { slug: string; name: string; statusLabel: string }) {
+export function PosterClient({ slug, name, statusLabel, collectEnabled = false }: { slug: string; name: string; statusLabel: string; collectEnabled?: boolean }) {
   const listingUrl = `${SITE}/business/${slug}?utm_source=poster&utm_medium=qr`;
   const reviewUrl = `${SITE}/r/${slug}`;
+  const collectUrl = `${SITE}/c/${slug}`;
 
   return (
     <div className="poster-wrap">
@@ -51,6 +52,13 @@ export function PosterClient({ slug, name, statusLabel }: { slug: string; name: 
             <div className="poster-qr-h">Enjoyed it? Leave a review</div>
             <div className="poster-qr-s">Scan &amp; share your experience — it takes a minute</div>
           </div>
+          {collectEnabled && (
+            <div className="poster-qr" id="collect">
+              <QR value={collectUrl} />
+              <div className="poster-qr-h">Collect a Halal Passport stamp</div>
+              <div className="poster-qr-s">Scan to earn points &amp; badges on Humble Halal</div>
+            </div>
+          )}
         </div>
 
         <div className="poster-foot">Find us on humblehalal.com — Singapore&apos;s halal directory</div>
