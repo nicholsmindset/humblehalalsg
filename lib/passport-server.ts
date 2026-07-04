@@ -1,7 +1,7 @@
 import "server-only";
 import type { getSupabaseAdmin } from "@/lib/supabase/server";
 import {
-  POINTS, BADGES, tierFor, badgesFor, streakFrom, sgtDate, totalPoints,
+  POINTS, BADGES, tierFor, badgesFor, streakFrom, sgtDate, totalPoints, earnedPoints,
   type PassportSource, type PassportStats,
 } from "@/lib/passport";
 import { emailForUser } from "@/lib/emails/recipient";
@@ -53,7 +53,8 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
     qualifiedReferrals = qc || 0;
   } catch { /* table may be pre-migration */ }
   return {
-    totalPoints: totalPoints(rows),
+    totalPoints: earnedPoints(rows), // lifetime earned → tier + badges
+    balance: totalPoints(rows),      // net spendable wallet
     reviewCount: count("review"),
     visitCount: visitIds.size,
     followCount: count("follow"),
@@ -64,6 +65,30 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
 }
 
 export interface LedgerRow { delta: number; source_type: string; source_id: string | null; reason: string; created_at: string }
+
+/** Award the bonus for any quest completed this week (idempotent by quest+week). */
+export async function evaluateQuests(db: Db, userId: string, rows?: LedgerRow[]): Promise<void> {
+  const { QUESTS, weekInfoSgt, questCount } = await import("@/lib/passport-quests");
+  const ledger = rows ?? (await loadStats(db, userId)).rows;
+  const { weekKey, sinceIso } = weekInfoSgt(new Date());
+  for (const q of QUESTS) {
+    if (questCount(q, ledger, sinceIso) >= q.target) {
+      await award(db, { userId, source: "bonus", sourceId: q.id, points: q.bonus, reason: `Quest: ${q.title}`, dedupeKey: `quest:${q.id}:${weekKey}` });
+    }
+  }
+}
+
+/** Quest cards with live progress + whether the bonus is already banked. */
+export async function questsState(db: Db, userId: string, rows: LedgerRow[]): Promise<{ id: string; title: string; desc: string; target: number; bonus: number; progress: number; done: boolean; claimed: boolean }[]> {
+  const { QUESTS, weekInfoSgt, questCount } = await import("@/lib/passport-quests");
+  const { sinceIso } = weekInfoSgt(new Date());
+  return QUESTS.map((q) => {
+    const progress = Math.min(q.target, questCount(q, rows, sinceIso));
+    // Bonus is banked when a 'bonus' ledger row for this quest exists this week.
+    const claimed = rows.some((r) => r.source_type === "bonus" && r.source_id === q.id && r.created_at >= sinceIso);
+    return { id: q.id, title: q.title, desc: q.desc, target: q.target, bonus: q.bonus, progress, done: progress >= q.target, claimed };
+  });
+}
 
 /** Insert tier-up / badge-earned notifications (+ email) for crossings between two stat snapshots. */
 export async function emitProgress(db: Db, userId: string, before: PassportStats, after: PassportStats): Promise<void> {

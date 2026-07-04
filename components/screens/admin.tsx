@@ -14,6 +14,7 @@ import { fmtSGD } from "@/lib/fees";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminLeads } from "./admin-leads";
+import { AdminGiveaways } from "./admin-giveaways";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
@@ -82,7 +83,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled?: boolean }) {
+export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = false }: { leadRoutingEnabled?: boolean; passportEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -97,6 +98,7 @@ export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled
     ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
+    ...(passportEnabled ? [["giveaways", "Passport giveaways", "trophy"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
@@ -146,6 +148,7 @@ export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled
           {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
+          {section==='giveaways' && passportEnabled && <AdminGiveaways toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}

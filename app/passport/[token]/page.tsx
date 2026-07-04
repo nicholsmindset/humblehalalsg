@@ -54,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
     );
   }
   const tier = tierFor(row.total_points);
-  const earned = badgesFor({ totalPoints: row.total_points, reviewCount: row.review_count, visitCount: row.visit_count, followCount: row.follow_count, streakDays: 0, qualifiedReferrals: 0 });
+  const earned = badgesFor({ totalPoints: row.total_points, balance: row.total_points, reviewCount: row.review_count, visitCount: row.visit_count, followCount: row.follow_count, streakDays: 0, qualifiedReferrals: 0 });
   const badges = BADGES.filter((b) => earned.includes(b.key)).map((b) => ({ key: b.key, label: b.label, icon: b.icon }));
   return <PublicPassport row={row} tier={tier.label} badges={badges} />;
 }

@@ -15,17 +15,19 @@ export async function GET() {
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
-  const { loadStats } = await import("@/lib/passport-server");
+  const { loadStats, questsState } = await import("@/lib/passport-server");
   const stats = await loadStats(db, userId);
   const tier = tierFor(stats.totalPoints);
   const next = nextTier(stats.totalPoints);
   const earned = badgesFor(stats);
+  const quests = await questsState(db, userId, stats.rows);
 
   return NextResponse.json({
     ok: true,
     enabled: true,
     stats: {
-      totalPoints: stats.totalPoints,
+      totalPoints: stats.totalPoints, // lifetime earned (tier/badges)
+      balance: stats.balance,          // spendable wallet
       reviewCount: stats.reviewCount,
       visitCount: stats.visitCount,
       followCount: stats.followCount,
@@ -36,6 +38,7 @@ export async function GET() {
     nextTier: next,
     tiers: TIERS,
     badges: BADGES.map((b) => ({ key: b.key, label: b.label, icon: b.icon, desc: b.desc, earned: earned.includes(b.key) })),
+    quests,
     points: POINTS,
     recent: stats.rows.slice(0, 20).map((r) => ({ delta: r.delta, reason: r.reason, at: r.created_at })),
   });

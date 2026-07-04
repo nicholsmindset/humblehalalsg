@@ -1,17 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { tierFor, nextTier, badgesFor, streakFrom, totalPoints, TIERS, type PassportStats } from "../../lib/passport";
+import { tierFor, nextTier, badgesFor, streakFrom, totalPoints, earnedPoints, TIERS, type PassportStats } from "../../lib/passport";
+import { QUESTS, weekInfoSgt, questCount } from "../../lib/passport-quests";
 
 /* The passport point/tier/streak model drives what users see and earn — lock
    the boundaries so a refactor can't silently shift a tier cutoff or break a streak. */
 
 const stats = (o: Partial<PassportStats> = {}): PassportStats => ({
-  totalPoints: 0, reviewCount: 0, visitCount: 0, followCount: 0, streakDays: 0, qualifiedReferrals: 0, ...o,
+  totalPoints: 0, balance: 0, reviewCount: 0, visitCount: 0, followCount: 0, streakDays: 0, qualifiedReferrals: 0, ...o,
 });
 
-describe("totalPoints", () => {
-  it("sums the ledger deltas", () => {
-    expect(totalPoints([{ delta: 50 }, { delta: 20 }, { delta: 5 }])).toBe(75);
+describe("totalPoints / earnedPoints", () => {
+  it("totalPoints is the net balance (spending lowers it)", () => {
+    expect(totalPoints([{ delta: 50 }, { delta: 20 }, { delta: -30 }])).toBe(40);
     expect(totalPoints([])).toBe(0);
+  });
+  it("earnedPoints is lifetime positive only (spending never lowers tier)", () => {
+    expect(earnedPoints([{ delta: 50 }, { delta: 20 }, { delta: -30 }])).toBe(70);
+    expect(earnedPoints([{ delta: -30 }])).toBe(0);
   });
 });
 
@@ -58,5 +63,27 @@ describe("streakFrom", () => {
   });
   it("returns 0 for no activity", () => {
     expect(streakFrom([], "2026-07-04")).toBe(0);
+  });
+});
+
+describe("quests", () => {
+  const rows = (n: number, type: string, since: string) =>
+    Array.from({ length: n }, (_, i) => ({ source_type: type, source_id: `b${i}`, created_at: since }));
+
+  it("counts distinct qualifying events since the week start", () => {
+    const q = QUESTS.find((x) => x.metric === "review")!;
+    const since = "2026-07-06T00:00:00.000Z"; // within-week timestamp
+    expect(questCount(q, rows(3, "review", since), "2026-07-05T00:00:00.000Z")).toBe(3);
+  });
+  it("ignores events before the week start and other metrics", () => {
+    const q = QUESTS.find((x) => x.metric === "review")!;
+    const old = [{ source_type: "review", source_id: "b1", created_at: "2026-06-01T00:00:00.000Z" }];
+    const other = [{ source_type: "follow", source_id: "b2", created_at: "2026-07-06T00:00:00.000Z" }];
+    expect(questCount(q, [...old, ...other], "2026-07-05T00:00:00.000Z")).toBe(0);
+  });
+  it("weekInfoSgt returns a Monday weekKey + a since instant", () => {
+    const info = weekInfoSgt(new Date("2026-07-08T10:00:00+08:00")); // a Wednesday
+    expect(info.weekKey).toBe("2026-07-06"); // Monday
+    expect(new Date(info.sinceIso).getTime()).toBeLessThan(new Date("2026-07-08T10:00:00+08:00").getTime());
   });
 });

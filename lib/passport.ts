@@ -29,7 +29,10 @@ export const TIERS: Tier[] = [
 ];
 
 export interface PassportStats {
+  /** Lifetime earned points — drives tier + badges (never lowered by spending). */
   totalPoints: number;
+  /** Spendable wallet balance (earned minus redeemed). */
+  balance: number;
   reviewCount: number;
   visitCount: number;
   followCount: number;
@@ -57,8 +60,15 @@ export const BADGES: BadgeDef[] = [
   { key: "ambassador_3", label: "Community Ambassador", icon: "trophy", desc: "Referred 3 friends", test: (s) => s.qualifiedReferrals >= 3 },
 ];
 
+/** Net balance — the spendable wallet (can go down when points are redeemed). */
 export function totalPoints(rows: { delta: number }[]): number {
   return rows.reduce((n, r) => n + r.delta, 0);
+}
+
+/** Lifetime EARNED points — sum of positive deltas only. Drives tiers, badges
+   and the leaderboard, so spending a reward never demotes you. */
+export function earnedPoints(rows: { delta: number }[]): number {
+  return rows.reduce((n, r) => n + (r.delta > 0 ? r.delta : 0), 0);
 }
 
 export function tierFor(points: number): Tier {

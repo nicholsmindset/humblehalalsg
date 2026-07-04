@@ -9,6 +9,7 @@ export type ScreenName =
   | "mosques" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "about" | "contact" | "faq"
   | "events" | "event-detail" | "ticket-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
+  | "passport" | "passport-leaderboard"
   | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips" | "travel-flights";
 
 export type Params = Record<string, unknown>;
@@ -43,6 +44,8 @@ const BASE_PATH: Record<string, string> = {
   "travel-flights": "/travel/flights",
   blog: "/blog",
   saved: "/saved",
+  passport: "/passport",
+  "passport-leaderboard": "/passport/leaderboard",
   verify: "/verify",
   disclaimer: "/disclaimer",
   "404": "/404",

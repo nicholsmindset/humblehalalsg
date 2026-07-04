@@ -18,9 +18,12 @@ export async function POST(req: Request) {
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
   const day = sgtDate(new Date());
-  const { award, loadStats, emitProgress } = await import("@/lib/passport-server");
+  const { award, loadStats, emitProgress, evaluateQuests } = await import("@/lib/passport-server");
   const before = await loadStats(db, userId);
   const awarded = await award(db, { userId, source: "checkin", sourceId: day, points: POINTS.checkin, reason: "Daily visit", dedupeKey: `checkin:${day}` });
+  // Bank any completed weekly-quest bonuses (this is the reliable evaluation
+  // point — the dashboard fires check-in on every mount).
+  await evaluateQuests(db, userId, before.rows);
   if (awarded) await emitProgress(db, userId, before, await loadStats(db, userId));
   return NextResponse.json({ ok: true, awarded });
 }

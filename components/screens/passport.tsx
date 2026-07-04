@@ -13,11 +13,13 @@ import { shareOrCopy } from "@/lib/share";
 
 const SITE = "https://www.humblehalal.com";
 
+type Quest = { id: string; title: string; desc: string; target: number; bonus: number; progress: number; done: boolean; claimed: boolean };
 type Passport = {
-  stats: { totalPoints: number; reviewCount: number; visitCount: number; followCount: number; streakDays: number; qualifiedReferrals: number };
+  stats: { totalPoints: number; balance: number; reviewCount: number; visitCount: number; followCount: number; streakDays: number; qualifiedReferrals: number };
   tier: { key: string; label: string; min: number };
   nextTier: { tier: { key: string; label: string; min: number }; pointsToGo: number } | null;
   badges: { key: string; label: string; icon: string; desc: string; earned: boolean }[];
+  quests: Quest[];
   recent: { delta: number; reason: string; at: string }[];
 };
 
@@ -68,12 +70,15 @@ export function PassportScreen() {
   return (
     <div className="screen-in hh-page">
       <div className="hh-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 48 }}>
-        <span className="eyebrow">Halal Passport</span>
+        <div className="flex between center wrap g10">
+          <span className="eyebrow">Halal Passport</span>
+          <button className="link-inline" onClick={() => navigate("passport-leaderboard")} style={{ background: "none", border: 0, cursor: "pointer", fontSize: ".85rem", fontWeight: 600 }}><Icon name="trophy" size={13} /> Leaderboard</button>
+        </div>
         <div className="flex between center wrap g10" style={{ marginTop: 6 }}>
           <h1 style={{ fontSize: "clamp(1.6rem,4vw,2.2rem)" }}>{data.tier.label}</h1>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--emerald,#0e7a5f)" }}>{s.totalPoints}</div>
-            <div className="faint" style={{ fontSize: ".8rem" }}>points</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--emerald,#0e7a5f)" }}>{s.balance}</div>
+            <div className="faint" style={{ fontSize: ".8rem" }}>points to spend</div>
           </div>
         </div>
 
@@ -113,6 +118,31 @@ export function PassportScreen() {
             </div>
           ))}
         </div>
+
+        {/* Weekly quests */}
+        {data.quests.length > 0 && (
+          <>
+            <h2 style={{ fontSize: "1.2rem", margin: "24px 0 12px" }}>This week&apos;s quests</h2>
+            <div className="stack g8">
+              {data.quests.map((q) => (
+                <div key={q.id} className="card" style={{ padding: 14 }}>
+                  <div className="flex between center wrap g8">
+                    <div><strong>{q.title}</strong> <span className="faint" style={{ fontSize: ".84rem" }}>· {q.desc}</span></div>
+                    <span className={`pill-tag ${q.claimed ? "green" : q.done ? "green" : "amber"}`}>{q.claimed ? `+${q.bonus} earned` : `+${q.bonus}`}</span>
+                  </div>
+                  <div style={{ height: 7, borderRadius: 999, background: "var(--line,#eee)", marginTop: 8, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.round((q.progress / q.target) * 100)}%`, height: "100%", background: q.done ? "var(--emerald,#0e7a5f)" : "var(--gold,#b8860b)" }} />
+                  </div>
+                  <div className="faint" style={{ fontSize: ".78rem", marginTop: 4 }}>{q.progress}/{q.target}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <RewardsStore toast={toast} onChange={load} />
+
+        <GiveawayCard toast={toast} onChange={load} />
 
         <InviteFriendCard toast={toast} />
 
@@ -187,6 +217,87 @@ export function InviteFriendCard({ toast }: { toast: (m: string) => void }) {
         <a className="btn btn-soft btn-sm" href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener"><Icon name="whatsapp" size={15} /> WhatsApp</a>
       </div>
       <div className="faint" style={{ fontSize: ".8rem", marginTop: 8 }}>{ref.clicks} clicks · {ref.signups} joined</div>
+    </div>
+  );
+}
+
+function RewardsStore({ toast, onChange }: { toast: (m: string) => void; onChange: () => void }) {
+  const [data, setData] = useState<{ balance: number; rewards: { id: string; title: string; desc: string; cost: number; icon: string; owned: boolean; repeatable: boolean }[] } | null>(null);
+  const [busy, setBusy] = useState("");
+
+  const load = useCallback(async () => {
+    try { const d = await (await fetch("/api/passport/rewards")).json(); if (d.ok) setData(d); } catch { /* noop */ }
+  }, []);
+  useEffect(() => { let alive = true; (async () => { if (alive) await load(); })(); return () => { alive = false; }; }, [load]);
+
+  const redeem = async (id: string) => {
+    setBusy(id);
+    try {
+      const res = await fetch("/api/passport/rewards", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rewardId: id }) });
+      const d = await res.json();
+      if (res.status === 402) toast("Not enough points yet — keep earning!");
+      else if (d.error === "already_owned") toast("You already own this");
+      else if (!res.ok || !d.ok) toast("Couldn't redeem");
+      else { toast("Redeemed! 🎁"); await load(); onChange(); }
+    } catch { toast("Couldn't redeem"); }
+    setBusy("");
+  };
+
+  if (!data) return null;
+  return (
+    <>
+      <h2 style={{ fontSize: "1.2rem", margin: "24px 0 12px" }}>Rewards store</h2>
+      <div className="stack g8">
+        {data.rewards.map((r) => (
+          <div key={r.id} className="card" style={{ padding: 14, display: "flex", gap: 12, alignItems: "center" }}>
+            <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--emerald-50,#e7f3ee)", color: "var(--emerald,#0e7a5f)", display: "grid", placeItems: "center", flexShrink: 0 }}><Icon name={r.icon} size={18} /></span>
+            <div className="f1" style={{ minWidth: 120 }}>
+              <div style={{ fontWeight: 700 }}>{r.title}</div>
+              <div className="faint" style={{ fontSize: ".82rem" }}>{r.desc}</div>
+            </div>
+            {r.owned && !r.repeatable ? (
+              <span className="pill-tag green">Owned</span>
+            ) : (
+              <button className="btn btn-soft btn-sm" disabled={busy === r.id || data.balance < r.cost} onClick={() => redeem(r.id)}>{data.balance < r.cost ? `${r.cost} pts` : `Redeem · ${r.cost}`}</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function GiveawayCard({ toast, onChange }: { toast: (m: string) => void; onChange: () => void }) {
+  const [g, setG] = useState<{ giveaway: { id: string; title: string; description: string | null; entryCost: number; month: string } | null; myEntries: number; entrants: number; balance: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try { const d = await (await fetch("/api/passport/giveaway")).json(); if (d.ok) setG(d); } catch { /* noop */ }
+  }, []);
+  useEffect(() => { let alive = true; (async () => { if (alive) await load(); })(); return () => { alive = false; }; }, [load]);
+
+  const enter = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/passport/giveaway", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const d = await res.json();
+      if (res.status === 402) toast("Not enough points for an entry yet");
+      else if (!res.ok || !d.ok) toast("Couldn't enter");
+      else { toast("You're in! 🎟️"); await load(); onChange(); }
+    } catch { toast("Couldn't enter"); }
+    setBusy(false);
+  };
+
+  if (!g?.giveaway) return null;
+  const gv = g.giveaway;
+  return (
+    <div className="card" style={{ padding: 18, marginTop: 24, background: "var(--gold-50,#fbf3df)" }}>
+      <div className="flex g8 center"><span style={{ fontSize: "1.4rem" }}>🎁</span><h2 style={{ fontSize: "1.15rem" }}>{gv.title}</h2></div>
+      {gv.description && <p className="faint" style={{ fontSize: ".88rem", marginTop: 4 }}>{gv.description}</p>}
+      <div className="flex between center wrap g10" style={{ marginTop: 12 }}>
+        <div className="faint" style={{ fontSize: ".85rem" }}>Your entries: <strong>{g.myEntries}</strong> · {g.entrants} {g.entrants === 1 ? "member" : "members"} entered</div>
+        <button className="btn btn-gold btn-sm" disabled={busy || g.balance < gv.entryCost} onClick={enter}><Icon name="ticket" size={15} /> Enter · {gv.entryCost} pts</button>
+      </div>
     </div>
   );
 }

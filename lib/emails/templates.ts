@@ -309,6 +309,16 @@ export function tierUpEmail(o: { name?: string | null; tier: string }): Out {
     { label: "Open your Passport", url: `${U}/passport` },
   );
 }
+export function giveawayWonEmail(o: { name?: string | null; title: string }): Out {
+  return wrap(
+    `You won: ${o.title} 🎉`,
+    "Congratulations — you won!",
+    greet(o.name) +
+      p(`Amazing news — you won <strong>${esc(o.title)}</strong> in this month's Halal Passport giveaway! Our team will be in touch shortly about claiming your prize.`) +
+      p(`Thank you for being an active member of the Humble Halal community.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
 
 /* ═══ Rebrands of the existing inline-HTML emails ══════════════════════ */
 export function fareAlertEmail(o: { route: string; oldPrice: string; newPrice: string; url?: string }): Out {
