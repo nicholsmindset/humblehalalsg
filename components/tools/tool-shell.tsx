@@ -32,13 +32,13 @@ export function ToolShell({
       <div className="screen-in hh-page">
         <section className="seo-hero hh-pattern">
           <div className="hh-wrap">
-            <div className="flex g6 center faint" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
+            <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link>
               <span>›</span>
               <Link className="link-inline" href="/tools">Tools</Link>
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>{title}</span>
-            </div>
+            </nav>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>{title}</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               {intro}

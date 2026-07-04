@@ -158,6 +158,9 @@
 
 .hotel-detail-grid { display: grid; grid-template-columns: 1fr 320px; gap: 30px; align-items: start; }
 @media (max-width: 900px) { .hotel-detail-grid { grid-template-columns: 1fr; } .reserve-box { order: -1; } }
+/* min-width:0 so neither column (the room list or the reserve box) can force
+   the grid wider than a narrow phone and clip at the page edge. */
+.hotel-detail-grid > * { min-width: 0; }
 .reserve-box { position: sticky; top: 84px; }
 .reserve-price { font-size: 1.5rem; font-weight: 800; color: var(--ink, #1f2933); }
 .reserve-price small { font-size: .82rem; font-weight: 600; color: var(--ink-soft, #5a6470); }
@@ -220,7 +223,7 @@
 
 .muslim-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
 @media (max-width: 560px) { .muslim-cards { grid-template-columns: 1fr; } }
-.muslim-card { background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df); border-radius: var(--r-md, 14px); padding: 14px; }
+.muslim-card { min-width: 0; overflow-wrap: anywhere; background: var(--emerald-50, #e8f1ee); border: 1px solid var(--emerald-100, #d3e6df); border-radius: var(--r-md, 14px); padding: 14px; }
 .muslim-card-h { display: flex; align-items: center; gap: 7px; font-size: .92rem; color: var(--emerald, #0f5c4a); margin-bottom: 10px; }
 .muslim-card-f { font-size: .76rem; color: var(--ink-soft, #5a6470); margin-top: 10px; }
 .prayer-row { display: flex; justify-content: space-between; gap: 6px; }

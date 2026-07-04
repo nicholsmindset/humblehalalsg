@@ -361,6 +361,10 @@
 .inh-check input { width: 18px; height: 18px; accent-color: var(--emerald); }
 .inh-result { padding: 18px; }
 .inh-table { margin: 0; }
+/* The results table sits in a .tbl-scroll wrapper (narrow phones would
+   otherwise clip it — body is overflow-x:clip, so there'd be no scrollbar).
+   A 2–3 column table doesn't need the 680px admin-table floor, though. */
+.tbl-scroll .inh-table { min-width: 0; }
 .inh-note { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: .84rem; }
 .inh-disclaimer {
   background: var(--gold-50); border: 1px solid var(--gold-100); border-radius: var(--r-md);

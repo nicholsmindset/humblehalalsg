@@ -196,6 +196,10 @@
 .gallery-more { width:64px; height:48px; border-radius:8px; border:2px solid #fff; background: rgba(31,41,51,.6); color:#fff; font-weight:700; cursor:pointer; backdrop-filter: blur(2px); }
 .detail-body { display:grid; grid-template-columns: 1fr 340px; gap:28px; padding-top:24px; align-items:start; }
 @media (max-width: 860px){ .detail-body { grid-template-columns: 1fr; } .detail-side { display:none; } }
+/* Grid items default to min-width:auto, so long content (meta rows, amenity
+   chips) forces the 1fr column wider than the viewport and it gets clipped by
+   the page-edge overflow:clip. min-width:0 lets the column shrink and reflow. */
+.detail-main { min-width: 0; }
 .detail-headbtns { }
 @media (max-width: 760px){ .detail-headbtns { display:none; } }
 

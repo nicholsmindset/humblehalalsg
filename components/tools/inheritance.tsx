@@ -68,18 +68,20 @@ export function InheritanceTool() {
           <p className="muted">No fixed or residuary share applies to these heirs in this simplified model.</p>
         ) : (
           <>
-            <table className="tbl inh-table">
-              <thead><tr><th>Heir</th><th>Share</th>{estateNum > 0 && <th>Amount</th>}</tr></thead>
-              <tbody>
-                {result.shares.map((s) => (
-                  <tr key={s.heir}>
-                    <td><strong>{s.heir}</strong><div className="faint" style={{ fontSize: ".78rem" }}>{s.basis}</div></td>
-                    <td>{(s.fraction * 100).toFixed(2)}%</td>
-                    {estateNum > 0 && <td>{(s.fraction * estateNum).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="tbl-scroll">
+              <table className="tbl inh-table">
+                <thead><tr><th>Heir</th><th>Share</th>{estateNum > 0 && <th>Amount</th>}</tr></thead>
+                <tbody>
+                  {result.shares.map((s) => (
+                    <tr key={s.heir}>
+                      <td><strong>{s.heir}</strong><div className="faint" style={{ fontSize: ".78rem" }}>{s.basis}</div></td>
+                      <td>{(s.fraction * 100).toFixed(2)}%</td>
+                      {estateNum > 0 && <td>{(s.fraction * estateNum).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {result.note && <p className="faint inh-note"><Icon name="info" size={14} /> {result.note}</p>}
           </>
         )}

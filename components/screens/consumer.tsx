@@ -17,7 +17,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
+import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -535,7 +535,7 @@ export function ExploreScreen() {
               </button>
               <div className="sortwrap">
                 <Icon name="sort" size={16} style={{ color: "var(--ink-soft)" }} />
-                <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <select className="sort-select" aria-label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)}>
                   <option value="featured">Featured</option>
                   <option value="rating">Top rated</option>
                   <option value="nearest">Nearest</option>
@@ -620,6 +620,17 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClear: () => void;
 }) {
   const { categories: catCategories, areas: catAreas } = useCatalog();
+  // ≤860px the panel is a fixed full-screen sheet (screens.css) — freeze the
+  // page behind it. On desktop it's an inline aside, so no lock.
+  const [isSheet, setIsSheet] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)");
+    const update = () => setIsSheet(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useBodyScrollLock(isSheet);
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
   );
@@ -876,15 +887,15 @@ export function MapScreen() {
           </div>
           {!chips.mosque && (
             <div className="flex g8 wrap" style={{ marginTop: 8 }}>
-              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, padding: "7px 10px" }}>
                 <option value="">All categories</option>
                 {catCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
-              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, padding: "7px 10px" }}>
                 <option value="">All areas</option>
                 {catAreas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select>
-              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, padding: "7px 10px" }}>
                 <option value="">Any halal status</option>
                 <option value="certified">Certified / verified</option>
                 <option value="muis">MUIS certified</option>
@@ -1055,7 +1066,7 @@ export function DetailScreen() {
   return (
     <div className="screen-in detail-screen hh-page">
       <MobileHeader title="" onBack={() => navigate("explore")}
-        right={<button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
+        right={<button className="btn btn-ghost" style={{ padding: 8 }} aria-label={saved ? "Remove from saved" : "Save this place"} aria-pressed={saved} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
           <Icon name="heart" size={22} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : "var(--ink-soft)" }} /></button>} />
 
       {/* cover */}
