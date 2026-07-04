@@ -299,12 +299,13 @@ function LocalPerks({ toast, onChange }: { toast: (m: string) => void; onChange:
           <div className="faint" style={{ fontSize: ".82rem", marginBottom: 6 }}>Your vouchers — show these in-store:</div>
           <div className="stack g6">
             {data.vouchers.filter((v) => v.status === "active").map((v) => (
-              <div key={v.voucher_code} className="flex between center" style={{ padding: "8px 12px", background: "#fff", borderRadius: 8 }}>
+              <a key={v.voucher_code} href={`/v/${v.voucher_code}`} target="_blank" rel="noopener" className="flex between center" style={{ padding: "8px 12px", background: "#fff", borderRadius: 8, textDecoration: "none", color: "inherit" }}>
                 <span style={{ fontSize: ".9rem" }}>{v.title}</span>
-                <code style={{ fontWeight: 700, letterSpacing: ".05em" }}>{v.voucher_code}</code>
-              </div>
+                <span className="flex g8 center"><code style={{ fontWeight: 700, letterSpacing: ".05em" }}>{v.voucher_code}</code><Icon name="external" size={13} /></span>
+              </a>
             ))}
           </div>
+          <p className="faint" style={{ fontSize: ".78rem", marginTop: 6 }}>Tap a voucher to show its QR — staff scan it to redeem.</p>
         </div>
       )}
       <div className="stack g8">

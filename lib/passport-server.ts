@@ -66,23 +66,24 @@ export async function loadStats(db: Db, userId: string): Promise<PassportStats &
 
 export interface LedgerRow { delta: number; source_type: string; source_id: string | null; reason: string; created_at: string }
 
-/** Award the bonus for any quest completed this week (idempotent by quest+week). */
+/** Award the bonus for any of the user's PERSONALISED quests completed this
+   week (idempotent by quest+week). Only the user's selected quests can award. */
 export async function evaluateQuests(db: Db, userId: string, rows?: LedgerRow[]): Promise<void> {
-  const { QUESTS, weekInfoSgt, questCount } = await import("@/lib/passport-quests");
+  const { weekInfoSgt, questCount, selectQuestsForWeek } = await import("@/lib/passport-quests");
   const ledger = rows ?? (await loadStats(db, userId)).rows;
   const { weekKey, sinceIso } = weekInfoSgt(new Date());
-  for (const q of QUESTS) {
+  for (const q of selectQuestsForWeek(userId, weekKey)) {
     if (questCount(q, ledger, sinceIso) >= q.target) {
       await award(db, { userId, source: "bonus", sourceId: q.id, points: q.bonus, reason: `Quest: ${q.title}`, dedupeKey: `quest:${q.id}:${weekKey}` });
     }
   }
 }
 
-/** Quest cards with live progress + whether the bonus is already banked. */
+/** The user's personalised quest cards with live progress + banked state. */
 export async function questsState(db: Db, userId: string, rows: LedgerRow[]): Promise<{ id: string; title: string; desc: string; target: number; bonus: number; progress: number; done: boolean; claimed: boolean }[]> {
-  const { QUESTS, weekInfoSgt, questCount } = await import("@/lib/passport-quests");
-  const { sinceIso } = weekInfoSgt(new Date());
-  return QUESTS.map((q) => {
+  const { weekInfoSgt, questCount, selectQuestsForWeek } = await import("@/lib/passport-quests");
+  const { weekKey, sinceIso } = weekInfoSgt(new Date());
+  return selectQuestsForWeek(userId, weekKey).map((q) => {
     const progress = Math.min(q.target, questCount(q, rows, sinceIso));
     // Bonus is banked when a 'bonus' ledger row for this quest exists this week.
     const claimed = rows.some((r) => r.source_type === "bonus" && r.source_id === q.id && r.created_at >= sinceIso);

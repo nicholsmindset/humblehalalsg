@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { tierFor, nextTier, badgesFor, streakFrom, totalPoints, earnedPoints, TIERS, type PassportStats } from "../../lib/passport";
-import { QUESTS, weekInfoSgt, questCount } from "../../lib/passport-quests";
+import { QUESTS, weekInfoSgt, questCount, selectQuestsForWeek, QUESTS_PER_WEEK } from "../../lib/passport-quests";
 
 /* The passport point/tier/streak model drives what users see and earn — lock
    the boundaries so a refactor can't silently shift a tier cutoff or break a streak. */
@@ -85,5 +85,21 @@ describe("quests", () => {
     const info = weekInfoSgt(new Date("2026-07-08T10:00:00+08:00")); // a Wednesday
     expect(info.weekKey).toBe("2026-07-06"); // Monday
     expect(new Date(info.sinceIso).getTime()).toBeLessThan(new Date("2026-07-08T10:00:00+08:00").getTime());
+  });
+
+  it("selectQuestsForWeek is deterministic, sized, and always includes referral", () => {
+    const a1 = selectQuestsForWeek("user_abc", "2026-07-06");
+    const a2 = selectQuestsForWeek("user_abc", "2026-07-06");
+    expect(a1.map((q) => q.id)).toEqual(a2.map((q) => q.id)); // stable within a week
+    expect(a1).toHaveLength(QUESTS_PER_WEEK);
+    expect(a1.some((q) => q.metric === "referral")).toBe(true); // word-of-mouth always
+    expect(new Set(a1.map((q) => q.id)).size).toBe(a1.length); // no dupes
+  });
+  it("selectQuestsForWeek varies across users / weeks", () => {
+    const u1 = selectQuestsForWeek("user_aaa", "2026-07-06").map((q) => q.id).join();
+    const u2 = selectQuestsForWeek("user_zzz", "2026-07-06").map((q) => q.id).join();
+    const w2 = selectQuestsForWeek("user_aaa", "2026-07-13").map((q) => q.id).join();
+    // At least one of the two comparisons should differ (rotation over the pool).
+    expect(u1 !== u2 || u1 !== w2).toBe(true);
   });
 });
