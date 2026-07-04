@@ -24,10 +24,11 @@ function QR({ value, size = 220 }: { value: string; size?: number }) {
   return <img src={url} alt="" width={size} height={size} style={{ display: "block", borderRadius: 12 }} />;
 }
 
-export function PosterClient({ slug, name, statusLabel, collectEnabled = false }: { slug: string; name: string; statusLabel: string; collectEnabled?: boolean }) {
+export function PosterClient({ slug, name, statusLabel, collectEnabled = false, collectToken = "" }: { slug: string; name: string; statusLabel: string; collectEnabled?: boolean; collectToken?: string }) {
   const listingUrl = `${SITE}/business/${slug}?utm_source=poster&utm_medium=qr`;
   const reviewUrl = `${SITE}/r/${slug}`;
-  const collectUrl = `${SITE}/c/${slug}`;
+  // Signed token gates the points award (anti-forgery — see lib/passport-collect).
+  const collectUrl = `${SITE}/c/${slug}${collectToken ? `?k=${collectToken}` : ""}`;
 
   return (
     <div className="poster-wrap">

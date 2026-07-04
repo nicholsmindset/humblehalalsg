@@ -35,9 +35,10 @@ export async function POST(req: Request) {
       await db.from("saved_places").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
       if (getServerFlags().passport) {
         try {
-          const { award, loadStats, emitProgress } = await import("@/lib/passport-server");
+          const { awardDailyCapped, loadStats, emitProgress } = await import("@/lib/passport-server");
           const before = await loadStats(db, userId);
-          await award(db, { userId, source: "save", sourceId: businessId, points: POINTS.save, reason: "Saved a place", dedupeKey: `save:${businessId}` });
+          // Capped per day (anti-farm: no earning by saving hundreds of places).
+          await awardDailyCapped(db, { userId, source: "save", sourceId: businessId, points: POINTS.save, reason: "Saved a place", dedupeKey: `save:${businessId}`, dailyCap: 10 });
           await emitProgress(db, userId, before, await loadStats(db, userId));
         } catch { /* passport best-effort */ }
       }

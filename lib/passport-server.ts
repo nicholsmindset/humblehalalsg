@@ -33,6 +33,30 @@ export async function award(
   }
 }
 
+/** Award, but only if the user is under the per-SGT-day cap for this source —
+   anti-farm guard on the volume-based earners (visit/follow/save). A real user
+   does a handful a day; a farmer wants hundreds. Over the cap → no points (the
+   underlying action still happened). Returns whether points were awarded. */
+export async function awardDailyCapped(
+  db: Db,
+  a: { userId: string; source: PassportSource; sourceId: string | null; points: number; reason: string; dedupeKey: string; dailyCap: number },
+): Promise<boolean> {
+  const { sgtDate } = await import("@/lib/passport");
+  const since = new Date(sgtDate(new Date()) + "T00:00:00+08:00").toISOString();
+  try {
+    const { count } = await db
+      .from("passport_points")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", a.userId).eq("source_type", a.source).gt("delta", 0)
+      .gte("created_at", since);
+    if ((count || 0) >= a.dailyCap) return false;
+  } catch {
+    // If the count query fails, fall through to a normal (idempotent) award
+    // rather than blocking a legitimate earn.
+  }
+  return award(db, a);
+}
+
 /** Load a user's passport stats from the ledger (summed; no stored balance). */
 export async function loadStats(db: Db, userId: string): Promise<PassportStats & { rows: LedgerRow[] }> {
   const { data } = await db

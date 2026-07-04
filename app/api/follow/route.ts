@@ -27,14 +27,15 @@ export async function POST(req: Request) {
   }
 
   // Halal Passport: award once per business followed (dedupe = no toggle farming;
-  // no claw-back on unfollow). Best-effort, service-role.
+  // no claw-back on unfollow) AND capped per day (anti-farm: no earning by
+  // following hundreds of businesses). Best-effort, service-role.
   if (follow && getServerFlags().passport) {
     const sb = getSupabaseAdmin();
     if (sb) {
       try {
-        const { award, loadStats, emitProgress } = await import("@/lib/passport-server");
+        const { awardDailyCapped, loadStats, emitProgress } = await import("@/lib/passport-server");
         const before = await loadStats(sb, userId);
-        await award(sb, { userId, source: "follow", sourceId: businessId, points: POINTS.follow, reason: "Followed a place", dedupeKey: `follow:${businessId}` });
+        await awardDailyCapped(sb, { userId, source: "follow", sourceId: businessId, points: POINTS.follow, reason: "Followed a place", dedupeKey: `follow:${businessId}`, dailyCap: 5 });
         await emitProgress(sb, userId, before, await loadStats(sb, userId));
       } catch { /* passport best-effort */ }
     }

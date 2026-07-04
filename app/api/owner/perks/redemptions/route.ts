@@ -52,7 +52,13 @@ export async function POST(req: Request) {
   if (!voucher) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (voucher.status === "used") return NextResponse.json({ ok: false, error: "already_used" }, { status: 409 });
 
-  const { error } = await db.from("perk_redemptions").update({ status: "used", used_at: new Date().toISOString() }).eq("id", voucher.id).eq("status", "active");
+  // Atomic state flip: the .eq("status","active") makes concurrent scans safe —
+  // only the first affects a row. Confirm a row changed so the second scanner
+  // is told "already used" instead of a false success.
+  const { data: updated, error } = await db
+    .from("perk_redemptions").update({ status: "used", used_at: new Date().toISOString() })
+    .eq("id", voucher.id).eq("status", "active").select("id");
   if (error) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
+  if (!updated || updated.length === 0) return NextResponse.json({ ok: false, error: "already_used" }, { status: 409 });
   return NextResponse.json({ ok: true });
 }

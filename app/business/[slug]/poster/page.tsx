@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getListingBySlug } from "@/lib/directory";
 import { PosterClient } from "@/components/business/poster-client";
 import { getServerFlags } from "@/lib/flags";
+import { collectToken } from "@/lib/passport-collect";
 
 /* Printable shopfront poster for owners — noindex (utility page, not SEO). */
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -19,5 +20,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const l = await getListingBySlug(slug);
   if (!l) notFound();
-  return <PosterClient slug={l.slug || slug} name={l.name} statusLabel={statusLabel(l)} collectEnabled={getServerFlags().passport} />;
+  const passport = getServerFlags().passport;
+  // Signed collect token so the poster QR can't be forged (see lib/passport-collect).
+  const token = passport && l.id ? collectToken(l.id) : "";
+  return <PosterClient slug={l.slug || slug} name={l.name} statusLabel={statusLabel(l)} collectEnabled={passport} collectToken={token} />;
 }

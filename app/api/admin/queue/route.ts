@@ -7,6 +7,7 @@ import { revalidatePublic } from "@/lib/revalidate";
 import { sendEmail } from "@/lib/email";
 import { emailForUser, emailForBusinessOwner } from "@/lib/emails/recipient";
 import { claimApprovedEmail, claimRejectedEmail, listingApprovedEmail, listingRejectedEmail, eventApprovedEmail } from "@/lib/emails/templates";
+import { getServerFlags } from "@/lib/flags";
 
 /* Unified admin moderation queue.
    GET  ?type=listings|reviews|reports|suggestions|claims&limit=  → pending rows
@@ -71,6 +72,22 @@ export async function POST(req: Request) {
         if (!status) return badAction();
         await admin.from("reviews").update({ status }).eq("id", id);
         await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved review" : "Removed review", target: id });
+        // Halal Passport: award review points ONLY on approval (anti-farm — a
+        // pending/spam review never earns). Idempotent by review id.
+        if (status === "published" && getServerFlags().passport) {
+          try {
+            const { data: rev } = await admin.from("reviews").select("user_id").eq("id", id).maybeSingle();
+            const reviewer = (rev as { user_id?: string | null } | null)?.user_id;
+            if (reviewer) {
+              const { award, qualifyReferralIfPending, loadStats, emitProgress } = await import("@/lib/passport-server");
+              const { POINTS } = await import("@/lib/passport");
+              const before = await loadStats(admin, reviewer);
+              await award(admin, { userId: reviewer, source: "review", sourceId: id, points: POINTS.review, reason: "Wrote a review", dedupeKey: `review:${id}` });
+              await qualifyReferralIfPending(admin, reviewer);
+              await emitProgress(admin, reviewer, before, await loadStats(admin, reviewer));
+            }
+          } catch { /* passport best-effort — never affect moderation */ }
+        }
         revalidatePublic();
         return NextResponse.json({ ok: true, status });
       }
