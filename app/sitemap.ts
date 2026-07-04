@@ -16,6 +16,7 @@ const PUBLIC_STATIC = [
   "/explore",
   "/map",
   "/mosques",
+  "/prayer-rooms",
   "/tools",
   "/halal",
   "/is-halal",
