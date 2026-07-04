@@ -5,9 +5,17 @@ import { allBrands, getBrand, relatedBrands, STATUS_META } from "@/lib/halal-sta
 import { halalSgSearchUrl, HALALSG_BASE } from "@/lib/muis";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, articleJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
+import { getApprovedVerdict, approvedVerdictSlugs } from "@/lib/verdicts-data";
+import { VerdictView } from "@/components/verdict/verdict-view";
 
-export function generateStaticParams() {
-  return allBrands().map((b) => ({ brand: b.slug }));
+// Approved AI-drafted verdicts (when HALAL_VERDICTS_ENABLED) render on demand;
+// ISR keeps newly-approved pages fresh within the hour without a redeploy.
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const fileSlugs = allBrands().map((b) => b.slug);
+  const dbSlugs = await approvedVerdictSlugs(); // [] when flag off / no DB
+  return [...new Set([...fileSlugs, ...dbSlugs])].map((brand) => ({ brand }));
 }
 
 export async function generateMetadata({
@@ -16,6 +24,17 @@ export async function generateMetadata({
   params: Promise<{ brand: string }>;
 }): Promise<Metadata> {
   const { brand } = await params;
+  // Prefer an approved AI-drafted verdict (richer); fall back to the file brand.
+  const v = await getApprovedVerdict(brand);
+  if (v) {
+    const desc = v.one_line_answer || `Is ${v.name} halal in Singapore? A human-reviewed halal assessment.`;
+    return pageMeta({
+      title: v.h1 || `Is ${v.name} Halal in Singapore? (2026)`,
+      description: desc.length > 155 ? desc.slice(0, 152) + "…" : desc,
+      path: `/is-halal/${v.slug}`,
+      absoluteTitle: true,
+    });
+  }
   const b = getBrand(brand);
   if (!b) return pageMeta({ title: "Is it halal?", path: `/is-halal/${brand}` });
   return pageMeta({
@@ -38,6 +57,33 @@ function brandFaq(brandName: string, answer: string) {
 
 export default async function Page({ params }: { params: Promise<{ brand: string }> }) {
   const { brand } = await params;
+
+  // Approved AI-drafted verdict (human-reviewed) takes precedence — richer page.
+  const v = await getApprovedVerdict(brand);
+  if (v) {
+    const vFaq = v.faq_answer ? [{ q: v.h1 || `Is ${v.name} halal in Singapore?`, a: v.faq_answer }] : [];
+    return (
+      <>
+        <JsonLd
+          data={[
+            articleJsonLd({
+              headline: `${v.h1 || `Is ${v.name} Halal in Singapore?`} (2026)`,
+              description: v.one_line_answer || `Is ${v.name} halal in Singapore?`,
+              path: `/is-halal/${v.slug}`,
+            }),
+            breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Is it halal?", path: "/is-halal" },
+              { name: v.name, path: `/is-halal/${v.slug}` },
+            ]),
+            ...(vFaq.length ? [faqJsonLd(vFaq)] : []),
+          ]}
+        />
+        <VerdictView v={v} />
+      </>
+    );
+  }
+
   const b = getBrand(brand);
   if (!b) notFound();
   const m = STATUS_META[b.status];
