@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags, resolveBusinessFlag } from "@/lib/feature-flags";
-import { remainingQuota } from "@/lib/lead-routing";
 
 /* Accept a routed lead → unmask the consumer's contact details. This is the
    quota gate:
@@ -56,33 +55,37 @@ export async function POST(req: Request) {
   // Idempotent: already accepted → just return contact.
   const already = ["accepted", "contacted", "won", "lost"].includes(route.status);
   if (!already) {
+    // Derive the cap + window; the RPC re-checks it under a per-business advisory
+    // lock and flips the route in the same transaction, so two concurrent accepts
+    // of different routes for the same business can't both slip past the cap
+    // (the old count-then-update was a TOCTOU that over-delivered credits).
+    let cap = BETA_FREE_CAP;
+    let since = monthStartIso();
     if (paidLeads) {
-      const remaining = await remainingQuota(db, [route.business_id]);
-      if ((remaining[route.business_id] ?? 0) <= 0) {
-        return NextResponse.json({ ok: false, error: "quota_exhausted", upsell: true }, { status: 402 });
-      }
-    } else {
-      // Beta courtesy cap — count this calendar month's free unlocks.
-      const { count } = await db
-        .from("lead_routes")
-        .select("id", { count: "exact", head: true })
-        .eq("business_id", route.business_id)
-        .in("status", ["accepted", "contacted", "won", "lost"])
-        .gte("accepted_at", monthStartIso());
-      if ((count || 0) >= BETA_FREE_CAP) {
-        return NextResponse.json({ ok: false, error: "beta_cap", betaCap: BETA_FREE_CAP }, { status: 402 });
-      }
+      const { data: sub } = await db
+        .from("subscriptions")
+        .select("monthly_quota, current_period_start, status")
+        .eq("kind", "leads").eq("business_id", route.business_id)
+        .order("current_period_start", { ascending: false }).limit(1).maybeSingle();
+      const active = !!sub && (sub.status === "active" || sub.status === "trialing");
+      cap = active && sub ? (sub.monthly_quota || 0) : 0;
+      since = active && sub?.current_period_start ? sub.current_period_start : new Date(0).toISOString();
     }
 
-    const { error } = await db
-      .from("lead_routes")
-      .update({ status: "accepted", accepted_at: new Date().toISOString(), quota_consumed: paidLeads })
-      .eq("id", routeId)
-      .in("status", ["sent", "viewed"]); // guard against a double-accept race
+    const { data: result, error } = await db.rpc("accept_lead_route", {
+      p_route_id: routeId, p_business_id: route.business_id, p_paid: paidLeads, p_cap: cap, p_since: since,
+    });
     if (error) return NextResponse.json({ ok: false, error: "could_not_accept" }, { status: 502 });
-
-    // Reflect intent on the lead itself (first accept moves it to contacted-ready).
-    try { await db.from("leads").update({ status: "contacted" }).eq("id", route.lead_id).eq("status", "routed"); } catch { /* noop */ }
+    if (result === "quota") return NextResponse.json({ ok: false, error: "quota_exhausted", upsell: true }, { status: 402 });
+    if (result === "cap") return NextResponse.json({ ok: false, error: "beta_cap", betaCap: BETA_FREE_CAP }, { status: 402 });
+    if (result === "ok") {
+      // Reflect intent on the lead itself (first accept moves it to contacted-ready).
+      try { await db.from("leads").update({ status: "contacted" }).eq("id", route.lead_id).eq("status", "routed"); } catch { /* noop */ }
+    } else if (result !== "wrong_state") {
+      // 'not_found' / unexpected → fail. 'wrong_state' = concurrently accepted
+      // between our read and the lock, so fall through and return the contact.
+      return NextResponse.json({ ok: false, error: "could_not_accept" }, { status: 502 });
+    }
   }
 
   const raw = route.leads as unknown;

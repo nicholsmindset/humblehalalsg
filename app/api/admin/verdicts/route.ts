@@ -55,21 +55,24 @@ export async function POST(req: Request) {
     });
     if (blocked) return NextResponse.json({ ok: false, error: "compliance_blocked", reason: blocked }, { status: 409 });
 
-    // One approved verdict per slug — retire any previously-approved sibling
-    // first so the partial unique index doesn't reject this update.
-    await db.from("halal_verdicts").update({ status: "rejected", review_note: "superseded by a newer verdict" })
-      .eq("slug", v.slug).eq("status", "approved").neq("id", id);
+    // Atomic supersede + promote in ONE transaction: retire any previously-
+    // approved sibling AND flip this row to approved together, so a reader never
+    // sees the slug with zero approved and a partial failure can't strand it
+    // with no live page (the two-statement version could).
+    const { data: slug, error } = await db.rpc("approve_verdict", { p_id: id, p_reviewer: gate.userId, p_note: note || null });
+    if (error || !slug) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
+
+    await logAudit(db, { actor: gate.userId, action: "Halal verdict approved", target: id, meta: { slug: v.slug, verdict: v.verdict } });
+    revalidatePublic([`/is-halal/${v.slug}`, "/is-halal"]);
+    return NextResponse.json({ ok: true, status: "approved" });
   }
 
-  const status = action === "approve" ? "approved" : "rejected";
   const { error } = await db
     .from("halal_verdicts")
-    .update({ status, reviewed_by: gate.userId, reviewed_at: new Date().toISOString(), review_note: note || null })
+    .update({ status: "rejected", reviewed_by: gate.userId, reviewed_at: new Date().toISOString(), review_note: note || null })
     .eq("id", id);
   if (error) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
 
-  await logAudit(db, { actor: gate.userId, action: `Halal verdict ${status}`, target: id, meta: { slug: v.slug, verdict: v.verdict } });
-  if (status === "approved") revalidatePublic([`/is-halal/${v.slug}`, "/is-halal"]);
-
-  return NextResponse.json({ ok: true, status });
+  await logAudit(db, { actor: gate.userId, action: "Halal verdict rejected", target: id, meta: { slug: v.slug, verdict: v.verdict } });
+  return NextResponse.json({ ok: true, status: "rejected" });
 }
