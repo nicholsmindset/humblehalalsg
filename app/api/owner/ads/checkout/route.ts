@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/feature-flags";
+import { resolveBusinessFlag } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
@@ -81,7 +81,9 @@ export async function POST(req: Request) {
   end.setUTCDate(end.getUTCDate() - 1);
   const endsOn = end.toISOString().slice(0, 10);
 
-  const flags = await getServerFlags();
+  // Owner-scoped — businessId already validated above, so resolve per-business
+  // (business override ?? global ?? env) rather than the global-only gate.
+  const paidAds = await resolveBusinessFlag("paidAds", businessId);
 
   const { data: campaign, error } = await sb
     .from("ad_campaigns")
@@ -99,7 +101,7 @@ export async function POST(req: Request) {
       starts_on: startsOn,
       ends_on: endsOn,
       rate_cents: rateCents,
-      notes: flags.paidAds ? null : "self-serve request while paidAds off — invoice manually",
+      notes: paidAds ? null : "self-serve request while paidAds off — invoice manually",
       created_by: userId,
     })
     .select("id")
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
   if (error || !campaign) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
 
   // Flag off → request mode: no charge, admin follows up with an invoice.
-  if (!flags.paidAds) {
+  if (!paidAds) {
     try {
       const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
       await sendEmail({

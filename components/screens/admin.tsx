@@ -100,6 +100,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
+    ["businesses", "Businesses", "store"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
@@ -150,6 +151,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
+          {section==='businesses' && <AdminBusinesses toast={toast} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
@@ -321,6 +323,167 @@ export function AdminMonetization() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Per-business feature overrides ─────────────────────────────────────────
+   The five owner-scoped flags (paidPlans, paidAds, certVault, leadRouting,
+   paidLeads) can be forced on/off for a single business — e.g. beta-test a
+   feature with select businesses while it's globally off, or comp/restrict one
+   business without touching the site-wide switch. A "Default" state clears the
+   override so the business falls back to the global/env value. */
+const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidPlans", "paidAds", "certVault", "leadRouting", "paidLeads"];
+
+/* One feature's 3-state control: Default (defer to global) / On (forced) /
+   Off (forced). Uses the same `chip`/`chip.active` styling as the role/status
+   filters elsewhere in this file — no new visual pattern. */
+function BusinessFeatureRow({ flagKey, value, onSet }: { flagKey: FlagKey; value: boolean | null; onSet: (next: boolean | null) => void }) {
+  const { title, desc } = FLAG_COPY[flagKey];
+  return (
+    <div className="card" style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <h4 style={{ fontSize: ".96rem", marginBottom: 2 }}>{title}</h4>
+        <p className="faint" style={{ fontSize: ".82rem", lineHeight: 1.4 }}>{desc}</p>
+      </div>
+      <div className="flex g6" role="group" aria-label={`${title} override`}>
+        <button type="button" className={`chip ${value === null ? "active" : ""}`} aria-pressed={value === null} onClick={() => onSet(null)}>Default</button>
+        <button type="button" className={`chip ${value === true ? "active" : ""}`} aria-pressed={value === true} onClick={() => onSet(true)}>On</button>
+        <button type="button" className={`chip ${value === false ? "active" : ""}`} aria-pressed={value === false} onClick={() => onSet(false)}>Off</button>
+      </div>
+    </div>
+  );
+}
+
+/* Loads + persists the per-business overrides for one business.
+   Read path: a direct client read of business_feature_overrides, scoped by the
+   admin-only RLS policy from migration 0049 ("bfo admin read" — for select to
+   authenticated using is_admin()) via the Clerk-authed useSupabaseBrowser()
+   client (same hook/pattern this file already uses for admin dashboard reads,
+   e.g. AdminUsers' admin_list_users rpc). This gives REAL current state rather
+   than starting every business at "Default" on every visit. Fails soft to
+   all-Default when Supabase isn't configured, the migration hasn't been applied
+   yet, or the read errors for any reason — the panel stays usable either way,
+   and a successful write always reflects immediately (optimistic + real POST). */
+function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toast: (msg: string) => void }) {
+  const supabase = useSupabaseBrowser();
+  const [values, setValues] = useState<Record<string, boolean | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    (async () => {
+      const base: Record<string, boolean | null> = {};
+      for (const k of BUSINESS_FEATURE_KEYS) base[k] = null;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from("business_feature_overrides")
+            .select("feature_key, enabled")
+            .eq("business_id", businessId);
+          if (!error && Array.isArray(data)) {
+            for (const row of data as { feature_key: string; enabled: boolean }[]) {
+              if ((BUSINESS_FEATURE_KEYS as string[]).includes(row.feature_key)) base[row.feature_key] = row.enabled;
+            }
+          }
+        } catch { /* fail soft → all Default */ }
+      }
+      if (alive) { setValues(base); setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [businessId, supabase]);
+
+  const setFeature = async (feature: FlagKey, next: boolean | null) => {
+    const prev = values[feature] ?? null;
+    setValues((v) => ({ ...v, [feature]: next })); // optimistic
+    try {
+      const r = await fetch("/api/admin/business-flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId, feature, enabled: next }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [feature]: prev }));
+        toast("Couldn't save — try again.");
+      } else {
+        toast(`${FLAG_COPY[feature].title} → ${next === null ? "Default" : next ? "On" : "Off"}`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [feature]: prev }));
+      toast("Couldn't save — try again.");
+    }
+  };
+
+  return (
+    <div className="stack g10">
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>
+        Features{loading ? " · loading…" : ""}
+      </div>
+      <div className="stack g10">
+        {BUSINESS_FEATURE_KEYS.map((k) => (
+          <BusinessFeatureRow key={k} flagKey={k} value={values[k] ?? null} onSet={(next) => setFeature(k, next)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Businesses — admin business detail (list → select → Features panel) ────
+   Reuses the live directory (same data browse-facing pages read via
+   useDirectory()) so the list is real, not mock. Selecting a row opens its
+   detail card with the per-business Features panel above. */
+export function AdminBusinesses({ toast }: { toast: (msg: string) => void }) {
+  const dir = useDirectory();
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const rows = q
+    ? dir.listings.filter((l) => `${l.name} ${l.cat} ${l.area}`.toLowerCase().includes(q.toLowerCase()))
+    : dir.listings;
+  const biz = selected ? dir.get(selected) : undefined;
+
+  return (
+    <div className="stack g16">
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead">
+          <div className="flex g8 center"><span className="tag">{dir.listings.length} businesses</span></div>
+          <div className="searchbar" style={{ maxWidth: 260, padding: "4px 4px 4px 12px" }}>
+            <Icon name="search" className="lead" size={16} />
+            <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
+          </div>
+        </div>
+        {rows.length === 0 ? (
+          <div style={{ padding: 24 }}><Empty icon="building" title="No businesses" body={q ? `Nothing matches "${q}".` : "No businesses in the directory yet."} /></div>
+        ) : (
+          <div className="tbl-scroll"><table className="tbl">
+            <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Plan</th><th>Manage</th></tr></thead>
+            <tbody>{rows.slice(0, 200).map((l) => (
+              <tr key={l.id} className="rowhover" style={{ background: selected === l.id ? "var(--cream-100)" : undefined }}>
+                <td style={{ fontWeight: 700 }}>{l.name}</td>
+                <td className="muted">{l.cat}</td>
+                <td className="muted">{l.area}</td>
+                <td><span className="pill-tag">{l.plan || "free"}</span></td>
+                <td><button className="btn btn-soft btn-sm" onClick={() => setSelected(selected === l.id ? null : l.id)}>{selected === l.id ? "Close" : "Manage"}</button></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+
+      {biz && (
+        <div className="card" style={{ padding: 20 }}>
+          <div className="flex between center wrap g8" style={{ marginBottom: 14 }}>
+            <div>
+              <h3 style={{ fontSize: "1.1rem" }}>{biz.name}</h3>
+              <p className="faint" style={{ fontSize: ".84rem" }}>{biz.cat} · {biz.area}</p>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><Icon name="x" size={15} /> Close</button>
+          </div>
+          <BusinessFeaturesPanel businessId={biz.id} toast={toast} />
+        </div>
+      )}
     </div>
   );
 }
