@@ -12,7 +12,7 @@ export interface MapPoint {
   name: string;
   coords: LatLng;
   active?: boolean;
-  kind?: "listing" | "mosque" | "user";
+  kind?: "listing" | "mosque" | "prayer-room" | "user";
 }
 
 function pinIcon(point: MapPoint) {
@@ -29,6 +29,15 @@ function pinIcon(point: MapPoint) {
     return L.divIcon({
       className: "hh-pin-wrap",
       html: `<span class="hh-mosque-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+  if (point.kind === "prayer-room") {
+    // Round emerald badge — musollah (non-mosque prayer room).
+    return L.divIcon({
+      className: "hh-pin-wrap",
+      html: `<span class="hh-prayer-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
     });
@@ -50,11 +59,21 @@ function FitOrCenter({ center, zoom, points, fit }: { center: LatLng; zoom: numb
   const key = points.map((p) => p.id).join(",");
   useEffect(() => {
     map.invalidateSize();
+    // flyTo/fitBounds interpolate using the container size; on a zero-size
+    // container (mounted in a grid/flex cell that lays out AFTER the map) the
+    // projection divides by zero → "Invalid LatLng (NaN,NaN)" thrown from an
+    // effect (uncaught, not catchable by the React error boundary). Fall back
+    // to an instant, size-independent setView until the container has a size.
+    const size = map.getSize();
+    const sized = size.x > 0 && size.y > 0;
     if (fit && points.length > 1) {
       const b = L.latLngBounds(points.map((p) => [p.coords.lat, p.coords.lng] as [number, number]));
-      map.fitBounds(b, { padding: [48, 48], maxZoom: 15, animate: false });
-    } else {
+      if (sized) map.fitBounds(b, { padding: [48, 48], maxZoom: 15, animate: false });
+      else map.setView(b.getCenter(), zoom, { animate: false });
+    } else if (sized) {
       map.flyTo([center.lat, center.lng], zoom, { duration: 0.5 });
+    } else {
+      map.setView([center.lat, center.lng], zoom, { animate: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fit, key, points.length, center.lat, center.lng, zoom, map]);
@@ -239,7 +258,7 @@ export default function LeafletMap({
           <Popup>
             <div style={{ minWidth: 150 }}>
               <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
-              {p.kind === "mosque" ? (
+              {p.kind === "mosque" || p.kind === "prayer-room" ? (
                 <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
               ) : (
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>

@@ -13,7 +13,7 @@ import { screenToPath } from "@/lib/routes";
 import { UserButton } from "@clerk/nextjs";
 import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
-import { Badge, Icon, Logo, useDialog } from "./ui";
+import { Badge, Icon, Logo, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 import { ScreenLink } from "./screen-link";
 import Link from "next/link";
@@ -252,6 +252,7 @@ export function Onboarding() {
   };
   const skip = () => setPref({ onboarded: true });
   useDialog(ref, skip);
+  useBodyScrollLock();
 
   return (
     <div
@@ -493,6 +494,7 @@ export function MobileBar() {
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
   useDialog(ref, close);
+  useBodyScrollLock(open);
   const user = state.user;
 
   const go = (screen: string) => {
@@ -514,6 +516,7 @@ export function MobileBar() {
   ];
   const more: [string, string, string][] = [
     ["mosques", "Mosques near me", "mosque"],
+    ["prayer-rooms", "Prayer rooms & musollahs", "mosque"],
     ["request-quote", "Request a quote", "doc"],
     ["advertise", "Advertise with us", "megaphone"],
     ["host-event", "Host an event", "ticket"],
@@ -707,6 +710,7 @@ export function Footer() {
         ["Islamic tools", "tools"],
         ["Map view", "map"],
         ["Mosques in Singapore", "mosques"],
+        ["Prayer rooms (musollah)", "prayer-rooms"],
         ["Saved places", "saved"],
       ],
     ],

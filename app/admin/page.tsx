@@ -10,5 +10,5 @@ export default async function Page() {
   // Live backend → admins only. No backend (dev/demo) → open so the mock UI works.
   if (!(await isAdminOrUnconfigured())) redirect("/login?next=/admin");
   const flags = getServerFlags();
-  return <AdminScreen leadRoutingEnabled={flags.leadRouting} passportEnabled={flags.passport} />;
+  return <AdminScreen halalVerdictsEnabled={flags.halalVerdicts} leadRoutingEnabled={flags.leadRouting} passportEnabled={flags.passport} />;
 }

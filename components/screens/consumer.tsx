@@ -5,6 +5,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
+import { getPrayerSpaces } from "@/lib/prayer-spaces";
 import { useDirectory, useCatalog } from "../directory-context";
 import type { BadgeKey, LatLng, Listing, Review } from "@/lib/types";
 import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
@@ -17,7 +18,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
+import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -535,7 +536,7 @@ export function ExploreScreen() {
               </button>
               <div className="sortwrap">
                 <Icon name="sort" size={16} style={{ color: "var(--ink-soft)" }} />
-                <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <select className="sort-select" aria-label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)}>
                   <option value="featured">Featured</option>
                   <option value="rating">Top rated</option>
                   <option value="nearest">Nearest</option>
@@ -620,6 +621,17 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClear: () => void;
 }) {
   const { categories: catCategories, areas: catAreas } = useCatalog();
+  // ≤860px the panel is a fixed full-screen sheet (screens.css) — freeze the
+  // page behind it. On desktop it's an inline aside, so no lock.
+  const [isSheet, setIsSheet] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)");
+    const update = () => setIsSheet(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useBodyScrollLock(isSheet);
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
   );
@@ -666,6 +678,10 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
           <Toggle k="delivery" label="Delivery" icon="directions" />
           <Toggle k="open" label="Open now" icon="clock" />
         </div>
+        <p className="hint" style={{ marginTop: 8 }}>
+          &ldquo;Prayer space&rdquo; shows halal places with a prayer room. For standalone{" "}
+          <a className="link-inline" href="/prayer-rooms">musollahs in malls, MRT &amp; more →</a>
+        </p>
       </Section>
       <button className="btn btn-primary btn-block fp-apply" onClick={onClose}>Show results</button>
     </aside>
@@ -724,9 +740,11 @@ export function MapScreen() {
   const dir = useDirectory();
   const { categories: catCategories, areas: catAreas } = useCatalog();
   const wantMosques = params.show === "mosques";
+  const wantPrayerRooms = params.show === "prayer-rooms";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeMosque, setActiveMosque] = useState<string | null>(null);
-  const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques });
+  const [activePrayerRoom, setActivePrayerRoom] = useState<string | null>(null);
+  const [chips, setChips] = useState({ open: false, prayer: false, family: false, mosque: !!wantMosques, musollah: !!wantPrayerRooms });
   const [q, setQ] = useState((params.q as string) || "");
   const [cat, setCat] = useState((params.cat as string) || "");
   const [area, setArea] = useState((params.area as string) || "");
@@ -749,7 +767,7 @@ export function MapScreen() {
   const hasFilters = !!(cat || area || halal || q || chips.open || chips.prayer || chips.family);
   // Keep the left list in sync when a map pin is selected (GMB-style).
   const resultsRef = useRef<HTMLDivElement>(null);
-  const selectedId = activeMosque || activeId;
+  const selectedId = activeMosque || activePrayerRoom || activeId;
   useEffect(() => {
     if (!selectedId || !resultsRef.current) return;
     const el = resultsRef.current.querySelector(`[data-id="${selectedId}"]`);
@@ -783,12 +801,13 @@ export function MapScreen() {
   // mosque pins/geolocation never activated on a direct load.
   const askedNear = useRef(false);
   useEffect(() => {
-    if (!wantMosques || askedNear.current) return;
+    if ((!wantMosques && !wantPrayerRooms) || askedNear.current) return;
     askedNear.current = true;
-    setChips((c) => (c.mosque ? c : { ...c, mosque: true }));
+    if (wantMosques) setChips((c) => (c.mosque ? c : { ...c, mosque: true }));
+    if (wantPrayerRooms) setChips((c) => (c.musollah ? c : { ...c, musollah: true }));
     nearMe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantMosques]);
+  }, [wantMosques, wantPrayerRooms]);
 
   const list = useMemo(() => {
     let r = dir.listings.filter((l) => l.coords);
@@ -815,8 +834,17 @@ export function MapScreen() {
     return m;
   }, [userLoc]);
 
+  const prayerRoomList = useMemo(() => {
+    let p = getPrayerSpaces()
+      .filter((s) => s.coords)
+      .map((s) => ({ ...s, coords: s.coords as LatLng, distanceKm: userLoc ? haversineKm(userLoc, s.coords as LatLng) : undefined }));
+    if (userLoc) p = p.sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    return p;
+  }, [userLoc]);
+
   const center: LatLng =
     (activeMosque ? mosqueList.find((m) => m.id === activeMosque)?.coords : undefined) ||
+    (activePrayerRoom ? prayerRoomList.find((p) => p.id === activePrayerRoom)?.coords : undefined) ||
     userLoc ||
     list.find((l) => l.id === activeId)?.coords ||
     list[0]?.coords ||
@@ -833,21 +861,26 @@ export function MapScreen() {
     ...(chips.mosque
       ? mosqueList.map((m) => ({ id: m.id, name: m.name, coords: m.coords, active: m.id === activeMosque, kind: "mosque" as const }))
       : []),
+    ...(chips.musollah
+      ? prayerRoomList.map((p) => ({ id: p.id, name: p.name, coords: p.coords, active: p.id === activePrayerRoom, kind: "prayer-room" as const }))
+      : []),
     ...(userLoc ? [{ id: "user", name: "You are here", coords: userLoc, kind: "user" as const }] : []),
   ];
 
   const onSelect = (id: string) => {
     if (id === "user") return;
     if (mosqueList.some((m) => m.id === id)) {
-      setActiveMosque(id);
-      setActiveId(null);
+      setActiveMosque(id); setActivePrayerRoom(null); setActiveId(null);
       return;
     }
-    setActiveMosque(null);
-    setActiveId(id);
+    if (prayerRoomList.some((p) => p.id === id)) {
+      setActivePrayerRoom(id); setActiveMosque(null); setActiveId(null);
+      return;
+    }
+    setActiveMosque(null); setActivePrayerRoom(null); setActiveId(id);
   };
 
-  const resultCount = chips.mosque ? mosqueList.length : list.length;
+  const resultCount = chips.mosque ? mosqueList.length : chips.musollah ? prayerRoomList.length : list.length;
 
   return (
     <div className="map-split">
@@ -870,21 +903,24 @@ export function MapScreen() {
             <button className={`chip ${chips.mosque ? "active" : ""}`} onClick={() => tog("mosque")} aria-pressed={chips.mosque}>
               <Icon name="mosque" size={15} /> Mosques
             </button>
+            <button className={`chip ${chips.musollah ? "active" : ""}`} onClick={() => tog("musollah")} aria-pressed={chips.musollah}>
+              <Icon name="mosque" size={15} /> Prayer rooms
+            </button>
             <button className={`chip ${chips.open ? "active" : ""}`} onClick={() => tog("open")} aria-pressed={chips.open}>Open now</button>
             <button className={`chip ${chips.prayer ? "active" : ""}`} onClick={() => tog("prayer")} aria-pressed={chips.prayer}>Prayer space</button>
             <button className={`chip ${chips.family ? "active" : ""}`} onClick={() => tog("family")} aria-pressed={chips.family}>Family friendly</button>
           </div>
-          {!chips.mosque && (
+          {!chips.mosque && !chips.musollah && (
             <div className="flex g8 wrap" style={{ marginTop: 8 }}>
-              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Category" style={{ flex: "1 1 30%", minWidth: 116, padding: "7px 10px" }}>
                 <option value="">All categories</option>
                 {catCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
-              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={area} onChange={(e) => setArea(e.target.value)} aria-label="Area" style={{ flex: "1 1 30%", minWidth: 110, padding: "7px 10px" }}>
                 <option value="">All areas</option>
                 {catAreas.map((a) => <option key={a.id} value={a.name}>{a.name}</option>)}
               </select>
-              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, fontSize: ".85rem", padding: "7px 10px" }}>
+              <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, padding: "7px 10px" }}>
                 <option value="">Any halal status</option>
                 <option value="certified">Certified / verified</option>
                 <option value="muis">MUIS certified</option>
@@ -892,7 +928,7 @@ export function MapScreen() {
             </div>
           )}
           <div className="map-split-count flex between center">
-            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : "place"}{resultCount === 1 ? "" : "s"}{userLoc ? " · nearest first" : ""}</span>
+            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{userLoc ? " · nearest first" : ""}</span>
             {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: ".82rem" }}>Clear all</button>}
           </div>
         </div>
@@ -916,6 +952,30 @@ export function MapScreen() {
                 <div className="mosque-cc-foot">
                   <span className="mosque-cc-next"><Icon name="clock" size={13} /> {nextPrayer.name} {nextPrayer.time}</span>
                   <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${m.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                    <Icon name="directions" size={15} /> Directions
+                  </a>
+                </div>
+              </div>
+            ))
+          ) : chips.musollah ? (
+            prayerRoomList.map((p) => (
+              <div
+                key={p.id}
+                data-id={p.id}
+                className={`map-cc mosque-cc ${p.id === activePrayerRoom ? "on" : ""}`}
+                onClick={() => setActivePrayerRoom(p.id)}
+              >
+                <div className="mosque-cc-top">
+                  <span className="mosque-cc-ico"><Icon name="mosque" size={20} /></span>
+                  <div className="f1" style={{ minWidth: 0 }}>
+                    <div className="mosque-cc-name">{p.name}</div>
+                    <div className="lc-meta">{[p.area, p.type].filter(Boolean).join(" · ")}{p.distanceKm != null ? ` · ${formatKm(p.distanceKm)} away` : ""}</div>
+                    <div className="lc-meta" style={{ marginTop: 2 }}>{p.location}</div>
+                  </div>
+                </div>
+                <div className="mosque-cc-foot">
+                  <a className="link-inline" href="/prayer-rooms" onClick={(e) => e.stopPropagation()} style={{ fontSize: ".82rem" }}>Full directory →</a>
+                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
                 </div>
@@ -949,7 +1009,7 @@ export function MapScreen() {
       {/* RIGHT — live map */}
       <div className="map-split-map">
         <div className="map-live">
-          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} onView={(id) => navigate("detail", { id })} fit={!activeId && !activeMosque && !userLoc} />
+          <MapView center={center} zoom={userLoc ? 14 : 12} points={points} onSelect={onSelect} onView={(id) => navigate("detail", { id })} fit={!activeId && !activeMosque && !activePrayerRoom && !userLoc} />
         </div>
       </div>
     </div>
@@ -1055,7 +1115,7 @@ export function DetailScreen() {
   return (
     <div className="screen-in detail-screen hh-page">
       <MobileHeader title="" onBack={() => navigate("explore")}
-        right={<button className="btn btn-ghost" style={{ padding: 8 }} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
+        right={<button className="btn btn-ghost" style={{ padding: 8 }} aria-label={saved ? "Remove from saved" : "Save this place"} aria-pressed={saved} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
           <Icon name="heart" size={22} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : "var(--ink-soft)" }} /></button>} />
 
       {/* cover */}

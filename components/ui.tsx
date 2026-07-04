@@ -510,7 +510,7 @@ export function SearchBar({
         role={suggest ? "combobox" : undefined}
         aria-expanded={suggest ? showList : undefined}
         aria-haspopup={suggest ? "listbox" : undefined}
-        aria-owns={suggest ? "search-listbox" : undefined}
+        aria-owns={suggest && showList ? "search-listbox" : undefined}
         onSubmit={(e) => {
           e.preventDefault();
           if (showList && hi >= 0) {
@@ -529,7 +529,7 @@ export function SearchBar({
           autoFocus={autoFocus}
           aria-label="Search"
           aria-autocomplete={suggest ? "list" : undefined}
-          aria-controls={suggest ? "search-listbox" : undefined}
+          aria-controls={suggest && showList ? "search-listbox" : undefined}
           aria-activedescendant={showList && hi >= 0 ? `search-opt-${hi}` : undefined}
           onChange={(e) => {
             onChange(e.target.value);
@@ -773,6 +773,35 @@ export function useDialog(ref: React.RefObject<HTMLElement | null>, onClose?: ()
 }
 
 /* ---------------------------------------------------------------
+   BODY SCROLL LOCK — freeze the page behind full-screen overlays
+   (modals, drawers, sheets). Ref-counted so stacked overlays only
+   unlock when the last one closes. Deliberately NOT part of
+   useDialog: small anchored popovers (notification bell, sort menu)
+   trap focus without freezing the page.
+--------------------------------------------------------------- */
+let scrollLockCount = 0;
+export function useBodyScrollLock(active: boolean = true) {
+  useEffect(() => {
+    if (!active) return;
+    const root = document.documentElement;
+    if (scrollLockCount === 0) {
+      // Reserve the scrollbar gutter so desktop layout doesn't shift.
+      const gutter = window.innerWidth - root.clientWidth;
+      root.style.setProperty("--scroll-lock-gutter", `${gutter}px`);
+      root.classList.add("scroll-locked");
+    }
+    scrollLockCount += 1;
+    return () => {
+      scrollLockCount -= 1;
+      if (scrollLockCount === 0) {
+        root.classList.remove("scroll-locked");
+        root.style.removeProperty("--scroll-lock-gutter");
+      }
+    };
+  }, [active]);
+}
+
+/* ---------------------------------------------------------------
    MODAL
 --------------------------------------------------------------- */
 export function Modal({
@@ -786,6 +815,7 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useDialog(ref, onClose);
+  useBodyScrollLock();
   return (
     <div className="modal-veil" onClick={onClose}>
       <div
@@ -829,7 +859,7 @@ export function MobileHeader({
 }) {
   return (
     <div className="mob-head">
-      <button className="btn btn-ghost" style={{ padding: 8 }} onClick={onBack}>
+      <button className="btn btn-ghost" style={{ padding: 8 }} onClick={onBack} aria-label="Go back">
         <Icon name="back" size={22} />
       </button>
       <span className="mh-title">{title}</span>

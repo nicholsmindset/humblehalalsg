@@ -13,6 +13,7 @@ import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
+import { AdminVerdicts } from "./admin-verdicts";
 import { AdminLeads } from "./admin-leads";
 import { AdminGiveaways } from "./admin-giveaways";
 import { AdminPassportIntegrity } from "./admin-passport-integrity";
@@ -84,7 +85,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = false }: { leadRoutingEnabled?: boolean; passportEnabled?: boolean }) {
+export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled = false, passportEnabled = false }: { halalVerdictsEnabled?: boolean; leadRoutingEnabled?: boolean; passportEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -104,6 +105,7 @@ export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = fals
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
+    ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as [string, string, string]] : []),
     ["hotels", "Hotel verification", "bed"],
     ["reviews", "Review moderation", "star"],
     ["reports", "Reports & corrections", "flag"],
@@ -155,6 +157,7 @@ export function AdminScreen({ leadRoutingEnabled = false, passportEnabled = fals
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
+          {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}

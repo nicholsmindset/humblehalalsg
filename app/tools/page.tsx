@@ -43,11 +43,11 @@ export default function Page() {
       <div className="screen-in hh-page">
         <section className="seo-hero hh-pattern">
           <div className="hh-wrap">
-            <div className="flex g6 center faint" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
+            <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link>
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Tools</span>
-            </div>
+            </nav>
             <span className="eyebrow">Deen tools</span>
             <h1 style={{ fontSize: "clamp(1.9rem,4.5vw,2.8rem)", maxWidth: 760, marginTop: 8 }}>
               Free Islamic tools for every day

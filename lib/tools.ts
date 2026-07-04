@@ -217,6 +217,15 @@ export const TOOLS: Tool[] = [
     href: "/mosques",
     live: true,
   },
+  {
+    slug: "prayer-rooms",
+    title: "Prayer Rooms & Musollahs",
+    blurb: "Non-mosque prayer spaces in malls, MRT & more.",
+    icon: "mosque",
+    category: "Finders",
+    href: "/prayer-rooms",
+    live: true,
+  },
 ];
 
 export const CATEGORY_ORDER: ToolCategory[] = ["Worship", "Trackers", "Calculators", "Knowledge", "Finders"];

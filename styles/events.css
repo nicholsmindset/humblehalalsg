@@ -63,7 +63,10 @@
 @media (max-width:520px){ .evt-info-grid { grid-template-columns:1fr; } }
 .evt-info-item { display:flex; gap:11px; align-items:center; background:var(--cream); border:1px solid var(--line); border-radius:var(--r-md); padding:13px 15px; }
 
-.evt-organiser { display:flex; gap:14px; align-items:center; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px 16px; margin-top:12px; }
+.evt-organiser { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); padding:14px 16px; margin-top:12px; }
+/* Let the name/role text shrink and the action buttons wrap below on narrow
+   phones instead of pushing the row past the viewport edge. */
+.evt-organiser .f1 { min-width:0; }
 
 /* booking sidebar */
 .evt-bookcard { padding:20px; position:sticky; top:calc(var(--nav-h) + 60px); }
