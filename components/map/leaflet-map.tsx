@@ -12,7 +12,7 @@ export interface MapPoint {
   name: string;
   coords: LatLng;
   active?: boolean;
-  kind?: "listing" | "mosque" | "user";
+  kind?: "listing" | "mosque" | "prayer-room" | "user";
 }
 
 function pinIcon(point: MapPoint) {
@@ -29,6 +29,15 @@ function pinIcon(point: MapPoint) {
     return L.divIcon({
       className: "hh-pin-wrap",
       html: `<span class="hh-mosque-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+  if (point.kind === "prayer-room") {
+    // Round emerald badge — musollah (non-mosque prayer room).
+    return L.divIcon({
+      className: "hh-pin-wrap",
+      html: `<span class="hh-prayer-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
     });
@@ -249,7 +258,7 @@ export default function LeafletMap({
           <Popup>
             <div style={{ minWidth: 150 }}>
               <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
-              {p.kind === "mosque" ? (
+              {p.kind === "mosque" || p.kind === "prayer-room" ? (
                 <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
               ) : (
                 <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>

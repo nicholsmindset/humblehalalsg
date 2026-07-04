@@ -10,6 +10,8 @@
    MusollahSG and SolatGoWhere directories (+ public reporting). Attributed on
    the page; these spaces open/close/move, so the page tells users to verify. */
 
+import type { LatLng } from "@/lib/types";
+
 export type PrayerSpaceCategory = "malls" | "transport" | "attractions" | "campuses";
 
 export interface PrayerSpace {
@@ -27,6 +29,10 @@ export interface PrayerSpace {
   notes: string;
   /** Source directory / reference. */
   source?: string;
+  /** Building-level coordinates for map pins. Attached from COORDS by
+   *  getPrayerSpaces(). Building-level accuracy — the pin gets you to the
+   *  right building; the `location` note says where inside. */
+  coords?: LatLng;
 }
 
 const PRAYER_SPACES: PrayerSpace[] = [
@@ -284,16 +290,71 @@ const PRAYER_SPACES: PrayerSpace[] = [
   },
 ];
 
-/** Single data-access point. Returns the static list today; swap the body for a
- *  Supabase query later (non-dev editing / user submissions) without touching
- *  the page or the records. */
+/* Building-level coordinates, geocoded once via Singapore's OneMap search API
+   (scripts/geocode-prayer-spaces.mjs regenerates this). Kept separate from the
+   transcribed records so the geocoding is reviewable + refreshable in one place. */
+const COORDS: Record<string, LatLng> = {
+  "asia-square-tower-1": { lat: 1.27894, lng: 103.85126 },
+  "centennial-tower": { lat: 1.2935, lng: 103.86027 },
+  "suntec-city-mall": { lat: 1.29593, lng: 103.85901 },
+  "marina-square": { lat: 1.29186, lng: 103.85858 },
+  "city-square-mall": { lat: 1.31142, lng: 103.85662 },
+  "deen-dunya-haji-lane": { lat: 1.30089, lng: 103.85898 },
+  "duo-galleria": { lat: 1.29953, lng: 103.8584 },
+  "scape": { lat: 1.30101, lng: 103.83572 },
+  "fave-on-orchard": { lat: 1.30062, lng: 103.84223 },
+  "united-square": { lat: 1.31719, lng: 103.84361 },
+  "lucky-plaza": { lat: 1.30451, lng: 103.83396 },
+  "raffles-city": { lat: 1.29389, lng: 103.85312 },
+  "bedok-mall": { lat: 1.32474, lng: 103.92926 },
+  "century-square": { lat: 1.35237, lng: 103.94381 },
+  "causeway-point": { lat: 1.43607, lng: 103.78598 },
+  "sembawang-shopping-centre": { lat: 1.44182, lng: 103.82485 },
+  "jurong-point": { lat: 1.33945, lng: 103.70669 },
+  "imm-building": { lat: 1.33488, lng: 103.74689 },
+  "westgate": { lat: 1.33416, lng: 103.74277 },
+  "the-grandstand": { lat: 1.33663, lng: 103.79293 },
+  "german-centre": { lat: 1.3252, lng: 103.74638 },
+  "compass-one": { lat: 1.39205, lng: 103.89507 },
+  "hougang-mall": { lat: 1.37249, lng: 103.89377 },
+  "nex-serangoon": { lat: 1.35077, lng: 103.8723 },
+  "northshore-plaza": { lat: 1.41676, lng: 103.90208 },
+  "waterway-point": { lat: 1.40654, lng: 103.90199 },
+  "vivocity": { lat: 1.26429, lng: 103.8223 },
+  "jewel-changi": { lat: 1.36034, lng: 103.98908 },
+  "changi-t1": { lat: 1.36171, lng: 103.99035 },
+  "changi-t2": { lat: 1.3553, lng: 103.98914 },
+  "bishan-stadium": { lat: 1.3546, lng: 103.85099 },
+  "mandai-wildlife-west": { lat: 1.40621, lng: 103.77968 },
+  "singapore-flyer": { lat: 1.28907, lng: 103.86292 },
+  "ghim-moh-void-deck": { lat: 1.311, lng: 103.78823 },
+  "jamiyah-islamic-centre": { lat: 1.37089, lng: 103.84476 },
+  "toa-payoh-safra": { lat: 1.32981, lng: 103.8544 },
+  "mandai-zoo": { lat: 1.40559, lng: 103.7896 },
+  "harbourfront-centre": { lat: 1.26397, lng: 103.82024 },
+  "mount-elizabeth-novena": { lat: 1.32214, lng: 103.84421 },
+  "nuh": { lat: 1.29484, lng: 103.78373 },
+  "haw-par-technocentre": { lat: 1.30314, lng: 103.79666 },
+  "cintech-science-park": { lat: 1.29061, lng: 103.78907 },
+  "jtc-summit": { lat: 1.33121, lng: 103.74187 },
+  "bukit-batok-driving-centre": { lat: 1.3668, lng: 103.75014 },
+  "suss": { lat: 1.32833, lng: 103.77581 },
+  "ite-college-west": { lat: 1.37528, lng: 103.75241 },
+  "temasek-poly": { lat: 1.34794, lng: 103.92884 },
+  "ngee-ann-poly": { lat: 1.33248, lng: 103.77331 },
+  "sutd": { lat: 1.34017, lng: 103.96286 },
+};
+
+/** Single data-access point. Returns the static list with coordinates attached;
+ *  swap the body for a Supabase query later (non-dev editing / user submissions)
+ *  without touching the page or the records. */
 export function getPrayerSpaces(): PrayerSpace[] {
-  return PRAYER_SPACES;
+  return PRAYER_SPACES.map((p) => ({ ...p, coords: COORDS[p.id] }));
 }
 
-/** All spaces in a category, in source order. */
+/** All spaces in a category (coords attached), in source order. */
 export function byCategory(cat: PrayerSpaceCategory): PrayerSpace[] {
-  return PRAYER_SPACES.filter((p) => p.category === cat);
+  return getPrayerSpaces().filter((p) => p.category === cat);
 }
 
 export const PRAYER_CATEGORIES: { id: PrayerSpaceCategory; label: string; blurb: string }[] = [
