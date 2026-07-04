@@ -25,6 +25,7 @@ import { PendingSubmissions, type PendingSubmission } from "../owner/pending-sub
 import { ActivationChecklist } from "../owner/activation-checklist";
 import { ReviewRequestCard } from "../owner/review-request-card";
 import { OwnerLeads } from "../owner/leads-tab";
+import { OwnerPerks } from "../owner/perks-tab";
 import type { OwnerBiz, OwnerEvent } from "../owner/types";
 
 // MUIS certifies food & beverage — so only these categories get the
@@ -571,10 +572,10 @@ export function AddListingScreen() {
 /* =============================================================
    OWNER DASHBOARD
 ============================================================= */
-const DASH_TABS = ["overview", "listings", "cert", "events", "payouts", "reviews", "ads", "leads", "billing"] as const;
+const DASH_TABS = ["overview", "listings", "cert", "events", "payouts", "reviews", "ads", "leads", "perks", "billing"] as const;
 const isDashTab = (v: unknown): v is (typeof DASH_TABS)[number] => DASH_TABS.includes(v as (typeof DASH_TABS)[number]);
 
-export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled?: boolean }) {
+export function OwnerDashboardScreen({ leadRoutingEnabled = false, passportEnabled = false }: { leadRoutingEnabled?: boolean; passportEnabled?: boolean }) {
   const { navigate, toast, flags, params } = useApp();
   const dir = useDirectory();
   const { user } = useUser();
@@ -676,7 +677,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
     } catch { toast("Couldn’t cancel — try again"); }
   };
 
-  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
+  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ...(passportEnabled ? [["perks", "Passport perks", "ticket"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
 
   // One-time success toasts after returning from Stripe (Connect onboarding /
   // billing portal). Query params arrive via `params`; guard so it fires once.
@@ -898,6 +899,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
         )}
 
         {tab === "leads" && leadRoutingEnabled && <OwnerLeads toast={toast} live={live} navigate={navigate} />}
+        {tab === "perks" && passportEnabled && <OwnerPerks toast={toast} />}
 
         {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
 

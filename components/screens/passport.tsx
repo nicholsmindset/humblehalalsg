@@ -142,6 +142,8 @@ export function PassportScreen() {
 
         <RewardsStore toast={toast} onChange={load} />
 
+        <LocalPerks toast={toast} onChange={load} />
+
         <GiveawayCard toast={toast} onChange={load} />
 
         <InviteFriendCard toast={toast} />
@@ -260,6 +262,62 @@ function RewardsStore({ toast, onChange }: { toast: (m: string) => void; onChang
             ) : (
               <button className="btn btn-soft btn-sm" disabled={busy === r.id || data.balance < r.cost} onClick={() => redeem(r.id)}>{data.balance < r.cost ? `${r.cost} pts` : `Redeem · ${r.cost}`}</button>
             )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function LocalPerks({ toast, onChange }: { toast: (m: string) => void; onChange: () => void }) {
+  const [data, setData] = useState<{ balance: number; perks: { id: string; title: string; description: string | null; terms: string | null; cost: number; business: string }[]; vouchers: { voucher_code: string; title: string; status: string; created_at: string }[] } | null>(null);
+  const [busy, setBusy] = useState("");
+
+  const load = useCallback(async () => {
+    try { const d = await (await fetch("/api/passport/perks")).json(); if (d.ok && d.enabled) setData(d); } catch { /* noop */ }
+  }, []);
+  useEffect(() => { let alive = true; (async () => { if (alive) await load(); })(); return () => { alive = false; }; }, [load]);
+
+  const redeem = async (id: string) => {
+    setBusy(id);
+    try {
+      const res = await fetch("/api/passport/perks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ perkId: id }) });
+      const d = await res.json();
+      if (res.status === 402) toast("Not enough points for this perk yet");
+      else if (!res.ok || !d.ok) toast("Couldn't redeem — perk may be unavailable");
+      else { toast(`Voucher: ${d.voucher} 🎟️`); await load(); onChange(); }
+    } catch { toast("Couldn't redeem"); }
+    setBusy("");
+  };
+
+  if (!data || (data.perks.length === 0 && data.vouchers.length === 0)) return null;
+  return (
+    <>
+      <h2 style={{ fontSize: "1.2rem", margin: "24px 0 12px" }}>Perks from halal businesses</h2>
+      {data.vouchers.filter((v) => v.status === "active").length > 0 && (
+        <div className="card" style={{ padding: 14, marginBottom: 10, background: "var(--emerald-50,#e7f3ee)" }}>
+          <div className="faint" style={{ fontSize: ".82rem", marginBottom: 6 }}>Your vouchers — show these in-store:</div>
+          <div className="stack g6">
+            {data.vouchers.filter((v) => v.status === "active").map((v) => (
+              <div key={v.voucher_code} className="flex between center" style={{ padding: "8px 12px", background: "#fff", borderRadius: 8 }}>
+                <span style={{ fontSize: ".9rem" }}>{v.title}</span>
+                <code style={{ fontWeight: 700, letterSpacing: ".05em" }}>{v.voucher_code}</code>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="stack g8">
+        {data.perks.map((p) => (
+          <div key={p.id} className="card" style={{ padding: 14 }}>
+            <div className="flex between center wrap g8">
+              <div className="f1" style={{ minWidth: 140 }}>
+                <div style={{ fontWeight: 700 }}>{p.title}</div>
+                <div className="faint" style={{ fontSize: ".82rem" }}>{p.business}{p.description ? ` · ${p.description}` : ""}</div>
+                {p.terms && <div className="faint" style={{ fontSize: ".76rem", marginTop: 2 }}>{p.terms}</div>}
+              </div>
+              <button className="btn btn-soft btn-sm" disabled={busy === p.id || data.balance < p.cost} onClick={() => redeem(p.id)}>{data.balance < p.cost ? `${p.cost} pts` : `Redeem · ${p.cost}`}</button>
+            </div>
           </div>
         ))}
       </div>

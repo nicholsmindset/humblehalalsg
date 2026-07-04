@@ -262,9 +262,14 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
       setSaved((s) => {
         const has = s.includes(id);
         toast(has ? "Removed from Saved" : "Saved to your list");
+        // Sync to the server + earn a Halal Passport point (best-effort; the
+        // route is a no-op for guests). localStorage stays the source of truth.
+        if (isSignedIn) {
+          fetch("/api/saved", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: id, saved: !has }) }).catch(() => {});
+        }
         return has ? s.filter((x) => x !== id) : [id, ...s];
       }),
-    [toast],
+    [toast, isSignedIn],
   );
   const toggleWish = useCallback(
     (id: string) =>

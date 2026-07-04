@@ -5,7 +5,7 @@ import { getServerFlags } from "@/lib/flags";
 export const metadata = pageMeta({ title: "Business dashboard", description: "Manage your listings, events, reviews and analytics.", path: "/owner", index: false });
 
 export default function Page() {
-  // Server flag decides whether the Leads tab shows (dark until flipped on).
-  const { leadRouting } = getServerFlags();
-  return <OwnerDashboardScreen leadRoutingEnabled={leadRouting} />;
+  // Server flags decide which flagged tabs show (dark until flipped on).
+  const { leadRouting, passport } = getServerFlags();
+  return <OwnerDashboardScreen leadRoutingEnabled={leadRouting} passportEnabled={passport} />;
 }

@@ -7,12 +7,13 @@ export const POINTS = {
   review: 50,
   follow: 10,
   visit: 20,
+  save: 5,
   checkin: 5,
   referralReferrer: 100,
   referralReferred: 50,
 } as const;
 
-export type PassportSource = "review" | "follow" | "visit" | "checkin" | "referral" | "bonus";
+export type PassportSource = "review" | "follow" | "visit" | "save" | "checkin" | "referral" | "bonus" | "redeem";
 
 export interface Tier {
   key: string;
