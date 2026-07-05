@@ -1,0 +1,4 @@
+name,category,area,address,postal,phone,website,description,price_level,halal,attributes,photo_url,lat,lng
+Nasi Lemak House,restaurants,Bedok,"123 Bedok North Ave 1, #01-45, Singapore 460123",460123,+65 6123 4567,https://nasilemakhouse.example.sg,"Family-run nasi lemak stall serving fragrant coconut rice since 1998.",$,muslim-owned,"prayer-space,family-friendly",https://nasilemakhouse.example.sg/storefront.jpg,1.3268,103.9315
+Cafe Barakah,cafes,Tampines,"88 Tampines Street 81, Singapore 528765",528765,,https://cafebarakah.example.sg,"Specialty coffee and brunch — fully halal kitchen.",$$,muis-certified,wheelchair-accessible,,,
+Al-Amin Mart,groceries,Woodlands,"30 Woodlands Ave 2, Singapore 738343",738343,+65 6234 5678,,"Halal butcher and grocery with frozen and dry goods.",$,muslim-owned,,,,
