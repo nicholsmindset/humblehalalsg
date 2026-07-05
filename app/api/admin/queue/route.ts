@@ -187,7 +187,7 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   await db.from("staging_businesses").update({ review_status: "published", duplicate_of: created.id }).eq("id", id);
   if (submittedBy) await db.from("profiles").update({ role: "owner" }).eq("id", submittedBy).neq("role", "admin");
   await logAudit(db, { actor, action: "Published listing", target: created.id, meta: { name: insert.name, staging_id: id } });
-  // Notify the submitter their listing is live.
+  // Notify the submitter their listing is live (email + in-app bell).
   if (submittedBy) {
     try {
       const { email, name } = await emailForUser(db, submittedBy);
@@ -196,6 +196,17 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
         await sendEmail({ to: email, subject, html, template: "listing-approved", businessId: created.id });
       }
     } catch { /* email best-effort */ }
+    try {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        userId: submittedBy,
+        type: "listing_approved",
+        title: "Your listing is live 🎉",
+        body: `${insert.name} is now published on Humble Halal.`,
+        link: `/business/${slug}`,
+        dedupeKey: `listing_approved:${created.id}`,
+      });
+    } catch { /* best-effort */ }
   }
   revalidatePublic();
   return NextResponse.json({ ok: true, status: "published", businessId: created.id });

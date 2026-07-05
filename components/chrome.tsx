@@ -435,9 +435,8 @@ export function TopNav() {
           <LangToggle />
           {user.loggedIn ? (
             <>
-              <button className="btn btn-ghost btn-sm nav-dash" onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")} aria-label="Open my dashboard">
-                <Icon name="chart" size={16} /> Dashboard
-              </button>
+              {/* Dashboard lives in the avatar menu (My/Business dashboard
+                  actions below) — a separate ghost button crowded the cluster. */}
               {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
