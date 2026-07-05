@@ -73,7 +73,7 @@ export default function Page() {
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Is it halal? Singapore brand checker</h1>
             <p className="hs-answer" style={{ maxWidth: 680, marginTop: 12 }}>
               Quick, sourced answers on whether popular food brands are <strong>MUIS halal-certified</strong> in Singapore.
-              Most well-known chains are <strong>not</strong> MUIS-certified — and “no pork, no lard” is not the same as
+              Many major chains <strong>are</strong> MUIS-certified — but plenty are not, and “no pork, no lard” is not the same as
               halal certification. Always confirm on the official{" "}
               <a className="link-inline" href={HALALSG_BASE} target="_blank" rel="noopener noreferrer">MUIS HalalSG register</a>.
             </p>
