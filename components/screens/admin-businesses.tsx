@@ -12,7 +12,7 @@
      panel. Halal status is deliberately NOT editable here — it stays in the
      Halal-verification section (single-sourced via lib/verify-grant). */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HHData } from "@/lib/data";
 import type { FlagKey } from "@/lib/flags";
 import { ATTRIBUTE_OPTIONS } from "@/lib/attributes";
@@ -357,6 +357,12 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  // The Manage panel renders BELOW the (long) table — without this scroll it
+  // opens off-screen and "Manage" looks like it did nothing.
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (selected) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selected]);
 
   useEffect(() => {
     let alive = true;
@@ -422,13 +428,15 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
       </div>
 
       {selected && (
-        <BusinessManagePanel
-          businessId={selected}
-          onClose={() => setSelected(null)}
-          onChanged={patchRow}
-          toast={toast}
-          gotoVerification={gotoVerification}
-        />
+        <div ref={panelRef} style={{ scrollMarginTop: 80 }}>
+          <BusinessManagePanel
+            businessId={selected}
+            onClose={() => setSelected(null)}
+            onChanged={patchRow}
+            toast={toast}
+            gotoVerification={gotoVerification}
+          />
+        </div>
       )}
     </div>
   );
