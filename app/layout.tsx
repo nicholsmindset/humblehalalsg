@@ -32,6 +32,7 @@ import { getCategories, getAreas } from "@/lib/catalog";
 import { EventsProvider } from "@/components/events-context";
 import { getEvents } from "@/lib/events-source";
 import { getRamadanMode } from "@/lib/platform";
+import { getServerFlags } from "@/lib/feature-flags";
 import { SITE } from "@/lib/seo";
 import {
   JsonLd,
@@ -140,12 +141,13 @@ export default async function RootLayout({
   // Directory snapshot — Supabase when configured, else the mock seed (keeps
   // static rendering when there are no keys, so no regression).
   // Independent reads — run in parallel to cut server-render TTFB.
-  const [directory, events, ramadanMode, categories, areas] = await Promise.all([
+  const [directory, events, ramadanMode, categories, areas, serverFlags] = await Promise.all([
     getDirectory(),
     getEvents(),
     getRamadanMode(),
     getCategories(),
     getAreas(),
+    getServerFlags(),
   ]);
   return (
     <html lang="en" className={fontVars}>
@@ -154,7 +156,7 @@ export default async function RootLayout({
         <AdsenseScript />
         <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-          <AppProviders ramadanModeEnabled={ramadanMode}>
+          <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directory} categories={categories} areas={areas}>
               <EventsProvider events={events}>
                 <AppShell>{children}</AppShell>

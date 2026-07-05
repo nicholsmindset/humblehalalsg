@@ -3,7 +3,11 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { bustFlagCache } from "@/lib/feature-flags";
 
-const FEATURES = ["paidPlans", "paidAds", "certVault", "leadRouting", "paidLeads"];
+// Only the features a server-side resolveBusinessFlag() call actually reads —
+// paidPlans/leadRouting are in the 0053 CHECK but have no per-business reader
+// (their gates run before a businessId is resolvable), so accepting writes for
+// them stored rows that silently did nothing.
+const FEATURES = ["paidAds", "certVault", "paidLeads"];
 
 export async function POST(req: Request) {
   // Same admin gate as every other /api/admin/* route (requireAdmin), rather
