@@ -3,7 +3,7 @@
 /* Humble Halal — Admin Dashboard (ported from screens-admin.jsx) */
 import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { HHData } from "@/lib/data";
-import type { BadgeKey, Listing } from "@/lib/types";
+import type { BadgeKey } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -16,11 +16,13 @@ import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminVerdicts } from "./admin-verdicts";
 import { AdminLeads } from "./admin-leads";
+import { AdminBusinesses } from "./admin-businesses";
+import { FLAG_COPY } from "./admin-flag-copy";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
    configured or the caller isn't an admin (dev/demo), the fetch returns null
-   and the section keeps its mock rows so the console stays explorable. */
+   and the section renders its empty state so the console stays explorable. */
 type QueueRow = Record<string, unknown> & { id: string };
 
 async function queueGet(type: string): Promise<QueueRow[] | null> {
@@ -151,7 +153,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
-          {section==='businesses' && <AdminBusinesses toast={toast} />}
+          {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => setSection('verification')} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
@@ -172,23 +174,6 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
   );
 }
 
-/* Global flag → readable copy for the Monetization toggles. Order within each
-   group below is the display order. */
-const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
-  paidTickets: { title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
-  paidAds: { title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
-  paidPlans: { title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
-  paidHotels: { title: "Paid hotel bookings", desc: "Enable live hotel payments via LiteAPI. When OFF, hotel search stays browse-only (no checkout)." },
-  paidFlights: { title: "Paid flight bookings", desc: "Enable live flight payments via LiteAPI. Requires Vercel Pro for the 10-minute retry cron before going live." },
-  payNow: { title: "PayNow", desc: "Accept PayNow as a checkout method alongside cards, where supported." },
-  paidLeads: { title: "Paid lead marketplace", desc: "Businesses pay to receive routed customer leads instead of receiving them for free." },
-  certVault: { title: "Cert Vault", desc: "Certificate upload & verification vault for businesses claiming halal certification." },
-  semanticSearch: { title: "Semantic search", desc: "AI-powered semantic search across listings and travel results." },
-  aiConcierge: { title: "AI concierge", desc: "The AI concierge / Ask-Hotel assistant surfaced to visitors." },
-  halalVerdicts: { title: "Halal verdicts", desc: "Admin halal-verdict workflow surfaced on listing pages." },
-  leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
-  passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
-};
 const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"];
 const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k));
 
@@ -230,6 +215,8 @@ export function AdminMonetization() {
   // Global flag overrides — hydrated from platform_settings on mount so every
   // toggle reflects the persisted (server) state, not client-only demo state.
   const [values, setValues] = useState<Record<string, boolean | null>>({});
+  // Columns with a save in flight (render-stable Set — no re-render needed).
+  const [savingFlags] = useState(() => new Set<string>());
   useEffect(() => {
     (async () => {
       try {
@@ -258,6 +245,10 @@ export function AdminMonetization() {
   async function setGlobalFlag(flagKey: FlagKey, next: boolean, isPayment: boolean) {
     if (isPayment && next && !confirm("This enables a LIVE payment/charging flow. Continue?")) return;
     const column = FLAG_COLUMN[flagKey];
+    // In-flight guard: a rapid double-flip during a pending save would capture
+    // a stale `prev` and could mis-revert on failure (PR #147 review finding).
+    if (savingFlags.has(column)) return;
+    savingFlags.add(column);
     const prev = values[column] ?? null;
     setValues((v) => ({ ...v, [column]: next })); // optimistic
     try {
@@ -272,6 +263,8 @@ export function AdminMonetization() {
     } catch {
       setValues((v) => ({ ...v, [column]: prev }));
       toast("Couldn't save — try again.");
+    } finally {
+      savingFlags.delete(column);
     }
   }
 
@@ -323,184 +316,6 @@ export function AdminMonetization() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ── Per-business feature overrides ─────────────────────────────────────────
-   These owner-scoped flags can be forced on/off for a single business — e.g.
-   beta-test a feature with select businesses while it's globally off, or
-   comp/restrict one business without touching the site-wide switch. A
-   "Default" state clears the override so the business falls back to the
-   global/env value.
-
-   Only THREE flags are shown here — the ones `resolveBusinessFlag` actually
-   reads server-side (see app/api/owner/ads/checkout, app/api/owner/cert,
-   app/api/owner/leads/accept). `leadRouting` and `paidPlans` are intentionally
-   excluded: their gates are evaluated before a businessId is resolvable
-   (e.g. at enquiry-submission/pricing time), so a per-business override would
-   never be read — showing a toggle for them would be misleading UI. They
-   remain enforceable globally only for now; per-business enforcement is
-   deferred until those call sites are refactored to resolve a businessId
-   first. The API's FEATURES array and DB constraint intentionally still allow
-   all 5 keys, forward-compatible with that future work. */
-const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidAds", "certVault", "paidLeads"];
-
-/* One feature's 3-state control: Default (defer to global) / On (forced) /
-   Off (forced). Uses the same `chip`/`chip.active` styling as the role/status
-   filters elsewhere in this file — no new visual pattern. */
-function BusinessFeatureRow({ flagKey, value, onSet }: { flagKey: FlagKey; value: boolean | null; onSet: (next: boolean | null) => void }) {
-  const { title, desc } = FLAG_COPY[flagKey];
-  return (
-    <div className="card" style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
-      <div style={{ flex: 1, minWidth: 220 }}>
-        <h4 style={{ fontSize: ".96rem", marginBottom: 2 }}>{title}</h4>
-        <p className="faint" style={{ fontSize: ".82rem", lineHeight: 1.4 }}>{desc}</p>
-      </div>
-      <div className="flex g6" role="group" aria-label={`${title} override`}>
-        <button type="button" className={`chip ${value === null ? "active" : ""}`} aria-pressed={value === null} onClick={() => onSet(null)}>Default</button>
-        <button type="button" className={`chip ${value === true ? "active" : ""}`} aria-pressed={value === true} onClick={() => onSet(true)}>On</button>
-        <button type="button" className={`chip ${value === false ? "active" : ""}`} aria-pressed={value === false} onClick={() => onSet(false)}>Off</button>
-      </div>
-    </div>
-  );
-}
-
-/* Loads + persists the per-business overrides for one business.
-   Read path: a direct client read of business_feature_overrides, scoped by the
-   admin-only RLS policy from migration 0053 ("bfo admin read" — for select to
-   authenticated using is_admin()) via the Clerk-authed useSupabaseBrowser()
-   client (same hook/pattern this file already uses for admin dashboard reads,
-   e.g. AdminUsers' admin_list_users rpc). This gives REAL current state rather
-   than starting every business at "Default" on every visit. Fails soft to
-   all-Default when Supabase isn't configured, the migration hasn't been applied
-   yet, or the read errors for any reason — the panel stays usable either way,
-   and a successful write always reflects immediately (optimistic + real POST). */
-function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toast: (msg: string) => void }) {
-  const supabase = useSupabaseBrowser();
-  const [values, setValues] = useState<Record<string, boolean | null>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    // Reset synchronously (before the async fetch below resolves) so switching
-    // businesses never briefly shows the PREVIOUS business's On/Off state —
-    // every row starts at Default until this business's real overrides load.
-    const cleared: Record<string, boolean | null> = {};
-    for (const k of BUSINESS_FEATURE_KEYS) cleared[k] = null;
-    setValues(cleared);
-    (async () => {
-      const base: Record<string, boolean | null> = {};
-      for (const k of BUSINESS_FEATURE_KEYS) base[k] = null;
-      if (supabase) {
-        try {
-          const { data, error } = await supabase
-            .from("business_feature_overrides")
-            .select("feature_key, enabled")
-            .eq("business_id", businessId);
-          if (!error && Array.isArray(data)) {
-            for (const row of data as { feature_key: string; enabled: boolean }[]) {
-              if ((BUSINESS_FEATURE_KEYS as string[]).includes(row.feature_key)) base[row.feature_key] = row.enabled;
-            }
-          }
-        } catch { /* fail soft → all Default */ }
-      }
-      if (alive) { setValues(base); setLoading(false); }
-    })();
-    return () => { alive = false; };
-  }, [businessId, supabase]);
-
-  const setFeature = async (feature: FlagKey, next: boolean | null) => {
-    const prev = values[feature] ?? null;
-    setValues((v) => ({ ...v, [feature]: next })); // optimistic
-    try {
-      const r = await fetch("/api/admin/business-flags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId, feature, enabled: next }),
-      });
-      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
-      if (!d.ok) {
-        setValues((v) => ({ ...v, [feature]: prev }));
-        toast("Couldn't save — try again.");
-      } else {
-        toast(`${FLAG_COPY[feature].title} → ${next === null ? "Default" : next ? "On" : "Off"}`);
-      }
-    } catch {
-      setValues((v) => ({ ...v, [feature]: prev }));
-      toast("Couldn't save — try again.");
-    }
-  };
-
-  return (
-    <div className="stack g10">
-      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>
-        Features{loading ? " · loading…" : ""}
-      </div>
-      <div className="stack g10">
-        {BUSINESS_FEATURE_KEYS.map((k) => (
-          <BusinessFeatureRow key={k} flagKey={k} value={values[k] ?? null} onSet={(next) => setFeature(k, next)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Businesses — admin business detail (list → select → Features panel) ────
-   Reuses the live directory (same data browse-facing pages read via
-   useDirectory()) so the list is real, not mock. Selecting a row opens its
-   detail card with the per-business Features panel above. */
-export function AdminBusinesses({ toast }: { toast: (msg: string) => void }) {
-  const dir = useDirectory();
-  const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const rows = q
-    ? dir.listings.filter((l) => `${l.name} ${l.cat} ${l.area}`.toLowerCase().includes(q.toLowerCase()))
-    : dir.listings;
-  const biz = selected ? dir.get(selected) : undefined;
-
-  return (
-    <div className="stack g16">
-      <div className="card" style={{ overflow: "hidden" }}>
-        <div className="admin-tablehead">
-          <div className="flex g8 center"><span className="tag">{dir.listings.length} businesses</span></div>
-          <div className="searchbar" style={{ maxWidth: 260, padding: "4px 4px 4px 12px" }}>
-            <Icon name="search" className="lead" size={16} />
-            <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
-          </div>
-        </div>
-        {rows.length === 0 ? (
-          <div style={{ padding: 24 }}><Empty icon="building" title="No businesses" body={q ? `Nothing matches "${q}".` : "No businesses in the directory yet."} /></div>
-        ) : (
-          <div className="tbl-scroll"><table className="tbl">
-            <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Plan</th><th>Manage</th></tr></thead>
-            <tbody>{rows.slice(0, 200).map((l) => (
-              <tr key={l.id} className="rowhover" style={{ background: selected === l.id ? "var(--cream-100)" : undefined }}>
-                <td style={{ fontWeight: 700 }}>{l.name}</td>
-                <td className="muted">{l.cat}</td>
-                <td className="muted">{l.area}</td>
-                <td><span className="pill-tag">{l.plan || "free"}</span></td>
-                <td><button className="btn btn-soft btn-sm" onClick={() => setSelected(selected === l.id ? null : l.id)}>{selected === l.id ? "Close" : "Manage"}</button></td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-        )}
-      </div>
-
-      {biz && (
-        <div className="card" style={{ padding: 20 }}>
-          <div className="flex between center wrap g8" style={{ marginBottom: 14 }}>
-            <div>
-              <h3 style={{ fontSize: "1.1rem" }}>{biz.name}</h3>
-              <p className="faint" style={{ fontSize: ".84rem" }}>{biz.cat} · {biz.area}</p>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><Icon name="x" size={15} /> Close</button>
-          </div>
-          <BusinessFeaturesPanel businessId={biz.id} toast={toast} />
-        </div>
-      )}
     </div>
   );
 }
@@ -651,7 +466,7 @@ export function AdminRollout() {
     <div className="stack g16" style={{ maxWidth: 820 }}>
       <div className="notice notice-warn">
         <Icon name="info" size={18} />
-        <span>Recommended go-live order, easiest→hardest. Each flag is enabled in <strong>Vercel env</strong> (<code>PAID_*_ENABLED</code>); the toggles on the Monetization tab are client-side demo only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
+        <span>Recommended go-live order, easiest→hardest. Flip each flag on the <strong>Monetization</strong> tab (persists server-side, live within ~30s) or set the <code>PAID_*_ENABLED</code> Vercel env as the fallback default. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
       </div>
 
       <div className="stack g12">
@@ -1143,6 +958,25 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
     const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; }
     setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
   };
+  // Takedown straight from a report — the "reported as not halal → removed"
+  // loop. Suspends the business (reversible; hidden from every public surface)
+  // via /api/admin/listing, then auto-resolves the report.
+  const suspendFromReport = async (reportId: string, bizRef: string, bizName: string) => {
+    if (!confirm(`Suspend "${bizName}"?\n\nIt disappears from the directory, search, its page and the sitemap immediately. Reversible from Businesses → Manage.`)) return;
+    const reason = prompt("Reason (recorded in the audit log):", "Not halal — removed after community report") || "";
+    try {
+      const r = await fetch("/api/admin/listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: bizRef, action: "suspend", reason }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!d.ok) { toast(d.error === "not_found" ? "Couldn't match this report to a business." : "Couldn't suspend — try again."); return; }
+      await queueAct("reports", reportId, "resolve"); // best-effort close-out
+      setRows((rs) => rs.filter((x) => x.id !== reportId));
+      toast("Listing suspended and report resolved.");
+    } catch { toast("Couldn't suspend — try again."); }
+  };
   return (
     <div className="stack g12">
       {rows.map(r=>{
@@ -1151,7 +985,11 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
         <div key={r.id} className="card" style={{padding:18}}>
           <div className="flex between center wrap g10">
             <div className="flex g12 center"><span className={`sev-dot ${r.sev}`}/><div><div style={{fontWeight:700}}>{r.reason}</div><div className="faint" style={{fontSize:'.82rem'}}>{biz?.name || r.bizId.slice(0,8) || "—"} · reported by community · {r.time}</div></div></div>
-            <div className="flex g8">{biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}<button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button></div>
+            <div className="flex g8">
+              {biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}
+              {r.bizId && <button className="btn btn-sm" style={{background:'#FCEBEB',color:'#A32D2D'}} onClick={()=>suspendFromReport(r.id, r.bizId, biz?.name || 'this listing')}>Suspend listing</button>}
+              <button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button>
+            </div>
           </div>
         </div>
         );
