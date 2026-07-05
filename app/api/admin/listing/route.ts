@@ -5,6 +5,7 @@ import { revalidatePublic } from "@/lib/revalidate";
 import { logAudit } from "@/lib/audit";
 import { sanitizeAttributes } from "@/lib/attributes";
 import { sanitizePhotos } from "@/lib/photos";
+import { slugify } from "@/lib/slug";
 
 /* Admin listing management — the takedown/correction surface the moderation
    queues lacked (they only act on staging rows and reports; nothing could
@@ -115,6 +116,50 @@ export async function PATCH(req: Request) {
   });
   revalidatePublic([`/business/${row.slug}`]);
   return NextResponse.json({ ok: true });
+}
+
+/** Create a business directly (the manual-add path — everything else enters
+ *  via the staging-queue approval, which mirrors this insert shape). */
+export async function PUT(req: Request) {
+  const gate = await requireAdmin();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  const db = getSupabaseAdmin();
+  if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
+
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const name = String(body.name ?? "").trim().slice(0, 120);
+  if (!name) return NextResponse.json({ ok: false, error: "name_required" }, { status: 400 });
+
+  const insert: Record<string, unknown> = {
+    name,
+    slug: slugify(name),
+    status: "published",
+    halal_tier: "declared", // self-declared until verified in Halal verification
+    source: "admin",
+  };
+  for (const k of ADMIN_EDITABLE) {
+    if (k === "name" || !(k in body)) continue;
+    if (k === "photos") { insert.photos = sanitizePhotos(body.photos, ADMIN_GALLERY_MAX); continue; }
+    if (k === "attributes") { insert.attributes = sanitizeAttributes(body.attributes); continue; }
+    insert[k] = body[k] === "" ? null : body[k];
+  }
+
+  let { data: created, error } = await db.from("businesses").insert(insert).select(LIST_COLS).single();
+  if (error && /duplicate|unique/i.test(error.message)) {
+    // slug collision → retry once with a short random suffix
+    insert.slug = `${insert.slug}-${Math.random().toString(36).slice(2, 6)}`;
+    ({ data: created, error } = await db.from("businesses").insert(insert).select(LIST_COLS).single());
+  }
+  if (error || !created) return NextResponse.json({ ok: false, error: error?.message || "create_failed" }, { status: 500 });
+
+  await logAudit(db, {
+    actor: gate.userId,
+    action: "listing_admin_create",
+    target: (created as { id: string }).id,
+    meta: { name, slug: insert.slug },
+  });
+  revalidatePublic([`/business/${insert.slug}`, "/explore", "/halal"]);
+  return NextResponse.json({ ok: true, business: created });
 }
 
 export async function POST(req: Request) {

@@ -3,13 +3,17 @@
 /* Admin → Businesses: full listing management (split from admin.tsx following
    the admin-leads.tsx / admin-verdicts.tsx precedent).
 
-   - List: GET /api/admin/listing?all=1 — every business INCLUDING suspended
-     ones (useDirectory() only carries published rows, so a suspended listing
-     would vanish from an admin list built on it).
-   - Manage: edit whitelisted fields (incl. identity: name/category/area),
-     Suspend/Restore (reversible takedown via status='suspended' — instantly
-     hidden from every public surface), plus the per-business feature-override
-     panel. Halal status is deliberately NOT editable here — it stays in the
+   UX model: list → detail. Clicking Manage REPLACES the list with a full-width
+   detail editor (back button returns) — the earlier below-the-table panel
+   opened off-screen under 200 rows. "Add business" opens the same editor in
+   create mode (the manual-add path; everything else arrives via the staging
+   queue).
+
+   - List: GET /api/admin/listing?all=1 — every business INCLUDING suspended.
+   - Edit: whitelisted fields incl. identity (name/category/area), description,
+     photos (cover = first photo; upload or add by URL) and amenities.
+   - Suspend/Restore: reversible takedown via status='suspended'.
+   - Halal status is deliberately NOT editable here — it stays in the
      Halal-verification section (single-sourced via lib/verify-grant). */
 
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +25,7 @@ import { Empty, Icon } from "../ui";
 import { FLAG_COPY } from "./admin-flag-copy";
 
 /* ── Types (mirror /api/admin/listing selects) ─────────────────────────────── */
+type Photo = { url: string; caption?: string };
 type AdminBizRow = {
   id: string; slug: string; name: string; cat_id: string | null; area: string | null;
   plan: string | null; status: string; halal_tier: string | null; featured: boolean | null;
@@ -29,19 +34,14 @@ type AdminBizRow = {
 type AdminBizFull = AdminBizRow & {
   phone: string | null; website: string | null; address: string | null; postal: string | null;
   description: string | null; price_level: string | null; attributes: string[] | null;
+  photos: Photo[] | null;
 };
-
-const EDIT_FIELDS = [
-  ["name", "Business name"],
-  ["area", "Area"],
-  ["address", "Address"],
-  ["postal", "Postal code"],
-  ["phone", "Phone"],
-  ["website", "Website"],
-] as const;
 
 const PRICE_LEVELS = ["", "$", "$$", "$$$", "$$$$"];
 const STATUS_FILTERS = ["all", "published", "suspended"] as const;
+const EMPTY_FORM = { name: "", cat_id: "", area: "", address: "", postal: "", phone: "", website: "", description: "", price_level: "" };
+
+const catLabel = (id: string | null | undefined) => HHData.categories.find((c) => c.id === id)?.label || id || "—";
 
 function StatusChip({ status }: { status: string }) {
   const suspended = status === "suspended";
@@ -52,13 +52,10 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
-/* ── Per-business feature overrides (moved verbatim from admin.tsx) ──────────
+/* ── Per-business feature overrides ──────────────────────────────────────────
    Only THREE flags are shown — the ones `resolveBusinessFlag` actually reads
-   server-side (owner/ads/checkout, owner/cert, owner/leads/accept).
-   `leadRouting` and `paidPlans` are intentionally excluded: their gates are
-   evaluated before a businessId is resolvable, so a per-business override
-   would never be read — a toggle for them would be misleading UI. The API's
-   FEATURES array and DB constraint still allow all 5, forward-compatible. */
+   server-side. `leadRouting`/`paidPlans` are excluded (their gates evaluate
+   before a businessId is resolvable — a toggle would be misleading UI). */
 const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidAds", "certVault", "paidLeads"];
 
 function BusinessFeatureRow({ flagKey, value, onSet }: { flagKey: FlagKey; value: boolean | null; onSet: (next: boolean | null) => void }) {
@@ -86,11 +83,9 @@ function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toas
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    // Reset synchronously so switching businesses never flashes the previous
-    // business's On/Off state.
     const cleared: Record<string, boolean | null> = {};
     for (const k of BUSINESS_FEATURE_KEYS) cleared[k] = null;
-    setValues(cleared);
+    setValues(cleared); // sync reset — never flash the previous business's state
     (async () => {
       const base: Record<string, boolean | null> = {};
       for (const k of BUSINESS_FEATURE_KEYS) base[k] = null;
@@ -135,10 +130,9 @@ function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toas
   };
 
   return (
-    <div className="stack g10">
-      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>
-        Features{loading ? " · loading…" : ""}
-      </div>
+    <div className="card" style={{ padding: 20 }}>
+      <h3 style={{ fontSize: "1.02rem", marginBottom: 4 }}>Feature overrides{loading ? " · loading…" : ""}</h3>
+      <p className="faint" style={{ fontSize: ".82rem", marginBottom: 12 }}>Force a feature on/off for this business only. Default follows the global setting.</p>
       <div className="stack g10">
         {BUSINESS_FEATURE_KEYS.map((k) => (
           <BusinessFeatureRow key={k} flagKey={k} value={values[k] ?? null} onSet={(next) => setFeature(k, next)} />
@@ -148,22 +142,110 @@ function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toas
   );
 }
 
-/* ── Manage panel: editor + suspend/restore + features ─────────────────────── */
-function BusinessManagePanel({ businessId, onClose, onChanged, toast, gotoVerification }: {
-  businessId: string;
-  onClose: () => void;
-  onChanged: (row: Partial<AdminBizRow> & { id: string }) => void;
+/* ── Photos editor — cover (first) + gallery, upload or add by URL ─────────── */
+function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: (next: Photo[]) => void; toast: (msg: string) => void }) {
+  const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const addUrl = () => {
+    const u = url.trim();
+    if (!u) return;
+    if (!/^https:\/\//.test(u)) { toast("Image URL must start with https://"); return; }
+    onChange([...photos, { url: u }]);
+    setUrl("");
+  };
+
+  const upload = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const r = await fetch("/api/admin/listing/photo", { method: "POST", body: fd });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; url?: string; error?: string };
+      if (d.ok && d.url) {
+        onChange([...photos, { url: d.url }]);
+        toast("Photo uploaded — remember to Save changes.");
+      } else {
+        toast(d.error === "too_large" ? "Image too large (max 5MB)." : d.error === "bad_type" ? "Use a JPG, PNG or WebP image." : "Upload failed — try again.");
+      }
+    } catch { toast("Upload failed — try again."); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+  };
+
+  return (
+    <div className="stack g12">
+      {photos.length === 0 ? (
+        <p className="faint" style={{ fontSize: ".86rem" }}>No photos yet — the public page shows a stock placeholder. Add a main image below.</p>
+      ) : (
+        <div className="flex g10 wrap">
+          {photos.map((p, i) => (
+            <div key={`${p.url}-${i}`} className="card" style={{ padding: 8, width: 160 }}>
+              <div style={{ position: "relative" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- admin thumbs; bulk remote URLs stay unoptimized (lib/img.ts convention) */}
+                <img src={p.url} alt={p.caption || `Photo ${i + 1}`} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8 }} />
+                {i === 0 && <span className="pill-tag" style={{ position: "absolute", top: 6, left: 6, background: "var(--gold-100, #FBF3E0)", color: "#8A5A0B" }}>Cover</span>}
+              </div>
+              <input
+                className="input" style={{ fontSize: ".78rem", marginTop: 6, padding: "4px 8px" }}
+                placeholder="Caption (optional)" value={p.caption || ""} maxLength={120}
+                onChange={(e) => onChange(photos.map((x, xi) => (xi === i ? { ...x, caption: e.target.value } : x)))}
+                aria-label={`Caption for photo ${i + 1}`}
+              />
+              <div className="flex g6" style={{ marginTop: 6 }}>
+                {i !== 0 && (
+                  <button type="button" className="btn btn-soft btn-sm" style={{ fontSize: ".74rem", padding: "4px 8px" }}
+                    onClick={() => onChange([photos[i], ...photos.filter((_, xi) => xi !== i)])}>
+                    Make cover
+                  </button>
+                )}
+                <button type="button" className="btn btn-sm" style={{ fontSize: ".74rem", padding: "4px 8px", background: "#FCEBEB", color: "#A32D2D" }}
+                  onClick={() => onChange(photos.filter((_, xi) => xi !== i))}>
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex g8 wrap center">
+        <button type="button" className="btn btn-soft btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
+          <Icon name="upload" size={15} /> {uploading ? "Uploading…" : "Upload image"}
+        </button>
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }} aria-label="Upload photo" />
+        <span className="faint" style={{ fontSize: ".8rem" }}>or</span>
+        <input className="input" style={{ flex: 1, minWidth: 220, fontSize: ".84rem" }} type="url" placeholder="https:// image URL"
+          value={url} onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }} aria-label="Add photo by URL" />
+        <button type="button" className="btn btn-soft btn-sm" onClick={addUrl}>Add URL</button>
+      </div>
+      <p className="faint" style={{ fontSize: ".78rem" }}>The first photo is the main image shown in the directory and on the listing page. JPG/PNG/WebP up to 5MB.</p>
+    </div>
+  );
+}
+
+/* ── Detail editor — used for BOTH manage (edit) and create ─────────────────── */
+function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, toast, gotoVerification }: {
+  businessId: string | null; // null = create mode
+  onBack: () => void;
+  onSaved: (row: AdminBizRow) => void;   // create-mode success
+  onRowChanged: (row: Partial<AdminBizRow> & { id: string }) => void;
   toast: (msg: string) => void;
   gotoVerification: () => void;
 }) {
+  const creating = businessId === null;
   const [biz, setBiz] = useState<AdminBizFull | null>(null);
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>({ ...EMPTY_FORM });
   const [attrs, setAttrs] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [saving, setSaving] = useState(false);
   const [acting, setActing] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
 
   useEffect(() => {
+    if (creating) { setBiz(null); setForm({ ...EMPTY_FORM }); setAttrs([]); setPhotos([]); return; }
     let alive = true;
     setBiz(null); setLoadErr(false);
     (async () => {
@@ -174,55 +256,65 @@ function BusinessManagePanel({ businessId, onClose, onChanged, toast, gotoVerifi
         if (d.ok && d.business) {
           setBiz(d.business);
           setForm({
-            name: d.business.name || "",
-            cat_id: d.business.cat_id || "",
-            area: d.business.area || "",
-            address: d.business.address || "",
-            postal: d.business.postal || "",
-            phone: d.business.phone || "",
-            website: d.business.website || "",
-            description: d.business.description || "",
-            price_level: d.business.price_level || "",
+            name: d.business.name || "", cat_id: d.business.cat_id || "", area: d.business.area || "",
+            address: d.business.address || "", postal: d.business.postal || "", phone: d.business.phone || "",
+            website: d.business.website || "", description: d.business.description || "", price_level: d.business.price_level || "",
           });
           setAttrs(Array.isArray(d.business.attributes) ? d.business.attributes : []);
+          setPhotos(Array.isArray(d.business.photos) ? d.business.photos : []);
         } else setLoadErr(true);
       } catch { if (alive) setLoadErr(true); }
     })();
     return () => { alive = false; };
-  }, [businessId]);
+  }, [businessId, creating]);
 
-  if (loadErr) return <div className="card" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load this business — try again.</p></div>;
-  if (!biz) return <div className="card" style={{ padding: 20, height: 120, opacity: 0.5 }} aria-busy="true" />;
+  const backBtn = (
+    <button className="btn btn-ghost btn-sm" onClick={onBack}><Icon name="chevron" size={15} style={{ transform: "rotate(180deg)" }} /> All businesses</button>
+  );
 
-  const suspended = biz.status === "suspended";
-  const dirty =
-    form.name !== (biz.name || "") || form.cat_id !== (biz.cat_id || "") || form.area !== (biz.area || "") ||
-    form.address !== (biz.address || "") || form.postal !== (biz.postal || "") || form.phone !== (biz.phone || "") ||
-    form.website !== (biz.website || "") || form.description !== (biz.description || "") ||
-    form.price_level !== (biz.price_level || "") ||
-    JSON.stringify([...attrs].sort()) !== JSON.stringify([...(biz.attributes || [])].sort());
+  if (!creating && loadErr) return <div className="stack g12">{backBtn}<div className="card" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load this business — try again.</p></div></div>;
+  if (!creating && !biz) return <div className="stack g12">{backBtn}<div className="card" style={{ padding: 20, height: 140, opacity: 0.5 }} aria-busy="true" /></div>;
+
+  const suspended = biz?.status === "suspended";
+  const dirty = creating
+    ? form.name.trim().length > 0
+    : !!biz && (
+      form.name !== (biz.name || "") || form.cat_id !== (biz.cat_id || "") || form.area !== (biz.area || "") ||
+      form.address !== (biz.address || "") || form.postal !== (biz.postal || "") || form.phone !== (biz.phone || "") ||
+      form.website !== (biz.website || "") || form.description !== (biz.description || "") ||
+      form.price_level !== (biz.price_level || "") ||
+      JSON.stringify([...attrs].sort()) !== JSON.stringify([...(biz.attributes || [])].sort()) ||
+      JSON.stringify(photos) !== JSON.stringify(biz.photos || [])
+    );
 
   const save = async () => {
     if (!form.name.trim()) { toast("Business name is required."); return; }
     setSaving(true);
     try {
+      const payload = { ...form, attributes: attrs, photos };
       const r = await fetch("/api/admin/listing", {
-        method: "PATCH",
+        method: creating ? "PUT" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: biz.id, ...form, attributes: attrs }),
+        body: JSON.stringify(creating ? payload : { id: biz!.id, ...payload }),
       });
-      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string; business?: AdminBizRow };
       if (d.ok) {
-        const updated = { ...biz, ...form, attributes: attrs } as AdminBizFull;
-        setBiz(updated);
-        onChanged({ id: biz.id, name: form.name, cat_id: form.cat_id, area: form.area });
-        toast("Listing updated.");
+        if (creating && d.business) {
+          toast(`"${d.business.name}" created and published.`);
+          onSaved(d.business);
+        } else if (biz) {
+          const updated = { ...biz, ...form, attributes: attrs, photos } as AdminBizFull;
+          setBiz(updated);
+          onRowChanged({ id: biz.id, name: form.name, cat_id: form.cat_id, area: form.area });
+          toast("Listing updated.");
+        }
       } else toast(d.error === "name_required" ? "Business name is required." : "Couldn't save — try again.");
     } catch { toast("Couldn't save — try again."); }
     finally { setSaving(false); }
   };
 
   const act = async (action: "suspend" | "restore") => {
+    if (!biz) return;
     const msg = action === "suspend"
       ? `Suspend "${biz.name}"?\n\nIt disappears from the directory, search, its detail page and the sitemap immediately. This is reversible (Restore).`
       : `Restore "${biz.name}" to the public directory?`;
@@ -239,7 +331,7 @@ function BusinessManagePanel({ businessId, onClose, onChanged, toast, gotoVerifi
       const d = (await r.json().catch(() => ({}))) as { ok?: boolean; status?: string };
       if (d.ok && d.status) {
         setBiz({ ...biz, status: d.status });
-        onChanged({ id: biz.id, status: d.status });
+        onRowChanged({ id: biz.id, status: d.status });
         toast(action === "suspend" ? "Listing suspended — hidden from the public site." : "Listing restored.");
       } else toast("Couldn't update — try again.");
     } catch { toast("Couldn't update — try again."); }
@@ -251,118 +343,139 @@ function BusinessManagePanel({ businessId, onClose, onChanged, toast, gotoVerifi
   );
 
   return (
-    <div className="card" style={{ padding: 20 }}>
-      <div className="flex between center wrap g8" style={{ marginBottom: 6 }}>
-        <div>
-          <div className="flex g8 center wrap">
-            <h3 style={{ fontSize: "1.1rem" }}>{biz.name}</h3>
-            <StatusChip status={biz.status} />
-          </div>
-          <p className="faint" style={{ fontSize: ".84rem" }}>
-            {HHData.categories.find((c) => c.id === biz.cat_id)?.label || biz.cat_id} · {biz.area || "—"} · <span className="pill-tag">{biz.plan || "free"}</span>
-          </p>
-        </div>
+    <div className="stack g14">
+      <div className="flex between center wrap g8">
+        {backBtn}
         <div className="flex g8 center">
-          <a className="btn btn-ghost btn-sm" href={`/business/${biz.slug}`} target="_blank" rel="noopener noreferrer">
-            View public page <Icon name="arrow" size={14} />
-          </a>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}><Icon name="x" size={15} /> Close</button>
+          {!creating && biz && (
+            <a className="btn btn-ghost btn-sm" href={`/business/${biz.slug}`} target="_blank" rel="noopener noreferrer">
+              View public page <Icon name="arrow" size={14} />
+            </a>
+          )}
+          <button className="btn btn-primary btn-sm" disabled={!dirty || saving} onClick={save}>
+            {saving ? "Saving…" : creating ? "Create & publish" : dirty ? "Save changes" : "Saved"}
+          </button>
         </div>
       </div>
 
+      <div className="flex g8 center wrap">
+        <h3 style={{ fontSize: "1.2rem" }}>{creating ? "Add a business" : biz!.name}</h3>
+        {!creating && biz && <StatusChip status={biz.status} />}
+        {!creating && biz && <span className="pill-tag">{biz.plan || "free"}</span>}
+      </div>
+
       {suspended && (
-        <div className="notice notice-warn" style={{ marginBottom: 14 }}>
+        <div className="notice notice-warn">
           <Icon name="info" size={18} />
           <span><strong>This listing is suspended</strong> — hidden from the directory, search, its page and the sitemap. Restore it below when resolved.</span>
         </div>
       )}
 
-      {/* ── Edit form ── */}
-      <div className="stack g12" style={{ marginTop: 8 }}>
-        <div className="flex g10 wrap">
-          <div className="field" style={{ flex: 2, minWidth: 220 }}><label>Business name</label>{input("name")}</div>
-          <div className="field" style={{ flex: 1, minWidth: 160 }}>
-            <label>Category</label>
-            <select className="input" value={form.cat_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, cat_id: e.target.value }))}>
-              <option value="">—</option>
-              {HHData.categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="flex g10 wrap">
-          {EDIT_FIELDS.filter(([k]) => k !== "name").map(([k, label]) => (
-            <div key={k} className="field" style={{ flex: 1, minWidth: 150 }}>
-              <label>{label}</label>
-              {input(k, k === "postal" ? { inputMode: "numeric", maxLength: 6 } : k === "phone" ? { type: "tel" } : k === "website" ? { type: "url", placeholder: "https://…" } : {})}
+      {/* ── Details ── */}
+      <div className="card" style={{ padding: 20 }}>
+        <h3 style={{ fontSize: "1.02rem", marginBottom: 12 }}>Listing details</h3>
+        <div className="stack g12">
+          <div className="flex g10 wrap">
+            <div className="field" style={{ flex: 2, minWidth: 220 }}><label>Business name</label>{input("name", { placeholder: "e.g. Warung Bumbu Rempah" })}</div>
+            <div className="field" style={{ flex: 1, minWidth: 160 }}>
+              <label>Category</label>
+              <select className="input" value={form.cat_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, cat_id: e.target.value }))}>
+                <option value="">—</option>
+                {HHData.categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
             </div>
-          ))}
-          <div className="field" style={{ minWidth: 110 }}>
-            <label>Price</label>
-            <select className="input" value={form.price_level ?? ""} onChange={(e) => setForm((f) => ({ ...f, price_level: e.target.value }))}>
-              {PRICE_LEVELS.map((p) => <option key={p} value={p}>{p || "—"}</option>)}
-            </select>
+            <div className="field" style={{ minWidth: 110 }}>
+              <label>Price</label>
+              <select className="input" value={form.price_level ?? ""} onChange={(e) => setForm((f) => ({ ...f, price_level: e.target.value }))}>
+                {PRICE_LEVELS.map((p) => <option key={p} value={p}>{p || "—"}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
-        <div className="field">
-          <label>Description</label>
-          <textarea className="input" rows={3} value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-        </div>
-        <div className="field">
-          <label>Amenities</label>
-          <div className="flex g6 wrap">
-            {ATTRIBUTE_OPTIONS.map((a) => {
-              const on = attrs.includes(a);
-              return (
-                <button key={a} type="button" className={`chip ${on ? "active" : ""}`} aria-pressed={on}
-                  onClick={() => setAttrs((cur) => (on ? cur.filter((x) => x !== a) : [...cur, a]))}>
-                  {a}
-                </button>
-              );
-            })}
+          <div className="flex g10 wrap">
+            <div className="field" style={{ flex: 1, minWidth: 150 }}><label>Area</label>{input("area", { placeholder: "e.g. Kampong Glam" })}</div>
+            <div className="field" style={{ flex: 2, minWidth: 200 }}><label>Address</label>{input("address")}</div>
+            <div className="field" style={{ minWidth: 120 }}><label>Postal code</label>{input("postal", { inputMode: "numeric", maxLength: 6 })}</div>
           </div>
-        </div>
-        <p className="faint" style={{ fontSize: ".8rem" }}>
-          Halal status (MUIS / admin verification, certificates) is managed in the{" "}
-          <button className="link-inline" style={{ background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit", color: "var(--emerald)" }} onClick={gotoVerification}>Halal verification</button>{" "}
-          section — never edited here.
-        </p>
-        <div className="flex g8 center wrap" style={{ justifyContent: "space-between" }}>
-          <div className="flex g8">
-            <button className="btn btn-primary btn-sm" disabled={!dirty || saving} onClick={save}>
-              {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-            </button>
+          <div className="flex g10 wrap">
+            <div className="field" style={{ flex: 1, minWidth: 150 }}><label>Phone</label>{input("phone", { type: "tel", placeholder: "+65 …" })}</div>
+            <div className="field" style={{ flex: 2, minWidth: 200 }}><label>Website</label>{input("website", { type: "url", placeholder: "https://…" })}</div>
           </div>
-          {suspended ? (
-            <button className="btn btn-soft btn-sm" disabled={acting} onClick={() => act("restore")}>
-              <Icon name="check" size={15} /> {acting ? "Working…" : "Restore listing"}
-            </button>
-          ) : (
-            <button className="btn btn-sm" style={{ background: "#FCEBEB", color: "#A32D2D" }} disabled={acting} onClick={() => act("suspend")}>
-              <Icon name="x" size={15} /> {acting ? "Working…" : "Suspend listing"}
-            </button>
-          )}
+          <div className="field">
+            <label>Description</label>
+            <textarea className="input" rows={3} value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What makes this place special?" />
+          </div>
+          <div className="field">
+            <label>Amenities</label>
+            <div className="flex g6 wrap">
+              {ATTRIBUTE_OPTIONS.map((a) => {
+                const on = attrs.includes(a);
+                return (
+                  <button key={a} type="button" className={`chip ${on ? "active" : ""}`} aria-pressed={on}
+                    onClick={() => setAttrs((cur) => (on ? cur.filter((x) => x !== a) : [...cur, a]))}>
+                    {a}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="faint" style={{ fontSize: ".8rem" }}>
+            Halal status (MUIS / admin verification, certificates) is managed in the{" "}
+            <button className="link-inline" style={{ background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit", color: "var(--emerald)" }} onClick={gotoVerification}>Halal verification</button>{" "}
+            section — never edited here.
+          </p>
         </div>
       </div>
 
-      <div style={{ borderTop: "1px solid var(--line)", margin: "18px 0" }} />
-      <BusinessFeaturesPanel businessId={biz.id} toast={toast} />
+      {/* ── Photos ── */}
+      <div className="card" style={{ padding: 20 }}>
+        <h3 style={{ fontSize: "1.02rem", marginBottom: 12 }}>Photos</h3>
+        <PhotosEditor photos={photos} onChange={setPhotos} toast={toast} />
+      </div>
+
+      {!creating && biz && (
+        <>
+          <BusinessFeaturesPanel businessId={biz.id} toast={toast} />
+
+          {/* ── Danger zone ── */}
+          <div className="card" style={{ padding: 20, borderColor: "#F3C9C9" }}>
+            <h3 style={{ fontSize: "1.02rem", marginBottom: 4 }}>{suspended ? "Restore listing" : "Remove from public site"}</h3>
+            <p className="faint" style={{ fontSize: ".84rem", marginBottom: 12 }}>
+              {suspended
+                ? "Bring this listing back to the directory, search and its public page."
+                : "Suspending hides this listing from the directory, search, its page and the sitemap immediately. Reversible — nothing is deleted."}
+            </p>
+            {suspended ? (
+              <button className="btn btn-soft btn-sm" disabled={acting} onClick={() => act("restore")}>
+                <Icon name="check" size={15} /> {acting ? "Working…" : "Restore listing"}
+              </button>
+            ) : (
+              <button className="btn btn-sm" style={{ background: "#FCEBEB", color: "#A32D2D" }} disabled={acting} onClick={() => act("suspend")}>
+                <Icon name="x" size={15} /> {acting ? "Working…" : "Suspend listing"}
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Sticky save affordance at the bottom too — long form, easy access */}
+      <div className="flex" style={{ justifyContent: "flex-end" }}>
+        <button className="btn btn-primary" disabled={!dirty || saving} onClick={save}>
+          {saving ? "Saving…" : creating ? "Create & publish" : dirty ? "Save changes" : "Saved"}
+        </button>
+      </div>
     </div>
   );
 }
 
-/* ── The section: list (all statuses) → Manage ─────────────────────────────── */
+/* ── The section: list ⇄ detail ─────────────────────────────────────────────── */
+type View = { mode: "list" } | { mode: "manage"; id: string } | { mode: "create" };
+
 export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: string) => void; gotoVerification: () => void }) {
   const [rows, setRows] = useState<AdminBizRow[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
-  const [selected, setSelected] = useState<string | null>(null);
-  // The Manage panel renders BELOW the (long) table — without this scroll it
-  // opens off-screen and "Manage" looks like it did nothing.
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (selected) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [selected]);
+  const [view, setView] = useState<View>({ mode: "list" });
 
   useEffect(() => {
     let alive = true;
@@ -378,15 +491,26 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
     return () => { alive = false; };
   }, []);
 
-  const catLabel = (id: string | null) => HHData.categories.find((c) => c.id === id)?.label || id || "—";
+  const patchRow = (patch: Partial<AdminBizRow> & { id: string }) =>
+    setRows((cur) => (cur ? cur.map((r) => (r.id === patch.id ? { ...r, ...patch } : r)) : cur));
+
+  if (view.mode !== "list") {
+    return (
+      <BusinessEditor
+        businessId={view.mode === "manage" ? view.id : null}
+        onBack={() => setView({ mode: "list" })}
+        onSaved={(created) => { setRows((cur) => [created, ...(cur ?? [])]); setView({ mode: "manage", id: created.id }); }}
+        onRowChanged={patchRow}
+        toast={toast}
+        gotoVerification={gotoVerification}
+      />
+    );
+  }
+
   const filtered = (rows ?? [])
     .filter((r) => (statusFilter === "all" ? true : r.status === statusFilter))
     .filter((r) => (q ? `${r.name} ${catLabel(r.cat_id)} ${r.area ?? ""}`.toLowerCase().includes(q.toLowerCase()) : true));
   const suspendedCount = (rows ?? []).filter((r) => r.status === "suspended").length;
-
-  // Local row patcher so edits/suspends reflect in the list without a refetch.
-  const patchRow = (patch: Partial<AdminBizRow> & { id: string }) =>
-    setRows((cur) => (cur ? cur.map((r) => (r.id === patch.id ? { ...r, ...patch } : r)) : cur));
 
   return (
     <div className="stack g16">
@@ -401,9 +525,12 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
               ))}
             </div>
           </div>
-          <div className="searchbar" style={{ maxWidth: 260, padding: "4px 4px 4px 12px" }}>
-            <Icon name="search" className="lead" size={16} />
-            <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
+          <div className="flex g8 center">
+            <div className="searchbar" style={{ maxWidth: 240, padding: "4px 4px 4px 12px" }}>
+              <Icon name="search" className="lead" size={16} />
+              <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={() => setView({ mode: "create" })}><Icon name="plus" size={15} /> Add business</button>
           </div>
         </div>
         {loadErr ? (
@@ -414,30 +541,18 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
           <div className="tbl-scroll"><table className="tbl">
             <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Status</th><th>Plan</th><th>Manage</th></tr></thead>
             <tbody>{filtered.slice(0, 200).map((r) => (
-              <tr key={r.id} className="rowhover" style={{ background: selected === r.id ? "var(--cream-100)" : undefined }}>
+              <tr key={r.id} className="rowhover">
                 <td style={{ fontWeight: 700 }}>{r.name}</td>
                 <td className="muted">{catLabel(r.cat_id)}</td>
                 <td className="muted">{r.area || "—"}</td>
                 <td><StatusChip status={r.status} /></td>
                 <td><span className="pill-tag">{r.plan || "free"}</span></td>
-                <td><button className="btn btn-soft btn-sm" onClick={() => setSelected(selected === r.id ? null : r.id)}>{selected === r.id ? "Close" : "Manage"}</button></td>
+                <td><button className="btn btn-soft btn-sm" onClick={() => setView({ mode: "manage", id: r.id })}>Manage</button></td>
               </tr>
             ))}</tbody>
           </table></div>
         )}
       </div>
-
-      {selected && (
-        <div ref={panelRef} style={{ scrollMarginTop: 80 }}>
-          <BusinessManagePanel
-            businessId={selected}
-            onClose={() => setSelected(null)}
-            onChanged={patchRow}
-            toast={toast}
-            gotoVerification={gotoVerification}
-          />
-        </div>
-      )}
     </div>
   );
 }
