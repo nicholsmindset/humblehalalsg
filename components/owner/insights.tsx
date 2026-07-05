@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
+import { canUse } from "@/lib/plans";
 import { Icon } from "../ui";
 
 type OwnerRow = {
@@ -17,8 +18,11 @@ type OwnerRow = {
 type DailyRow = { day: string; listing_views: number; lead_actions: number };
 type QueryRow = { query: string; searches: number };
 
-export function OwnerInsights() {
+export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onUpgrade?: () => void }) {
   const supabase = useSupabaseBrowser();
+  // Basic totals stay free; the trend + search-insights blocks are the Premium
+  // "advanced analytics" differentiator (they were silently free-to-all).
+  const advanced = canUse(plan, "analytics");
   const [rows, setRows] = useState<OwnerRow[] | null>(null);
   const [daily, setDaily] = useState<DailyRow[]>([]);
   const [queries, setQueries] = useState<QueryRow[]>([]);
@@ -97,13 +101,22 @@ export function OwnerInsights() {
           <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
         ))}
       </div>
-      {trend.length >= 2 && (
+      {!advanced && (
+        <div className="card" style={{ padding: "14px 18px", marginTop: 14, display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <p style={{ fontSize: ".9rem", fontWeight: 700, margin: 0 }}>Daily trend &amp; “what people searched” — Premium</p>
+            <p className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>See your views day-by-day and the exact searches that led people to you.</p>
+          </div>
+          {onUpgrade && <button className="btn btn-gold btn-sm" onClick={onUpgrade}>Upgrade</button>}
+        </div>
+      )}
+      {advanced && trend.length >= 2 && (
         <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
           <p className="faint" style={{ fontSize: ".82rem", margin: 0 }}>Views &amp; lead actions per day</p>
           <Sparkline data={trend} />
         </div>
       )}
-      {queries.length > 0 && (
+      {advanced && queries.length > 0 && (
         <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
           <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>What people searched before finding you</p>
           <div className="stack g8">
