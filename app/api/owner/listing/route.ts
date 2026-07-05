@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { revalidatePublic } from "@/lib/revalidate";
 import { galleryMax } from "@/lib/plans";
 import { sanitizeAttributes } from "@/lib/attributes";
+import { sanitizePhotos } from "@/lib/photos";
 
 /* Owner self-service listing editor. GET returns the editable fields for a
    business the caller owns; PATCH updates a whitelist of fields. Ownership is
@@ -15,24 +16,6 @@ export const dynamic = "force-dynamic";
 // (identity + trust + billing stay admin-controlled). `attributes` is vetted
 // against the fixed amenity vocabulary (lib/attributes) — no free-form tags.
 const EDITABLE = ["phone", "website", "address", "postal", "description", "price_level", "opening_hours", "socials", "photos", "attributes"] as const;
-
-// Coerce an incoming `photos` value into the jsonb shape rowToListing reads:
-// an array of { url, caption? } with string urls. Anything malformed is dropped.
-// `max` is the caller's plan gallery limit (lib/plans galleryMax: 3/15/20/30).
-function sanitizePhotos(v: unknown, max: number): { url: string; caption?: string }[] {
-  if (!Array.isArray(v)) return [];
-  const out: { url: string; caption?: string }[] = [];
-  for (const p of v) {
-    if (!p || typeof p !== "object") continue;
-    const url = (p as { url?: unknown }).url;
-    if (typeof url !== "string" || !url.trim()) continue;
-    const caption = (p as { caption?: unknown }).caption;
-    const entry: { url: string; caption?: string } = { url: url.trim() };
-    if (typeof caption === "string" && caption.trim()) entry.caption = caption.trim().slice(0, 120);
-    out.push(entry);
-  }
-  return out.slice(0, Math.max(1, max));
-}
 
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 async function ownership(db: Db, id: string, userId: string) {
