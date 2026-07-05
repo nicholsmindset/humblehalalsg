@@ -4,7 +4,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { reviewReceivedEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { POINTS } from "@/lib/passport";
 
 /* Review submission. Graceful-degradation: validates + accepts now (returns
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
           }
         } catch { /* email best-effort — never affect the API response */ }
         // Halal Passport: award for the review + qualify any pending referral.
-        if (userId && getServerFlags().passport && inserted?.id) {
+        if (userId && (await getServerFlags()).passport && inserted?.id) {
           try {
             const { award, qualifyReferralIfPending, loadStats, emitProgress } = await import("@/lib/passport-server");
             const before = await loadStats(sb, userId);

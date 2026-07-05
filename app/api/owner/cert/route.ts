@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { resolveBusinessFlag } from "@/lib/feature-flags";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
@@ -45,14 +45,15 @@ type CertRow = {
 };
 
 export async function POST(req: Request) {
-  // Pilot kill-switch — the feature surface is off until explicitly enabled.
-  if (!getServerFlags().certVault) {
-    return NextResponse.json({ ok: false, reason: "cert_vault_disabled" }, { status: 403 });
-  }
-
+  // Rate-limit FIRST — it keys on the client IP from headers and doesn't need
+  // the parsed body, so abusive requests are rejected before we pay the cost
+  // of parsing (potentially large) multipart form data.
   const rl = await rateLimit(req, "owner-cert", 8, 3600);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
+  // Parsed next so a businessId is in scope for the per-business flag
+  // resolution below — owner-supplied directly in the form body, same as the
+  // ads-checkout businessId pattern.
   let file: File | null = null;
   let businessId = "";
   let issuer = "";
@@ -72,6 +73,12 @@ export async function POST(req: Request) {
     expiresOn = String(form.get("expires_on") || "").trim();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
+  }
+
+  // Pilot kill-switch — the feature surface is off until explicitly enabled
+  // (globally, or forced on/off for this specific business).
+  if (!(await resolveBusinessFlag("certVault", businessId))) {
+    return NextResponse.json({ ok: false, reason: "cert_vault_disabled" }, { status: 403 });
   }
 
   if (!file) return NextResponse.json({ ok: false, error: "No file" }, { status: 400 });

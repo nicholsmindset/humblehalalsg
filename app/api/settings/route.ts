@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { bustFlagCache } from "@/lib/feature-flags";
+import { FLAG_COLUMN } from "@/lib/flags";
 
 /* Admin-only monetization-flag writes (persisted to platform_settings).
    Until Supabase is wired, flags live client-side (localStorage) for demos;
    this route is the production source of truth. */
-const ALLOWED = ["paid_tickets_enabled", "paid_ads_enabled", "paid_plans_enabled", "ramadan_mode_enabled"];
+const ALLOWED = ["ramadan_mode_enabled", ...Object.values(FLAG_COLUMN)];
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -18,12 +20,21 @@ export async function POST(req: Request) {
   if (profile?.role !== "admin") return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const patch: Record<string, boolean> = {};
-  for (const k of ALLOWED) if (k in body) patch[k] = !!body[k];
+  const patch: Record<string, boolean | null> = {};
+  for (const k of ALLOWED) {
+    if (k in body) {
+      if (k === "ramadan_mode_enabled") {
+        patch[k] = !!body[k];
+      } else {
+        patch[k] = body[k] === null ? null : !!body[k];
+      }
+    }
+  }
   if (Object.keys(patch).length === 0) return NextResponse.json({ ok: false, reason: "no_changes" }, { status: 400 });
 
   const { error } = await admin.from("platform_settings").update(patch).eq("id", 1);
   if (error) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+  bustFlagCache();
   return NextResponse.json({ ok: true });
 }
 

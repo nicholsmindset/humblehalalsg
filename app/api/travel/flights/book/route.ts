@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { liteapiConfigured, bookFlight } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
@@ -52,7 +52,7 @@ async function bookWithRetry(prebookId: string, transactionId: string): Promise<
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "flight-book", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
-  if (!getServerFlags().paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
+  if (!(await getServerFlags()).paidFlights) return NextResponse.json({ ok: false, reason: "flight_booking_disabled" }, { status: 403 });
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;

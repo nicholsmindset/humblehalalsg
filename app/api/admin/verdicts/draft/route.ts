@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import {
   VerdictSchema, VERDICT_SYSTEM_PROMPT, verdictUserPrompt, verdictSlug,
   PAGE_TYPES, type PageType,
@@ -16,7 +16,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  if (!getServerFlags().halalVerdicts) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).halalVerdicts) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
 

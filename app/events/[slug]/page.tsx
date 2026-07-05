@@ -4,7 +4,7 @@ import { EventDetailScreen } from "@/components/screens/events";
 import { SimilarEvents } from "@/components/events/similar-events";
 import { getEvents } from "@/lib/events-source";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
@@ -41,7 +41,7 @@ export async function generateMetadata({
  *  (Cert Vault). The badge only ever reflects a verified record — never
  *  self-declared — and the whole surface stays behind CERT_VAULT_ENABLED. */
 async function organiserCertVerified(businessId: string | null): Promise<boolean> {
-  if (!businessId || !getServerFlags().certVault) return false;
+  if (!businessId || !(await getServerFlags()).certVault) return false;
   const supa = getSupabaseAdmin();
   if (!supa) return false;
   try {

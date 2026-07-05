@@ -11,6 +11,7 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
+import { FLAG_COLUMN, type FlagKey } from "@/lib/flags";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminVerdicts } from "./admin-verdicts";
@@ -99,6 +100,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
+    ["businesses", "Businesses", "store"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
@@ -149,6 +151,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
+          {section==='businesses' && <AdminBusinesses toast={toast} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
@@ -169,10 +172,78 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
   );
 }
 
+/* Global flag → readable copy for the Monetization toggles. Order within each
+   group below is the display order. */
+const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
+  paidTickets: { title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
+  paidAds: { title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
+  paidPlans: { title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
+  paidHotels: { title: "Paid hotel bookings", desc: "Enable live hotel payments via LiteAPI. When OFF, hotel search stays browse-only (no checkout)." },
+  paidFlights: { title: "Paid flight bookings", desc: "Enable live flight payments via LiteAPI. Requires Vercel Pro for the 10-minute retry cron before going live." },
+  payNow: { title: "PayNow", desc: "Accept PayNow as a checkout method alongside cards, where supported." },
+  paidLeads: { title: "Paid lead marketplace", desc: "Businesses pay to receive routed customer leads instead of receiving them for free." },
+  certVault: { title: "Cert Vault", desc: "Certificate upload & verification vault for businesses claiming halal certification." },
+  semanticSearch: { title: "Semantic search", desc: "AI-powered semantic search across listings and travel results." },
+  aiConcierge: { title: "AI concierge", desc: "The AI concierge / Ask-Hotel assistant surfaced to visitors." },
+  halalVerdicts: { title: "Halal verdicts", desc: "Admin halal-verdict workflow surfaced on listing pages." },
+  leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
+  passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
+};
+const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"];
+const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k));
+
+/* Single flag row — reuses the cert-toggle/cert-switch/cert-knob switch markup
+   used elsewhere in this file (Ramadan mode, Cert Vault, etc). `value` is the
+   platform_settings column value: true/false = explicit override, null = no
+   override (falls back to the env var server-side). */
+function GlobalFlagRow({ flagKey, value, onToggle }: { flagKey: FlagKey; value: boolean | null; onToggle: (next: boolean) => void }) {
+  const { title, desc } = FLAG_COPY[flagKey];
+  const on = value === true;
+  return (
+    <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ flex: 1 }}>
+        <div className="flex g8 center" style={{ marginBottom: 4 }}>
+          <h3 style={{ fontSize: "1.05rem" }}>{title}</h3>
+          <span className="tag" style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
+            {on ? "Live" : "Off"}
+          </span>
+          {value === null && <span className="faint" style={{ fontSize: ".72rem", fontStyle: "italic" }}>using env default</span>}
+        </div>
+        <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{desc}</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={`${on ? "Disable" : "Enable"} ${title}`}
+        className={`cert-toggle ${on ? "on" : ""}`}
+        style={{ flex: "none" }}
+        onClick={() => onToggle(!on)}
+      >
+        <span className="cert-switch"><span className="cert-knob" /></span>
+      </button>
+    </div>
+  );
+}
+
 export function AdminMonetization() {
-  const { flags, setFlag, toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  const { toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  // Global flag overrides — hydrated from platform_settings on mount so every
+  // toggle reflects the persisted (server) state, not client-only demo state.
+  const [values, setValues] = useState<Record<string, boolean | null>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/settings");
+        const d = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        const next: Record<string, boolean | null> = {};
+        for (const col of Object.values(FLAG_COLUMN)) next[col] = col in d ? (d[col] === null ? null : !!d[col]) : null;
+        setValues(next);
+      } catch { /* keep defaults — rows show "using env default" */ }
+    })();
+  }, []);
+
   // Ramadan mode persists to platform_settings so EVERY visitor sees it (server-
-  // hydrated), unlike the demo paid-flag toggles which are client-side only.
+  // hydrated), same pattern the flags above now follow.
   const toggleRamadan = async () => {
     const next = !ramadanModeEnabled;
     setRamadanModeEnabled(next);
@@ -181,11 +252,29 @@ export function AdminMonetization() {
       await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ramadan_mode_enabled: next }) });
     } catch { /* optimistic; admin can retry */ }
   };
-  const rows: { key: "paidTickets" | "paidAds" | "paidPlans"; title: string; desc: string }[] = [
-    { key: "paidTickets", title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
-    { key: "paidAds", title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
-    { key: "paidPlans", title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
-  ];
+
+  // Persist a global flag override. Payment flags require an explicit confirm
+  // before flipping ON, since they gate LIVE charging flows.
+  async function setGlobalFlag(flagKey: FlagKey, next: boolean, isPayment: boolean) {
+    if (isPayment && next && !confirm("This enables a LIVE payment/charging flow. Continue?")) return;
+    const column = FLAG_COLUMN[flagKey];
+    const prev = values[column] ?? null;
+    setValues((v) => ({ ...v, [column]: next })); // optimistic
+    try {
+      const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [column]: next }) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [column]: prev }));
+        toast("Couldn't save — try again.");
+      } else {
+        toast(`${FLAG_COPY[flagKey].title} ${next ? "enabled" : "disabled"}`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [column]: prev }));
+      toast("Couldn't save — try again.");
+    }
+  }
+
   return (
     <div style={{ maxWidth: 720 }}>
       <div className="notice notice-warn" style={{ marginBottom: 18 }}>
@@ -195,37 +284,22 @@ export function AdminMonetization() {
           Paid flows also require Stripe keys + each business to complete payout onboarding.
         </span>
       </div>
-      <div className="stack g12">
-        {rows.map((r) => {
-          const on = flags[r.key];
-          return (
-            <div key={r.key} className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div style={{ flex: 1 }}>
-                <div className="flex g8 center" style={{ marginBottom: 4 }}>
-                  <h3 style={{ fontSize: "1.05rem" }}>{r.title}</h3>
-                  <span className={`tag ${on ? "" : ""}`} style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
-                    {on ? "Live" : "Off"}
-                  </span>
-                </div>
-                <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{r.desc}</p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={on}
-                aria-label={`${on ? "Disable" : "Enable"} ${r.title}`}
-                className={`cert-toggle ${on ? "on" : ""}`}
-                style={{ flex: "none" }}
-                onClick={() => {
-                  setFlag(r.key, !on);
-                  toast(`${r.title} ${!on ? "enabled" : "disabled"}`);
-                }}
-              >
-                <span className="cert-switch"><span className="cert-knob" /></span>
-              </button>
-            </div>
-          );
-        })}
 
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Payments</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {PAYMENT_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, true)} />
+        ))}
+      </div>
+
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Features</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {FEATURE_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, false)} />
+        ))}
+      </div>
+
+      <div className="stack g12">
         {/* Ramadan mode — seasonal, persisted globally */}
         <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", borderColor: "var(--emerald-200)" }}>
           <div style={{ flex: 1 }}>
@@ -249,6 +323,184 @@ export function AdminMonetization() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Per-business feature overrides ─────────────────────────────────────────
+   These owner-scoped flags can be forced on/off for a single business — e.g.
+   beta-test a feature with select businesses while it's globally off, or
+   comp/restrict one business without touching the site-wide switch. A
+   "Default" state clears the override so the business falls back to the
+   global/env value.
+
+   Only THREE flags are shown here — the ones `resolveBusinessFlag` actually
+   reads server-side (see app/api/owner/ads/checkout, app/api/owner/cert,
+   app/api/owner/leads/accept). `leadRouting` and `paidPlans` are intentionally
+   excluded: their gates are evaluated before a businessId is resolvable
+   (e.g. at enquiry-submission/pricing time), so a per-business override would
+   never be read — showing a toggle for them would be misleading UI. They
+   remain enforceable globally only for now; per-business enforcement is
+   deferred until those call sites are refactored to resolve a businessId
+   first. The API's FEATURES array and DB constraint intentionally still allow
+   all 5 keys, forward-compatible with that future work. */
+const BUSINESS_FEATURE_KEYS: FlagKey[] = ["paidAds", "certVault", "paidLeads"];
+
+/* One feature's 3-state control: Default (defer to global) / On (forced) /
+   Off (forced). Uses the same `chip`/`chip.active` styling as the role/status
+   filters elsewhere in this file — no new visual pattern. */
+function BusinessFeatureRow({ flagKey, value, onSet }: { flagKey: FlagKey; value: boolean | null; onSet: (next: boolean | null) => void }) {
+  const { title, desc } = FLAG_COPY[flagKey];
+  return (
+    <div className="card" style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <h4 style={{ fontSize: ".96rem", marginBottom: 2 }}>{title}</h4>
+        <p className="faint" style={{ fontSize: ".82rem", lineHeight: 1.4 }}>{desc}</p>
+      </div>
+      <div className="flex g6" role="group" aria-label={`${title} override`}>
+        <button type="button" className={`chip ${value === null ? "active" : ""}`} aria-pressed={value === null} onClick={() => onSet(null)}>Default</button>
+        <button type="button" className={`chip ${value === true ? "active" : ""}`} aria-pressed={value === true} onClick={() => onSet(true)}>On</button>
+        <button type="button" className={`chip ${value === false ? "active" : ""}`} aria-pressed={value === false} onClick={() => onSet(false)}>Off</button>
+      </div>
+    </div>
+  );
+}
+
+/* Loads + persists the per-business overrides for one business.
+   Read path: a direct client read of business_feature_overrides, scoped by the
+   admin-only RLS policy from migration 0053 ("bfo admin read" — for select to
+   authenticated using is_admin()) via the Clerk-authed useSupabaseBrowser()
+   client (same hook/pattern this file already uses for admin dashboard reads,
+   e.g. AdminUsers' admin_list_users rpc). This gives REAL current state rather
+   than starting every business at "Default" on every visit. Fails soft to
+   all-Default when Supabase isn't configured, the migration hasn't been applied
+   yet, or the read errors for any reason — the panel stays usable either way,
+   and a successful write always reflects immediately (optimistic + real POST). */
+function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toast: (msg: string) => void }) {
+  const supabase = useSupabaseBrowser();
+  const [values, setValues] = useState<Record<string, boolean | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    // Reset synchronously (before the async fetch below resolves) so switching
+    // businesses never briefly shows the PREVIOUS business's On/Off state —
+    // every row starts at Default until this business's real overrides load.
+    const cleared: Record<string, boolean | null> = {};
+    for (const k of BUSINESS_FEATURE_KEYS) cleared[k] = null;
+    setValues(cleared);
+    (async () => {
+      const base: Record<string, boolean | null> = {};
+      for (const k of BUSINESS_FEATURE_KEYS) base[k] = null;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from("business_feature_overrides")
+            .select("feature_key, enabled")
+            .eq("business_id", businessId);
+          if (!error && Array.isArray(data)) {
+            for (const row of data as { feature_key: string; enabled: boolean }[]) {
+              if ((BUSINESS_FEATURE_KEYS as string[]).includes(row.feature_key)) base[row.feature_key] = row.enabled;
+            }
+          }
+        } catch { /* fail soft → all Default */ }
+      }
+      if (alive) { setValues(base); setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [businessId, supabase]);
+
+  const setFeature = async (feature: FlagKey, next: boolean | null) => {
+    const prev = values[feature] ?? null;
+    setValues((v) => ({ ...v, [feature]: next })); // optimistic
+    try {
+      const r = await fetch("/api/admin/business-flags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId, feature, enabled: next }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [feature]: prev }));
+        toast("Couldn't save — try again.");
+      } else {
+        toast(`${FLAG_COPY[feature].title} → ${next === null ? "Default" : next ? "On" : "Off"}`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [feature]: prev }));
+      toast("Couldn't save — try again.");
+    }
+  };
+
+  return (
+    <div className="stack g10">
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>
+        Features{loading ? " · loading…" : ""}
+      </div>
+      <div className="stack g10">
+        {BUSINESS_FEATURE_KEYS.map((k) => (
+          <BusinessFeatureRow key={k} flagKey={k} value={values[k] ?? null} onSet={(next) => setFeature(k, next)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Businesses — admin business detail (list → select → Features panel) ────
+   Reuses the live directory (same data browse-facing pages read via
+   useDirectory()) so the list is real, not mock. Selecting a row opens its
+   detail card with the per-business Features panel above. */
+export function AdminBusinesses({ toast }: { toast: (msg: string) => void }) {
+  const dir = useDirectory();
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const rows = q
+    ? dir.listings.filter((l) => `${l.name} ${l.cat} ${l.area}`.toLowerCase().includes(q.toLowerCase()))
+    : dir.listings;
+  const biz = selected ? dir.get(selected) : undefined;
+
+  return (
+    <div className="stack g16">
+      <div className="card" style={{ overflow: "hidden" }}>
+        <div className="admin-tablehead">
+          <div className="flex g8 center"><span className="tag">{dir.listings.length} businesses</span></div>
+          <div className="searchbar" style={{ maxWidth: 260, padding: "4px 4px 4px 12px" }}>
+            <Icon name="search" className="lead" size={16} />
+            <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
+          </div>
+        </div>
+        {rows.length === 0 ? (
+          <div style={{ padding: 24 }}><Empty icon="building" title="No businesses" body={q ? `Nothing matches "${q}".` : "No businesses in the directory yet."} /></div>
+        ) : (
+          <div className="tbl-scroll"><table className="tbl">
+            <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Plan</th><th>Manage</th></tr></thead>
+            <tbody>{rows.slice(0, 200).map((l) => (
+              <tr key={l.id} className="rowhover" style={{ background: selected === l.id ? "var(--cream-100)" : undefined }}>
+                <td style={{ fontWeight: 700 }}>{l.name}</td>
+                <td className="muted">{l.cat}</td>
+                <td className="muted">{l.area}</td>
+                <td><span className="pill-tag">{l.plan || "free"}</span></td>
+                <td><button className="btn btn-soft btn-sm" onClick={() => setSelected(selected === l.id ? null : l.id)}>{selected === l.id ? "Close" : "Manage"}</button></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+
+      {biz && (
+        <div className="card" style={{ padding: 20 }}>
+          <div className="flex between center wrap g8" style={{ marginBottom: 14 }}>
+            <div>
+              <h3 style={{ fontSize: "1.1rem" }}>{biz.name}</h3>
+              <p className="faint" style={{ fontSize: ".84rem" }}>{biz.cat} · {biz.area}</p>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><Icon name="x" size={15} /> Close</button>
+          </div>
+          <BusinessFeaturesPanel businessId={biz.id} toast={toast} />
+        </div>
+      )}
     </div>
   );
 }

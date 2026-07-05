@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { computeOrder, CURRENCY, type FeeMode } from "@/lib/fees";
 import { getEvent } from "@/lib/data";
@@ -37,7 +37,7 @@ const STRIPE_MIN_CHARGE_CENTS = 50; // Stripe's minimum chargeable amount in SGD
 
 export async function POST(req: Request) {
   // 1) server-side kill-switch (never trust the client toggle)
-  const flags = getServerFlags();
+  const flags = await getServerFlags();
   if (!flags.paidTickets) {
     return NextResponse.json({ ok: false, reason: "paid_tickets_disabled" }, { status: 403 });
   }

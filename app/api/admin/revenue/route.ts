@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { PLANS, planKey } from "@/lib/plans";
 
 /* Unified revenue P&L across every stream, from OUR own ledger tables:
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
 
-  const flags = getServerFlags();
+  const flags = await getServerFlags();
   const url = new URL(req.url);
   const windowDays = Math.min(365, Math.max(1, Number(url.searchParams.get("days")) || 30));
 

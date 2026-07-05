@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 
 /* Passport privacy settings (PDPA: default private). GET returns is_public +
    share_token + display_name; POST toggles/updates them (service-role write;
@@ -18,7 +18,7 @@ async function ensureRow(db: NonNullable<ReturnType<typeof getSupabaseAdmin>>, u
 }
 
 export async function GET() {
-  if (!getServerFlags().passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();
@@ -28,7 +28,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!getServerFlags().passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).passport) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();

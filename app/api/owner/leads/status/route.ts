@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 
 /* Owner updates the pipeline state of an ACCEPTED lead: contacted / won / lost.
    Only valid from an already-accepted route (contact was unlocked). */
@@ -18,7 +18,7 @@ async function ownsBusiness(db: Db, businessId: string, userId: string): Promise
 }
 
 export async function POST(req: Request) {
-  if (!getServerFlags().leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
+  if (!(await getServerFlags()).leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const db = getSupabaseAdmin();

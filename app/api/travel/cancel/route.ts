@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { cancelBooking, liteapiConfigured } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
@@ -8,7 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
    (hotel_bookings.user_id) before calling LiteAPI; LiteAPI enforces the
    cancellation policy. Gated by PAID_HOTELS_ENABLED. */
 export async function POST(req: Request) {
-  if (!getServerFlags().paidHotels) return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
+  if (!(await getServerFlags()).paidHotels) return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as { id?: string };
   const id = String(body.id || "").trim();

@@ -1,5 +1,5 @@
 import { FlightsScreen } from "@/components/screens/flights";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 
@@ -30,11 +30,11 @@ const faqs = [
   { q: "Can I book flights and a hotel together?", a: "You can search flights and pair them with a Muslim-friendly hotel — with prayer rooms, halal dining nearby and alcohol-free options — in one place." },
 ];
 
-export default function Page() {
+export default async function Page() {
   return (
     <>
       <JsonLd data={[service, faqJsonLd(faqs), breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Travel", path: "/travel" }, { name: "Flights", path: "/travel/flights" }])]} />
-      <FlightsScreen bookingEnabled={getServerFlags().paidFlights} />
+      <FlightsScreen bookingEnabled={(await getServerFlags()).paidFlights} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { beehiivSubscribe } from "@/lib/beehiiv";
@@ -23,7 +23,7 @@ const PRICE_ENV: Record<string, { monthly?: string; yearly?: string }> = {
 const PRICE_FOUNDING_Y = process.env.STRIPE_PRICE_VERIFIED_FOUNDING_Y;
 
 export async function POST(req: Request) {
-  if (!getServerFlags().paidPlans) {
+  if (!(await getServerFlags()).paidPlans) {
     return NextResponse.json({ ok: false, reason: "paid_plans_disabled" }, { status: 403 });
   }
   // Stripe-session factory — rate-limit like /api/donate.

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getListingBySlug } from "@/lib/directory";
 import { PosterClient } from "@/components/business/poster-client";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 
 /* Printable shopfront poster for owners — noindex (utility page, not SEO). */
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -19,5 +19,5 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const l = await getListingBySlug(slug);
   if (!l) notFound();
-  return <PosterClient slug={l.slug || slug} name={l.name} statusLabel={statusLabel(l)} collectEnabled={getServerFlags().passport} />;
+  return <PosterClient slug={l.slug || slug} name={l.name} statusLabel={statusLabel(l)} collectEnabled={(await getServerFlags()).passport} />;
 }

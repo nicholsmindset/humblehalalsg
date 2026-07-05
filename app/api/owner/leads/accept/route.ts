@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags, resolveBusinessFlag } from "@/lib/feature-flags";
 import { remainingQuota } from "@/lib/lead-routing";
 
 /* Accept a routed lead → unmask the consumer's contact details. This is the
@@ -28,7 +28,9 @@ async function ownsBusiness(db: Db, businessId: string, userId: string): Promise
 }
 
 export async function POST(req: Request) {
-  const { leadRouting, paidLeads } = getServerFlags();
+  // leadRouting gates the whole surface before any businessId is knowable
+  // (routeId hasn't even been parsed yet) — stays on the global/env resolution.
+  const { leadRouting } = await getServerFlags();
   if (!leadRouting) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
 
   const { userId } = await auth();
@@ -47,6 +49,9 @@ export async function POST(req: Request) {
   if (!route) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!(await ownsBusiness(db, route.business_id, userId)))
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+
+  // businessId is in scope now (the route's own business) — resolve per-business.
+  const paidLeads = await resolveBusinessFlag("paidLeads", route.business_id);
 
   // Idempotent: already accepted → just return contact.
   const already = ["accepted", "contacted", "won", "lost"].includes(route.status);

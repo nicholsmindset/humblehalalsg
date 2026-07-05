@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { remainingQuota } from "@/lib/lead-routing";
 import { maskName, maskEmail, maskPhone } from "@/lib/lead-mask";
 import { verticalLabel } from "@/lib/lead-verticals";
@@ -24,7 +24,7 @@ async function ownedBusinessIds(db: Db, userId: string): Promise<string[]> {
 }
 
 export async function GET() {
-  const { leadRouting, paidLeads } = getServerFlags();
+  const { leadRouting, paidLeads } = await getServerFlags();
   if (!leadRouting) return NextResponse.json({ ok: true, enabled: false, routes: [] });
 
   const { userId } = await auth();

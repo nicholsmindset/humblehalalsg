@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TravelHotelScreen } from "@/components/screens/travel";
 import { hotelDetail } from "@/lib/travel-data";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
 import { qiblaBearing } from "@/lib/qibla";
@@ -43,7 +43,7 @@ export default async function Page({
   const d = await hotelDetail(id, dates);
   if (!d) notFound();
 
-  const bookingEnabled = getServerFlags().paidHotels;
+  const bookingEnabled = (await getServerFlags()).paidHotels;
 
   return (
     <>

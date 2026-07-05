@@ -74,8 +74,8 @@ export async function POST(req: Request) {
       const refCode = d.unsafe_metadata?.refCode;
       if (refCode) {
         try {
-          const { getServerFlags } = await import("@/lib/flags");
-          if (getServerFlags().passport) {
+          const { getServerFlags } = await import("@/lib/feature-flags");
+          if ((await getServerFlags()).passport) {
             const { data: referrerId } = await admin.rpc("credit_referral", { p_referred_id: d.id, p_code: String(refCode) });
             if (referrerId) {
               const { notifyReferralJoined } = await import("@/lib/passport-server");
