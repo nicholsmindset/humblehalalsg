@@ -950,6 +950,25 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
     const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; }
     setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
   };
+  // Takedown straight from a report — the "reported as not halal → removed"
+  // loop. Suspends the business (reversible; hidden from every public surface)
+  // via /api/admin/listing, then auto-resolves the report.
+  const suspendFromReport = async (reportId: string, bizRef: string, bizName: string) => {
+    if (!confirm(`Suspend "${bizName}"?\n\nIt disappears from the directory, search, its page and the sitemap immediately. Reversible from Businesses → Manage.`)) return;
+    const reason = prompt("Reason (recorded in the audit log):", "Not halal — removed after community report") || "";
+    try {
+      const r = await fetch("/api/admin/listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: bizRef, action: "suspend", reason }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!d.ok) { toast(d.error === "not_found" ? "Couldn't match this report to a business." : "Couldn't suspend — try again."); return; }
+      await queueAct("reports", reportId, "resolve"); // best-effort close-out
+      setRows((rs) => rs.filter((x) => x.id !== reportId));
+      toast("Listing suspended and report resolved.");
+    } catch { toast("Couldn't suspend — try again."); }
+  };
   return (
     <div className="stack g12">
       {rows.map(r=>{
@@ -958,7 +977,11 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
         <div key={r.id} className="card" style={{padding:18}}>
           <div className="flex between center wrap g10">
             <div className="flex g12 center"><span className={`sev-dot ${r.sev}`}/><div><div style={{fontWeight:700}}>{r.reason}</div><div className="faint" style={{fontSize:'.82rem'}}>{biz?.name || r.bizId.slice(0,8) || "—"} · reported by community · {r.time}</div></div></div>
-            <div className="flex g8">{biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}<button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button></div>
+            <div className="flex g8">
+              {biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}
+              {r.bizId && <button className="btn btn-sm" style={{background:'#FCEBEB',color:'#A32D2D'}} onClick={()=>suspendFromReport(r.id, r.bizId, biz?.name || 'this listing')}>Suspend listing</button>}
+              <button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button>
+            </div>
           </div>
         </div>
         );

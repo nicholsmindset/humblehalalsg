@@ -38,6 +38,18 @@ const ADMIN_EDITABLE = [
 const ADMIN_GALLERY_MAX = 30;
 
 const LIST_COLS = "id, slug, name, cat_id, area, plan, status, halal_tier, featured, created_at";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Resolve a business by uuid OR slug — report rows carry `business_ref` as
+ *  raw text that may be either, so takedown-from-a-report must accept both. */
+async function findBusiness(db: NonNullable<ReturnType<typeof getSupabaseAdmin>>, ref: string, cols: string) {
+  const q = db.from("businesses").select(cols);
+  const { data } = UUID_RE.test(ref)
+    ? await q.eq("id", ref).maybeSingle()
+    : await q.eq("slug", ref).maybeSingle();
+  return data as Record<string, unknown> | null;
+}
 const ROW_COLS = `${LIST_COLS}, phone, website, address, postal, description, price_level, opening_hours, socials, photos, attributes, owner_id, claimed_by`;
 
 export async function GET(req: Request) {
@@ -119,19 +131,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
   }
 
-  const { data: row } = await db.from("businesses").select("id, slug, name, status").eq("id", id).maybeSingle();
+  const row = (await findBusiness(db, id, "id, slug, name, status")) as
+    | { id: string; slug: string; name: string; status: string }
+    | null;
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
   const nextStatus = action === "suspend" ? "suspended" : "published";
   if (row.status === nextStatus) return NextResponse.json({ ok: true, status: nextStatus, unchanged: true });
 
-  const { error } = await db.from("businesses").update({ status: nextStatus }).eq("id", id);
+  const { error } = await db.from("businesses").update({ status: nextStatus }).eq("id", row.id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
   await logAudit(db, {
     actor: gate.userId,
     action: action === "suspend" ? "listing_suspend" : "listing_restore",
-    target: id,
+    target: row.id,
     meta: { slug: row.slug, name: row.name, reason: reason || null },
   });
   // The listing disappears from (or returns to) every published surface.
