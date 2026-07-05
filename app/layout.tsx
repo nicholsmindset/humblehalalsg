@@ -74,6 +74,9 @@ export const metadata: Metadata = {
     description: SITE.description,
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: SITE.name },
+  // Google Search Console ownership (meta-tag method; the HTML-file method is
+  // also served from public/googledeada25508a8dbb9.html as a backup).
+  verification: { google: "hpyENNOXNa-bCerM6QCS2IRau9olW41Sov-CGUKkqAE" },
 };
 
 export const viewport: Viewport = {
