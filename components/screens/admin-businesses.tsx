@@ -468,7 +468,7 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, toast, goto
 }
 
 /* ── The section: list ⇄ detail ─────────────────────────────────────────────── */
-type View = { mode: "list" } | { mode: "manage"; id: string } | { mode: "create" };
+type View = { mode: "list" } | { mode: "manage"; id: string } | { mode: "create" } | { mode: "import" };
 
 export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: string) => void; gotoVerification: () => void }) {
   const [rows, setRows] = useState<AdminBizRow[] | null>(null);
@@ -476,6 +476,7 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("all");
   const [view, setView] = useState<View>({ mode: "list" });
+  const [refresh, setRefresh] = useState(0); // bumped after a bulk import publishes rows
 
   useEffect(() => {
     let alive = true;
@@ -489,10 +490,20 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
       } catch { if (alive) { setRows([]); setLoadErr(true); } }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [refresh]);
 
   const patchRow = (patch: Partial<AdminBizRow> & { id: string }) =>
     setRows((cur) => (cur ? cur.map((r) => (r.id === patch.id ? { ...r, ...patch } : r)) : cur));
+
+  if (view.mode === "import") {
+    return (
+      <ImportPanel
+        toast={toast}
+        onBack={() => setView({ mode: "list" })}
+        onPublished={() => { setView({ mode: "list" }); setRefresh((n) => n + 1); }}
+      />
+    );
+  }
 
   if (view.mode !== "list") {
     return (
@@ -530,6 +541,7 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
               <Icon name="search" className="lead" size={16} />
               <input placeholder="Search businesses…" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: ".86rem" }} aria-label="Search businesses" />
             </div>
+            <button className="btn btn-soft btn-sm" onClick={() => setView({ mode: "import" })}><Icon name="upload" size={15} /> Import CSV</button>
             <button className="btn btn-primary btn-sm" onClick={() => setView({ mode: "create" })}><Icon name="plus" size={15} /> Add business</button>
           </div>
         </div>
@@ -553,6 +565,160 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
           </table></div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Bulk import (CSV → staging → batch approve) ───────────────────────────── */
+type ImportRow = { row: number; name: string; status: "ok" | "duplicate" | "error"; reason?: string };
+type ImportResult = { counts: { ok: number; duplicate: number; error: number }; report: ImportRow[]; committed?: boolean };
+
+function ImportPanel({ toast, onBack, onPublished }: { toast: (m: string) => void; onBack: () => void; onPublished: () => void }) {
+  const [csv, setCsv] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [committed, setCommitted] = useState(false);
+  const [approving, setApproving] = useState(false);
+
+  const readFile = (f: File | undefined) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { setCsv(String(reader.result || "")); setResult(null); setCommitted(false); };
+    reader.readAsText(f);
+  };
+
+  const run = async (commit: boolean) => {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv, commit }),
+      });
+      const d = (await r.json().catch(() => ({}))) as ImportResult & { ok?: boolean; error?: string };
+      if (!d.ok) {
+        toast(
+          d.error === "missing_name_column" ? "The CSV needs a 'name' column — use the template." :
+          d.error === "too_many_rows" ? "Max 500 rows per import — split the file." :
+          d.error === "no_data_rows" ? "No data rows found below the header." :
+          "Couldn't read that CSV — check the format against the template.",
+        );
+        return;
+      }
+      setResult(d);
+      setCommitted(!!d.committed);
+      if (d.committed) toast(`${d.counts.ok} listing${d.counts.ok === 1 ? "" : "s"} sent to the review queue`);
+    } catch {
+      toast("Network error — please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const approveAll = async () => {
+    setApproving(true);
+    try {
+      const r = await fetch("/api/admin/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "listings", action: "approve_all", source: "import" }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; published?: number; failed?: number };
+      if (d.ok) {
+        toast(`${d.published ?? 0} published${d.failed ? ` · ${d.failed} left for manual review` : ""}`);
+        onPublished();
+      } else {
+        toast("Couldn't batch-approve — review them in Listing approvals instead.");
+      }
+    } catch {
+      toast("Network error — please try again.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  return (
+    <div className="stack g16">
+      <div className="flex g8 center">
+        <button className="btn btn-ghost btn-sm" onClick={onBack}><Icon name="arrow" size={15} style={{ transform: "rotate(180deg)" }} /> Back to businesses</button>
+      </div>
+      <div className="card" style={{ padding: 20 }}>
+        <h3 style={{ fontSize: "1.05rem" }}>Bulk import from a spreadsheet</h3>
+        <p className="muted" style={{ fontSize: ".88rem", marginTop: 6 }}>
+          Imported rows go to the <b>review queue</b> first — nothing publishes until you approve.
+          Halal status is never set from a spreadsheet; verified badges stay in Halal verification.
+        </p>
+        <ol className="stack g10" style={{ marginTop: 14, paddingLeft: 18, fontSize: ".9rem" }}>
+          <li>
+            <a className="btn btn-soft btn-sm" href="/templates/business-import-template.csv" download>
+              <Icon name="doc" size={15} /> Download the CSV template
+            </a>
+            <span className="muted" style={{ marginLeft: 8 }}>Google Sheets: File → Download → CSV. Only <b>name</b> is required.</span>
+          </li>
+          <li>
+            <div className="stack g8" style={{ marginTop: 6 }}>
+              <input type="file" accept=".csv,text/csv" aria-label="Upload CSV file" onChange={(e) => readFile(e.target.files?.[0])} />
+              <textarea
+                className="input"
+                rows={6}
+                placeholder={"…or paste CSV here (first row must be the header)\nname,category,area,address,…"}
+                value={csv}
+                onChange={(e) => { setCsv(e.target.value); setResult(null); setCommitted(false); }}
+                style={{ fontFamily: "var(--mono, monospace)", fontSize: ".8rem" }}
+              />
+            </div>
+          </li>
+          <li>
+            <div className="flex g8 center wrap" style={{ marginTop: 6 }}>
+              <button className="btn btn-primary btn-sm" disabled={!csv.trim() || busy} onClick={() => run(false)}>
+                {busy && !committed ? "Checking…" : "Validate"}
+              </button>
+              {result && !committed && result.counts.ok > 0 && (
+                <button className="btn btn-gold btn-sm" disabled={busy} onClick={() => run(true)}>
+                  Send {result.counts.ok} to review queue
+                </button>
+              )}
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      {result && (
+        <div className="card" style={{ padding: 20 }}>
+          <div className="flex g8 center wrap">
+            <span className="pill-tag" style={{ background: "#E8F3EE", color: "var(--emerald)" }}>{result.counts.ok} ok</span>
+            <span className="pill-tag">{result.counts.duplicate} duplicate{result.counts.duplicate === 1 ? "" : "s"}</span>
+            <span className="pill-tag" style={{ background: "#FCEBEB", color: "#A32D2D" }}>{result.counts.error} error{result.counts.error === 1 ? "" : "s"}</span>
+          </div>
+          {committed && (
+            <div className="flex g8 center wrap" style={{ marginTop: 12 }}>
+              <button className="btn btn-primary btn-sm" disabled={approving} onClick={approveAll}>
+                {approving ? "Publishing…" : "Approve all imported now"}
+              </button>
+              <span className="muted" style={{ fontSize: ".84rem" }}>…or review them one-by-one under Listing approvals.</span>
+            </div>
+          )}
+          <div className="tbl-scroll" style={{ marginTop: 12, maxHeight: 320, overflowY: "auto" }}>
+            <table className="tbl">
+              <thead><tr><th>Row</th><th>Name</th><th>Status</th><th>Note</th></tr></thead>
+              <tbody>
+                {result.report.map((r) => (
+                  <tr key={r.row}>
+                    <td className="muted">{r.row}</td>
+                    <td style={{ fontWeight: 600 }}>{r.name}</td>
+                    <td>
+                      <span className="pill-tag" style={r.status === "ok" ? { background: "#E8F3EE", color: "var(--emerald)" } : r.status === "error" ? { background: "#FCEBEB", color: "#A32D2D" } : undefined}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="muted" style={{ fontSize: ".82rem" }}>{r.reason || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

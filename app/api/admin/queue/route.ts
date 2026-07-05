@@ -54,8 +54,35 @@ export async function POST(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
 
-  const body = (await req.json().catch(() => ({}))) as { type?: QueueType; id?: string; action?: string };
+  const body = (await req.json().catch(() => ({}))) as { type?: QueueType; id?: string; action?: string; source?: string };
   const { type, id, action } = body;
+  // approve_all is a batch action (no single id): approve every pending staged
+  // listing from one source (the CSV import flow's one-click publish).
+  if (type === "listings" && action === "approve_all") {
+    const admin2 = getSupabaseAdmin()!;
+    const source = String(body.source || "import");
+    const { data: pending } = await admin2
+      .from("staging_businesses")
+      .select("id")
+      .in("review_status", ["new", "reviewing"])
+      .eq("source", source)
+      .limit(500);
+    let published = 0, failed = 0;
+    for (const row of pending || []) {
+      try {
+        const r = await actListing(admin2, String(row.id), "approve", gate.userId, { revalidate: false });
+        if (r.status === 200) published++; else failed++;
+      } catch { failed++; }
+    }
+    revalidatePublic();
+    await logAudit(admin2, {
+      actor: gate.userId,
+      action: "Batch-approved imported listings",
+      target: "staging_businesses",
+      meta: { source, published, failed },
+    });
+    return NextResponse.json({ ok: true, published, failed });
+  }
   if (!type || !(type in PENDING) || !id || !action) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 422 });
   }
@@ -127,7 +154,7 @@ function badAction() {
 
 /* Approving a staged listing publishes a real business row, then marks the
    staging record done. Rejecting just flags the staging record. */
-async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string, action: string, actor: string) {
+async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string, action: string, actor: string, opts?: { revalidate?: boolean }) {
   const db = admin!;
   if (action === "reject") {
     await db.from("staging_businesses").update({ review_status: "rejected" }).eq("id", id);
@@ -163,6 +190,12 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
   const photos = Array.isArray(raw.photos)
     ? (raw.photos as unknown[]).map((p) => (typeof p === "string" ? { url: p } : p)).filter((p): p is { url: string } => !!p && typeof (p as { url?: unknown }).url === "string")
     : [];
+  // Contact/detail fields captured at intake (owner wizard or CSV import)
+  // carry through — attributes as a clean text[] and price_level clamped to $s.
+  const attributes = Array.isArray(raw.attributes)
+    ? (raw.attributes as unknown[]).map((a) => String(a).trim().toLowerCase()).filter(Boolean).slice(0, 12)
+    : [];
+  const priceLevel = typeof raw.price_level === "string" && /^\${1,4}$/.test(raw.price_level) ? raw.price_level : null;
   const insert = {
     name: String(s.name),
     slug,
@@ -171,6 +204,12 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
     description: String(raw.desc || raw.description || "") || null,
     address: String(raw.address || "") || null,
     postal: String(raw.postal || "") || null,
+    phone: String(raw.phone || "") || null,
+    website: String(raw.website || "") || null,
+    price_level: priceLevel,
+    attributes,
+    lat: typeof s.lat === "number" ? s.lat : null,
+    lng: typeof s.lng === "number" ? s.lng : null,
     photos,
     status: "published",
     halal_tier: "declared", // community-declared until an admin verifies on HalalSG
@@ -208,7 +247,7 @@ async function actListing(admin: ReturnType<typeof getSupabaseAdmin>, id: string
       });
     } catch { /* best-effort */ }
   }
-  revalidatePublic();
+  if (opts?.revalidate !== false) revalidatePublic();
   return NextResponse.json({ ok: true, status: "published", businessId: created.id });
 }
 
