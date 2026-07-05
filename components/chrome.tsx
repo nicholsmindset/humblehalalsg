@@ -435,9 +435,8 @@ export function TopNav() {
           <LangToggle />
           {user.loggedIn ? (
             <>
-              <button className="btn btn-ghost btn-sm nav-dash" onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")} aria-label="Open my dashboard">
-                <Icon name="chart" size={16} /> Dashboard
-              </button>
+              {/* Dashboard lives in the avatar menu (My/Business dashboard
+                  actions below) — a separate ghost button crowded the cluster. */}
               {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
@@ -685,7 +684,7 @@ function LangToggle() {
 function FooterSection({ title, cloud, children }: { title: string; cloud?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className={`${cloud ? "hh-wrap hh-footer-cats" : "hh-footer-col"} ${open ? "open" : ""}`}>
+    <section className={`${cloud ? "hh-footer-cats" : "hh-footer-col"} ${open ? "open" : ""}`}>
       <h2 className="hh-footer-title">
         <button type="button" className="hh-footer-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {title}
@@ -707,19 +706,20 @@ export function Footer() {
       [
         ["Explore", "explore"],
         ["Events", "events"],
-        ["Islamic tools", "tools"],
         ["Map view", "map"],
-        ["Mosques in Singapore", "mosques"],
-        ["Prayer rooms (musollah)", "prayer-rooms"],
-        ["Saved places", "saved"],
-      ],
-    ],
-    [
-      "Travel",
-      [
         ["Halal travel & hotels", "travel"],
         ["Flights", "travel-flights"],
         ["My trips", "travel-trips"],
+      ],
+    ],
+    [
+      "Community & tools",
+      [
+        ["Islamic tools", "tools"],
+        ["Mosques in Singapore", "mosques"],
+        ["Prayer rooms (musollah)", "prayer-rooms"],
+        ["Saved places", "saved"],
+        ["Blog & guides", "blog"],
       ],
     ],
     [
@@ -748,7 +748,6 @@ export function Footer() {
         ["About us", "about"],
         ["Contact us", "contact"],
         ["FAQ", "faq"],
-        ["Blog & guides", "blog"],
       ],
     ],
   ];
@@ -791,26 +790,30 @@ export function Footer() {
             </FooterSection>
           ))}
         </div>
-        <FooterSection title="Browse by category" cloud>
-          <li><Link href="/halal">Halal directory</Link></li>
-          {catPages.map((p) => {
-            const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
-            return (
-              <li key={p.slug}>
-                <ScreenLink screen="seo" params={{ slug: p.slug }}>Halal {label}</ScreenLink>
+        {/* One cloud row: categories (wide) + guides (bounded) side by side —
+            two stacked full-width clouds doubled the footer's height. */}
+        <div className="hh-wrap hh-footer-clouds">
+          <FooterSection title="Browse by category" cloud>
+            <li><Link href="/halal">Halal directory</Link></li>
+            {catPages.map((p) => {
+              const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
+              return (
+                <li key={p.slug}>
+                  <ScreenLink screen="seo" params={{ slug: p.slug }}>Halal {label}</ScreenLink>
+                </li>
+              );
+            })}
+            <li><Link href="/halal">All categories →</Link></li>
+          </FooterSection>
+          <FooterSection title="Halal guides" cloud>
+            {allCategories().slice(0, 6).map((c) => (
+              <li key={c.slug}>
+                <Link href={`/blog/category/${c.slug}`}>{c.name}</Link>
               </li>
-            );
-          })}
-          <li><Link href="/halal">All categories →</Link></li>
-        </FooterSection>
-        <FooterSection title="Halal guides" cloud>
-          <li><Link href="/blog">All guides</Link></li>
-          {allCategories().map((c) => (
-            <li key={c.slug}>
-              <Link href={`/blog/category/${c.slug}`}>{c.name}</Link>
-            </li>
-          ))}
-        </FooterSection>
+            ))}
+            <li><Link href="/blog">All guides →</Link></li>
+          </FooterSection>
+        </div>
       </nav>
       <nav className="hh-wrap hh-footer-legal" aria-label="Legal">
         <Link href="/terms">Terms</Link>

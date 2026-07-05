@@ -691,6 +691,24 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
 /* ---- Map preview (inside explore) ---- */
 const MAP_RAIL_MAX = 30; // don't mount hundreds of row cards under the preview
 
+/** Pin-popup enrichment shared by the explore preview and the full map —
+ *  the trust chip shows the strongest verified claim, matching card copy. */
+function listingPopup(l: Listing, openNow?: boolean) {
+  const badge = l.badges.includes("muis")
+    ? "MUIS-certified"
+    : l.badges.includes("admin")
+      ? "Verified halal"
+      : l.badges.includes("owned")
+        ? "Muslim-owned"
+        : undefined;
+  return {
+    meta: [l.cat, l.area].filter(Boolean).join(" · ") || undefined,
+    badge,
+    open: openNow,
+    distance: l.distanceKm != null ? `${formatKm(l.distanceKm)} away` : undefined,
+  };
+}
+
 export function MapPreview({ results, navigate, mapParams }: {
   results: Listing[];
   navigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -700,7 +718,7 @@ export function MapPreview({ results, navigate, mapParams }: {
 }) {
   const pts = results
     .filter((l) => l.coords)
-    .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const }));
+    .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const, ...listingPopup(l, l.open) }));
   const unmapped = results.length - pts.length;
   const railItems = results.slice(0, MAP_RAIL_MAX);
   return (
@@ -857,12 +875,29 @@ export function MapScreen() {
       coords: l.coords as LatLng,
       active: l.id === activeId,
       kind: "listing" as const,
+      ...listingPopup(l, mapMounted ? isOpenNow(l.hoursWeek) : l.open),
     })),
     ...(chips.mosque
-      ? mosqueList.map((m) => ({ id: m.id, name: m.name, coords: m.coords, active: m.id === activeMosque, kind: "mosque" as const }))
+      ? mosqueList.map((m) => ({
+          id: m.id,
+          name: m.name,
+          coords: m.coords,
+          active: m.id === activeMosque,
+          kind: "mosque" as const,
+          meta: [m.area, `${nextPrayer.name} ${nextPrayer.time}`].filter(Boolean).join(" · "),
+          distance: m.distanceKm != null ? `${formatKm(m.distanceKm)} away` : undefined,
+        }))
       : []),
     ...(chips.musollah
-      ? prayerRoomList.map((p) => ({ id: p.id, name: p.name, coords: p.coords, active: p.id === activePrayerRoom, kind: "prayer-room" as const }))
+      ? prayerRoomList.map((p) => ({
+          id: p.id,
+          name: p.name,
+          coords: p.coords,
+          active: p.id === activePrayerRoom,
+          kind: "prayer-room" as const,
+          meta: [p.area, p.type].filter(Boolean).join(" · ") || undefined,
+          distance: p.distanceKm != null ? `${formatKm(p.distanceKm)} away` : undefined,
+        }))
       : []),
     ...(userLoc ? [{ id: "user", name: "You are here", coords: userLoc, kind: "user" as const }] : []),
   ];

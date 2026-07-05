@@ -198,6 +198,25 @@ export async function POST(req: Request) {
     /* email best-effort */
   }
 
+  // In-app bell for the owner (same outcome, instant).
+  try {
+    const { data: biz } = await db.from("businesses").select("owner_id, claimed_by, name").eq("id", cert.business_id).maybeSingle();
+    const ownerSub = (biz?.owner_id as string) || (biz?.claimed_by as string) || null;
+    if (ownerSub) {
+      const { notify } = await import("@/lib/notify");
+      await notify({
+        userId: ownerSub,
+        type: "cert_change",
+        title: action === "approve" ? "Halal certificate approved ✓" : "Halal certificate needs attention",
+        body: action === "approve"
+          ? `${biz?.name || "Your business"} now shows as certificate-verified.`
+          : reviewNote || "Your certificate was rejected — open the Halal certificate tab for details.",
+        link: "/owner?tab=cert",
+        dedupeKey: `cert:${certId}:${newStatus}`,
+      });
+    }
+  } catch { /* best-effort */ }
+
   // Approving a cert changes the business's halal tier/score → refresh public pages.
   if (action === "approve") revalidatePublic();
 

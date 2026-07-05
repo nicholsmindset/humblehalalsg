@@ -764,6 +764,20 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
   width: 16px; height: 16px; border-radius: 50%; transform: none;
   background: #2A6FDB; box-shadow: 0 0 0 5px rgba(42,111,219,.25), 0 1px 4px rgba(0,0,0,.3);
 }
+/* Pin popup mini-card — name, meta line, trust/open/distance chips, actions. */
+.hh-popcard { display: grid; gap: 6px; min-width: 190px; max-width: 240px; }
+.hh-popcard-name { font-size: .95rem; line-height: 1.25; }
+.hh-popcard-meta { font-size: .78rem; color: var(--ink-60, #5b6770); }
+.hh-popcard-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.hh-popchip {
+  font-style: normal; font-size: .68rem; font-weight: 600; line-height: 1;
+  padding: 4px 7px; border-radius: 999px; background: var(--sand-100, #f2ede3); color: var(--ink-70, #47525b);
+}
+.hh-popchip-halal { background: var(--emerald-50, #e7f1ee); color: var(--emerald, #0F5C4A); }
+.hh-popchip-open { background: #e7f5e9; color: #1e7a34; }
+.hh-popchip-closed { background: #f7e9e7; color: #a5372a; }
+.hh-popcard-actions { display: flex; gap: 6px; margin-top: 2px; }
+.hh-popcard-actions .btn { flex: none; }
 .map-loading { width: 100%; height: 100%; display: grid; place-items: center; background: var(--emerald-50); }
 .map-loading .spinner {
   width: 34px; height: 34px; border-radius: 50%;

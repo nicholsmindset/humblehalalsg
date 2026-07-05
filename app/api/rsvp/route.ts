@@ -5,8 +5,10 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
 import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { todaySG } from "@/lib/events-source";
+import { auth } from "@clerk/nextjs/server";
 import { sendEmail } from "@/lib/email";
 import { rsvpConfirmationEmail } from "@/lib/emails/templates";
+import { notify } from "@/lib/notify";
 
 /* Free RSVP — the launch path. DB-backed when the event exists in Supabase;
    otherwise returns simulated:true so the client keeps the local mock ticket
@@ -103,15 +105,30 @@ export async function POST(req: Request) {
   if (incErr) await supa.from("events").update({ taken: taken + qty }).eq("id", row.id);
 
   // Confirmation email to the RSVP submitter (best-effort — never affects response).
+  const eventTitle = String((row as { title?: string }).title || mockEv?.title || "your event");
   if (body.email) {
     try {
-      const eventTitle = String((row as { title?: string }).title || mockEv?.title || "your event");
       const dateLabel = String((row as { date_iso?: string }).date_iso || mockEv?.dateLabel || "") || undefined;
       const venue = mockEv?.venue || undefined;
       const t = rsvpConfirmationEmail({ name: body.name, eventTitle, dateLabel, venue, ref: issuedRef });
       await sendEmail({ to: body.email, subject: t.subject, html: t.html, template: "rsvp-confirmation", businessId: (row.business_id as string | null) || undefined });
     } catch { /* email best-effort */ }
   }
+
+  // In-app bell for signed-in attendees (guests have no Clerk sub to notify).
+  try {
+    const { userId } = await auth();
+    if (userId) {
+      await notify({
+        userId,
+        type: "rsvp_confirmed",
+        title: "RSVP confirmed — you’re going!",
+        body: `${eventTitle} · ${qty > 1 ? `${qty} spots` : "1 spot"} · ref ${issuedRef}`,
+        link: "/dashboard?tab=tickets",
+        dedupeKey: `rsvp:${ord.id}`,
+      });
+    }
+  } catch { /* Clerk not configured — the bell is signed-in-only anyway */ }
 
   return NextResponse.json({ ok: true, ref: issuedRef });
 }
