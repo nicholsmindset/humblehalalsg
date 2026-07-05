@@ -13,6 +13,13 @@ export interface MapPoint {
   coords: LatLng;
   active?: boolean;
   kind?: "listing" | "mosque" | "prayer-room" | "user";
+  /* Popup enrichment — all optional so thin callers (location picker,
+     travel maps) keep working with just id/name/coords. Callers pre-format
+     strings so this component stays free of directory/geo imports. */
+  meta?: string;     // "Category · Area" (listing) / "Area · Type" (prayer room)
+  badge?: string;    // halal trust label, e.g. "MUIS-certified"
+  distance?: string; // pre-formatted, e.g. "1.2 km away"
+  open?: boolean;    // true "Open now" / false "Closed" / undefined hidden
 }
 
 function pinIcon(point: MapPoint) {
@@ -256,13 +263,30 @@ export default function LeafletMap({
       >
         {p.kind !== "user" && !onPick && (
           <Popup>
-            <div style={{ minWidth: 150 }}>
-              <strong style={{ display: "block", marginBottom: 8, fontSize: ".95rem" }}>{p.name}</strong>
-              {p.kind === "mosque" || p.kind === "prayer-room" ? (
-                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
-              ) : (
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View details →</button>
+            <div className="hh-popcard">
+              <strong className="hh-popcard-name">{p.name}</strong>
+              {p.meta && <span className="hh-popcard-meta">{p.meta}</span>}
+              {(p.badge || p.open != null || p.distance) && (
+                <span className="hh-popcard-chips">
+                  {p.badge && <em className="hh-popchip hh-popchip-halal">{p.badge}</em>}
+                  {p.open != null && (
+                    <em className={`hh-popchip ${p.open ? "hh-popchip-open" : "hh-popchip-closed"}`}>
+                      {p.open ? "Open now" : "Closed"}
+                    </em>
+                  )}
+                  {p.distance && <em className="hh-popchip">{p.distance}</em>}
+                </span>
               )}
+              <span className="hh-popcard-actions">
+                {p.kind === "mosque" || p.kind === "prayer-room" ? (
+                  <a className="btn btn-primary btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions →</a>
+                ) : (
+                  <>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => onView?.(p.id, p.kind || "listing")}>View listing →</button>
+                    <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/dir/?api=1&destination=${p.coords.lat},${p.coords.lng}`} target="_blank" rel="noopener noreferrer">Directions</a>
+                  </>
+                )}
+              </span>
             </div>
           </Popup>
         )}
