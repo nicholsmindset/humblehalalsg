@@ -13,9 +13,10 @@ let cache: { value: Partial<Record<FlagKey, boolean>>; expiresAt: number } | nul
 export function bustFlagCache(): void { cache = null; }
 
 /** Global admin overrides from platform_settings. NULL column → key absent
-    (defer to env). Cached 30s; fail-safe to {} (→ env). */
+    (defer to env). Cached 30s; fail-safe to {} (→ env). Always returns a
+    copy so no caller can mutate the shared cache for the TTL window. */
 export async function getGlobalOverrides(): Promise<Partial<Record<FlagKey, boolean>>> {
-  if (cache && cache.expiresAt > Date.now()) return cache.value;
+  if (cache && cache.expiresAt > Date.now()) return { ...cache.value };
   const out: Partial<Record<FlagKey, boolean>> = {};
   try {
     const admin = getSupabaseAdmin();
@@ -30,7 +31,7 @@ export async function getGlobalOverrides(): Promise<Partial<Record<FlagKey, bool
     }
   } catch { /* fail-safe → {} */ }
   cache = { value: out, expiresAt: Date.now() + TTL_MS };
-  return out;
+  return { ...out };
 }
 
 /** Site-wide flags: global override ?? env. The gate every server route uses. */

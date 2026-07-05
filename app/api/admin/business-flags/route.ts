@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { bustFlagCache } from "@/lib/feature-flags";
 
 const FEATURES = ["paidPlans", "paidAds", "certVault", "leadRouting", "paidLeads"];
 
 export async function POST(req: Request) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+  // Same admin gate as every other /api/admin/* route (requireAdmin), rather
+  // than the earlier inline Clerk+profiles check — one pattern everywhere.
+  const gate = await requireAdmin();
+  if (!gate.ok) return NextResponse.json({ ok: false, reason: gate.error }, { status: gate.status });
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" }, { status: 503 });
-  const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  if (profile?.role !== "admin") return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
 
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const businessId = String(b.businessId || "");

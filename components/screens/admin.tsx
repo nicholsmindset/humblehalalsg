@@ -215,6 +215,8 @@ export function AdminMonetization() {
   // Global flag overrides — hydrated from platform_settings on mount so every
   // toggle reflects the persisted (server) state, not client-only demo state.
   const [values, setValues] = useState<Record<string, boolean | null>>({});
+  // Columns with a save in flight (render-stable Set — no re-render needed).
+  const [savingFlags] = useState(() => new Set<string>());
   useEffect(() => {
     (async () => {
       try {
@@ -243,6 +245,10 @@ export function AdminMonetization() {
   async function setGlobalFlag(flagKey: FlagKey, next: boolean, isPayment: boolean) {
     if (isPayment && next && !confirm("This enables a LIVE payment/charging flow. Continue?")) return;
     const column = FLAG_COLUMN[flagKey];
+    // In-flight guard: a rapid double-flip during a pending save would capture
+    // a stale `prev` and could mis-revert on failure (PR #147 review finding).
+    if (savingFlags.has(column)) return;
+    savingFlags.add(column);
     const prev = values[column] ?? null;
     setValues((v) => ({ ...v, [column]: next })); // optimistic
     try {
@@ -257,6 +263,8 @@ export function AdminMonetization() {
     } catch {
       setValues((v) => ({ ...v, [column]: prev }));
       toast("Couldn't save — try again.");
+    } finally {
+      savingFlags.delete(column);
     }
   }
 
@@ -458,7 +466,7 @@ export function AdminRollout() {
     <div className="stack g16" style={{ maxWidth: 820 }}>
       <div className="notice notice-warn">
         <Icon name="info" size={18} />
-        <span>Recommended go-live order, easiest→hardest. Each flag is enabled in <strong>Vercel env</strong> (<code>PAID_*_ENABLED</code>); the toggles on the Monetization tab are client-side demo only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
+        <span>Recommended go-live order, easiest→hardest. Flip each flag on the <strong>Monetization</strong> tab (persists server-side, live within ~30s) or set the <code>PAID_*_ENABLED</code> Vercel env as the fallback default. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
       </div>
 
       <div className="stack g12">
