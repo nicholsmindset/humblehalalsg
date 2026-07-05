@@ -298,7 +298,10 @@ export function seoListings(page: SeoPage, source: Listing[]): Listing[] {
     }
     if (page.catId && l.catId !== page.catId) return false;
     return true;
-  });
+  })
+  // Featured-plan boost — "top of category & area" is a paid promise; the
+  // sort is stable so non-featured relative order is untouched.
+  .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 }
 
 /** A few related SEO pages (same area/venue/category) for internal linking. */

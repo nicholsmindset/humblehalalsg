@@ -50,13 +50,14 @@ describe("plans — canUse gates", () => {
     expect(canUse("premium", "featured_placement")).toBe(true);
   });
   it("premium-only features", () => {
-    const premiumOnly: Feature[] = ["offers_block", "multi_location", "analytics", "ad_credits"];
+    const premiumOnly: Feature[] = ["offers_block", "analytics"];
     for (const f of premiumOnly) {
       expect(canUse("featured", f)).toBe(false);
       expect(canUse("premium", f)).toBe(true);
     }
   });
-  it("free is entitled to nothing gated", () => {
-    expect(PLANS.free.features.length).toBe(0);
+  it("free includes review replies (marketed free value — matches the ungated app)", () => {
+    expect(canUse("free", "reply_reviews")).toBe(true);
+    expect(PLANS.free.features).toEqual(["reply_reviews"]);
   });
 });
