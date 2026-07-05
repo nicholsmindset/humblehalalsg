@@ -1,4 +1,4 @@
--- 0049_feature_flags.sql — admin-controllable feature flags.
+-- 0053_feature_flags.sql — admin-controllable feature flags.
 -- Global overrides live in platform_settings (single row id=1); a NULL column
 -- means "defer to the env var" and true/false is an explicit admin override.
 -- Per-business overrides live in business_feature_overrides.

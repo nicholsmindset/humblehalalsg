@@ -368,7 +368,7 @@ function BusinessFeatureRow({ flagKey, value, onSet }: { flagKey: FlagKey; value
 
 /* Loads + persists the per-business overrides for one business.
    Read path: a direct client read of business_feature_overrides, scoped by the
-   admin-only RLS policy from migration 0049 ("bfo admin read" — for select to
+   admin-only RLS policy from migration 0053 ("bfo admin read" — for select to
    authenticated using is_admin()) via the Clerk-authed useSupabaseBrowser()
    client (same hook/pattern this file already uses for admin dashboard reads,
    e.g. AdminUsers' admin_list_users rpc). This gives REAL current state rather

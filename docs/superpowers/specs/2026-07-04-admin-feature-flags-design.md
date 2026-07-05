@@ -100,7 +100,7 @@ In-module `let cache: { value; expiresAt } | null`, 30s TTL. `/api/settings` and
 
 ## Rollout
 
-- **Migration `0049_feature_flags.sql`** — `platform_settings` new nullable columns + `business_feature_overrides` table + RLS. Idempotent (`if not exists`, `add column if not exists`).
+- **Migration `0053_feature_flags.sql`** — `platform_settings` new nullable columns + `business_feature_overrides` table + RLS. Idempotent (`if not exists`, `add column if not exists`).
 - No env changes required; existing env flags remain the fallback, so behaviour is unchanged until the admin flips something.
 - Ships without a feature flag of its own (it *is* the flag system); the admin surface is already behind the admin gate.
 

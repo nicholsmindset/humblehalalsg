@@ -21,7 +21,7 @@
 
 ## File structure
 
-- `supabase/migrations/0049_feature_flags.sql` — **create.** Global columns + per-business table + RLS.
+- `supabase/migrations/0053_feature_flags.sql` — **create.** Global columns + per-business table + RLS.
 - `lib/flags.ts` — **modify.** Add `FlagKey`, `FLAG_ENV`, `FLAG_COLUMN`, `envFlags()`; keep client-safe. Remove the old sync `getServerFlags` in Task 4.
 - `lib/feature-flags.ts` — **create** (`server-only`). Async `getServerFlags()`, `getGlobalOverrides()`, `resolveBusinessFlag()`, `bustFlagCache()`.
 - `tests/unit/feature-flags.test.ts` — **create.** Precedence, cache, fail-safe.
@@ -33,10 +33,10 @@
 
 ---
 
-### Task 1: Migration 0049 — data model
+### Task 1: migration 0053 — data model
 
 **Files:**
-- Create: `supabase/migrations/0049_feature_flags.sql`
+- Create: `supabase/migrations/0053_feature_flags.sql`
 
 **Interfaces:**
 - Produces: `platform_settings` nullable flag columns (null = defer to env); `business_feature_overrides(business_id, feature_key, enabled)`.
@@ -44,7 +44,7 @@
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- 0049_feature_flags.sql — admin-controllable feature flags.
+-- 0053_feature_flags.sql — admin-controllable feature flags.
 -- Global overrides live in platform_settings (single row id=1); a NULL column
 -- means "defer to the env var" and true/false is an explicit admin override.
 -- Per-business overrides live in business_feature_overrides.
@@ -97,8 +97,8 @@ create policy "bfo admin read" on public.business_feature_overrides
 - [ ] **Step 2: Commit**
 
 ```bash
-git add supabase/migrations/0049_feature_flags.sql
-git commit -m "feat(flags): migration 0049 — platform_settings flag columns + business_feature_overrides"
+git add supabase/migrations/0053_feature_flags.sql
+git commit -m "feat(flags): migration 0053 — platform_settings flag columns + business_feature_overrides"
 ```
 
 - [ ] **Step 3: Verification note (manual, at deploy time)**
@@ -597,12 +597,12 @@ git commit -m "feat(admin): per-business feature overrides — panel + owner-sco
 
 ## Self-review
 
-- **Spec coverage:** data model (T1), resolver + precedence + cache + fail-safe (T3), async ripple (T4), APIs (T5), global UI + payment confirm (T6), per-business UI + gates (T7), env/DB fallback (T2/T3), migration 0049 (T1). All spec sections mapped.
+- **Spec coverage:** data model (T1), resolver + precedence + cache + fail-safe (T3), async ripple (T4), APIs (T5), global UI + payment confirm (T6), per-business UI + gates (T7), env/DB fallback (T2/T3), migration 0053 (T1). All spec sections mapped.
 - **Placeholders:** none — every code step shows real code; the 52-site sweep is a tsc-gated loop with a representative diff (legitimate — the edit is identical in shape at each site).
 - **Type consistency:** `FlagKey`, `FLAG_ENV`, `FLAG_COLUMN`, `envFlags`, `getServerFlags` (async), `getGlobalOverrides`, `resolveBusinessFlag`, `bustFlagCache` names are used identically across tasks; the five per-business features match the `check` constraint (T1), the API `FEATURES` list (T5) and the panel (T7).
 
 ## Deployment
 
-- Apply `0049_feature_flags.sql` in the Supabase SQL editor; probe-verify (T1 step 3).
+- Apply `0053_feature_flags.sql` in the Supabase SQL editor; probe-verify (T1 step 3).
 - No env changes required — env stays the fallback; behaviour is unchanged until an admin flips a toggle.
 - Ships without its own feature flag (it *is* the flag system); the surface is already admin-gated.
