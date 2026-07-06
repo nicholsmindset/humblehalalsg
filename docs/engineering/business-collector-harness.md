@@ -52,7 +52,10 @@ headless fetch can't.
    [`scripts/collect/halalsg-harness-task.md`](../../scripts/collect/halalsg-harness-task.md).
    It navigates the register, pages through the certified list, and writes the
    results to `data/staging/candidates-halalsg.json` in the **shared candidate
-   schema**.
+   schema**. **Run one focused batch at a time** (an area, a scheme, or a page
+   range — see the *Scope* section of that task file); a batch is ~10–30 min and
+   gives you a reviewable chunk. Batches are resumable and de-duplicated, so you
+   can keep coming back for the next slice.
 3. Merge into the pipeline:
    ```bash
    node scripts/collect-candidates.mjs --source=halalsg

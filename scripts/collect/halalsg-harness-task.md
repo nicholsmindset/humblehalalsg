@@ -32,10 +32,35 @@ Always set `halalHint` to `"muis-certified (verify on HalalSG)"` and
 
 ## Scope
 
-- Cover the list requested by the operator (a category, an area, or "all pages up
-  to N"). If you cap the run, **say how many pages/entries you covered and how
-  many remain** — never imply you got everything when you didn't.
+**Run one focused batch at a time — do NOT try to collect the whole register in
+one go.** The register has thousands of entries; a small batch takes ~10–30 min,
+is easy to watch, and gives you a reviewable chunk in the admin queue instead of
+a giant dump. Pick a scope, run it, then come back for the next one.
+
+Set the scope by editing the line below before you hand this prompt over — pick
+ONE:
+
+> **Scope for this run:** `<paste one of the examples below>`
+
+Ready-to-paste examples:
+
+- **By area** — `Only businesses in the Tampines area (use the directory's area/region filter).`
+- **By category/scheme** — `Only the "Eating Establishment" scheme.` (or "Food Preparation Area", "Endorsed Product", "Snack Bar", etc.)
+- **By page range** — `Pages 1 to 5 of the certified list, default sort.`
+- **By search term** — `Search the register for "cafe" and collect the matches.`
+- **Combined** — `"Eating Establishment" scheme in the Woodlands area, first 40 results.`
+
+Rules for every run:
+
+- Cover exactly the scope above — nothing more.
+- If you hit the end of the scope, say so. If you **cap** the run (e.g. time or a
+  page limit), **state how many pages/entries you covered and how many remain**,
+  and what scope to use next to continue — never imply you got everything.
 - De-duplicate obvious repeats by name+postal within your run.
+- The pipeline is resumable: each batch appends to the same downstream files
+  (`collect-candidates.mjs --source=halalsg` merges + dedupes against what's
+  already collected, live, or in the review queue), so overlapping batches are
+  safe — duplicates get dropped, not doubled.
 
 ## Output
 
