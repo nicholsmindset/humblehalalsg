@@ -349,6 +349,40 @@ export function ownerDigestEmail(o: { name?: string | null; businessName: string
     { label: "See full insights", url: `${U}/owner` },
   );
 }
+/* Monthly performance report — the free-tier retention/upsell hook (growth
+   plan Part 1). Comparison + upsell lines are precomputed by the cron so this
+   stays a dumb renderer. */
+export function ownerMonthlyReportEmail(o: {
+  name?: string | null;
+  businessName: string;
+  monthLabel: string; // e.g. "June 2026"
+  views: number;
+  enquiries: number;
+  whatsapp: number;
+  calls: number;
+  directions: number;
+  compareLine?: string | null; // pre-escaped HTML line, e.g. category average
+  upsellLine?: string | null;  // pre-escaped HTML line, plan-aware
+}): Out {
+  return wrap(
+    `Your ${o.monthLabel} report — ${o.businessName}`,
+    "Your month on Humble Halal",
+    greet(o.name) +
+      p(`Here's how <strong>${esc(o.businessName)}</strong> did in ${esc(o.monthLabel)}:`) +
+      p(
+        `👀 <strong>${o.views}</strong> profile views<br>` +
+        `✉️ <strong>${o.enquiries}</strong> enquiries<br>` +
+        `💬 <strong>${o.whatsapp}</strong> WhatsApp taps<br>` +
+        `📞 <strong>${o.calls}</strong> calls<br>` +
+        `📍 <strong>${o.directions}</strong> direction requests`,
+      ) +
+      (o.compareLine ? p(o.compareLine) : "") +
+      (o.upsellLine ? p(o.upsellLine) : ""),
+    { label: "See your full insights", url: `${U}/owner` },
+    "Every enquiry, WhatsApp tap and call is a customer Humble Halal sent your way.",
+  );
+}
+
 export function eventReminderEmail(o: { name?: string | null; eventTitle: string; dateLabel?: string; venue?: string }): Out {
   return wrap(
     `Tomorrow: ${o.eventTitle}`,
