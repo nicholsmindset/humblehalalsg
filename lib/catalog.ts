@@ -16,6 +16,29 @@ import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (v == null ? "" : String(v));
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
+const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=75`;
+
+const AREA_IMAGE_FALLBACKS: Record<string, string> = {
+  "kampong-glam": unsplash("1555921015-5532091f6026"),
+  "arab-street": unsplash("1555921015-5532091f6026"),
+  bugis: unsplash("1565967511849-76a60a516170"),
+  tampines: unsplash("1555921015-5532091f6026"),
+  "race-course-road": unsplash("1565967511849-76a60a516170"),
+  geylang: unsplash("1565967511849-76a60a516170"),
+  "geylang-serai": unsplash("1565967511849-76a60a516170"),
+  islandwide: unsplash("1518684079-3c830dcef090"),
+  "tanjong-pagar": unsplash("1518684079-3c830dcef090"),
+  bedok: unsplash("1555921015-5532091f6026"),
+  jurong: unsplash("1414235077428-338989a2e8c0"),
+  "paya-lebar": unsplash("1565967511849-76a60a516170"),
+};
+
+const areaImageFor = (id: string, name: string, existing?: string) => {
+  if (existing) return existing;
+  const key = (id || name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const nameKey = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return AREA_IMAGE_FALLBACKS[key] || AREA_IMAGE_FALLBACKS[nameKey] || AREA_IMAGE_FALLBACKS.islandwide;
+};
 
 // Static sort baseline: preserve authored order so untouched items stay put.
 const catOrder = new Map(staticCategories.map((c, i) => [c.id, i]));
@@ -80,20 +103,25 @@ export const getAreas = cache(async (): Promise<Area[]> => {
   for (const a of staticAreas) {
     if (inactive.has(a.id)) continue;
     const o = overrides.get(a.id);
+    const name = o ? str(o.name) || a.name : a.name;
     merged.push({
       ...a,
-      name: o ? str(o.name) || a.name : a.name,
+      name,
       tone: o ? str(o.tone) || a.tone : a.tone,
+      image: areaImageFor(a.id, name, a.image),
       _sort: o && o.sort != null ? num(o.sort, 100) : (areaOrder.get(a.id) ?? 100),
     });
     overrides.delete(a.id);
   }
   for (const o of overrides.values()) {
+    const id = str(o.id);
+    const name = str(o.name) || id;
     merged.push({
-      id: str(o.id),
-      name: str(o.name) || str(o.id),
+      id,
+      name,
       count: 0,
       tone: str(o.tone) || "emerald",
+      image: areaImageFor(id, name),
       _sort: num(o.sort, 100),
     });
   }
