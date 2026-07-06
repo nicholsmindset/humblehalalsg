@@ -20,24 +20,24 @@ const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?auto=f
 
 const AREA_IMAGE_FALLBACKS: Record<string, string> = {
   "kampong-glam": unsplash("1555921015-5532091f6026"),
-  "arab-street": unsplash("1555921015-5532091f6026"),
-  bugis: unsplash("1565967511849-76a60a516170"),
-  tampines: unsplash("1555921015-5532091f6026"),
-  "race-course-road": unsplash("1565967511849-76a60a516170"),
-  geylang: unsplash("1565967511849-76a60a516170"),
-  "geylang-serai": unsplash("1565967511849-76a60a516170"),
+  tampines: unsplash("1565967511849-76a60a516170"),
+  "arab-street": unsplash("1559339352-11d035aa65de"),
+  "race-course-road": unsplash("1517248135467-4c7edcad34c4"),
+  geylang: unsplash("1604908176997-125f25cc6f3d"),
+  "geylang-serai": unsplash("1604908176997-125f25cc6f3d"),
   islandwide: unsplash("1518684079-3c830dcef090"),
-  "tanjong-pagar": unsplash("1518684079-3c830dcef090"),
-  bedok: unsplash("1555921015-5532091f6026"),
-  jurong: unsplash("1414235077428-338989a2e8c0"),
-  "paya-lebar": unsplash("1565967511849-76a60a516170"),
+  "tanjong-pagar": unsplash("1504674900247-0877df9cc836"),
+  bugis: unsplash("1414235077428-338989a2e8c0"),
+  "little-india": unsplash("1563379091339-03b21ab4a4f8"),
+  bedok: unsplash("1631292784640-2b24be784d5d"),
+  jurong: unsplash("1554118811-1e0d58224f24"),
+  "paya-lebar": unsplash("1441986300917-64674bd600d8"),
 };
 
 const areaImageFor = (id: string, name: string, existing?: string) => {
-  if (existing) return existing;
   const key = (id || name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const nameKey = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return AREA_IMAGE_FALLBACKS[key] || AREA_IMAGE_FALLBACKS[nameKey] || AREA_IMAGE_FALLBACKS.islandwide;
+  return AREA_IMAGE_FALLBACKS[key] || AREA_IMAGE_FALLBACKS[nameKey] || existing || AREA_IMAGE_FALLBACKS.islandwide;
 };
 
 // Static sort baseline: preserve authored order so untouched items stay put.
