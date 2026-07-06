@@ -47,6 +47,9 @@ export async function POST(req: Request) {
   // (deleted) if fulfillment later throws (see the catch), so a transient error
   // mid-fulfillment doesn't get masked as a "duplicate" on Stripe's retry.
   const supa = getSupabaseAdmin();
+  if (!supa && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ ok: false, error: "db_not_configured" }, { status: 503 });
+  }
   if (supa) {
     const { error } = await supa.from("webhook_events").insert({ stripe_event_id: event.id });
     if (error) {

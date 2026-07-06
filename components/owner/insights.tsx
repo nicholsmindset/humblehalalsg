@@ -6,6 +6,7 @@
    listings, or no events yet — so the dashboard never breaks in mock mode. */
 
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { resolveRange, fmt } from "@/lib/analytics-dashboard";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { canUse } from "@/lib/plans";
@@ -20,6 +21,7 @@ type QueryRow = { query: string; searches: number };
 
 export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onUpgrade?: () => void }) {
   const supabase = useSupabaseBrowser();
+  const { isLoaded, isSignedIn } = useUser();
   // Basic totals stay free; the trend + search-insights blocks are the Premium
   // "advanced analytics" differentiator (they were silently free-to-all).
   const advanced = canUse(plan, "analytics");
@@ -32,8 +34,22 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
   useEffect(() => {
     let alive = true;
     (async () => {
+      if (!isLoaded) return;
       const sb = supabase;
-      if (!sb) { if (alive) setLoading(false); return; }
+      if (!sb || !isSignedIn) {
+        if (alive) {
+          setRows(null);
+          setDaily([]);
+          setQueries([]);
+          setLoadErr(false);
+          setLoading(false);
+        }
+        return;
+      }
+      if (alive) {
+        setLoading(true);
+        setLoadErr(false);
+      }
       const { from, to } = resolveRange("30d");
       // Trend + top-queries are additive (0045) — their failure never blocks the cards.
       const [main, trend, q] = await Promise.all([
@@ -50,7 +66,7 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
       }
     })();
     return () => { alive = false; };
-  }, [supabase]);
+  }, [supabase, isLoaded, isSignedIn]);
 
   if (loading) {
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;

@@ -26,11 +26,21 @@ const BASE = "https://api.liteapi.travel/v3.0";
 const DA_BASE = "https://da.liteapi.travel";
 const TIMEOUT_MS = 10_000;
 
-/** Active key: prod when LITEAPI_ENV=prod, else sandbox; falls back either way. */
+/** Active environment: only explicit LITEAPI_ENV=prod uses production. */
+export function liteapiEnv(): "prod" | "sandbox" {
+  return process.env.LITEAPI_ENV === "prod" ? "prod" : "sandbox";
+}
+
+/** Payment SDK mode must match the server key environment exactly. */
+export function liteapiPaymentMode(): "live" | "sandbox" {
+  return liteapiEnv() === "prod" ? "live" : "sandbox";
+}
+
+/** Active key. Fail closed on missing env-specific keys; never cross-fallback. */
 function apiKey(): string | null {
-  const prod = process.env.LITEAPI_ENV === "prod";
-  const k = prod ? process.env.LITEAPI_PROD_KEY : process.env.LITEAPI_SAND_KEY;
-  return k || process.env.LITEAPI_SAND_KEY || process.env.LITEAPI_PROD_KEY || null;
+  return liteapiEnv() === "prod"
+    ? process.env.LITEAPI_PROD_KEY || null
+    : process.env.LITEAPI_SAND_KEY || null;
 }
 
 export function liteapiConfigured(): boolean {
