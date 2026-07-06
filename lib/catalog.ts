@@ -16,22 +16,22 @@ import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (v == null ? "" : String(v));
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
-const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=75`;
+const areaAsset = (file: string) => `/area-images/${file}.svg`;
 
 const AREA_IMAGE_FALLBACKS: Record<string, string> = {
-  "kampong-glam": unsplash("1555921015-5532091f6026"),
-  tampines: unsplash("1565967511849-76a60a516170"),
-  "arab-street": unsplash("1559339352-11d035aa65de"),
-  "race-course-road": unsplash("1517248135467-4c7edcad34c4"),
-  geylang: unsplash("1604908176997-125f25cc6f3d"),
-  "geylang-serai": unsplash("1604908176997-125f25cc6f3d"),
-  islandwide: unsplash("1518684079-3c830dcef090"),
-  "tanjong-pagar": unsplash("1504674900247-0877df9cc836"),
-  bugis: unsplash("1414235077428-338989a2e8c0"),
-  "little-india": unsplash("1563379091339-03b21ab4a4f8"),
-  bedok: unsplash("1631292784640-2b24be784d5d"),
-  jurong: unsplash("1554118811-1e0d58224f24"),
-  "paya-lebar": unsplash("1441986300917-64674bd600d8"),
+  "kampong-glam": areaAsset("kampong-glam"),
+  tampines: areaAsset("tampines"),
+  "arab-street": areaAsset("arab-street"),
+  "race-course-road": areaAsset("race-course-road"),
+  geylang: areaAsset("geylang"),
+  "geylang-serai": areaAsset("geylang"),
+  islandwide: areaAsset("islandwide"),
+  "tanjong-pagar": areaAsset("tanjong-pagar"),
+  bugis: areaAsset("bugis"),
+  "little-india": areaAsset("little-india"),
+  bedok: areaAsset("tampines"),
+  jurong: areaAsset("islandwide"),
+  "paya-lebar": areaAsset("geylang"),
 };
 
 const areaImageFor = (id: string, name: string, existing?: string) => {
