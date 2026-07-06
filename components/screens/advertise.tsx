@@ -123,6 +123,11 @@ export function AdvertiseScreen() {
               </div>
             ))}
           </div>
+          <p className="muted tc" style={{ fontSize: ".9rem", marginTop: 16 }}>
+            Prefer done-for-you? <strong>Managed marketing is available</strong> — campaigns, content and lead
+            generation run by <strong>Onnifyworks</strong>, Humble Halal&rsquo;s growth partner.{" "}
+            <a href="/contact" style={{ fontWeight: 600 }}>Request a call →</a>
+          </p>
         </section>
 
         {/* why */}

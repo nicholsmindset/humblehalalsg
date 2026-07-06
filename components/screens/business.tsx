@@ -21,6 +21,7 @@ import { PayoutsPanel } from "../owner/payouts";
 import { CertVault } from "../owner/cert-vault";
 import { OwnerAds } from "../owner/ads-tab";
 import { OwnerInsights } from "../owner/insights";
+import { GrowthServicesCard } from "../owner/growth-services";
 import { OwnerOfferCard } from "../owner/offer-card";
 import { PendingSubmissions, type PendingSubmission } from "../owner/pending-submissions";
 import { ActivationChecklist } from "../owner/activation-checklist";
@@ -99,6 +100,11 @@ export function ForBusinessScreen() {
             <Newsletter source="for-business" stage="lead" cta="Send the starter kit" />
           </div>
         </div>
+        <p className="muted tc" style={{ fontSize: ".88rem", marginTop: 18 }}>
+          Rather have it handled? <strong>Managed marketing is available</strong> — powered by{" "}
+          <strong>Onnifyworks</strong>, Humble Halal&rsquo;s growth team.{" "}
+          <a href="/contact" style={{ fontWeight: 600 }}>Ask about Growth Partner →</a>
+        </p>
       </section>
     </div>
   );
@@ -760,6 +766,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
               />
             )}
             <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
+            <GrowthServicesCard onContact={() => navigate("contact")} />
           </div>
         )}
 
