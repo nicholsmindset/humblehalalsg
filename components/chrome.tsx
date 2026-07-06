@@ -778,6 +778,9 @@ export function Footer() {
               {SITE.org.streetAddress}
               <br />
               {SITE.org.addressLocality} {SITE.org.postalCode}
+              <br />
+              Growth services by{" "}
+              <a href="https://onnifyworks.com" target="_blank" rel="noopener noreferrer">Onnifyworks</a>
             </address>
           </div>
           {cols.map(([title, links]) => (
