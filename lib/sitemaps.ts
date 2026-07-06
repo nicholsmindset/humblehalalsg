@@ -196,6 +196,12 @@ function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => XML_ESCAPES[c]);
 }
 
+// Sitemap <loc>/<image:loc> must be ABSOLUTE. Blog feature images are stored as
+// site-relative paths (e.g. /blog/<slug>.webp), so prefix them with the origin.
+function absUrl(u: string): string {
+  return /^https?:\/\//i.test(u) ? u : `${SITE.url}${u.startsWith("/") ? "" : "/"}${u}`;
+}
+
 /** Serialise a segment's URLs to a sitemap <urlset> document. */
 export function urlsetXml(urls: SitemapUrl[]): string {
   const body = urls
@@ -204,7 +210,7 @@ export function urlsetXml(urls: SitemapUrl[]): string {
       if (u.lastmod) parts.push(`    <lastmod>${u.lastmod}</lastmod>`);
       if (u.changefreq) parts.push(`    <changefreq>${u.changefreq}</changefreq>`);
       if (typeof u.priority === "number") parts.push(`    <priority>${u.priority.toFixed(1)}</priority>`);
-      if (u.image) parts.push(`    <image:image><image:loc>${esc(u.image)}</image:loc></image:image>`);
+      if (u.image) parts.push(`    <image:image><image:loc>${esc(absUrl(u.image))}</image:loc></image:image>`);
       return `  <url>\n${parts.join("\n")}\n  </url>`;
     })
     .join("\n");
