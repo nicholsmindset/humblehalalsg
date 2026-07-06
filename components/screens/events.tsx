@@ -10,6 +10,7 @@ import { HHData, spotsLeft } from "@/lib/data";
 import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
 import { useDirectory } from "../directory-context";
+import { MapView } from "../map/map-view";
 import type { EventItem, GenderArrangement } from "@/lib/types";
 import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
@@ -785,7 +786,26 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
             <Icon name="pin" size={16} style={{ color: "var(--emerald)" }} />
             <span className="muted">{ev.venue}</span>
           </div>
-          <ImagePh label="venue map" tone="emerald" style={{ height: 180, borderRadius: 14, marginTop: 12 }} icon="map" />
+          {ev.venueCoords ? (
+            // Real venue pin (the host wizard captures lat/lng). Events without
+            // coordinates keep the placeholder — we never guess a location.
+            <div style={{ height: 220, borderRadius: 14, marginTop: 12, overflow: "hidden" }}>
+              <MapView
+                center={ev.venueCoords}
+                zoom={15}
+                points={[{
+                  id: "venue",
+                  name: ev.venue || ev.title,
+                  coords: ev.venueCoords,
+                  kind: "listing",
+                  active: true,
+                  meta: [ev.area, ev.dateLabel].filter(Boolean).join(" · ") || undefined,
+                }]}
+              />
+            </div>
+          ) : (
+            <ImagePh label="venue map" tone="emerald" style={{ height: 180, borderRadius: 14, marginTop: 12 }} icon="map" />
+          )}
           <a className="btn btn-outline mt12" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ev.venue} ${ev.area}`)}`} target="_blank" rel="noopener noreferrer">
             <Icon name="directions" size={17} /> Get directions
           </a>
