@@ -16,6 +16,9 @@
     "functions:serve": "supabase functions serve --env-file supabase/functions/.env.local",
     "flight:check": "tsx scripts/flight-sandbox-check.ts",
     "geocode:listings": "node --env-file=.env.local scripts/geocode-listings.mjs",
+    "collect:candidates": "node scripts/collect-candidates.mjs",
+    "collect:enrich": "node scripts/enrich-candidates.mjs",
+    "collect:csv": "node scripts/build-import-csv.mjs",
     "audit:mobile": "node scripts/mobile-audit.mjs",
     "seo:counts": "node scripts/gen-seo-counts.mjs"
   },
