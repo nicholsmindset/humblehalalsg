@@ -20,11 +20,17 @@ const UNOPTIMIZED_IMAGE_HOST_SUFFIXES = [".supabase.co"];
 
 export function isUnoptimizedImageSrc(src?: string | null): boolean {
   if (!src) return false;
+  // Site-relative, pre-optimized static assets (already WebP + sized at build,
+  // e.g. blog feature images in /public/blog). These would otherwise route
+  // through /_next/image, which returns HTTP 402 while the Hobby optimizer
+  // quota is exhausted — so a relative src is NOT "nothing to bill against";
+  // it breaks like every other optimized image. Serve them directly.
+  if (src.startsWith("/blog/")) return true;
   let host: string;
   try {
     host = new URL(src).hostname;
   } catch {
-    // Relative or malformed src — nothing for the optimizer to bill against.
+    // Other relative/malformed src — no host for the optimizer to resolve.
     return false;
   }
   return (
