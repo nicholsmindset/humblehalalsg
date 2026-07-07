@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MapView, type MapPoint } from "@/components/map/map-view";
 import { SG_CENTER } from "@/lib/data";
 import { directionsUrl, formatKm, haversineKm, mapsSearchUrl } from "@/lib/geo";
@@ -40,7 +40,7 @@ export function PrayerRoomsDirectory({
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const mapLayoutRef = useRef<HTMLDivElement | null>(null);
 
   const filtered = useMemo(
     () => spaces.filter((p) => activeFilter === "all" || p.category === activeFilter),
@@ -51,11 +51,6 @@ export function PrayerRoomsDirectory({
     () => filtered.find((p) => p.id === activeId) || null,
     [activeId, filtered],
   );
-
-  useEffect(() => {
-    if (!activeId) return;
-    cardRefs.current[activeId]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [activeId]);
 
   const sorted = useMemo(() => {
     const copy = [...filtered];
@@ -114,6 +109,11 @@ export function PrayerRoomsDirectory({
   const filterCount = (id: ActiveFilter) =>
     id === "all" ? spaces.length : spaces.filter((p) => p.category === id).length;
 
+  const selectFromCard = (id: string) => {
+    setActiveId(id);
+    mapLayoutRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  };
+
   return (
     <div className="prayer-map-shell" id="prayer-map">
       <div className="prayer-map-head">
@@ -153,7 +153,7 @@ export function PrayerRoomsDirectory({
 
       {locError && <p className="prayer-map-error">{locError}</p>}
 
-      <div className="prayer-map-layout">
+      <div className="prayer-map-layout" ref={mapLayoutRef}>
         <div className="map-canvas prayer-map-canvas">
           <MapView
             center={mapCenter}
@@ -219,9 +219,8 @@ export function PrayerRoomsDirectory({
             {g.items.map((p) => (
               <div
                 key={p.id}
-                ref={(el) => { cardRefs.current[p.id] = el; }}
                 className={`prayer-card ${p.id === activeId ? "on" : ""}`}
-                onClick={() => setActiveId(p.id)}
+                onClick={() => selectFromCard(p.id)}
               >
                 <div className="prayer-card-name">{p.name}</div>
                 <div className="prayer-card-meta">

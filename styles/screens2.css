@@ -226,7 +226,7 @@
 .prayer-filter span { display:inline-grid; place-items:center; min-width:22px; height:22px; padding:0 7px; border-radius:999px; background:var(--emerald-50,#e9f6f0); color:var(--emerald); font-size:.74rem; }
 .prayer-filter.on span { background:rgba(255,255,255,.18); color:#fff; }
 .prayer-map-error { margin:0 0 12px; padding:11px 13px; border:1px solid #f1b5b5; background:#fff0f0; color:#9f2c2c; border-radius:12px; font-size:.86rem; font-weight:700; }
-.prayer-map-layout { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:stretch; }
+.prayer-map-layout { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:stretch; scroll-margin-top:150px; }
 .prayer-map-canvas { height:clamp(360px, 58vh, 520px) !important; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--line); box-shadow:var(--sh-md); }
 .prayer-map-panel { display:flex; flex-direction:column; gap:14px; padding:18px; border:1px solid var(--line); border-radius:var(--r-lg); background:var(--white); box-shadow:var(--sh-md); min-height:320px; }
 .prayer-map-kicker { display:flex; align-items:center; gap:12px; }
