@@ -72,7 +72,15 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;
   }
   if (loadErr) {
-    return <div className="card mt20" style={{ padding: 20 }}><p className="faint" role="alert">Couldn&apos;t load your insights — refresh to try again.</p></div>;
+    return (
+      <div className="dash-soft-alert mt20" role="alert">
+        <span><Icon name="warning" size={18} /></span>
+        <div>
+          <strong>Insights could not refresh</strong>
+          <p>We could not load your latest analytics. Refresh in a moment; your listing data is still safe.</p>
+        </div>
+      </div>
+    );
   }
 
   const total = (rows || []).reduce(

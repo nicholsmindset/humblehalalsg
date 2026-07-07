@@ -140,6 +140,165 @@ export function ContactScreen() {
   );
 }
 
+/* ── Growth Partner intake ───────────────────────────────────────────────── */
+const GP_GOALS = ["More enquiries", "More walk-ins", "Improve Google/social", "Promote offers", "Launch a new outlet", "Fix weak marketing"];
+const GP_CHANNELS = ["Google Business Profile", "Instagram / TikTok", "Paid ads", "Influencers", "Email / WhatsApp list", "None consistently"];
+const GP_BUDGETS = ["S$299–S$499/mo", "S$500–S$999/mo", "S$1,000–S$2,000/mo", "S$2,000+/mo", "Not sure yet"];
+const GP_TIMELINES = ["ASAP", "This month", "Next 1–3 months", "Just exploring"];
+
+export function GrowthPartnerScreen() {
+  const [step, setStep] = useState(0);
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [form, setForm] = useState({
+    business: "",
+    website: "",
+    goals: [] as string[],
+    channels: [] as string[],
+    budget: "",
+    timeline: "",
+    current: "",
+    name: "",
+    email: "",
+    phone: "",
+    notes: "",
+  });
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const toggle = (key: "goals" | "channels", value: string) =>
+    setForm((f) => ({ ...f, [key]: f[key].includes(value) ? f[key].filter((x) => x !== value) : [...f[key], value] }));
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+  const canNext = step === 0 ? form.business.trim().length >= 2 && form.goals.length > 0 : step === 1 ? !!form.budget && !!form.timeline : true;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !emailOk) { setState("error"); return; }
+    setState("sending");
+    const message = [
+      "Growth Partner intake",
+      "",
+      `Business: ${form.business || "Not provided"}`,
+      `Website/listing: ${form.website || "Not provided"}`,
+      `Goals: ${form.goals.join(", ") || "Not provided"}`,
+      `Current marketing: ${form.channels.join(", ") || "Not provided"}`,
+      `What they are doing now: ${form.current || "Not provided"}`,
+      `Budget: ${form.budget || "Not provided"}`,
+      `Timeline: ${form.timeline || "Not provided"}`,
+      `Phone/WhatsApp: ${form.phone || "Not provided"}`,
+      "",
+      `Notes: ${form.notes || "None"}`,
+    ].join("\n");
+    try {
+      const r = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, email: form.email, subject: "Managed marketing (Growth Partner)", message }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (d?.ok) {
+        setState("done");
+        track.leadSubmit("contact", {}, { email: form.email || undefined });
+        requestAnimationFrame(() => document.querySelector(".growth-form")?.scrollIntoView({ block: "center", behavior: "smooth" }));
+      } else {
+        setState("error");
+      }
+    } catch { setState("error"); }
+  };
+
+  return (
+    <div className="screen-in hh-page growth-intake">
+      <Crumb trail={[{ label: "Home", href: "/" }, { label: "Growth Partner" }]} />
+      <section className="growth-hero hh-pattern">
+        <div className="hh-wrap growth-hero-grid">
+          <div>
+            <span className="eyebrow" style={{ color: "var(--gold)" }}>Humble Halal Growth Partner</span>
+            <h1>Managed marketing for halal businesses that want more enquiries</h1>
+            <p>
+              Tell us your budget, current marketing, and growth goals first. Then we route your enquiry to the right
+              Onnifyworks package instead of sending you to a generic contact form.
+            </p>
+          </div>
+          <div className="growth-hero-card">
+            <strong>From S$299/mo</strong>
+            <span>Campaign setup, content direction, local SEO, ads support, and monthly lead reporting.</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="hh-wrap hh-section">
+        <div className="growth-layout">
+          <aside className="growth-steps" aria-label="Growth Partner steps">
+            {["Goals", "Budget", "Contact"].map((label, i) => (
+              <button key={label} className={step === i ? "on" : ""} onClick={() => i <= step && setStep(i)}>
+                <span>{i + 1}</span>
+                <div><strong>{label}</strong><small>{i === 0 ? "What you want to grow" : i === 1 ? "Spend and timeline" : "Send the brief"}</small></div>
+              </button>
+            ))}
+          </aside>
+
+          <form className="growth-form card" onSubmit={submit} noValidate>
+            {state === "done" ? (
+              <div className="growth-done">
+                <div className="empty-ico" style={{ background: "var(--emerald-50)", color: "var(--emerald)" }}><Icon name="check" size={26} /></div>
+                <h2 style={{ marginTop: 12 }}>Intake received</h2>
+                <p className="muted">We’ll review your goals and reply with a recommended Growth Partner package within 1–2 business days.</p>
+              </div>
+            ) : (
+              <>
+                {step === 0 && (
+                  <div className="stack g16">
+                    <div><span className="eyebrow">Step 1</span><h2>What are you trying to grow?</h2></div>
+                    <div className="grid2">
+                      <div className="field"><label>Business name *</label><input value={form.business} onChange={(e) => set("business", e.target.value)} placeholder="e.g. Warung Bumbu Rempah" /></div>
+                      <div className="field"><label>Website or listing link</label><input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://..." /></div>
+                    </div>
+                    <div className="field">
+                      <label>Main goals *</label>
+                      <div className="option-grid">
+                        {GP_GOALS.map((g) => <button key={g} type="button" className={form.goals.includes(g) ? "on" : ""} onClick={() => toggle("goals", g)}>{g}</button>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {step === 1 && (
+                  <div className="stack g16">
+                    <div><span className="eyebrow">Step 2</span><h2>Budget and current marketing</h2></div>
+                    <div className="field"><label>Monthly marketing budget *</label><div className="option-grid">{GP_BUDGETS.map((b) => <button key={b} type="button" className={form.budget === b ? "on" : ""} onClick={() => set("budget", b)}>{b}</button>)}</div></div>
+                    <div className="field"><label>When do you want to start? *</label><div className="option-grid">{GP_TIMELINES.map((t) => <button key={t} type="button" className={form.timeline === t ? "on" : ""} onClick={() => set("timeline", t)}>{t}</button>)}</div></div>
+                    <div className="field"><label>What marketing are you doing now?</label><div className="option-grid">{GP_CHANNELS.map((c) => <button key={c} type="button" className={form.channels.includes(c) ? "on" : ""} onClick={() => toggle("channels", c)}>{c}</button>)}</div></div>
+                    <div className="field"><label>What has or has not worked?</label><textarea rows={4} value={form.current} onChange={(e) => set("current", e.target.value)} placeholder="Tell us about ads, social posts, offers, agencies, or what you’ve tried." /></div>
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="stack g16">
+                    <div><span className="eyebrow">Step 3</span><h2>Where should we send the recommendation?</h2></div>
+                    <div className="grid2">
+                      <div className="field"><label>Your name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
+                      <div className="field"><label>Email *</label><input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
+                    </div>
+                    <div className="field"><label>Phone / WhatsApp</label><input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+65..." /></div>
+                    <div className="field"><label>Anything else we should know?</label><textarea rows={4} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Products to promote, target areas, preferred language, campaign deadlines..." /></div>
+                    {state === "error" && <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>Please enter your name and a valid email.</p>}
+                  </div>
+                )}
+
+                <div className="growth-actions">
+                  <button type="button" className="btn btn-ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>Back</button>
+                  {step < 2 ? (
+                    <button type="button" className="btn btn-primary" disabled={!canNext} onClick={() => setStep((s) => Math.min(2, s + 1))}>Continue <Icon name="arrow" size={16} /></button>
+                  ) : (
+                    <button className="btn btn-primary" type="submit" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send intake"}</button>
+                  )}
+                </div>
+              </>
+            )}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── FAQ hub ──────────────────────────────────────────────────────────────── */
 const TRAVEL_FAQ = [
   { q: "Are the hotels and flights “halal certified”?", a: "No — Humble Halal is a discovery platform, not a certifier. We surface factual, Muslim-friendly details (prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers, qibla) from each hotel's or airline's own information. Always confirm specifics with the hotel or airline." },
