@@ -43,8 +43,8 @@ const TAB_LABEL: Record<Tab, string> = {
 
 // Names shown in the error banner — index-aligned with the Promise.all below.
 const SECTION_NAMES = [
-  "Summary", "Comparison", "Listings", "Trend", "Search",
-  "Areas", "Categories", "Opportunities", "Journeys", "Lead values",
+  "Summary", "Comparison", "Trend", "Search",
+  "Areas", "Categories", "Lead values", "Listing detail fallback",
 ] as const;
 
 /** The equal-length window immediately before [from, to) — for Δ% chips. */
@@ -108,27 +108,34 @@ export default function Dashboard() {
       const results = await Promise.all([
         sb.rpc("admin_summary", { p_from: from, p_to: to }),
         sb.rpc("admin_summary", { p_from: prev.from, p_to: prev.to }),
-        sb.rpc("admin_vendor_leads", { p_from: from, p_to: to }),
         sb.from("v_daily_lead_actions").select("*").gte("day", from.slice(0, 10)).lte("day", to.slice(0, 10)),
         sb.rpc("admin_search_terms", { p_from: from, p_to: to, p_limit: 50 }),
         sb.rpc("admin_area_demand", { p_from: from, p_to: to }),
         sb.rpc("admin_category_demand", { p_from: from, p_to: to }),
-        sb.rpc("admin_opportunities", { p_from: from, p_to: to, p_limit: 25 }),
-        sb.rpc("admin_recent_journeys", { p_from: from, p_to: to, p_limit: 50 }),
         sb.from("analytics_lead_values").select("*"),
+        fetch(`/api/admin/analytics/fallback?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=50`)
+          .then(async (r) => {
+            const json = await r.json().catch(() => null);
+            return r.ok && json?.ok
+              ? { data: json as { listings: VendorRow[]; opportunities: OpportunityRow[]; journeys: Journey[] }, error: null }
+              : { data: null, error: new Error(json?.error || "Failed to load listing detail fallback") };
+          })
+          .catch((error: Error) => ({ data: null, error })),
       ] as const);
-      const [sumRes, prevRes, vendRes, dailyRes, searchRes, areaRes, catRes, oppRes, journeyRes, lvRes] = results;
+      const [sumRes, prevRes, dailyRes, searchRes, areaRes, catRes, lvRes, fallbackRes] = results;
       // Apply each successful dataset; failures never clobber loaded data.
       if (!sumRes.error) setSummary(Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data);
       if (!prevRes.error) setPrevSummary(Array.isArray(prevRes.data) ? prevRes.data[0] : prevRes.data);
-      if (!vendRes.error) setVendors((vendRes.data as VendorRow[]) ?? []);
       if (!dailyRes.error) setDaily((dailyRes.data as DailyRow[]) ?? []);
       if (!searchRes.error) setSearches((searchRes.data as SearchRow[]) ?? []);
       if (!areaRes.error) setAreas((areaRes.data as AreaRow[]) ?? []);
       if (!catRes.error) setCats((catRes.data as CategoryRow[]) ?? []);
-      if (!oppRes.error) setOpps((oppRes.data as OpportunityRow[]) ?? []);
-      if (!journeyRes.error) setJourneys((journeyRes.data as Journey[]) ?? []);
       if (!lvRes.error) setLeadValues((lvRes.data as LeadValueRow[]) ?? []);
+      if (!fallbackRes.error && fallbackRes.data) {
+        setVendors(fallbackRes.data.listings ?? []);
+        setOpps(fallbackRes.data.opportunities ?? []);
+        setJourneys(fallbackRes.data.journeys ?? []);
+      }
 
       const failedNames = results.flatMap((r, i) => (r.error ? [SECTION_NAMES[i]] : []));
       if (failedNames.length === 0) {
