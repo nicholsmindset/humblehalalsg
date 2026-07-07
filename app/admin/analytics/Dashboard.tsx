@@ -185,6 +185,7 @@ export default function Dashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={S.logo}>HH</div>
           <div>
+            <a href="/admin" style={S.backLink}>← Back to admin dashboard</a>
             <p style={S.kicker}>Admin analytics</p>
             <p style={S.title}>Business growth dashboard</p>
             <p style={S.sub}>Listings, search demand, leads, and upgrade opportunities in one view.</p>
