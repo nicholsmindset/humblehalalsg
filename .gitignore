@@ -61,3 +61,6 @@ lite_api.postman_collection.json
 
 # Supabase CLI local artifacts
 supabase/.temp/
+
+# clerk configuration (can include secrets)
+/.clerk/

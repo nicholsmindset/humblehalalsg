@@ -152,7 +152,7 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, [win, supabase]);
-  loadRef.current = load;
+  useEffect(() => { loadRef.current = load; }, [load]);
 
   // Reload whenever the resolved window changes (fresh auto-retry budget).
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -175,11 +175,12 @@ export default function Dashboard() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={S.logo}>HH</div>
           <div>
-            <p style={S.title}>Humble Halal · business analytics</p>
-            <p style={S.sub}>admin</p>
+            <p style={S.kicker}>Admin analytics</p>
+            <p style={S.title}>Business growth dashboard</p>
+            <p style={S.sub}>Listings, search demand, leads, and upgrade opportunities in one view.</p>
           </div>
         </div>
         <RangeBar
@@ -207,7 +208,7 @@ export default function Dashboard() {
         ))}
       </nav>
 
-      <section>
+      <section style={S.panel}>
         {loading && summary === null ? <Skeleton /> : (
           <>
             {tab === "overview" && <Overview daily={daily} vendors={vendors} />}
@@ -300,14 +301,26 @@ function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] 
 
   return (
     <>
-      <p style={S.sectionLabel}>Lead actions over time</p>
-      <div style={{ height: 260, marginBottom: 24 }}>
-        <LeadsOverTimeChart byDay={byDay} />
-      </div>
+      <div style={S.chartGrid}>
+        <div style={S.chartCard}>
+          <div style={S.chartHead}>
+            <p style={S.sectionLabel}>Lead actions over time</p>
+            <span style={S.chartHint}>Calls, directions, quotes, saves, and website clicks</span>
+          </div>
+          <div style={S.chartBody}>
+            <LeadsOverTimeChart byDay={byDay} />
+          </div>
+        </div>
 
-      <p style={S.sectionLabel}>Enquiries by vendor</p>
-      <div style={{ height: Math.max(topVendors.length * 38 + 40, 160) }}>
-        <EnquiriesByVendorChart topVendors={topVendors} />
+        <div style={S.chartCard}>
+          <div style={S.chartHead}>
+            <p style={S.sectionLabel}>Enquiries by vendor</p>
+            <span style={S.chartHint}>Top listings by quote enquiries</span>
+          </div>
+          <div style={{ ...S.chartBody, height: Math.max(topVendors.length * 38 + 40, 180) }}>
+            <EnquiriesByVendorChart topVendors={topVendors} />
+          </div>
+        </div>
       </div>
     </>
   );
@@ -397,5 +410,5 @@ function VendorDetail({ v, onBack }: { v: VendorRow; onBack: () => void }) {
 }
 
 function Skeleton() {
-  return <div style={{ height: 240, borderRadius: 12, background: "rgba(128,128,128,.08)" }} />;
+  return <div style={{ height: 300, borderRadius: 18, background: "rgba(15,92,74,.08)" }} />;
 }

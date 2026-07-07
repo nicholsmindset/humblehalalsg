@@ -138,9 +138,23 @@ export function PricingScreen() {
         toast("The founding rate is fully claimed — standard plans below.");
         return;
       }
+      if (res.status === 401 || data.reason === "not_signed_in") {
+        toast("Log in first, then choose your plan.");
+        return navigate("login");
+      }
+      if (data.reason === "no_business") {
+        toast("Create or claim your business before choosing a paid plan.");
+        return navigate("add-listing");
+      }
+      if (data.reason === "price_not_configured") {
+        toast("Checkout for this plan is not configured yet.");
+        return;
+      }
     } catch {
-      /* fall through */
+      toast("Checkout could not start — please try again.");
+      return;
     }
+    toast("Create or claim your business before choosing a paid plan.");
     navigate("add-listing");
   };
   // The plan catalog (lib/plans) is the single source of truth — no duplicated

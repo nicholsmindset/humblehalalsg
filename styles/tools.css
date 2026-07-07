@@ -161,7 +161,7 @@
 .prayer { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .prayer-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .prayer-controls .field { flex: 1; min-width: 180px; }
-.prayer-card { padding: 0; overflow: hidden; }
+.prayer .prayer-card { padding: 0; overflow: hidden; }
 .prayer-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 16px 18px; background: var(--emerald-50); border-bottom: 1px solid var(--emerald-100);

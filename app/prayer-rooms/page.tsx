@@ -39,8 +39,9 @@ export default function Page() {
         ]}
       />
       <div className="screen-in hh-page">
-        <section className="seo-hero hh-pattern">
-          <div className="hh-wrap">
+        <section className="prayer-hero hh-pattern">
+          <div className="hh-wrap prayer-hero-grid">
+            <div>
             <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link>
               <span>›</span>
@@ -61,6 +62,18 @@ export default function Page() {
                 Find prayer rooms near you on the map →
               </Link>
             </div>
+            </div>
+            <aside className="prayer-hero-panel" aria-label="Prayer room directory summary">
+              <span className="eyebrow" style={{ color: "var(--gold)" }}>Directory snapshot</span>
+              <div className="prayer-stat-grid">
+                <div><strong>{spaces.length}</strong><span>spaces listed</span></div>
+                <div><strong>{groups.length}</strong><span>area groups</span></div>
+                <div><strong>Map</strong><span>building-level pins</span></div>
+              </div>
+              <p>
+                Use the cards for level and landmark notes after opening directions. Facilities can change, so confirm at the venue when timing matters.
+              </p>
+            </aside>
             <nav className="mosque-jump" aria-label="Jump to category">
               {groups.map((g) => (
                 <a key={g.id} href={`#${g.id}`} className="mosque-jump-link">
@@ -84,7 +97,7 @@ export default function Page() {
                 <span className="mosque-region-count">{g.items.length} spaces</span>
               </h2>
               <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: ".92rem" }}>{g.blurb}</p>
-              <div className="hub-grid">
+              <div className="prayer-grid">
                 {g.items.map((p) => (
                   <div key={p.id} className="prayer-card">
                     <div className="prayer-card-name">{p.name}</div>

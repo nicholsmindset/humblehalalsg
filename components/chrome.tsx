@@ -415,8 +415,6 @@ export function TopNav() {
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "tools", label: "Tools" },
-    { id: "blog", label: "Blog" },
-    { id: "for-business", label: t("nav.forBusiness") },
     { id: "pricing", label: t("nav.pricing") },
   ];
   return (
@@ -431,12 +429,16 @@ export function TopNav() {
           ))}
         </nav>
         <div className="spacer" />
-        <div className="flex g10 center">
+        <div className="top-actions flex g8 center">
           <LangToggle />
           {user.loggedIn ? (
             <>
-              {/* Dashboard lives in the avatar menu (My/Business dashboard
-                  actions below) — a separate ghost button crowded the cluster. */}
+              <button
+                className="btn btn-soft btn-sm nav-dashboard"
+                onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+              >
+                <Icon name={user.role === "owner" ? "store" : "user"} size={16} /> Dashboard
+              </button>
               {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
