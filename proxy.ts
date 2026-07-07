@@ -26,6 +26,10 @@ const clerkEnabled = !!process.env.CLERK_SECRET_KEY;
 export default clerkEnabled
   ? clerkMiddleware(async (auth, req) => {
       if (isProtected(req)) await auth.protect();
+    }, {
+      frontendApiProxy: {
+        enabled: true,
+      },
     })
   : function proxy() {
       return NextResponse.next();
@@ -33,6 +37,9 @@ export default clerkEnabled
 
 export const config = {
   matcher: [
+    // Clerk's proxy serves browser assets under /__clerk/... with .js
+    // extensions, so it must bypass the static-file skip below.
+    "/__clerk/(.*)",
     // Skip Next internals and static files unless found in search params; always run on API/trpc.
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
