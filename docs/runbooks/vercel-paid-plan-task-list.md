@@ -23,9 +23,9 @@ This checklist turns the paid Vercel plan into an operating advantage for Humble
 
 ## P0: Do this first
 
-- [ ] Enable Vercel Web Analytics in the Vercel dashboard for `humblehalalsg`.
+- [x] Enable Vercel Web Analytics in the Vercel dashboard for `humblehalalsg`.
   - Owner: Robert
-  - Verify: Vercel dashboard shows page views after a production visit.
+  - Verify: Vercel dashboard shows page views after a production visit. Data can take a few minutes to appear.
 
 - [ ] Enable Vercel Speed Insights in the Vercel dashboard for `humblehalalsg`.
   - Owner: Robert
@@ -161,7 +161,7 @@ Fill this in after checking the Vercel dashboard.
 
 | Feature | Status | Notes |
 |---|---|---|
-| Web Analytics | Pending dashboard enable | Code hook installed |
+| Web Analytics | Enabled | Code hook installed; wait for production traffic to populate dashboard |
 | Speed Insights | Pending dashboard enable | Code hook installed |
 | Observability | Pending dashboard check | Use for route/API debugging |
 | Firewall/Security | Pending dashboard check | Useful before paid traffic campaigns |
