@@ -29,6 +29,7 @@ import { AdSlot } from "../ads/ad-slot";
 import { track } from "@/lib/analytics";
 import { NotificationBell } from "../notification-bell";
 import { VERIFY_FAQ } from "@/lib/faq";
+import { PassportScreen } from "./passport";
 
 /* =============================================================
    LOGIN / REGISTER
@@ -37,6 +38,19 @@ import { VERIFY_FAQ } from "@/lib/faq";
 function clerkErr(err: unknown): string {
   const e = err as { errors?: Array<{ longMessage?: string; message?: string }> };
   return e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || "";
+}
+
+/* Halal Passport referral: read the `hh_ref` cookie (set by /i/[code]) so it can
+   ride Clerk unsafeMetadata through signup. Guarded like captureAttribution. */
+function readRefCode(): string | undefined {
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)hh_ref=([a-z0-9]{4,12})(?:;|$)/);
+    if (m) return m[1];
+    const s = sessionStorage.getItem("hh-ref");
+    return s && /^[a-z0-9]{4,12}$/.test(s) ? s : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function LoginScreen() {
@@ -99,8 +113,9 @@ export function LoginScreen() {
         if (!suLoaded || !signUp) throw new Error("not_ready");
         // accountType rides Clerk unsafeMetadata → the user.created webhook
         // provisions profiles.role, so business owners land in the right
-        // dashboard from their very first session.
-        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role } });
+        // dashboard from their very first session. refCode credits a referral.
+        const refCode = readRefCode();
+        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) } });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       }
       setCodeSent(true);
@@ -173,11 +188,12 @@ export function LoginScreen() {
       try { sessionStorage.setItem("hh-account-type", role); } catch { /* private mode */ }
       if (mode === "register") {
         if (!suLoaded || !signUp) return;
+        const refCode = readRefCode();
         await signUp.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: `${window.location.origin}/sign-in/sso-callback`,
           redirectUrlComplete: `${window.location.origin}/`,
-          unsafeMetadata: { accountType: role },
+          unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) },
         });
         return;
       }
@@ -286,7 +302,7 @@ export function LoginScreen() {
 /* =============================================================
    USER DASHBOARD
 ============================================================= */
-export function UserDashboardScreen() {
+export function UserDashboardScreen({ passportEnabled = false }: { passportEnabled?: boolean }) {
   const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
   const dir = useDirectory();
   const { signOut } = useClerk();
@@ -299,11 +315,11 @@ export function UserDashboardScreen() {
     navigate("home");
   };
   // Deep-linkable tab (email CTAs use /dashboard?tab=tickets).
-  const TAB_IDS = ["saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
-  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : "saved");
+  const TAB_IDS = [...(passportEnabled ? ["passport"] : []), "saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
+  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : (passportEnabled ? "passport" : "saved"));
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
-  const tabs = [['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
+  const tabs: [string, string, string][] = [...(passportEnabled ? [['passport','Passport','trophy'] as [string,string,string]] : []),['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
 
   // Profile settings — real save to /api/user/update (display name) + client pref (home area).
@@ -416,6 +432,7 @@ export function UserDashboardScreen() {
           )}
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
           {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
+          {tab==='passport' && <PassportScreen />}
           {tab==='reviews' && (
             reviewsLoaded && myReviews.length===0
               ? <Empty icon="star" title="No reviews yet" body="You haven’t written any reviews yet. Explore places and share your experience." action="Start exploring" onAction={()=>navigate('explore')} />
