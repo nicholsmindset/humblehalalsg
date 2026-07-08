@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 
 /* Placement catalogue for the owner self-serve campaign builder: every active,
    direct-capable placement with its rate card + live booking count so the UI
@@ -45,5 +45,5 @@ export async function GET() {
       booked: liveCount.get(String(p.key)) || 0,
     }));
 
-  return NextResponse.json({ ok: true, options, paidAds: getServerFlags().paidAds });
+  return NextResponse.json({ ok: true, options, paidAds: (await getServerFlags()).paidAds });
 }

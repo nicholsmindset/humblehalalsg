@@ -12,15 +12,13 @@ export const PLAN_KEYS: PlanKey[] = ["free", "verified", "featured", "premium"];
 export type Feature =
   | "verified_badge"
   | "contact_buttons" // WhatsApp & directions
-  | "reply_reviews"
+  | "reply_reviews" // free — replying to customers is basic hygiene, not an upsell
   | "cert_upload" // Halal Certificate Vault — Verified+ (a trust play, not a premium upsell)
   | "featured_placement"
   | "homepage_rotation"
   | "priority_rank"
   | "offers_block"
-  | "multi_location"
-  | "analytics"
-  | "ad_credits";
+  | "analytics";
 
 export interface Plan {
   key: PlanKey;
@@ -37,7 +35,7 @@ export interface Plan {
 }
 
 // Cumulative feature sets, built bottom-up so each tier inherits the one below.
-const FREE_FEATURES: Feature[] = [];
+const FREE_FEATURES: Feature[] = ["reply_reviews"];
 // NOTE (audit #3): a plan NEVER confers a public trust badge. The "Verified by
 // MUIS" / "Admin Verified" badge + halal-confidence tier are derived purely from
 // verification DATA (admin review of submitted evidence — see lib/verify-grant
@@ -48,7 +46,6 @@ const VERIFIED_FEATURES: Feature[] = [
   ...FREE_FEATURES,
   "verified_badge",
   "contact_buttons",
-  "reply_reviews",
   "cert_upload",
 ];
 const FEATURED_FEATURES: Feature[] = [
@@ -57,12 +54,13 @@ const FEATURED_FEATURES: Feature[] = [
   "homepage_rotation",
   "priority_rank",
 ];
+// No unbuilt promises here: "multiple locations" and "ad credits" were listed
+// before they existed and are withdrawn until they ship (packages must deliver
+// exactly what they market).
 const PREMIUM_FEATURES: Feature[] = [
   ...FEATURED_FEATURES,
   "offers_block",
-  "multi_location",
   "analytics",
-  "ad_credits",
 ];
 
 export const PLANS: Record<PlanKey, Plan> = {
@@ -75,7 +73,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     cta: "Start free",
     galleryMax: 3,
     features: FREE_FEATURES,
-    bullets: ["Basic profile", "1 category", "Up to 3 photos", "Map pin", "Customer reviews"],
+    bullets: ["Basic profile", "1 category", "Up to 3 photos", "Map pin", "Customer reviews", "Reply to reviews"],
   },
   verified: {
     key: "verified",
@@ -94,7 +92,6 @@ export const PLANS: Record<PlanKey, Plan> = {
       "Eligibility for the Admin-Verified badge (earned after review, not automatic)",
       "Halal certificate vault",
       "Up to 15 photos",
-      "Reply to reviews",
       "WhatsApp & directions buttons",
     ],
   },
@@ -126,10 +123,9 @@ export const PLANS: Record<PlanKey, Plan> = {
     features: PREMIUM_FEATURES,
     bullets: [
       "Everything in Featured",
-      "Offers & promotions block",
-      "Multiple locations",
-      "Advanced analytics",
-      "Promo & ad credits",
+      "Offers & promotions on your listing",
+      "Advanced analytics & search insights",
+      "Up to 30 photos",
     ],
   },
 };

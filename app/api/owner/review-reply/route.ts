@@ -41,17 +41,30 @@ export async function POST(req: Request) {
   const { error } = await sb.rpc("owner_reply_to_review", { p_review_id: reviewId, p_reply: reply });
   if (error) return NextResponse.json({ ok: false, error: "Couldn't post reply." }, { status: 403 });
 
-  // Best-effort: notify the reviewer. Uses service-role to read the reviewer's
-  // profile email + business name (both otherwise out of the owner's RLS scope).
+  // Best-effort: notify the reviewer (email + in-app bell). Uses service-role
+  // to read the reviewer's email + business name (out of the owner's RLS scope).
   try {
     const admin = getSupabaseAdmin();
     if (admin) {
       const { data: rv } = await admin.from("reviews").select("user_id, business_id").eq("id", reviewId).maybeSingle();
       const reviewerId = (rv?.user_id as string) || null;
       let businessName = "the business";
+      let businessSlug: string | null = null;
       if (rv?.business_id) {
-        const { data: biz } = await admin.from("businesses").select("name").eq("id", rv.business_id).maybeSingle();
+        const { data: biz } = await admin.from("businesses").select("name, slug").eq("id", rv.business_id).maybeSingle();
         if (biz?.name) businessName = String(biz.name);
+        if (biz?.slug) businessSlug = String(biz.slug);
+      }
+      if (reviewerId) {
+        const { notify } = await import("@/lib/notify");
+        await notify({
+          userId: reviewerId,
+          type: "review_reply",
+          title: `${businessName} replied to your review`,
+          body: reply.slice(0, 140),
+          link: businessSlug ? `/business/${businessSlug}?tab=reviews` : undefined,
+          dedupeKey: `review_reply:${reviewId}`,
+        });
       }
       const { email, name } = await emailForUser(admin, reviewerId);
       if (email) {
@@ -59,7 +72,7 @@ export async function POST(req: Request) {
         await sendEmail({ to: email, subject: t.subject, html: t.html, template: "review-reply", businessId: (rv?.business_id as string) || undefined });
       }
     }
-  } catch { /* email best-effort */ }
+  } catch { /* best-effort */ }
 
   return NextResponse.json({ ok: true });
 }

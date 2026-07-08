@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { liteapiConfigured, prebook } from "@/lib/liteapi";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
@@ -8,7 +8,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    secretKey/clientSecret) so the client can render the card form. Gated by the
    PAID_HOTELS_ENABLED kill-switch and graceful without a key. */
 export async function POST(req: Request) {
-  if (!getServerFlags().paidHotels) {
+  if (!(await getServerFlags()).paidHotels) {
     return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
   }
   if (!liteapiConfigured()) return NextResponse.json({ ok: false, reason: "liteapi_not_configured" });

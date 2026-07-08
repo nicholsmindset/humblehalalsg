@@ -10,6 +10,7 @@ import { HHData, spotsLeft } from "@/lib/data";
 import { towns, REGIONS } from "@/lib/sg-locations";
 import { useEvents } from "../events-context";
 import { useDirectory } from "../directory-context";
+import { MapView } from "../map/map-view";
 import type { EventItem, GenderArrangement } from "@/lib/types";
 import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { screenToPath } from "@/lib/routes";
@@ -785,7 +786,26 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
             <Icon name="pin" size={16} style={{ color: "var(--emerald)" }} />
             <span className="muted">{ev.venue}</span>
           </div>
-          <ImagePh label="venue map" tone="emerald" style={{ height: 180, borderRadius: 14, marginTop: 12 }} icon="map" />
+          {ev.venueCoords ? (
+            // Real venue pin (the host wizard captures lat/lng). Events without
+            // coordinates keep the placeholder — we never guess a location.
+            <div style={{ height: 220, borderRadius: 14, marginTop: 12, overflow: "hidden" }}>
+              <MapView
+                center={ev.venueCoords}
+                zoom={15}
+                points={[{
+                  id: "venue",
+                  name: ev.venue || ev.title,
+                  coords: ev.venueCoords,
+                  kind: "listing",
+                  active: true,
+                  meta: [ev.area, ev.dateLabel].filter(Boolean).join(" · ") || undefined,
+                }]}
+              />
+            </div>
+          ) : (
+            <ImagePh label="venue map" tone="emerald" style={{ height: 180, borderRadius: 14, marginTop: 12 }} icon="map" />
+          )}
           <a className="btn btn-outline mt12" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ev.venue} ${ev.area}`)}`} target="_blank" rel="noopener noreferrer">
             <Icon name="directions" size={17} /> Get directions
           </a>
@@ -1132,6 +1152,13 @@ export function CheckoutScreen() {
             <div className="form-head">
               <span className="eyebrow">{free ? "Free RSVP" : "Secure checkout"}</span>
               <h1 style={{ fontSize: "1.6rem", marginTop: 8 }}>{free ? "Reserve your spot" : "Get your tickets"}</h1>
+              {free && (
+                <p className="muted" style={{ marginTop: 6, fontSize: ".92rem" }}>
+                  {ev.requiresApproval
+                    ? "The organiser reviews each request — you’ll get an email once you’re approved."
+                    : "No payment needed — your spot is confirmed instantly."}
+                </p>
+              )}
             </div>
 
             {!free && ev.tiers && (
@@ -1175,10 +1202,11 @@ export function CheckoutScreen() {
                 <div className="field">
                   <label>Email</label>
                   <input className="input" type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Mobile</label>
-                  <input className="input" placeholder="+65 …" />
+                  {free && !ev.requiresApproval && (
+                    <span className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Icon name="ticket" size={14} /> We’ll email your confirmation with a QR ticket — show it at the door.
+                    </span>
+                  )}
                 </div>
                 {!free && (
                   <div className="field">
@@ -1195,14 +1223,52 @@ export function CheckoutScreen() {
 
           <aside>
             <div className="card evt-summary">
-              <div className="flex g10 center" style={{ paddingBottom: 14, borderBottom: "1px solid var(--line)" }}>
-                <ImagePh label="event" tone={ev.tone} src={ev.img} style={{ width: 54, height: 54, borderRadius: 10, flex: "none" }} />
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: ".92rem", lineHeight: 1.25 }}>{ev.title}</div>
+              <ImagePh label="event" tone={ev.tone} src={ev.img} style={{ width: "100%", height: 120, borderRadius: 12 }} />
+              <div className="flex g10" style={{ padding: "12px 0", borderBottom: "1px solid var(--line)" }}>
+                <EventDateChip ev={ev} />
+                <div className="f1">
+                  <div style={{ fontWeight: 700, fontSize: ".95rem", lineHeight: 1.3 }}>{ev.title}</div>
                   <div className="faint" style={{ fontSize: ".78rem", marginTop: 3 }}>
-                    {ev.dateLabel} · {ev.area}
+                    {ev.dateLabel}
+                    {ev.timeLabel ? ` · ${ev.timeLabel}` : ""}
+                  </div>
+                  <div className="faint" style={{ fontSize: ".78rem", marginTop: 2 }}>
+                    {ev.venue} · {ev.area} ·{" "}
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ev.venue} ${ev.area}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontWeight: 600 }}
+                    >
+                      Directions
+                    </a>
                   </div>
                 </div>
+              </div>
+              {(ev.halalCatering || ev.prayerNearby || (ev.genderArrangement && ev.genderArrangement !== "mixed")) && (
+                <div className="flex g6" style={{ flexWrap: "wrap", padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                  <EventBadges ev={ev} compact />
+                </div>
+              )}
+              {!ev.soldOut && (ev.taken > 0 || ev.capacity > 0) && (
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div className="flex between center" style={{ marginBottom: ev.capacity ? 7 : 0 }}>
+                    <span style={{ fontWeight: 700, fontSize: ".85rem" }}>
+                      {ev.taken} going{ev.capacity ? ` · ${left} spots left` : ""}
+                    </span>
+                    {left > 0 && left <= 10 && (
+                      <span className="evt-left urgent" style={{ fontSize: ".75rem" }}>Almost full</span>
+                    )}
+                  </div>
+                  {ev.capacity ? (
+                    <div className="evt-bar">
+                      <div className="evt-bar-fill" style={{ width: Math.min(100, Math.round((ev.taken / ev.capacity) * 100)) + "%" }} />
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              <div className="faint" style={{ fontSize: ".78rem", padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                Hosted by <b style={{ color: "var(--ink)" }}>{ev.organiser}</b>
               </div>
               <div className="stack g8" style={{ padding: "14px 0" }}>
                 <div className="flex between">

@@ -3,7 +3,7 @@
 /* Humble Halal — Admin Dashboard (ported from screens-admin.jsx) */
 import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { HHData } from "@/lib/data";
-import type { BadgeKey, Listing } from "@/lib/types";
+import type { BadgeKey } from "@/lib/types";
 import { halalSgSearchUrl } from "@/lib/muis";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
@@ -11,14 +11,18 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { Badge, Empty, Icon, ImagePh } from "../ui";
 import { NotificationBell } from "../notification-bell";
 import { fmtSGD } from "@/lib/fees";
+import { FLAG_COLUMN, type FlagKey } from "@/lib/flags";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
+import { AdminVerdicts } from "./admin-verdicts";
 import { AdminLeads } from "./admin-leads";
+import { AdminBusinesses } from "./admin-businesses";
+import { FLAG_COPY } from "./admin-flag-copy";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
    Sections fetch from /api/admin/queue (admin-gated). When the backend isn't
    configured or the caller isn't an admin (dev/demo), the fetch returns null
-   and the section keeps its mock rows so the console stays explorable. */
+   and the section renders its empty state so the console stays explorable. */
 type QueueRow = Record<string, unknown> & { id: string };
 
 async function queueGet(type: string): Promise<QueueRow[] | null> {
@@ -82,7 +86,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled?: boolean }) {
+export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled = false }: { halalVerdictsEnabled?: boolean; leadRoutingEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -98,9 +102,11 @@ export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
     ["claims", "Ownership claims", "building"],
+    ["businesses", "Businesses", "store"],
     ["suggestions", "Suggestions", "sparkles"],
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
+    ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as [string, string, string]] : []),
     ["hotels", "Hotel verification", "bed"],
     ["reviews", "Review moderation", "star"],
     ["reports", "Reports & corrections", "flag"],
@@ -147,9 +153,11 @@ export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
+          {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => setSection('verification')} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
+          {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}
@@ -166,10 +174,63 @@ export function AdminScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled
   );
 }
 
+const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"];
+const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k));
+
+/* Single flag row — reuses the cert-toggle/cert-switch/cert-knob switch markup
+   used elsewhere in this file (Ramadan mode, Cert Vault, etc). `value` is the
+   platform_settings column value: true/false = explicit override, null = no
+   override (falls back to the env var server-side). */
+function GlobalFlagRow({ flagKey, value, onToggle }: { flagKey: FlagKey; value: boolean | null; onToggle: (next: boolean) => void }) {
+  const { title, desc } = FLAG_COPY[flagKey];
+  const on = value === true;
+  return (
+    <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ flex: 1 }}>
+        <div className="flex g8 center" style={{ marginBottom: 4 }}>
+          <h3 style={{ fontSize: "1.05rem" }}>{title}</h3>
+          <span className="tag" style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
+            {on ? "Live" : "Off"}
+          </span>
+          {value === null && <span className="faint" style={{ fontSize: ".72rem", fontStyle: "italic" }}>using env default</span>}
+        </div>
+        <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{desc}</p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={on}
+        aria-label={`${on ? "Disable" : "Enable"} ${title}`}
+        className={`cert-toggle ${on ? "on" : ""}`}
+        style={{ flex: "none" }}
+        onClick={() => onToggle(!on)}
+      >
+        <span className="cert-switch"><span className="cert-knob" /></span>
+      </button>
+    </div>
+  );
+}
+
 export function AdminMonetization() {
-  const { flags, setFlag, toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  const { toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
+  // Global flag overrides — hydrated from platform_settings on mount so every
+  // toggle reflects the persisted (server) state, not client-only demo state.
+  const [values, setValues] = useState<Record<string, boolean | null>>({});
+  // Columns with a save in flight (render-stable Set — no re-render needed).
+  const [savingFlags] = useState(() => new Set<string>());
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/settings");
+        const d = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        const next: Record<string, boolean | null> = {};
+        for (const col of Object.values(FLAG_COLUMN)) next[col] = col in d ? (d[col] === null ? null : !!d[col]) : null;
+        setValues(next);
+      } catch { /* keep defaults — rows show "using env default" */ }
+    })();
+  }, []);
+
   // Ramadan mode persists to platform_settings so EVERY visitor sees it (server-
-  // hydrated), unlike the demo paid-flag toggles which are client-side only.
+  // hydrated), same pattern the flags above now follow.
   const toggleRamadan = async () => {
     const next = !ramadanModeEnabled;
     setRamadanModeEnabled(next);
@@ -178,11 +239,35 @@ export function AdminMonetization() {
       await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ramadan_mode_enabled: next }) });
     } catch { /* optimistic; admin can retry */ }
   };
-  const rows: { key: "paidTickets" | "paidAds" | "paidPlans"; title: string; desc: string }[] = [
-    { key: "paidTickets", title: "Paid event tickets", desc: "Let businesses sell paid tickets (Stripe Connect). When OFF, every event is free RSVP only and the paid checkout API is blocked server-side." },
-    { key: "paidAds", title: "Paid advertising", desc: "Enable purchasable ad placements on the Advertise page. When OFF, ad CTAs invite enquiries instead of charging." },
-    { key: "paidPlans", title: "Paid listing plans", desc: "Enable Verified / Featured / Premium subscriptions on the Pricing page and billing." },
-  ];
+
+  // Persist a global flag override. Payment flags require an explicit confirm
+  // before flipping ON, since they gate LIVE charging flows.
+  async function setGlobalFlag(flagKey: FlagKey, next: boolean, isPayment: boolean) {
+    if (isPayment && next && !confirm("This enables a LIVE payment/charging flow. Continue?")) return;
+    const column = FLAG_COLUMN[flagKey];
+    // In-flight guard: a rapid double-flip during a pending save would capture
+    // a stale `prev` and could mis-revert on failure (PR #147 review finding).
+    if (savingFlags.has(column)) return;
+    savingFlags.add(column);
+    const prev = values[column] ?? null;
+    setValues((v) => ({ ...v, [column]: next })); // optimistic
+    try {
+      const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [column]: next }) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [column]: prev }));
+        toast("Couldn't save — try again.");
+      } else {
+        toast(`${FLAG_COPY[flagKey].title} ${next ? "enabled" : "disabled"}`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [column]: prev }));
+      toast("Couldn't save — try again.");
+    } finally {
+      savingFlags.delete(column);
+    }
+  }
+
   return (
     <div style={{ maxWidth: 720 }}>
       <div className="notice notice-warn" style={{ marginBottom: 18 }}>
@@ -192,37 +277,22 @@ export function AdminMonetization() {
           Paid flows also require Stripe keys + each business to complete payout onboarding.
         </span>
       </div>
-      <div className="stack g12">
-        {rows.map((r) => {
-          const on = flags[r.key];
-          return (
-            <div key={r.key} className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div style={{ flex: 1 }}>
-                <div className="flex g8 center" style={{ marginBottom: 4 }}>
-                  <h3 style={{ fontSize: "1.05rem" }}>{r.title}</h3>
-                  <span className={`tag ${on ? "" : ""}`} style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
-                    {on ? "Live" : "Off"}
-                  </span>
-                </div>
-                <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{r.desc}</p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={on}
-                aria-label={`${on ? "Disable" : "Enable"} ${r.title}`}
-                className={`cert-toggle ${on ? "on" : ""}`}
-                style={{ flex: "none" }}
-                onClick={() => {
-                  setFlag(r.key, !on);
-                  toast(`${r.title} ${!on ? "enabled" : "disabled"}`);
-                }}
-              >
-                <span className="cert-switch"><span className="cert-knob" /></span>
-              </button>
-            </div>
-          );
-        })}
 
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Payments</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {PAYMENT_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, true)} />
+        ))}
+      </div>
+
+      <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Features</div>
+      <div className="stack g12" style={{ marginBottom: 24 }}>
+        {FEATURE_FLAG_KEYS.map((k) => (
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, false)} />
+        ))}
+      </div>
+
+      <div className="stack g12">
         {/* Ramadan mode — seasonal, persisted globally */}
         <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between", borderColor: "var(--emerald-200)" }}>
           <div style={{ flex: 1 }}>
@@ -396,7 +466,7 @@ export function AdminRollout() {
     <div className="stack g16" style={{ maxWidth: 820 }}>
       <div className="notice notice-warn">
         <Icon name="info" size={18} />
-        <span>Recommended go-live order, easiest→hardest. Each flag is enabled in <strong>Vercel env</strong> (<code>PAID_*_ENABLED</code>); the toggles on the Monetization tab are client-side demo only. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
+        <span>Recommended go-live order, easiest→hardest. Flip each flag on the <strong>Monetization</strong> tab (persists server-side, live within ~30s) or set the <code>PAID_*_ENABLED</code> Vercel env as the fallback default. Full steps &amp; rollback: <code>docs/runbooks/paid-flag-rollout.md</code>.</span>
       </div>
 
       <div className="stack g12">
@@ -888,6 +958,25 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
     const res = await queueAct("reports", id, "resolve"); if (!res.ok) { toast(queueErr(res.error)); return; }
     setRows(r=>r.filter(x=>x.id!==id)); toast('Report resolved');
   };
+  // Takedown straight from a report — the "reported as not halal → removed"
+  // loop. Suspends the business (reversible; hidden from every public surface)
+  // via /api/admin/listing, then auto-resolves the report.
+  const suspendFromReport = async (reportId: string, bizRef: string, bizName: string) => {
+    if (!confirm(`Suspend "${bizName}"?\n\nIt disappears from the directory, search, its page and the sitemap immediately. Reversible from Businesses → Manage.`)) return;
+    const reason = prompt("Reason (recorded in the audit log):", "Not halal — removed after community report") || "";
+    try {
+      const r = await fetch("/api/admin/listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: bizRef, action: "suspend", reason }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!d.ok) { toast(d.error === "not_found" ? "Couldn't match this report to a business." : "Couldn't suspend — try again."); return; }
+      await queueAct("reports", reportId, "resolve"); // best-effort close-out
+      setRows((rs) => rs.filter((x) => x.id !== reportId));
+      toast("Listing suspended and report resolved.");
+    } catch { toast("Couldn't suspend — try again."); }
+  };
   return (
     <div className="stack g12">
       {rows.map(r=>{
@@ -896,7 +985,11 @@ export function AdminReports({ toast, navigate }: { toast: (msg: string) => void
         <div key={r.id} className="card" style={{padding:18}}>
           <div className="flex between center wrap g10">
             <div className="flex g12 center"><span className={`sev-dot ${r.sev}`}/><div><div style={{fontWeight:700}}>{r.reason}</div><div className="faint" style={{fontSize:'.82rem'}}>{biz?.name || r.bizId.slice(0,8) || "—"} · reported by community · {r.time}</div></div></div>
-            <div className="flex g8">{biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}<button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button></div>
+            <div className="flex g8">
+              {biz && <button className="btn btn-outline btn-sm" onClick={()=>navigate("detail",{id: biz.slug || r.bizId})}>View listing</button>}
+              {r.bizId && <button className="btn btn-sm" style={{background:'#FCEBEB',color:'#A32D2D'}} onClick={()=>suspendFromReport(r.id, r.bizId, biz?.name || 'this listing')}>Suspend listing</button>}
+              <button className="btn btn-primary btn-sm" onClick={()=>resolve(r.id)}>Resolve</button>
+            </div>
           </div>
         </div>
         );

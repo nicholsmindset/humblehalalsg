@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { SITE } from "@/lib/seo";
@@ -17,7 +17,7 @@ import { leadPlan, leadPriceId, FOUNDING_LEAD_MONTHLY, LEAD_PLANS } from "@/lib/
 const FOUNDING_LIMIT = 25; // first N leads subscribers per vertical get the founding rate
 
 export async function POST(req: Request) {
-  if (!getServerFlags().paidLeads) {
+  if (!(await getServerFlags()).paidLeads) {
     return NextResponse.json({ ok: false, error: "paid_leads_disabled" }, { status: 403 });
   }
   const rl = await rateLimit(req, "checkout-leads", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);

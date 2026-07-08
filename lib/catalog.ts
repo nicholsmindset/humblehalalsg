@@ -16,6 +16,29 @@ import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (v == null ? "" : String(v));
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
+const areaAsset = (file: string) => `/area-images/${file}.svg`;
+
+const AREA_IMAGE_FALLBACKS: Record<string, string> = {
+  "kampong-glam": areaAsset("kampong-glam"),
+  tampines: areaAsset("tampines"),
+  "arab-street": areaAsset("arab-street"),
+  "race-course-road": areaAsset("race-course-road"),
+  geylang: areaAsset("geylang"),
+  "geylang-serai": areaAsset("geylang"),
+  islandwide: areaAsset("islandwide"),
+  "tanjong-pagar": areaAsset("tanjong-pagar"),
+  bugis: areaAsset("bugis"),
+  "little-india": areaAsset("little-india"),
+  bedok: areaAsset("tampines"),
+  jurong: areaAsset("islandwide"),
+  "paya-lebar": areaAsset("geylang"),
+};
+
+const areaImageFor = (id: string, name: string, existing?: string) => {
+  const key = (id || name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const nameKey = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return AREA_IMAGE_FALLBACKS[key] || AREA_IMAGE_FALLBACKS[nameKey] || existing || AREA_IMAGE_FALLBACKS.islandwide;
+};
 
 // Static sort baseline: preserve authored order so untouched items stay put.
 const catOrder = new Map(staticCategories.map((c, i) => [c.id, i]));
@@ -80,20 +103,25 @@ export const getAreas = cache(async (): Promise<Area[]> => {
   for (const a of staticAreas) {
     if (inactive.has(a.id)) continue;
     const o = overrides.get(a.id);
+    const name = o ? str(o.name) || a.name : a.name;
     merged.push({
       ...a,
-      name: o ? str(o.name) || a.name : a.name,
+      name,
       tone: o ? str(o.tone) || a.tone : a.tone,
+      image: areaImageFor(a.id, name, a.image),
       _sort: o && o.sort != null ? num(o.sort, 100) : (areaOrder.get(a.id) ?? 100),
     });
     overrides.delete(a.id);
   }
   for (const o of overrides.values()) {
+    const id = str(o.id);
+    const name = str(o.name) || id;
     merged.push({
-      id: str(o.id),
-      name: str(o.name) || str(o.id),
+      id,
+      name,
       count: 0,
       tone: str(o.tone) || "emerald",
+      image: areaImageFor(id, name),
       _sort: num(o.sort, 100),
     });
   }

@@ -21,6 +21,8 @@ import { PayoutsPanel } from "../owner/payouts";
 import { CertVault } from "../owner/cert-vault";
 import { OwnerAds } from "../owner/ads-tab";
 import { OwnerInsights } from "../owner/insights";
+import { GrowthServicesCard } from "../owner/growth-services";
+import { OwnerOfferCard } from "../owner/offer-card";
 import { PendingSubmissions, type PendingSubmission } from "../owner/pending-submissions";
 import { ActivationChecklist } from "../owner/activation-checklist";
 import { ReviewRequestCard } from "../owner/review-request-card";
@@ -98,6 +100,11 @@ export function ForBusinessScreen() {
             <Newsletter source="for-business" stage="lead" cta="Send the starter kit" />
           </div>
         </div>
+        <p className="muted tc" style={{ fontSize: ".88rem", marginTop: 18 }}>
+          Rather have it handled? <strong>Managed marketing is available</strong> — powered by{" "}
+          <strong>Onnifyworks</strong>, Humble Halal&rsquo;s growth team.{" "}
+          <a href="/contact" style={{ fontWeight: 600 }}>Ask about Growth Partner →</a>
+        </p>
       </section>
     </div>
   );
@@ -758,7 +765,8 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                 onAddListing={() => navigate("add-listing")}
               />
             )}
-            <OwnerInsights />
+            <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
+            <GrowthServicesCard onContact={() => navigate("contact")} />
           </div>
         )}
 
@@ -816,6 +824,10 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                   )}
                 </div>
               ))
+            )}
+            {/* Offers & promotions — Premium manage card / locked teaser below. */}
+            {live && biz !== null && biz.length > 0 && (
+              <OwnerOfferCard plan={currentPlan} toast={toast} onUpgrade={() => navigate("pricing")} />
             )}
             <button className="btn btn-outline btn-block" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> {live && biz && biz.length ? "Add another listing" : "Add your business"}</button>
           </div>

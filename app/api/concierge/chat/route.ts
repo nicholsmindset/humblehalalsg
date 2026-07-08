@@ -1,5 +1,5 @@
 import { createAgentUIStreamResponse } from "ai";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { aiConfigured } from "@/lib/ai";
 import { buildConcierge } from "@/lib/concierge-agent";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  if (!getServerFlags().aiConcierge) {
+  if (!(await getServerFlags()).aiConcierge) {
     return Response.json({ error: "concierge_disabled" }, { status: 403 });
   }
   // Paid LLM call — throttle per IP (unauthenticated public chat).

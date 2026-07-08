@@ -88,7 +88,11 @@
 .prayer-strip .prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
 .prayer-caret { transition: transform .2s; color:#A9C8BD; }
 .prayer-caret.up { transform: rotate(180deg); }
-.prayer-mosque { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:72%; }
+/* min-width:0 lets this flex item shrink below its content so the span's
+   ellipsis engages — without it the default `min-width:auto` pins the button at
+   intrinsic width, so a long label ("Find masjid near you") or mosque name
+   overflows the 320px viewport by ~10px (intermittent mobile-guard failure). */
+.prayer-mosque { display:flex; align-items:center; gap:6px; min-width:0; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:72%; }
 .prayer-mosque:hover { background:rgba(255,255,255,.18); }
 .prayer-mosque span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .prayer-mosque strong { font-weight:700; }

@@ -271,6 +271,45 @@ export function planStartedEmail(o: { name?: string | null; plan: string }): Out
   );
 }
 
+/* ── Halal Passport (loyalty + referrals) ────────────────────────────── */
+export function referralJoinedEmail(o: { name?: string | null }): Out {
+  return wrap(
+    "A friend joined with your invite 🎉",
+    "Your invite worked",
+    greet(o.name) +
+      p(`Good news — a friend just joined Humble Halal using your invite link. You'll both earn Halal Passport points as soon as they leave their first review or collect their first stamp.`) +
+      p(`Keep sharing your link to climb toward the <strong>Community Ambassador</strong> badge.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
+export function referralQualifiedEmail(o: { name?: string | null; points: number }): Out {
+  return wrap(
+    `You earned ${o.points} Passport points`,
+    "Referral reward unlocked",
+    greet(o.name) +
+      p(`Your invited friend just made their first move on Humble Halal — so <strong>${o.points} Halal Passport points</strong> have landed in your account. Thank you for growing the community.`),
+    { label: "See your points", url: `${U}/passport` },
+  );
+}
+export function badgeEarnedEmail(o: { name?: string | null; badge: string }): Out {
+  return wrap(
+    `You unlocked the ${o.badge} badge`,
+    `New badge: ${esc(o.badge)}`,
+    greet(o.name) +
+      p(`Nice work — you just earned the <strong>${esc(o.badge)}</strong> badge on your Halal Passport. Show it off or keep collecting.`),
+    { label: "View your badges", url: `${U}/passport` },
+  );
+}
+export function tierUpEmail(o: { name?: string | null; tier: string }): Out {
+  return wrap(
+    `You reached ${o.tier} on Humble Halal`,
+    `Welcome to ${esc(o.tier)}`,
+    greet(o.name) +
+      p(`You've levelled up to <strong>${esc(o.tier)}</strong> on your Halal Passport. Keep reviewing, collecting stamps and inviting friends to reach the next tier.`),
+    { label: "Open your Passport", url: `${U}/passport` },
+  );
+}
+
 /* ═══ Rebrands of the existing inline-HTML emails ══════════════════════ */
 export function fareAlertEmail(o: { route: string; oldPrice: string; newPrice: string; url?: string }): Out {
   return wrap(
@@ -310,6 +349,40 @@ export function ownerDigestEmail(o: { name?: string | null; businessName: string
     { label: "See full insights", url: `${U}/owner` },
   );
 }
+/* Monthly performance report — the free-tier retention/upsell hook (growth
+   plan Part 1). Comparison + upsell lines are precomputed by the cron so this
+   stays a dumb renderer. */
+export function ownerMonthlyReportEmail(o: {
+  name?: string | null;
+  businessName: string;
+  monthLabel: string; // e.g. "June 2026"
+  views: number;
+  enquiries: number;
+  whatsapp: number;
+  calls: number;
+  directions: number;
+  compareLine?: string | null; // pre-escaped HTML line, e.g. category average
+  upsellLine?: string | null;  // pre-escaped HTML line, plan-aware
+}): Out {
+  return wrap(
+    `Your ${o.monthLabel} report — ${o.businessName}`,
+    "Your month on Humble Halal",
+    greet(o.name) +
+      p(`Here's how <strong>${esc(o.businessName)}</strong> did in ${esc(o.monthLabel)}:`) +
+      p(
+        `👀 <strong>${o.views}</strong> profile views<br>` +
+        `✉️ <strong>${o.enquiries}</strong> enquiries<br>` +
+        `💬 <strong>${o.whatsapp}</strong> WhatsApp taps<br>` +
+        `📞 <strong>${o.calls}</strong> calls<br>` +
+        `📍 <strong>${o.directions}</strong> direction requests`,
+      ) +
+      (o.compareLine ? p(o.compareLine) : "") +
+      (o.upsellLine ? p(o.upsellLine) : ""),
+    { label: "See your full insights", url: `${U}/owner` },
+    "Every enquiry, WhatsApp tap and call is a customer Humble Halal sent your way.",
+  );
+}
+
 export function eventReminderEmail(o: { name?: string | null; eventTitle: string; dateLabel?: string; venue?: string }): Out {
   return wrap(
     `Tomorrow: ${o.eventTitle}`,

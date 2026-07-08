@@ -1,5 +1,7 @@
 # Mobile-First Audit — humblehalal.com (July 2026)
 
+> **Superseded by [`mobile-matrix-audit-2026-07.md`](./mobile-matrix-audit-2026-07.md)** — a later pass that turned this audit's method into a repeatable 10-device harness, closed the open items below (sub-12px text, 320 floor, the never-verified pages, iOS input zoom, scroll lock, the map `flyTo` crash), and added a CI guard.
+
 **Method:** Live Playwright rendering on **production** (`www.humblehalal.com`) at 320 / 375 / 390 / 414 CSS px, cross-referenced with a full source/CSS audit. Measured: real horizontal overflow (parent-scroll-aware), tap-target geometry, sub-12px text, interactive states (filter drawer, date picker), and console errors.
 **Assume ≥70% mobile traffic.** Standards enforced: zero horizontal overflow 320–1024px · ≥48px tap targets (WCAG AA floor 44) · body 16px / text ≥12px · CWV good at p75.
 

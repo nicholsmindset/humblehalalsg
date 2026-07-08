@@ -4,6 +4,13 @@ import type { EventItem, Listing } from "@/lib/types";
 import type { Hotel } from "@/lib/halal-hotels";
 import { scoreListing } from "@/lib/halal-score";
 
+/** schema.org requires absolute image URLs. Local feature images are stored as
+ *  site-relative paths (e.g. /blog/x.webp) — absolutize them; leave full URLs
+ *  (Unsplash, LiteAPI) untouched. */
+function absUrl(src: string): string {
+  return src.startsWith("/") ? `${SITE.url}${src}` : src;
+}
+
 export function JsonLd({ data }: { data: object | object[] }) {
   return (
     <script
@@ -210,7 +217,7 @@ export function articleJsonLd(a: {
     description: a.description,
     url: `${SITE.url}${a.path}`,
     mainEntityOfPage: `${SITE.url}${a.path}`,
-    ...(a.image ? { image: a.image } : {}),
+    ...(a.image ? { image: absUrl(a.image) } : {}),
     ...(a.datePublished ? { datePublished: a.datePublished } : {}),
     ...(a.dateModified || a.datePublished
       ? { dateModified: a.dateModified || a.datePublished }
@@ -242,7 +249,7 @@ export function blogPostingJsonLd(p: {
     description: p.description,
     url: `${SITE.url}${p.path}`,
     mainEntityOfPage: `${SITE.url}${p.path}`,
-    ...(p.image ? { image: [p.image] } : {}),
+    ...(p.image ? { image: [absUrl(p.image)] } : {}),
     datePublished: p.datePublished,
     dateModified: p.dateModified || p.datePublished,
     author: { "@type": "Organization", name: p.author, url: SITE.url },

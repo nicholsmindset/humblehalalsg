@@ -22,8 +22,9 @@ type ClerkUserEvent = {
     first_name?: string | null;
     last_name?: string | null;
     /** Client-set at signup (LoginScreen role picker) — accountType "owner"
-     *  provisions the business-owner role from the first session. */
-    unsafe_metadata?: { accountType?: string } | null;
+     *  provisions the business-owner role from the first session. `refCode`
+     *  carries a Halal Passport referral code (the Svix webhook has no cookie). */
+    unsafe_metadata?: { accountType?: string; refCode?: string } | null;
   };
 };
 
@@ -67,6 +68,22 @@ export async function POST(req: Request) {
       // promoted admin's role back to 'user').
       const role = d.unsafe_metadata?.accountType === "owner" ? "owner" : "user";
       await admin.from("profiles").upsert({ id: d.id, email, name, role }, { onConflict: "id", ignoreDuplicates: true });
+
+      // Halal Passport referral: credit the referrer (points award happens later,
+      // on the new user's first review/stamp — anti-fraud). Best-effort.
+      const refCode = d.unsafe_metadata?.refCode;
+      if (refCode) {
+        try {
+          const { getServerFlags } = await import("@/lib/feature-flags");
+          if ((await getServerFlags()).passport) {
+            const { data: referrerId } = await admin.rpc("credit_referral", { p_referred_id: d.id, p_code: String(refCode) });
+            if (referrerId) {
+              const { notifyReferralJoined } = await import("@/lib/passport-server");
+              await notifyReferralJoined(admin, String(referrerId));
+            }
+          }
+        } catch { /* referral credit is best-effort — never fail the webhook */ }
+      }
     } else {
       // Existing user → refresh contact fields only; never touch role.
       await admin.from("profiles").update({ email, name }).eq("id", d.id);

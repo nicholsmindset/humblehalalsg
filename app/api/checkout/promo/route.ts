@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
@@ -12,7 +12,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    Humble Halal is the seller. Amount in cents passed from a server-trusted map. */
 
 export async function POST(req: Request) {
-  if (!getServerFlags().paidAds) {
+  if (!(await getServerFlags()).paidAds) {
     return NextResponse.json({ ok: false, reason: "paid_ads_disabled" }, { status: 403 });
   }
   // Unauthenticated Stripe-session factory — rate-limit like /api/donate.

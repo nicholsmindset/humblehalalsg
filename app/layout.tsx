@@ -32,6 +32,7 @@ import { getCategories, getAreas } from "@/lib/catalog";
 import { EventsProvider } from "@/components/events-context";
 import { getEvents } from "@/lib/events-source";
 import { getRamadanMode } from "@/lib/platform";
+import { getServerFlags } from "@/lib/feature-flags";
 import { SITE } from "@/lib/seo";
 import {
   JsonLd,
@@ -74,6 +75,9 @@ export const metadata: Metadata = {
     description: SITE.description,
   },
   appleWebApp: { capable: true, statusBarStyle: "default", title: SITE.name },
+  // Google Search Console ownership (meta-tag method; the HTML-file method is
+  // also served from public/googledeada25508a8dbb9.html as a backup).
+  verification: { google: "hpyENNOXNa-bCerM6QCS2IRau9olW41Sov-CGUKkqAE" },
 };
 
 export const viewport: Viewport = {
@@ -137,12 +141,13 @@ export default async function RootLayout({
   // Directory snapshot — Supabase when configured, else the mock seed (keeps
   // static rendering when there are no keys, so no regression).
   // Independent reads — run in parallel to cut server-render TTFB.
-  const [directory, events, ramadanMode, categories, areas] = await Promise.all([
+  const [directory, events, ramadanMode, categories, areas, serverFlags] = await Promise.all([
     getDirectory(),
     getEvents(),
     getRamadanMode(),
     getCategories(),
     getAreas(),
+    getServerFlags(),
   ]);
   return (
     <html lang="en" className={fontVars}>
@@ -151,7 +156,7 @@ export default async function RootLayout({
         <AdsenseScript />
         <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-          <AppProviders ramadanModeEnabled={ramadanMode}>
+          <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directory} categories={categories} areas={areas}>
               <EventsProvider events={events}>
                 <AppShell>{children}</AppShell>

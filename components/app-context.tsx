@@ -129,7 +129,7 @@ function loadLS(): Persisted {
   }
 }
 
-export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial = false }: { children: React.ReactNode; ramadanModeEnabled?: boolean }) {
+export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial = false, serverFlags }: { children: React.ReactNode; ramadanModeEnabled?: boolean; serverFlags?: Partial<Flags> }) {
   const router = useRouter();
   const pathname = usePathname();
   const routeParams = useParams();
@@ -147,7 +147,23 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   const [requests, setRequests] = useState<AppRequest[]>([]);
   const [tweaks, setTweaks] = useState<Tweaks>(DEFAULT_TWEAKS);
   const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
-  const [flags, setFlags] = useState<Flags>(DEFAULT_FLAGS);
+  // Server-resolved flags (DB override → env) hydrate the client context.
+  // Before this, flags started at DEFAULT_FLAGS (all off) + localStorage —
+  // so surfaces gated by useApp().flags (paid tickets/plans, cert vault,
+  // PayNow copy) stayed hidden even when the server flag was ON, while the
+  // APIs were already live. Two layers: the layout prop (correct on dynamic
+  // routes) seeds initial state; /api/flags refreshes after mount (static
+  // routes bake the layout at build in this Next version, so their prop is
+  // stale — the fetch is what makes admin flag flips reach every page).
+  const [flags, setFlags] = useState<Flags>({ ...DEFAULT_FLAGS, ...serverFlags });
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/flags")
+      .then((r) => r.json())
+      .then((d) => { if (alive && d?.ok && d.flags) setFlags({ ...DEFAULT_FLAGS, ...d.flags }); })
+      .catch(() => { /* keep the seeded values */ });
+    return () => { alive = false; };
+  }, []);
   const [toastMsg, setToastMsg] = useState("");
   const [hydrated, setHydrated] = useState(false);
   // Admin-controlled Ramadan mode (server-hydrated; admins flip it for the season).
@@ -167,7 +183,8 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     if (ls.requests) setRequests(ls.requests);
     if (ls.tweaks) setTweaks({ ...DEFAULT_TWEAKS, ...ls.tweaks });
     if (ls.collections) setCollections(ls.collections);
-    if (ls.flags) setFlags({ ...DEFAULT_FLAGS, ...ls.flags });
+    // Flags are deliberately NOT restored from localStorage — the server-
+    // resolved value is the truth; a stale local copy overrode admin flips.
     setHydrated(true);
   }, []);
 
@@ -221,14 +238,15 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   useEffect(() => {
     if (!hydrated) return;
     try {
+      // flags intentionally not persisted — server-resolved every request.
       localStorage.setItem(
         LS,
-        JSON.stringify({ saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections, flags }),
+        JSON.stringify({ saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections }),
       );
     } catch {
       /* ignore */
     }
-  }, [saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections, flags, hydrated]);
+  }, [saved, wishlist, recent, user, prefs, savedEvents, tickets, requests, tweaks, collections, hydrated]);
 
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);

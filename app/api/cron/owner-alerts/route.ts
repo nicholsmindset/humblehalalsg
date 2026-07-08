@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
 import { ownerDigestEmail } from "@/lib/emails/templates";
 
-/* B5 — daily owner roll-up (views / WhatsApp clicks / new leads) → Resend.
-   The retention hook for paid plans. Graceful without keys. */
+/* B5 — owner roll-up (views / WhatsApp clicks / new leads) → Resend.
+   WEEKLY (Mon 00:00 UTC = 8am SG) — it was scheduled daily while re-sending
+   the same 7-day window, which became real spam once RESEND went live. Quiet
+   listings are skipped; the monthly report (owner-monthly-report) carries the
+   comparison/upsell angle. Graceful without keys. */
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
@@ -47,6 +50,8 @@ export async function GET(req: Request) {
       const to = (prof as { email?: string } | null)?.email;
       if (!to) continue;
       const m = bySlug.get(b.slug as string) || { views: 0, whatsapp: 0, calls: 0, enquiries: 0 };
+      // A week of zeros isn't a digest, it's a nag — skip quiet listings.
+      if (m.views + m.whatsapp + m.calls + m.enquiries === 0) continue;
       const { subject, html } = ownerDigestEmail({
         businessName: b.name,
         views: m.views,

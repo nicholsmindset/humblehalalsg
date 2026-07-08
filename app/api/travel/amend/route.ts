@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getServerFlags } from "@/lib/flags";
+import { getServerFlags } from "@/lib/feature-flags";
 import { amendBooking, liteapiConfigured } from "@/lib/liteapi";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* Amend the lead guest name on the signed-in traveller's own hotel booking.
    Verifies ownership before calling LiteAPI. Gated by PAID_HOTELS_ENABLED. */
 export async function POST(req: Request) {
-  if (!getServerFlags().paidHotels) return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
+  if (!(await getServerFlags()).paidHotels) return NextResponse.json({ ok: false, reason: "hotel_booking_disabled" }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as { id?: string; firstName?: string; lastName?: string };
   const id = String(body.id || "").trim();

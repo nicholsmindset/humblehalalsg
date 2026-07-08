@@ -13,12 +13,13 @@ import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { canUse, galleryMax } from "@/lib/plans";
+import { dailyRotate } from "@/lib/rotate";
 import { HalalConfidenceBadge } from "../halal-confidence-badge";
 import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead } from "../ui";
+import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -232,7 +233,9 @@ export function HomeScreen() {
 /* ---- Discover rail: one tabbed rail replacing the two near-identical rails ---- */
 function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof useDirectory>; certifiedOnly: boolean; navigate: (s: string, p?: Record<string, unknown>) => void }) {
   const [tab, setTab] = useState<"featured" | "newest" | "top">("featured");
-  const featured = useMemo(() => dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)).slice(0, 8), [dir.listings, certifiedOnly]);
+  // Daily deterministic rotation so every Featured-plan business gets homepage
+  // time (the tier promise) instead of the same first 8 forever.
+  const featured = useMemo(() => dailyRotate(dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)), "home").slice(0, 8), [dir.listings, certifiedOnly]);
   const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 8), [dir.listings, certifiedOnly]);
   const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 8), [dir.listings, certifiedOnly]);
   const picked = tab === "newest" ? newest : tab === "top" ? top : featured;
@@ -621,6 +624,17 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClear: () => void;
 }) {
   const { categories: catCategories, areas: catAreas } = useCatalog();
+  // ≤860px the panel is a fixed full-screen sheet (screens.css) — freeze the
+  // page behind it. On desktop it's an inline aside, so no lock.
+  const [isSheet, setIsSheet] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)");
+    const update = () => setIsSheet(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useBodyScrollLock(isSheet);
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
   );
@@ -680,6 +694,24 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
 /* ---- Map preview (inside explore) ---- */
 const MAP_RAIL_MAX = 30; // don't mount hundreds of row cards under the preview
 
+/** Pin-popup enrichment shared by the explore preview and the full map —
+ *  the trust chip shows the strongest verified claim, matching card copy. */
+function listingPopup(l: Listing, openNow?: boolean) {
+  const badge = l.badges.includes("muis")
+    ? "MUIS-certified"
+    : l.badges.includes("admin")
+      ? "Verified halal"
+      : l.badges.includes("owned")
+        ? "Muslim-owned"
+        : undefined;
+  return {
+    meta: [l.cat, l.area].filter(Boolean).join(" · ") || undefined,
+    badge,
+    open: openNow,
+    distance: l.distanceKm != null ? `${formatKm(l.distanceKm)} away` : undefined,
+  };
+}
+
 export function MapPreview({ results, navigate, mapParams }: {
   results: Listing[];
   navigate: (screen: string, params?: Record<string, unknown>) => void;
@@ -689,7 +721,7 @@ export function MapPreview({ results, navigate, mapParams }: {
 }) {
   const pts = results
     .filter((l) => l.coords)
-    .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const }));
+    .map((l) => ({ id: l.id, name: l.name, coords: l.coords as LatLng, kind: "listing" as const, ...listingPopup(l, l.open) }));
   const unmapped = results.length - pts.length;
   const railItems = results.slice(0, MAP_RAIL_MAX);
   return (
@@ -846,9 +878,29 @@ export function MapScreen() {
       coords: l.coords as LatLng,
       active: l.id === activeId,
       kind: "listing" as const,
+      ...listingPopup(l, mapMounted ? isOpenNow(l.hoursWeek) : l.open),
     })),
     ...(chips.mosque
-      ? mosqueList.map((m) => ({ id: m.id, name: m.name, coords: m.coords, active: m.id === activeMosque, kind: "mosque" as const }))
+      ? mosqueList.map((m) => ({
+          id: m.id,
+          name: m.name,
+          coords: m.coords,
+          active: m.id === activeMosque,
+          kind: "mosque" as const,
+          meta: [m.area, `${nextPrayer.name} ${nextPrayer.time}`].filter(Boolean).join(" · "),
+          distance: m.distanceKm != null ? `${formatKm(m.distanceKm)} away` : undefined,
+        }))
+      : []),
+    ...(chips.musollah
+      ? prayerRoomList.map((p) => ({
+          id: p.id,
+          name: p.name,
+          coords: p.coords,
+          active: p.id === activePrayerRoom,
+          kind: "prayer-room" as const,
+          meta: [p.area, p.type].filter(Boolean).join(" · ") || undefined,
+          distance: p.distanceKm != null ? `${formatKm(p.distanceKm)} away` : undefined,
+        }))
       : []),
     ...(chips.musollah
       ? prayerRoomList.map((p) => ({ id: p.id, name: p.name, coords: p.coords, active: p.id === activePrayerRoom, kind: "prayer-room" as const }))
@@ -1610,17 +1662,38 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
   );
 }
 
+/** The business's live offer (owner-managed, Premium). Renders nothing while
+ *  loading or when no active offer — the block never shows placeholder copy. */
+function OffersBlock({ businessId }: { businessId: string }) {
+  const [offer, setOffer] = useState<{ title: string; details: string | null; ends_at: string | null } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/offers?business=${businessId}`)
+      .then((r) => r.json())
+      .then((d) => { if (alive && d?.ok && d.offer) setOffer(d.offer); })
+      .catch(() => { /* no offer — block stays hidden */ });
+    return () => { alive = false; };
+  }, [businessId]);
+  if (!offer) return null;
+  const until = offer.ends_at
+    ? new Date(`${offer.ends_at}T00:00:00+08:00`).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+  return (
+    <div className="offers-block">
+      <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offers &amp; promotions</span></div>
+      <p className="offers-body"><b>{offer.title}</b>{offer.details ? ` — ${offer.details}` : ""}{until ? ` (valid until ${until})` : ""}</p>
+      <p className="offers-body" style={{ fontSize: ".8rem", opacity: 0.8 }}>Mention Humble Halal or show this listing to staff to redeem.</p>
+    </div>
+  );
+}
+
 export function DetailOverview({ item }: { item: Listing }) {
   return (
     <div className="detail-pane">
       <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb}{item.area ? ` A neighbourhood favourite in ${item.area}, known for warm service${item.cuisine ? ` and consistent quality across ${item.cuisine.toLowerCase()}` : ""}.` : ""}</p>
-      {/* Offers & promotions — Premium-only (offers_block). Hidden for lower tiers. */}
-      {canUse(item, "offers_block") && (
-        <div className="offers-block">
-          <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offers &amp; promotions</span></div>
-          <p className="offers-body">Show your Humble Halal save to staff for current deals from {item.name}. Promotions are managed by the business from their dashboard.</p>
-        </div>
-      )}
+      {/* Offers & promotions — Premium-only (offers_block). Shows the REAL
+          offer the owner set (managed in their dashboard); nothing when none. */}
+      {canUse(item, "offers_block") && <OffersBlock businessId={item.id} />}
       <PrayerSpaceCard item={item} />
       <div className="amenity-row">
         {item.tags.map((t) => {
