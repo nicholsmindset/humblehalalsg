@@ -16,9 +16,18 @@ export const supabaseConfigured = !!(url && anon);
 // "multiple GoTrueClient instances" warning and any session storage-key clashes).
 const NO_GOTRUE = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } } as const;
 
+// Module singleton — the anon client carries no per-request state (no user
+// token), so one instance is reused for the tab's lifetime. Previously this
+// created a fresh client on every call; analytics `emit()` calls it on every
+// tracked event, so each search/filter/click spawned another GoTrueClient under
+// the same storage key ("Multiple GoTrueClient instances" warnings that grew
+// unbounded with interaction). One instance = one GoTrueClient.
+let anonClient: ReturnType<typeof createClient> | null = null;
+
 export function getSupabaseBrowser() {
   if (!url || !anon) return null;
-  return createClient(url, anon, NO_GOTRUE);
+  if (!anonClient) anonClient = createClient(url, anon, NO_GOTRUE);
+  return anonClient;
 }
 
 /** Browser client scoped to the current Clerk session: attaches the Clerk JWT
