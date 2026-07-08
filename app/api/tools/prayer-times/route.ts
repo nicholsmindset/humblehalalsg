@@ -4,6 +4,10 @@ import { PRAYER_METHODS, DEFAULT_METHOD } from "@/lib/tools/prayer-methods";
 
 /* Prayer times for any location (Aladhan, cached daily upstream). Public, no PII
    stored — coordinates come from the client and are used only for this lookup. */
+const PRAYER_TIMES_FOR_LOCATION_HEADERS = {
+  "Cache-Control": "private, max-age=3600",
+};
+
 export async function GET(request: Request) {
   const sp = new URL(request.url).searchParams;
   const lat = Number(sp.get("lat"));
@@ -16,6 +20,6 @@ export async function GET(request: Request) {
   const m = PRAYER_METHODS.some((x) => x.id === method) ? method : DEFAULT_METHOD;
 
   const data = await getPrayerTimesFor(lat, lng, m);
-  if (!data) return NextResponse.json({ ok: false });
-  return NextResponse.json({ ok: true, ...data });
+  if (!data) return NextResponse.json({ ok: false }, { headers: PRAYER_TIMES_FOR_LOCATION_HEADERS });
+  return NextResponse.json({ ok: true, ...data }, { headers: PRAYER_TIMES_FOR_LOCATION_HEADERS });
 }

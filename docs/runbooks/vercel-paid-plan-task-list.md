@@ -114,18 +114,25 @@ This checklist turns the paid Vercel plan into an operating advantage for Humble
 - [ ] Set Vercel spend/budget alerts.
   - Watch bandwidth, function duration, image optimization, edge requests, build minutes.
 
-- [ ] Review cache strategy.
+- [x] Review cache strategy.
   - Static SEO pages should stay cheap.
   - Dynamic admin/owner routes should be monitored for slow server work.
   - AI/search routes should be rate limited before promotion.
+  - Added conservative response caching for high-repeat public endpoints:
+    - `/api/ads/active`: 60s edge cache, 5m stale revalidate.
+    - `/api/prayer-times`: 1h edge cache, 24h stale revalidate.
+    - `/api/travel/hoteltypes`: 24h edge cache, 7d stale revalidate.
+    - `/api/travel/loyalty`: 1h edge cache, 24h stale revalidate.
+    - `/api/tools/prayer-times`: 1h private browser cache because query coordinates should not be shared through a public CDN cache.
 
 - [ ] Review cron frequency now that the plan supports more serious operations.
   - Current `flight-retry` is daily in `vercel.json`.
   - Before live flights: decide whether to increase retry frequency and confirm plan limits.
 
-- [ ] Confirm image optimization strategy.
+- [x] Confirm image optimization strategy.
   - Large homepage/category/listing images affect bandwidth and LCP.
   - Use Speed Insights to identify pages where images are hurting LCP.
+  - Current config constrains optimizer widths, uses a 31-day minimum TTL, and bypasses optimizer for Unsplash, LiteAPI hotel images, Supabase-hosted assets, and local blog images.
 
 ## P4: Conversion and business growth
 
