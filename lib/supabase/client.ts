@@ -22,11 +22,18 @@ const NO_GOTRUE = { auth: { persistSession: false, autoRefreshToken: false, dete
 // tracked event, so each search/filter/click spawned another GoTrueClient under
 // the same storage key ("Multiple GoTrueClient instances" warnings that grew
 // unbounded with interaction). One instance = one GoTrueClient.
-let anonClient: ReturnType<typeof createClient> | null = null;
+//
+// The type is inferred from the real createClient(...) call via this helper —
+// `ReturnType<typeof createClient>` (signature default-generics) resolves the
+// Supabase schema differently and breaks `.rpc()` arg typing project-wide.
+function createAnonClient() {
+  return createClient(url as string, anon as string, NO_GOTRUE);
+}
+let anonClient: ReturnType<typeof createAnonClient> | null = null;
 
 export function getSupabaseBrowser() {
   if (!url || !anon) return null;
-  if (!anonClient) anonClient = createClient(url, anon, NO_GOTRUE);
+  if (!anonClient) anonClient = createAnonClient();
   return anonClient;
 }
 
