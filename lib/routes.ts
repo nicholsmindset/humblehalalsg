@@ -4,7 +4,7 @@ import { slugForListing, slugForEvent } from "./data";
 
 export type ScreenName =
   | "home" | "explore" | "map" | "detail" | "ask"
-  | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
+  | "for-business" | "for-business-onboarding" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
   | "mosques" | "prayer-rooms" | "hawker" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "about" | "contact" | "faq"
@@ -20,6 +20,7 @@ const BASE_PATH: Record<string, string> = {
   ask: "/ask",
   map: "/map",
   "for-business": "/for-business",
+  "for-business-onboarding": "/for-business/onboarding",
   advertise: "/advertise",
   pricing: "/pricing",
   "add-listing": "/add-listing",

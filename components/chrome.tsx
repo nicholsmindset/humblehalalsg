@@ -727,6 +727,7 @@ export function Footer() {
       "For business",
       [
         ["List your business", "for-business"],
+        ["Owner getting-started", "for-business-onboarding"],
         ["Advertise with us", "advertise"],
         ["Host an event", "host-event"],
         ["Pricing", "pricing"],
