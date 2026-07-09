@@ -45,5 +45,10 @@ export async function POST(req: Request) {
   if (r.ok) {
     return NextResponse.json({ ok: true, ...(r.already ? { already: true } : {}), ...(r.simulated ? { simulated: true } : {}) });
   }
-  return NextResponse.json({ ok: false, error: "Subscription failed" }, { status: 502 });
+  if (r.configured) {
+    // Configured but beehiiv rejected — most often a bad API key / wrong publication
+    // pairing (fails silently otherwise, like the platform_settings service-role bug).
+    console.error("[subscribe] beehiiv rejected", { status: r.status, source });
+  }
+  return NextResponse.json({ ok: false, error: "Subscription service unavailable — please try again." }, { status: 502 });
 }

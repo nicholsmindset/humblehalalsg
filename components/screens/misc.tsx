@@ -1136,14 +1136,14 @@ export function SeoScreen() {
           </div>
 
           <section className="newsletter-card mt24">
-            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free guide</span>
-            <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>Get the Ultimate Halal Food Guide by MRT</h2>
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Weekly halal guide</span>
+            <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>New halal finds, every week</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Be first to hear about new {noun} {placeLabel} in our weekly newsletter. Subscribe and we&apos;ll email you
-              the free guide — MUIS-verified spots sorted by MRT station.
+              Be first to hear about new {noun} {placeLabel} — Muslim-owned openings, verified spots and community
+              favourites — in our free weekly newsletter.
             </p>
             <div style={{ marginTop: 14 }}>
-              <Newsletter source="directory" cta="Send me the guide" />
+              <Newsletter source="directory" cta="Subscribe" />
             </div>
           </section>
 
