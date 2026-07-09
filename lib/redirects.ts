@@ -46,6 +46,8 @@ const CUISINE_ALIASES: Array<[from: string, to: string]> = [
   ["halal-thai-food-singapore", "halal-thai-singapore"],
   ["halal-cafe-singapore", "halal-cafes-singapore"],
   ["halal-restaurant-singapore", "halal-restaurants-singapore"],
+  ["halal-brunch-singapore", "halal-breakfast-singapore"],
+  ["halal-cake-singapore", "halal-cakes-singapore"],
 ];
 
 export function seoRedirects(): Redirect[] {

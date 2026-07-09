@@ -81,6 +81,7 @@ export function rowToListing(r: Row): Listing {
     hoursWeek,
     certified,
     claimed: !!(r.owner_id || r.claimed_by),
+    createdAt: str(r.created_at) || undefined,
     certBody: tier === "muis" ? "MUIS" : tier === "admin" ? "Humble Halal" : null,
     verify: {
       certNo: str(r.muis_cert_no) || null,
