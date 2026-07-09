@@ -320,6 +320,17 @@ export const CUISINE_CONTENT: Record<string, CategoryContent> = {
     { q: "How much does halal catering cost in Singapore?", a: "Halal catering in Singapore typically starts around $12–18 per person for mini buffets and rises for premium wedding or corporate spreads. Request quotes from several Muslim-owned caterers to compare inclusions." },
     { q: "Is the catering MUIS halal-certified?", a: "Many caterers are MUIS-certified; others are Muslim-owned. We label each one with a halal-confidence score — always confirm certification on the official MUIS HalalSG register before booking." },
   ] },
+  // Blueprint P1 additions (Keyword Master Plan, HUB1 tab).
+  mookata: { intro: "Find halal mookata in Singapore — Thai-style BBQ steamboat where you grill marinated meats over charcoal while soup bubbles around the pan, from fully Muslim-friendly kitchens with halal chicken, beef and seafood. Browse spots by area with halal-confidence scores, reviews and directions for your next group feast.", lookFor: [], considerations: [], faq: cuisineFaq("mookata") },
+  ramen: { intro: "Craving halal ramen in Singapore? Discover Muslim-friendly Japanese ramen bars serving rich chicken paitan, beef broth and spicy miso bowls — no pork, no lard, no alcohol. Compare halal-confidence scores, read reviews and find a steaming bowl near you.", lookFor: [], considerations: [], faq: cuisineFaq("ramen") },
+  cakes: { intro: "Find halal cakes in Singapore — birthday cakes, wedding cakes, brownies and bakes from MUIS-certified bakeries and Muslim-owned home bakers. Every listing is labelled with its halal status and confidence score, so you can order celebration bakes with certainty.", lookFor: [], considerations: [], faq: [
+    { q: "Where can I buy halal birthday cakes in Singapore?", a: "MUIS-certified bakeries and Muslim-owned home bakers across Singapore take birthday-cake orders — browse this page for options with halal-confidence scores, reviews and ordering details." },
+    { q: "Are the cakes here MUIS-certified?", a: "Some bakeries are MUIS-certified while home-based bakers are typically Muslim-owned and not eligible for certification. We label each one clearly — always confirm certification on the MUIS HalalSG register." },
+  ] },
+  "food-delivery": { intro: "Order halal food delivery in Singapore — MUIS-certified restaurants and Muslim-owned kitchens that deliver islandwide or via GrabFood, Foodpanda and Deliveroo. Each listing shows its halal status and confidence score, so what arrives at your door is food you can trust.", lookFor: [], considerations: [], faq: [
+    { q: "Which halal restaurants deliver in Singapore?", a: "Many MUIS-certified and Muslim-owned restaurants offer delivery — either in-house or through GrabFood, Foodpanda and Deliveroo. Browse this page for options with halal-confidence scores and delivery details." },
+    { q: "How do I know delivery food is really halal?", a: "Check the restaurant's halal status on its Humble Halal listing — MUIS Certified means a valid official certificate; Muslim-Owned and self-declared labels are shown clearly. Always confirm certification on the MUIS HalalSG register." },
+  ] },
 };
 
 export function cuisineContent(id?: string): CategoryContent {

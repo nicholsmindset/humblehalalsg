@@ -63,6 +63,9 @@ const EXTRA_AREAS: SeoArea[] = [
   { id: "kampong-glam", name: "Kampong Glam", mrt: "Bugis", match: ["Kampong Glam"] },
   { id: "marine-parade", name: "Marine Parade", mrt: "Marine Parade", match: ["Marine Parade"] },
   { id: "botanic-gardens", name: "Botanic Gardens", mrt: "Botanic Gardens", match: ["Botanic Gardens"] },
+  // Blueprint Wave-3 districts (Keyword Master Plan, Location Page Factory tab).
+  { id: "clarke-quay", name: "Clarke Quay", mrt: "Clarke Quay", match: [] },
+  { id: "holland-village", name: "Holland Village", mrt: "Holland Village", match: [] },
 ];
 
 /* ---- Malls / venues (KD≈0, high-volume `{venue} halal food` cluster).
@@ -88,6 +91,9 @@ const VENUES: Venue[] = [
   { id: "paya-lebar-quarter", name: "Paya Lebar Quarter", mrt: "Paya Lebar", match: ["Paya Lebar"] },
   { id: "bedok-mall", name: "Bedok Mall", mrt: "Bedok", match: ["Bedok"] },
   { id: "waterway-point", name: "Waterway Point", mrt: "Punggol", match: [] },
+  // Blueprint Wave-3 malls (Keyword Master Plan, Location Page Factory tab).
+  { id: "amk-hub", name: "AMK Hub", mrt: "Ang Mo Kio", match: ["Ang Mo Kio"] },
+  { id: "compass-one", name: "Compass One", mrt: "Sengkang", match: ["Sengkang"] },
 ];
 
 /* ---- Cuisine / concept pages (validated KD 0–8 demand). `match` fragments
@@ -112,6 +118,11 @@ const CUISINES: Cuisine[] = [
   { id: "dessert", label: "Desserts", match: ["dessert", "kueh", "ice cream", "cake", "chocolate"] },
   { id: "buffet", label: "Buffet", match: ["buffet", "steamboat", "bbq"] },
   { id: "catering", label: "Catering", match: ["catering", "buffet", "event"] },
+  // Blueprint P1 additions (Keyword Master Plan, HUB1 tab).
+  { id: "mookata", label: "Mookata", match: ["mookata", "thai bbq", "steamboat", "thai"] },
+  { id: "ramen", label: "Ramen", match: ["ramen", "japanese"] },
+  { id: "cakes", label: "Cakes & Bakes", match: ["cake", "bakery", "patisserie", "dessert"] },
+  { id: "food-delivery", label: "Food Delivery", match: ["delivery"] },
 ];
 
 /* Only generate a category×area page when it has real content. Counts come

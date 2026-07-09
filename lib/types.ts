@@ -88,6 +88,9 @@ export interface Listing {
   prayer: boolean;
   delivery: boolean;
   featured: boolean;
+  /** ISO timestamp the listing row was created (drives the "new openings"
+   *  freshness hub). Absent for mock/seed data. */
+  createdAt?: string;
   /** Subscription tier (PlanKey: free | verified | featured | premium). Drives
    *  feature-gating via lib/plans. Optional — defaults to "free" when absent. */
   plan?: string;
