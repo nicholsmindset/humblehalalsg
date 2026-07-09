@@ -77,6 +77,10 @@ export function TikTokVideos({ slug, name }: { slug: string; name?: string }) {
       <div className="tiktok-grid">
         {videos.map((v) => <VideoCard key={v.id} v={v} consented={consented} />)}
       </div>
+      {/* Creator opt-out — always visible wherever embeds appear (mock-up spec). */}
+      <p className="faint" style={{ fontSize: ".8rem", marginTop: 10 }}>
+        Your video? <Link className="link-inline" href="/remove-video">Request removal</Link> — processed within 48 hours.
+      </p>
     </section>
   );
 }
