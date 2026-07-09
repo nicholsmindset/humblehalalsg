@@ -3,6 +3,7 @@
 /* Humble Halal — Consumer screens: Home, Explore, Map, Detail
    (ported from screens-consumer.jsx). */
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
 import { getPrayerSpaces } from "@/lib/prayer-spaces";
@@ -105,9 +106,8 @@ export function HomeScreen() {
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
 
-      {/* FEATURES + EMAIL CAPTURE — make the homepage value obvious before browse. */}
+      {/* 3-HUB ENTRY — route intent into the hubs right after the hero. */}
       <HomeFeatureSection navigate={navigate} />
-      <HomeNewsletterCapture />
 
       {/* CATEGORIES — top 8 + view all */}
       <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
@@ -175,23 +175,10 @@ export function HomeScreen() {
       {/* EVENTS STRIP */}
       <EventsStrip />
 
-      {/* WHY HUMBLE HALAL — value pillars (white band) */}
-      <div className="home-band-white">
-        <section className="hh-wrap hh-section home-why">
-          <h2 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Why Humble Halal</h2>
-          <p className="muted" style={{ maxWidth: 640, marginBottom: 20 }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
-          <div className="flt-benefit-grid">
-            {[
-              ["search", "A directory you can trust", "Find MUIS-certified, Muslim-owned and Muslim-friendly places with clear badges — so you always know what's verified and what's self-declared."],
-              ["plane", "Halal travel, worldwide", "Search Muslim-friendly hotels and flights for Umrah, Hajj and everyday travel — prayer rooms, halal dining nearby, alcohol-free stays, Muslim-meal flags and qibla."],
-              ["shield-check", "Transparency over hype", "We're a discovery platform, not a certifier. MUIS HalalSG stays the authority; we simply make the facts easy to find and confirm."],
-              ["heart", "Built with the community", "Your suggestions, reports and reviews keep it accurate — for the Singapore Muslim community, and Muslims travelling the world."],
-            ].map(([ic, h, b]) => (
-              <div key={h} className="flt-benefit"><span className="fi-ico"><Icon name={ic} size={20} /></span><h3>{h}</h3><p className="muted">{b}</p></div>
-            ))}
-          </div>
-        </section>
-      </div>
+      {/* EMAIL CAPTURE — after the browse sections, before the business CTA.
+          (The old "Why Humble Halal" pillars band was cut: it repeated the hub
+          row + trust strip; one trust story per page.) */}
+      <HomeNewsletterCapture />
 
       {/* BUSINESS CTA */}
       <section className="hh-wrap" style={{ paddingBottom: 48 }}>
@@ -227,70 +214,60 @@ export function HomeScreen() {
 }
 
 function HomeFeatureSection({ navigate }: { navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  const features = [
+  // The 3-hub entry row (SEO blueprint) + the live Hawker Finder — crawlable
+  // real hrefs with SPA-style styling. This replaced the old explainer cards:
+  // the homepage's job is routing intent into the hubs, not re-explaining them.
+  const hubs = [
     {
-      icon: "shield-check",
-      title: "Trust signals at a glance",
-      body: "See MUIS-certified, Muslim-owned, Admin Verified and community-reported labels before you decide.",
-      action: "How verification works",
-      onClick: () => navigate("verify"),
+      icon: "utensils",
+      title: "Halal food & dining",
+      body: "Every neighbourhood, mall and cuisine — with trust badges and halal-confidence scores.",
+      action: "Open the food guide",
+      href: "/halal-food-singapore",
     },
     {
-      icon: "search",
-      title: "Search by real intent",
-      body: "Look for halal brunch, prayer rooms near Orchard, Muslim-owned services, open-now places and more.",
-      action: "Start exploring",
-      onClick: () => navigate("explore"),
+      icon: "heart",
+      title: "Weddings & catering",
+      body: "Malay wedding guides, halal caterers, venues, pelamin and every vendor for the majlis.",
+      action: "Plan your wedding",
+      href: "/malay-wedding-singapore",
     },
     {
-      icon: "sparkles",
-      title: "Ask Halal AI",
-      body: "Describe what you need in plain words and get suggested places with facts surfaced clearly.",
-      action: "Try Ask AI",
-      onClick: () => navigate("ask"),
+      icon: "store",
+      title: "Halal Hawker Finder",
+      body: "Halal and Muslim-owned stalls grouped by hawker centre, on a live map.",
+      action: "Find a stall",
+      href: "/hawker",
+    },
+    {
+      icon: "building",
+      title: "For business owners",
+      body: "List free, get verified, and reach Singapore's halal-conscious community.",
+      action: "Grow with us",
+      href: "/for-business",
     },
   ];
 
   return (
     <section className="hh-wrap home-feature-section">
       <div className="home-feature-head">
-        <span className="eyebrow">Built for daily halal decisions</span>
-        <h2>Everything you need to find trusted places faster</h2>
+        <span className="eyebrow">One home for halal Singapore</span>
+        <h2>Food. Weddings &amp; catering. Business.</h2>
         <p className="muted">
-          Humble Halal combines verified badges, community updates, maps, prayer-room discovery and AI-assisted search
-          so people can move from question to decision with confidence.
+          Three hubs, one trust layer — every listing labelled MUIS Certified, Muslim-Owned or self-declared, with a
+          halal-confidence score.{" "}
+          <button className="link-inline" onClick={() => navigate("verify")} style={{ font: "inherit" }}>How we verify</button>
         </p>
       </div>
       <div className="home-feature-grid">
-        {features.map((f) => (
-          <button key={f.title} className="home-feature-card" onClick={f.onClick}>
+        {hubs.map((f) => (
+          <Link key={f.title} className="home-feature-card" href={f.href}>
             <span className="home-feature-icon"><Icon name={f.icon} size={22} /></span>
             <span className="home-feature-title">{f.title}</span>
             <span className="home-feature-body">{f.body}</span>
             <span className="home-feature-action">{f.action} <Icon name="chevron" size={13} /></span>
-          </button>
+          </Link>
         ))}
-        <div className="home-feature-panel">
-          <div className="home-feature-panel-head">
-            <span className="home-feature-icon"><Icon name="map" size={22} /></span>
-            <div>
-              <strong>Plan around food and prayer</strong>
-              <span>Use maps, areas and quick filters together.</span>
-            </div>
-          </div>
-          <div className="home-feature-route">
-            {[
-              ["1", "Search", "MUIS-certified nasi padang near Tampines"],
-              ["2", "Check", "Badge, opening hours, reviews and prayer space"],
-              ["3", "Go", "Open maps, save it, or share with family"],
-            ].map(([step, label, text]) => (
-              <div key={step} className="home-feature-step">
-                <span>{step}</span>
-                <div><strong>{label}</strong><p>{text}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );
