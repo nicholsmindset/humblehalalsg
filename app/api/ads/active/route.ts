@@ -18,6 +18,10 @@ type PlacementConfig = {
   lazy: boolean;
 };
 
+const ADS_CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+};
+
 // Fallback config when the backend isn't configured OR the placement predates 0040
 // (columns default there anyway). Keeps mock/dev rendering identical.
 function placementFrom(row: Record<string, unknown> | null | undefined, key: string): PlacementConfig | null {
@@ -39,7 +43,7 @@ function placementFrom(row: Record<string, unknown> | null | undefined, key: str
 export async function GET(req: Request) {
   const key = (new URL(req.url).searchParams.get("placement") || "").trim();
   const sb = getSupabaseAdmin();
-  if (!sb || !key) return NextResponse.json({ ok: true, ads: [], placement: null });
+  if (!sb || !key) return NextResponse.json({ ok: true, ads: [], placement: null }, { headers: ADS_CACHE_HEADERS });
 
   // select("*") (not named columns) so this route keeps working if it deploys
   // before migration 0040 — placementFrom() defaults any missing config columns,
@@ -53,7 +57,7 @@ export async function GET(req: Request) {
   const placement = placementFrom(placementRow, key);
   // Unknown or fully-off placement → nothing to serve, no reserved space.
   if (!placement || placement.active === false || placement.fillMode === "off") {
-    return NextResponse.json({ ok: true, ads: [], placement: placement && { ...placement, fillMode: "off" } });
+    return NextResponse.json({ ok: true, ads: [], placement: placement && { ...placement, fillMode: "off" } }, { headers: ADS_CACHE_HEADERS });
   }
 
   // AdSense-only slots never query direct campaigns.
@@ -81,5 +85,5 @@ export async function GET(req: Request) {
       .map((c) => ({ id: c.id, title: c.title, body: c.body, imageUrl: c.image_url, targetUrl: c.target_url }));
   }
 
-  return NextResponse.json({ ok: true, ads: live, placement });
+  return NextResponse.json({ ok: true, ads: live, placement }, { headers: ADS_CACHE_HEADERS });
 }

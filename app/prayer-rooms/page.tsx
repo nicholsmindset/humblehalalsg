@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getPrayerSpaces, byCategory, PRAYER_CATEGORIES } from "@/lib/prayer-spaces";
-import { mapsSearchUrl } from "@/lib/geo";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
-import { PrayerRoomsMap } from "@/components/prayer-rooms-map";
+import { PrayerRoomsDirectory } from "@/components/prayer-rooms-map";
 
 const spaces = getPrayerSpaces();
 
@@ -39,8 +38,9 @@ export default function Page() {
         ]}
       />
       <div className="screen-in hh-page">
-        <section className="seo-hero hh-pattern">
-          <div className="hh-wrap">
+        <section className="prayer-hero hh-pattern">
+          <div className="hh-wrap prayer-hero-grid">
+            <div>
             <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link>
               <span>›</span>
@@ -61,56 +61,23 @@ export default function Page() {
                 Find prayer rooms near you on the map →
               </Link>
             </div>
-            <nav className="mosque-jump" aria-label="Jump to category">
-              {groups.map((g) => (
-                <a key={g.id} href={`#${g.id}`} className="mosque-jump-link">
-                  {g.label} <span>{g.items.length}</span>
-                </a>
-              ))}
-            </nav>
+            </div>
+            <aside className="prayer-hero-panel" aria-label="Prayer room directory summary">
+              <span className="eyebrow" style={{ color: "var(--gold)" }}>Directory snapshot</span>
+              <div className="prayer-stat-grid">
+                <div><strong>{spaces.length}</strong><span>spaces listed</span></div>
+                <div><strong>{groups.length}</strong><span>area groups</span></div>
+                <div><strong>Map</strong><span>building-level pins</span></div>
+              </div>
+              <p>
+                Use the cards for level and landmark notes after opening directions. Facilities can change, so confirm at the venue when timing matters.
+              </p>
+            </aside>
           </div>
         </section>
 
         <div className="hh-wrap hh-section">
-          <PrayerRoomsMap spaces={spaces} />
-          <p className="faint" style={{ fontSize: ".82rem", margin: "8px 0 26px" }}>
-            Pins are building-level — tap one for directions, then use the level/landmark notes below to find the room inside.
-          </p>
-
-          {groups.map((g) => (
-            <section key={g.id} id={g.id} className="mosque-region">
-              <h2 className="mosque-region-h">
-                {g.label}
-                <span className="mosque-region-count">{g.items.length} spaces</span>
-              </h2>
-              <p className="muted" style={{ marginTop: -6, marginBottom: 14, fontSize: ".92rem" }}>{g.blurb}</p>
-              <div className="hub-grid">
-                {g.items.map((p) => (
-                  <div key={p.id} className="prayer-card">
-                    <div className="prayer-card-name">{p.name}</div>
-                    <div className="prayer-card-meta">
-                      {p.area && <span className="prayer-chip">{p.area}</span>}
-                      <span className="prayer-card-type">{p.type}</span>
-                    </div>
-                    <div className="prayer-card-loc">{p.location}</div>
-                    <div className="prayer-card-notes">{p.notes}</div>
-                    <div className="prayer-card-foot">
-                      {p.source && <span className="prayer-card-src">{p.source}</span>}
-                      <a
-                        className="prayer-card-dir"
-                        href={mapsSearchUrl(`${p.name} Singapore`)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Open ${p.name} in Google Maps`}
-                      >
-                        Map →
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+          <PrayerRoomsDirectory spaces={spaces} categories={PRAYER_CATEGORIES} />
 
           <h2 style={{ fontSize: "1.4rem", margin: "8px 0 14px" }}>Related</h2>
           <div className="hub-grid">

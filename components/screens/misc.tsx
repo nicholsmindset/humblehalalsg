@@ -374,8 +374,15 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
     return () => { active = false; };
   }, [state.user.loggedIn]);
 
+  const userSummary: [string, string, string, string][] = [
+    ["Saved", String(state.saved.length), "heart", "Places you want handy"],
+    ["Collections", String(state.collections.length), "bookmark", "Curated lists"],
+    ["Tickets", String(state.tickets.length), "ticket", "Events and RSVPs"],
+    ["Requests", String(state.requests.length), "doc", "Quote enquiries"],
+  ];
+
   return (
-    <div className="screen-in hh-page dash">
+    <div className="screen-in hh-page dash dash-user">
       <div className="dash-header dash-header-user hh-pattern">
         <div className="hh-wrap flex between center wrap g12">
           <div className="flex g14 center">
@@ -393,6 +400,18 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
       </div>
 
       <div className="hh-wrap">
+        <div className="dash-summary-grid dash-overlap">
+          {userSummary.map(([label, value, icon, hint]) => (
+            <button key={label} className="dash-summary-card dash-summary-action" onClick={() => setTab(label === "Saved" ? "saved" : label === "Collections" ? "collections" : label === "Tickets" ? "tickets" : "requests")}>
+              <span className="dash-summary-ico"><Icon name={icon} size={18} /></span>
+              <div>
+                <strong>{value}</strong>
+                <span>{label}</span>
+                <small>{hint}</small>
+              </div>
+            </button>
+          ))}
+        </div>
         <div className="dash-tabs">
           {tabs.map(([id,label,icon])=>(<button key={id} className={tab===id?'on':''} onClick={()=>setTab(id)}><Icon name={icon} size={17}/> {label}</button>))}
         </div>

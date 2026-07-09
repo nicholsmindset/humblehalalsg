@@ -66,3 +66,6 @@ supabase/.temp/
 .agent-browser/
 *.auth.json
 /shots/
+
+# clerk configuration (can include secrets)
+/.clerk/

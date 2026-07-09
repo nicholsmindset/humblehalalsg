@@ -1,123 +1,222 @@
-# Launch runbook — migrations, seed, flags & E2E verification
+# Production launch runbook
 
-Everything built in the recent work (events platform, donations, check-in, follows/ratings,
-Ramadan mode, sponsored ads) **degrades gracefully** until its migration is applied — the
-site never breaks, features just stay dormant/`simulated`. This runbook turns them on and
-verifies them end-to-end.
+This runbook is for taking `master` live on `www.humblehalal.com`.
 
-> Order matters: **1) migrations → 2) admin grant → 3) seed → 4) flags/Stripe → 5) verify.**
+Order matters: database first, then environment, then webhooks, then verification, then paid feature flags.
 
----
+## 1. Database migrations
 
-## 1. Apply database migrations
+Apply every migration in `supabase/migrations/*.sql`, currently through:
 
-Apply every migration through `0024` to the connected Supabase project. New since the last
-deploy:
+- `0048_halal_passport.sql`
+- `0053_feature_flags.sql`
 
-| File | Adds | Powers |
-|---|---|---|
-| `0019_donations.sql` | `donations` table + RLS | Zakat/sadaqah on charity events |
-| `0020_ticket_checkin.sql` | `tickets.checked_in_at/by` | QR door check-in |
-| `0021_follows_event_reviews.sql` | `organizer_follows`, `event_reviews`, `v_event_*` views, `follower_count()` | Follow organisers + event ratings |
-| `0022_ramadan_mode.sql` | `platform_settings.ramadan_mode_enabled` | Admin-controlled Ramadan mode |
-| `0023_ads.sql` | `ad_placements`, `ad_campaigns`, `ad_events`, `v_campaign_performance`, `track_ad_event()` | Sponsored-ad sales + tracking |
-| `0024_owner_campaign_perf.sql` | `owner_campaign_performance()` RPC | Advertiser report in `/owner` |
-| `0025_premerge_review_fixes.sql` | `events` `cancelled` status, `ad_orders` unique PI, `increment_donation_raised()` + `decrement_event_taken()` RPCs, `security_invoker` views | Pre-merge review fixes: event cancellation, atomic donation total, refund capacity, RLS-safe views |
-
-**How** (any one):
-- **Supabase CLI:** `supabase db push` (or `supabase migration up`) from the repo root.
-- **Dashboard:** SQL Editor → paste each new file in order → Run.
-
-Idempotent: all use `if not exists` / `create or replace`, safe to re-run.
-
----
-
-## 2. Grant yourself admin
-
-Admin powers the console, campaign manager, verification queue, and the `seed-demo` fallback.
-In the Supabase SQL Editor:
-
-```sql
-update profiles set role = 'admin'
-where id = (select id from auth.users where email = 'YOUR_ADMIN_EMAIL');
-```
-
-(Per project notes the launch admin is `onnifyworks@gmail.com`.) Sign out/in so the role
-takes effect.
-
----
-
-## 3. Seed demo data (directory + events)
-
-Without seeded `businesses`/`events`, directory/map render from the mock seed and write paths
-return `simulated`. Seed both with the `CRON_SECRET`-guarded endpoint (no admin login needed):
+Preferred path:
 
 ```bash
-curl -X POST https://YOUR_HOST/api/admin/seed-demo \
-  -H "Authorization: Bearer $CRON_SECRET"
-# → {"ok":true,"businesses":73,"events":8}
+supabase link --project-ref vzlcplizpkmvjspmqwns
+supabase db push
 ```
 
-After this: directory/map/events are DB-backed, RSVP returns a real ref, review-submit persists
-(`pending`), and the Ramadan-flagged demo events (`e3` segregated, `e5` charity+donations) show
-the Islamic layer.
+Fallback when Supabase CLI access is unavailable:
 
----
+1. Open `supabase/_ALL_MIGRATIONS.sql`.
+2. Paste the full contents into Supabase SQL Editor.
+3. Run it from the top.
 
-## 4. Flags, Stripe & Connect
+The combined file is intentionally re-runnable for launch recovery:
 
-**Feature flags** (env — all default OFF so launch is free):
-- `PAID_TICKETS_ENABLED`, `PAID_ADS_ENABLED`, `PAID_PLANS_ENABLED`, `PAID_HOTELS_ENABLED`, `PAID_FLIGHTS_ENABLED`
-- `RAMADAN_MODE_ENABLED` — env fallback; the **admin toggle** (Admin → Monetization → "Ramadan mode") is the live, DB-persisted control and is preferred.
+- `CREATE POLICY` statements are guarded with `DROP POLICY IF EXISTS`.
+- pre-Clerk auth policies are rewritten to `auth.jwt() ->> 'sub'`.
+- historical analytics rows do not block CHECK constraints.
 
-**Stripe** (test first): set `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`,
-`STRIPE_WEBHOOK_SECRET`. Point a Stripe webhook at `https://YOUR_HOST/api/webhooks/stripe`
-(events: `checkout.session.completed`, `charge.refunded`, `customer.subscription.*`).
+Post-migration verification:
 
-**Organizer payouts (Connect):** a paid-event organiser must complete onboarding —
-`/owner` → Stripe Connect → `/api/connect/onboard` — until `payouts_enabled` is true, paid
-ticket checkout is blocked server-side (by design).
+```sql
+select
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='business_feature_overrides') as feature_flags_ok,
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='passport_points') as passport_ok,
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='halal_verdicts') as verdicts_ok,
+  exists (select 1 from information_schema.tables where table_schema='public' and table_name='lead_routes') as lead_routes_ok,
+  exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='email') as profiles_email_ok,
+  exists (select 1 from pg_constraint where conname='analytics_events_event_type_check') as analytics_check_ok;
+```
 
----
+All values should be `true`.
 
-## 5. End-to-end verification
+Also verify Clerk identity storage:
 
-**Events — free RSVP**
-1. `/events` → an event → RSVP → expect a confirmation ref; `My tickets` shows a scannable QR.
+```sql
+select data_type
+from information_schema.columns
+where table_schema='public'
+  and table_name='profiles'
+  and column_name='id';
+```
 
-**Events — paid ticket loop** (set `PAID_TICKETS_ENABLED=true`, organiser Connect-onboarded, Stripe test card `4242 4242 4242 4242`):
-1. Buy a ticket → Stripe Checkout → success.
-2. Webhook records the `order` + `tickets`, decrements capacity atomically, emails the ticket.
-3. Organiser opens `/events/<slug>/checkin` → scan/enter the ticket ref → flips `valid→used` (re-scan rejected).
-4. Refund from the owner dashboard (or cancel the event) → `charge.refunded` reverses order + tickets.
-5. `event-payouts` cron transfers the organiser's net 24h after the event.
+Expected: `text`.
 
-> **Policy — refunds after payout:** a refund issued *after* the organiser payout has
-> been transferred does **not** reverse the Stripe transfer; the platform absorbs it.
-> (The webhook flips the order/tickets to refunded but never claws back a payout.)
-> Refund within the 24h window when possible.
+## 2. Admin access
 
-**Donations (charity event):** open `e5` (Iftar) → "Give zakat/sadaqah" → Stripe Checkout → webhook records the donation + bumps the honest running total.
+Clerk owns auth, so `profiles.id` is the Clerk user id, not `auth.users.id`.
 
-**Sponsored ads:** Admin → Monetization → "Featured & ads" → create a campaign on `homepage_hero`, set **Active** → it renders as a "Sponsored" card on the home page → impressions/clicks accrue in the admin table and in the advertiser's `/owner` → "Sponsored ads" tab.
+Set the launch admin by matching the profile email:
 
-**Ramadan mode:** Admin → Monetization → toggle **Ramadan mode** on → reload → the Ramadan toggle/banner appears for visitors (hidden when off).
+```sql
+update public.profiles
+set role = 'admin'
+where lower(email) = lower('YOUR_ADMIN_EMAIL');
+```
 
-**Discovery & trust:** event detail → **Follow** an organiser (auth), submit an **event rating** (moderated → admin approves → appears + average shows).
+Sign out and back in after updating the role.
 
----
+## 3. Real data seeding
 
-## 6. Crons (Vercel)
+Do not use `/api/admin/seed-demo` or `/api/admin/seed-directory`; both routes are retired and return `410`.
 
-Scheduled in `vercel.json`, all `CRON_SECRET`-guarded:
-`event-payouts` (daily 6:30), `event-reminders` (daily 1:00 — day-before emails), `refresh-stats`,
-`owner-alerts`, `index-health`, `recheck-certs`, `freshness-audit`, `weekly-digest`, `review-triage`,
-`fare-alerts`, `flight-retry`. On Hobby, crons run daily only (see project notes re: Vercel Pro for
-sub-daily flight retries).
+Use the real dataset/import path:
 
----
+```bash
+npm run geocode:listings
+node --env-file=.env.local scripts/seed-spreadsheet.mjs
+npm run seo:counts
+```
 
-## Honesty guardrails (don't regress)
-- MUIS status is deep-linked to HalalSG, never scraped; admins record their own dated assertions.
-- Ratings/donation totals/ad metrics are computed from **real** rows only — never fabricated.
-- Paid money routes always re-check the **server** flag; a client toggle can't enable charges.
+Commit the updated generated SEO count file if it changes.
+
+Before launch, remove old mock/test events from production if any remain:
+
+```bash
+DRY=1 node scripts/purge-mock-events.mjs
+node scripts/purge-mock-events.mjs
+```
+
+## 4. Production environment
+
+Required production env groups:
+
+- Site: `NEXT_PUBLIC_SITE_URL`
+- Clerk: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`
+- Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- Cron: `CRON_SECRET`
+- Email: `RESEND_API_KEY`, `EMAIL_FROM`, `CONTACT_INBOX`
+- Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, price IDs for enabled paid plans
+- LiteAPI: `LITEAPI_ENV`, matching `LITEAPI_PROD_KEY` or `LITEAPI_SAND_KEY`, `LITEAPI_WEBHOOK_SECRET`
+
+LiteAPI is fail-closed by environment: `LITEAPI_ENV=prod` requires `LITEAPI_PROD_KEY`; sandbox mode requires `LITEAPI_SAND_KEY`. Do not rely on cross-fallback.
+
+## 5. Webhooks
+
+Configure Clerk:
+
+- Endpoint: `https://www.humblehalal.com/api/webhooks/clerk`
+- Events: `user.created`, `user.updated`, `user.deleted`
+
+Configure Stripe:
+
+- Endpoint: `https://www.humblehalal.com/api/webhooks/stripe`
+- Events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `charge.refunded`, `account.updated`
+
+The Stripe webhook fails closed in production if the Supabase service-role admin client is unavailable. A `503` means fix env before retrying events.
+
+Configure LiteAPI:
+
+- Endpoint: `https://www.humblehalal.com/api/travel/webhook`
+- Secret: `LITEAPI_WEBHOOK_SECRET`
+- Set `LITEAPI_WEBHOOK_SIGNATURE_HEADER` if LiteAPI gives a non-standard signature header name.
+
+## 6. Feature flags
+
+Paid features default off. Keep these off until each flow is verified:
+
+- `PAID_TICKETS_ENABLED`
+- `PAID_ADS_ENABLED`
+- `PAID_PLANS_ENABLED`
+- `PAID_HOTELS_ENABLED`
+- `PAID_FLIGHTS_ENABLED`
+- `PAID_LEADS_ENABLED`
+- `PAYNOW_ENABLED`
+
+Other major flags:
+
+- `CERT_VAULT_ENABLED`
+- `SEMANTIC_SEARCH_ENABLED`
+- `AI_CONCIERGE_ENABLED`
+- `HALAL_VERDICTS_ENABLED`
+- `LEAD_ROUTING_ENABLED`
+- `PASSPORT_ENABLED`
+- `NEXT_PUBLIC_PRELAUNCH=0` hides the prelaunch banner.
+
+Admin DB overrides in `platform_settings` can override env fallback values.
+
+## 7. Verification
+
+Local preflight:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npx playwright test --project=chromium
+npx playwright test --project=mobile-320 --project=mobile-390 --project=tablet-768
+```
+
+Production smoke:
+
+```bash
+E2E_BASE_URL=https://www.humblehalal.com npx playwright test --project=chromium
+E2E_BASE_URL=https://www.humblehalal.com npx playwright test --project=mobile-390
+```
+
+Expected local skips are tests that require seeded Supabase or LiteAPI keys when those keys are absent.
+
+## 8. Paid-flow checks before enabling flags
+
+Tickets:
+
+1. Create or use a published paid event with organiser Connect `payouts_enabled=true`.
+2. Enable `PAID_TICKETS_ENABLED`.
+3. Buy a ticket through Stripe Checkout.
+4. Confirm webhook creates `orders` and `tickets`.
+5. Check in the ticket once; a second scan should fail.
+6. Refund through owner/admin tooling.
+7. Confirm order/tickets are refunded and `events.taken` is decremented.
+
+Hotels and flights:
+
+1. Confirm `LITEAPI_ENV` and key match.
+2. Keep paid flags off until one sandbox prebook/payment/book flow is verified.
+3. For production, enable only after LiteAPI production booking access is confirmed.
+
+Plans/leads/ads:
+
+1. Confirm Stripe price IDs are production price IDs.
+2. Complete one checkout.
+3. Confirm webhook writes the subscription/order/campaign row.
+4. Confirm billing portal works for the owner.
+
+## 9. Deploy
+
+Vercel production is manually promoted from this repo:
+
+```bash
+npm run deploy:prod
+```
+
+The deploy script uses clean `origin/master` in a temporary worktree. Commit and push launch changes before running it.
+
+After deploy:
+
+```bash
+curl -I https://www.humblehalal.com
+curl -s https://www.humblehalal.com/sitemap.xml | head
+curl -s https://www.humblehalal.com/robots.txt | head
+```
+
+## Guardrails
+
+- MUIS status is deep-linked and dated; the app is not a certifier.
+- Donation totals, ratings, analytics, and ad metrics come from real rows only.
+- Paid routes always re-check server flags.
+- Cron routes must stay `CRON_SECRET` guarded.

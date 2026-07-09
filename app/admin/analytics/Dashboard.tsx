@@ -43,8 +43,8 @@ const TAB_LABEL: Record<Tab, string> = {
 
 // Names shown in the error banner — index-aligned with the Promise.all below.
 const SECTION_NAMES = [
-  "Summary", "Comparison", "Listings", "Trend", "Search",
-  "Areas", "Categories", "Opportunities", "Journeys", "Lead values",
+  "Summary", "Comparison", "Trend", "Search",
+  "Areas", "Categories", "Lead values", "Listing detail fallback",
 ] as const;
 
 /** The equal-length window immediately before [from, to) — for Δ% chips. */
@@ -108,27 +108,34 @@ export default function Dashboard() {
       const results = await Promise.all([
         sb.rpc("admin_summary", { p_from: from, p_to: to }),
         sb.rpc("admin_summary", { p_from: prev.from, p_to: prev.to }),
-        sb.rpc("admin_vendor_leads", { p_from: from, p_to: to }),
         sb.from("v_daily_lead_actions").select("*").gte("day", from.slice(0, 10)).lte("day", to.slice(0, 10)),
         sb.rpc("admin_search_terms", { p_from: from, p_to: to, p_limit: 50 }),
         sb.rpc("admin_area_demand", { p_from: from, p_to: to }),
         sb.rpc("admin_category_demand", { p_from: from, p_to: to }),
-        sb.rpc("admin_opportunities", { p_from: from, p_to: to, p_limit: 25 }),
-        sb.rpc("admin_recent_journeys", { p_from: from, p_to: to, p_limit: 50 }),
         sb.from("analytics_lead_values").select("*"),
+        fetch(`/api/admin/analytics/fallback?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=50`)
+          .then(async (r) => {
+            const json = await r.json().catch(() => null);
+            return r.ok && json?.ok
+              ? { data: json as { listings: VendorRow[]; opportunities: OpportunityRow[]; journeys: Journey[] }, error: null }
+              : { data: null, error: new Error(json?.error || "Failed to load listing detail fallback") };
+          })
+          .catch((error: Error) => ({ data: null, error })),
       ] as const);
-      const [sumRes, prevRes, vendRes, dailyRes, searchRes, areaRes, catRes, oppRes, journeyRes, lvRes] = results;
+      const [sumRes, prevRes, dailyRes, searchRes, areaRes, catRes, lvRes, fallbackRes] = results;
       // Apply each successful dataset; failures never clobber loaded data.
       if (!sumRes.error) setSummary(Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data);
       if (!prevRes.error) setPrevSummary(Array.isArray(prevRes.data) ? prevRes.data[0] : prevRes.data);
-      if (!vendRes.error) setVendors((vendRes.data as VendorRow[]) ?? []);
       if (!dailyRes.error) setDaily((dailyRes.data as DailyRow[]) ?? []);
       if (!searchRes.error) setSearches((searchRes.data as SearchRow[]) ?? []);
       if (!areaRes.error) setAreas((areaRes.data as AreaRow[]) ?? []);
       if (!catRes.error) setCats((catRes.data as CategoryRow[]) ?? []);
-      if (!oppRes.error) setOpps((oppRes.data as OpportunityRow[]) ?? []);
-      if (!journeyRes.error) setJourneys((journeyRes.data as Journey[]) ?? []);
       if (!lvRes.error) setLeadValues((lvRes.data as LeadValueRow[]) ?? []);
+      if (!fallbackRes.error && fallbackRes.data) {
+        setVendors(fallbackRes.data.listings ?? []);
+        setOpps(fallbackRes.data.opportunities ?? []);
+        setJourneys(fallbackRes.data.journeys ?? []);
+      }
 
       const failedNames = results.flatMap((r, i) => (r.error ? [SECTION_NAMES[i]] : []));
       if (failedNames.length === 0) {
@@ -152,7 +159,7 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, [win, supabase]);
-  loadRef.current = load;
+  useEffect(() => { loadRef.current = load; }, [load]);
 
   // Reload whenever the resolved window changes (fresh auto-retry budget).
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -175,11 +182,13 @@ export default function Dashboard() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={S.logo}>HH</div>
           <div>
-            <p style={S.title}>Humble Halal · business analytics</p>
-            <p style={S.sub}>admin</p>
+            <a href="/admin" style={S.backLink}>← Back to admin dashboard</a>
+            <p style={S.kicker}>Admin analytics</p>
+            <p style={S.title}>Business growth dashboard</p>
+            <p style={S.sub}>Listings, search demand, leads, and upgrade opportunities in one view.</p>
           </div>
         </div>
         <RangeBar
@@ -207,7 +216,7 @@ export default function Dashboard() {
         ))}
       </nav>
 
-      <section>
+      <section style={S.panel}>
         {loading && summary === null ? <Skeleton /> : (
           <>
             {tab === "overview" && <Overview daily={daily} vendors={vendors} />}
@@ -300,14 +309,26 @@ function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] 
 
   return (
     <>
-      <p style={S.sectionLabel}>Lead actions over time</p>
-      <div style={{ height: 260, marginBottom: 24 }}>
-        <LeadsOverTimeChart byDay={byDay} />
-      </div>
+      <div style={S.chartGrid}>
+        <div style={S.chartCard}>
+          <div style={S.chartHead}>
+            <p style={S.sectionLabel}>Lead actions over time</p>
+            <span style={S.chartHint}>Calls, directions, quotes, saves, and website clicks</span>
+          </div>
+          <div style={S.chartBody}>
+            <LeadsOverTimeChart byDay={byDay} />
+          </div>
+        </div>
 
-      <p style={S.sectionLabel}>Enquiries by vendor</p>
-      <div style={{ height: Math.max(topVendors.length * 38 + 40, 160) }}>
-        <EnquiriesByVendorChart topVendors={topVendors} />
+        <div style={S.chartCard}>
+          <div style={S.chartHead}>
+            <p style={S.sectionLabel}>Enquiries by vendor</p>
+            <span style={S.chartHint}>Top listings by quote enquiries</span>
+          </div>
+          <div style={{ ...S.chartBody, height: Math.max(topVendors.length * 38 + 40, 180) }}>
+            <EnquiriesByVendorChart topVendors={topVendors} />
+          </div>
+        </div>
       </div>
     </>
   );
@@ -397,5 +418,5 @@ function VendorDetail({ v, onBack }: { v: VendorRow; onBack: () => void }) {
 }
 
 function Skeleton() {
-  return <div style={{ height: 240, borderRadius: 12, background: "rgba(128,128,128,.08)" }} />;
+  return <div style={{ height: 300, borderRadius: 18, background: "rgba(15,92,74,.08)" }} />;
 }

@@ -1,5 +1,6 @@
 import { FlightBookingScreen } from "@/components/screens/flights";
 import { getServerFlags } from "@/lib/feature-flags";
+import { liteapiPaymentMode } from "@/lib/liteapi";
 import { pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta({ title: "Complete your flight booking", description: "Book your flight.", path: "/travel/flights/booking", index: false });
@@ -18,7 +19,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       roundTrip={sp.rt === "1"}
       returnDate={String(sp.rdate || "")}
       bookingEnabled={(await getServerFlags()).paidFlights}
-      paymentMode={process.env.LITEAPI_ENV === "prod" ? "live" : "sandbox"}
+      paymentMode={liteapiPaymentMode()}
     />
   );
 }

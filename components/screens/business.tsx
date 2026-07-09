@@ -103,7 +103,7 @@ export function ForBusinessScreen() {
         <p className="muted tc" style={{ fontSize: ".88rem", marginTop: 18 }}>
           Rather have it handled? <strong>Managed marketing is available</strong> — powered by{" "}
           <strong>Onnifyworks</strong>, Humble Halal&rsquo;s growth team.{" "}
-          <a href="/contact" style={{ fontWeight: 600 }}>Ask about Growth Partner →</a>
+          <a href="/growth-partner" style={{ fontWeight: 600 }}>Start Growth Partner intake →</a>
         </p>
       </section>
     </div>
@@ -138,9 +138,23 @@ export function PricingScreen() {
         toast("The founding rate is fully claimed — standard plans below.");
         return;
       }
+      if (res.status === 401 || data.reason === "not_signed_in") {
+        toast("Log in first, then choose your plan.");
+        return navigate("login");
+      }
+      if (data.reason === "no_business") {
+        toast("Create or claim your business before choosing a paid plan.");
+        return navigate("add-listing");
+      }
+      if (data.reason === "price_not_configured") {
+        toast("Checkout for this plan is not configured yet.");
+        return;
+      }
     } catch {
-      /* fall through */
+      toast("Checkout could not start — please try again.");
+      return;
     }
+    toast("Create or claim your business before choosing a paid plan.");
     navigate("add-listing");
   };
   // The plan catalog (lib/plans) is the single source of truth — no duplicated
@@ -684,6 +698,15 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
   };
 
   const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
+  const listingCount = live ? (biz?.length ?? 0) : demoListings.length;
+  const eventCount = live ? (ownerEvents?.length ?? 0) : 0;
+  const verifiedCount = live ? (biz || []).filter((b) => b.halal_tier === "muis" || b.halal_tier === "admin").length : 1;
+  const ownerSummary: [string, string, string, string][] = [
+    ["Listings", biz === null && live ? "…" : String(listingCount), "store", "Published or claimed profiles"],
+    ["Verified", biz === null && live ? "…" : String(verifiedCount), "shield-check", "Trust badges active"],
+    ["Events", ownerEvents === null && live ? "…" : String(eventCount), "calendar", "Managed from dashboard"],
+    ["Plan", currentPlanLabel, "crescent", canUpgrade ? "Upgrade available" : "Highest tier"],
+  ];
 
   // One-time success toasts after returning from Stripe (Connect onboarding /
   // billing portal). Query params arrive via `params`; guard so it fires once.
@@ -699,7 +722,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
   }, [params, toast]);
 
   return (
-    <div className="screen-in hh-page dash">
+    <div className="screen-in hh-page dash dash-owner">
       <div className="dash-header hh-pattern">
         <div className="hh-wrap">
           <div className="flex between center wrap g12">
@@ -718,6 +741,18 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
       </div>
 
       <div className="hh-wrap">
+        <div className="dash-summary-grid dash-overlap">
+          {ownerSummary.map(([label, value, icon, hint]) => (
+            <div key={label} className="dash-summary-card">
+              <span className="dash-summary-ico"><Icon name={icon} size={18} /></span>
+              <div>
+                <strong>{value}</strong>
+                <span>{label}</span>
+                <small>{hint}</small>
+              </div>
+            </div>
+          ))}
+        </div>
         <div className="dash-tabs">
           {tabs.map(([id, label, icon]) => (<button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}><Icon name={icon} size={17} /> {label}</button>))}
         </div>
@@ -766,7 +801,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
               />
             )}
             <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
-            <GrowthServicesCard onContact={() => navigate("contact")} />
+            <GrowthServicesCard onContact={() => navigate("growth-partner")} />
           </div>
         )}
 

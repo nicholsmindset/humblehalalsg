@@ -105,16 +105,9 @@ export function HomeScreen() {
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
 
-      {/* NEWSLETTER — low-friction weekly-guide capture, below the hero search */}
-      <section className="hh-wrap" style={{ marginTop: 22 }}>
-        <div className="home-nl-band">
-          <div className="home-nl-copy">
-            <strong>🌙 Get the weekly halal guide</strong>
-            <span className="muted">New MUIS-verified spots, mosque events &amp; deals — free, every week.</span>
-          </div>
-          <Newsletter source="hero" cta="Subscribe" />
-        </div>
-      </section>
+      {/* FEATURES + EMAIL CAPTURE — make the homepage value obvious before browse. */}
+      <HomeFeatureSection navigate={navigate} />
+      <HomeNewsletterCapture />
 
       {/* CATEGORIES — top 8 + view all */}
       <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
@@ -230,6 +223,102 @@ export function HomeScreen() {
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
       <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />
     </div>
+  );
+}
+
+function HomeFeatureSection({ navigate }: { navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  const features = [
+    {
+      icon: "shield-check",
+      title: "Trust signals at a glance",
+      body: "See MUIS-certified, Muslim-owned, Admin Verified and community-reported labels before you decide.",
+      action: "How verification works",
+      onClick: () => navigate("verify"),
+    },
+    {
+      icon: "search",
+      title: "Search by real intent",
+      body: "Look for halal brunch, prayer rooms near Orchard, Muslim-owned services, open-now places and more.",
+      action: "Start exploring",
+      onClick: () => navigate("explore"),
+    },
+    {
+      icon: "sparkles",
+      title: "Ask Halal AI",
+      body: "Describe what you need in plain words and get suggested places with facts surfaced clearly.",
+      action: "Try Ask AI",
+      onClick: () => navigate("ask"),
+    },
+  ];
+
+  return (
+    <section className="hh-wrap home-feature-section">
+      <div className="home-feature-head">
+        <span className="eyebrow">Built for daily halal decisions</span>
+        <h2>Everything you need to find trusted places faster</h2>
+        <p className="muted">
+          Humble Halal combines verified badges, community updates, maps, prayer-room discovery and AI-assisted search
+          so people can move from question to decision with confidence.
+        </p>
+      </div>
+      <div className="home-feature-grid">
+        {features.map((f) => (
+          <button key={f.title} className="home-feature-card" onClick={f.onClick}>
+            <span className="home-feature-icon"><Icon name={f.icon} size={22} /></span>
+            <span className="home-feature-title">{f.title}</span>
+            <span className="home-feature-body">{f.body}</span>
+            <span className="home-feature-action">{f.action} <Icon name="chevron" size={13} /></span>
+          </button>
+        ))}
+        <div className="home-feature-panel">
+          <div className="home-feature-panel-head">
+            <span className="home-feature-icon"><Icon name="map" size={22} /></span>
+            <div>
+              <strong>Plan around food and prayer</strong>
+              <span>Use maps, areas and quick filters together.</span>
+            </div>
+          </div>
+          <div className="home-feature-route">
+            {[
+              ["1", "Search", "MUIS-certified nasi padang near Tampines"],
+              ["2", "Check", "Badge, opening hours, reviews and prayer space"],
+              ["3", "Go", "Open maps, save it, or share with family"],
+            ].map(([step, label, text]) => (
+              <div key={step} className="home-feature-step">
+                <span>{step}</span>
+                <div><strong>{label}</strong><p>{text}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HomeNewsletterCapture() {
+  return (
+    <section className="hh-wrap home-capture-wrap">
+      <div className="home-capture">
+        <div className="home-capture-copy">
+          <span className="eyebrow">Weekly halal guide</span>
+          <h2>Get new halal finds before the weekend</h2>
+          <p>
+            A short email with new MUIS-certified places, Muslim-owned businesses, prayer-room updates,
+            guides and community picks around Singapore.
+          </p>
+          <ul className="home-capture-list" aria-label="Newsletter includes">
+            <li><Icon name="check" size={15} /> New verified listings</li>
+            <li><Icon name="check" size={15} /> Prayer rooms and mosque updates</li>
+            <li><Icon name="check" size={15} /> Deals, events and guides</li>
+          </ul>
+        </div>
+        <div className="home-capture-form">
+          <strong>Join the free weekly guide</strong>
+          <Newsletter source="home-guide" collectName cta="Send me the guide" />
+        </div>
+      </div>
+    </section>
   );
 }
 

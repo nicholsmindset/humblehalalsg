@@ -118,7 +118,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     monthly: 99,
     yearly: 990,
     tag: "Grow faster",
-    cta: "Contact sales",
+    cta: "Choose Premium",
     galleryMax: 30,
     features: PREMIUM_FEATURES,
     bullets: [

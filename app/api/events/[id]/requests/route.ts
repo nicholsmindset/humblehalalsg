@@ -11,7 +11,7 @@ import { joinApprovedEmail, joinDeclinedEmail } from "@/lib/emails/templates";
    Decline → 'cancelled'. Authorised for the event's business owner or an admin
    (mirrors /api/tickets/checkin). Zero migration. */
 
-type AuthOk = { ok: true; admin: NonNullable<ReturnType<typeof getSupabaseAdmin>>; ev: { id: string; business_id: string | null; title: string } };
+type AuthOk = { ok: true; admin: NonNullable<ReturnType<typeof getSupabaseAdmin>>; ev: { id: string; business_id: string | null; title: string; capacity: number; taken: number } };
 type AuthErr = { ok: false; res: NextResponse };
 
 async function authorise(eventRef: string): Promise<AuthOk | AuthErr> {
@@ -19,7 +19,7 @@ async function authorise(eventRef: string): Promise<AuthOk | AuthErr> {
   if (!userId) return { ok: false, res: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
   if (!admin) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
-  const { data: ev } = await admin.from("events").select("id, business_id, title").or(`id.eq.${eventRef},slug.eq.${eventRef}`).maybeSingle();
+  const { data: ev } = await admin.from("events").select("id, business_id, title, capacity, taken").or(`id.eq.${eventRef},slug.eq.${eventRef}`).maybeSingle();
   if (!ev) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
   let allowed = profile?.role === "admin";
@@ -28,7 +28,17 @@ async function authorise(eventRef: string): Promise<AuthOk | AuthErr> {
     allowed = !!biz;
   }
   if (!allowed) return { ok: false, res: NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 }) };
-  return { ok: true, admin, ev: { id: ev.id as string, business_id: (ev.business_id as string) ?? null, title: (ev.title as string) || "your event" } };
+  return {
+    ok: true,
+    admin,
+    ev: {
+      id: ev.id as string,
+      business_id: (ev.business_id as string) ?? null,
+      title: (ev.title as string) || "your event",
+      capacity: Number(ev.capacity) || 0,
+      taken: Number(ev.taken) || 0,
+    },
+  };
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -76,6 +86,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   // approve → confirm the order, issue tickets, bump taken
+  const { data: currentEvent } = await admin.from("events").select("capacity, taken").eq("id", ev.id).maybeSingle();
+  const capacity = Number(currentEvent?.capacity ?? ev.capacity) || 0;
+  const taken = Number(currentEvent?.taken ?? ev.taken) || 0;
+  if (capacity > 0 && taken + qty > capacity) {
+    const left = Math.max(0, capacity - taken);
+    return NextResponse.json({ ok: false, reason: left > 0 ? "insufficient_capacity" : "sold_out", left }, { status: 409 });
+  }
   const { error: uErr } = await admin.from("orders").update({ status: "confirmed" }).eq("id", orderId).eq("status", "pending");
   if (uErr) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
   // Human-friendly qr_refs (lib/ticket-ref) — same format as direct RSVPs.

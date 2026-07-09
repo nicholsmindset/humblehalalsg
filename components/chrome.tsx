@@ -416,8 +416,6 @@ export function TopNav() {
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "tools", label: "Tools" },
-    { id: "blog", label: "Blog" },
-    { id: "for-business", label: t("nav.forBusiness") },
     { id: "pricing", label: t("nav.pricing") },
   ];
   return (
@@ -432,12 +430,16 @@ export function TopNav() {
           ))}
         </nav>
         <div className="spacer" />
-        <div className="flex g10 center">
+        <div className="top-actions flex g8 center">
           <LangToggle />
           {user.loggedIn ? (
             <>
-              {/* Dashboard lives in the avatar menu (My/Business dashboard
-                  actions below) — a separate ghost button crowded the cluster. */}
+              <button
+                className="btn btn-soft btn-sm nav-dashboard"
+                onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
+              >
+                <Icon name={user.role === "owner" ? "store" : "user"} size={16} /> Dashboard
+              </button>
               {clerkConfigured && <NotificationBell />}
               {clerkConfigured ? (
                 <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
@@ -761,21 +763,23 @@ export function Footer() {
       <nav aria-label="Footer">
         <div className="hh-wrap hh-footer-grid">
           <div className="hh-footer-brand">
-            <Logo light onClick={() => navigate("home")} />
-            <p>
-              Singapore’s most trusted halal &amp; Muslim-owned business directory. A discovery
-              platform — not a certifier.
-            </p>
-            <div style={{ marginTop: 16 }}>
-              <h2 className="hh-footer-title" style={{ marginBottom: 8 }}>Get the weekly halal guide</h2>
+            <div>
+              <Logo light onClick={() => navigate("home")} />
+              <p className="hh-footer-intro">
+                Singapore’s most trusted halal &amp; Muslim-owned business directory. A discovery
+                platform, not a certifier.
+              </p>
+            </div>
+            <div className="hh-footer-newsletter">
+              <h2 className="hh-footer-title">Get the weekly halal guide</h2>
               <Newsletter source="footer" />
             </div>
-            <div className="flex g8 wrap" style={{ marginTop: 16 }}>
+            <div className="hh-footer-badges" aria-label="Trust badges">
               <Badge type="muis" />
               <Badge type="owned" />
             </div>
             <address className="hh-footer-addr">
-              Operated by <strong>{SITE.org.legalName}</strong>
+              <span>Operated by <strong>{SITE.org.legalName}</strong></span>
               <br />
               {SITE.org.streetAddress}
               <br />
@@ -785,15 +789,17 @@ export function Footer() {
               <a href="https://onnifyworks.com" target="_blank" rel="noopener noreferrer">Onnifyworks</a>
             </address>
           </div>
-          {cols.map(([title, links]) => (
-            <FooterSection key={title} title={title}>
-              {links.map(([label, screen]) => (
-                <li key={label}>
-                  <ScreenLink screen={screen}>{label}</ScreenLink>
-                </li>
-              ))}
-            </FooterSection>
-          ))}
+          <div className="hh-footer-links" aria-label="Footer sections">
+            {cols.map(([title, links]) => (
+              <FooterSection key={title} title={title}>
+                {links.map(([label, screen]) => (
+                  <li key={label}>
+                    <ScreenLink screen={screen}>{label}</ScreenLink>
+                  </li>
+                ))}
+              </FooterSection>
+            ))}
+          </div>
         </div>
         {/* One cloud row: categories (wide) + guides (bounded) side by side —
             two stacked full-width clouds doubled the footer's height. */}

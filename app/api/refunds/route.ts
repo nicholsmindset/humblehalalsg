@@ -19,9 +19,10 @@ export async function POST(req: Request) {
   if (!orderId) return NextResponse.json({ ok: false, reason: "no_order" }, { status: 422 });
 
   const { data: order } = await admin
-    .from("orders").select("id, event_id, business_id, status, amount_cents, stripe_payment_intent").eq("id", orderId).maybeSingle();
+    .from("orders").select("id, event_id, business_id, status, amount_cents, stripe_payment_intent, qty").eq("id", orderId).maybeSingle();
   if (!order) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
   if (order.status === "refunded") return NextResponse.json({ ok: true, already: true });
+  if (order.status !== "confirmed") return NextResponse.json({ ok: false, reason: "not_refundable" }, { status: 409 });
 
   // Authorise: admin or the owner of the order's business.
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
@@ -64,5 +65,13 @@ export async function POST(req: Request) {
 
   await admin.from("orders").update({ payout_status: "none" }).eq("id", orderId);
   await admin.from("tickets").update({ status: "refunded" }).eq("order_id", orderId).eq("status", "valid");
+  if (order.event_id) {
+    const qty = Math.max(1, Number(order.qty) || 1);
+    const { error: decErr } = await admin.rpc("decrement_event_taken", { p_event_id: order.event_id, p_qty: qty });
+    if (decErr) {
+      const { data: ev } = await admin.from("events").select("taken").eq("id", order.event_id).maybeSingle();
+      await admin.from("events").update({ taken: Math.max(0, (Number(ev?.taken) || 0) - qty) }).eq("id", order.event_id);
+    }
+  }
   return NextResponse.json({ ok: true });
 }

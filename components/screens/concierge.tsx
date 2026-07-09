@@ -24,6 +24,36 @@ const EXAMPLES = [
   "Family-friendly biryani with delivery",
 ];
 
+const TRUST_POINTS = [
+  "Grounded in the Humble Halal directory",
+  "MUIS, Muslim-owned and prayer-space filters",
+  "Follow-up chat for faster narrowing",
+];
+
+const CAPABILITIES = [
+  {
+    icon: "shield-check",
+    title: "Halal-aware search",
+    text: "Ask for MUIS-certified, Muslim-owned, self-declared, or prayer-friendly places without learning filters first.",
+  },
+  {
+    icon: "pin",
+    title: "Area and intent matching",
+    text: "Use natural prompts like brunch in Bugis, delivery near Tampines, or wedding services in Geylang Serai.",
+  },
+  {
+    icon: "sparkles",
+    title: "Useful follow-ups",
+    text: "Refine results by price, family needs, prayer space, distance, cuisine, or business type in the same thread.",
+  },
+];
+
+const PROMPT_TIPS = [
+  "Name the area or MRT station.",
+  "Say the halal confidence you need.",
+  "Add constraints like delivery, prayer space, family-friendly, or budget.",
+];
+
 type Part = ConciergeUIMessage["parts"][number];
 type DirOut = Extract<Part, { type: "tool-searchDirectory"; state: "output-available" }>["output"];
 type HotelOut = Extract<Part, { type: "tool-searchHotels"; state: "output-available" }>["output"];
@@ -118,14 +148,14 @@ function SingleShotConcierge() {
   };
 
   return (
-    <>
+    <div className="ask-fallback">
       <form className="cncg-input" onSubmit={(e) => { e.preventDefault(); ask(); }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. MUIS-certified nasi padang near Tampines" aria-label="Ask the halal concierge" disabled={loading} />
         <button type="submit" className="btn btn-primary" disabled={loading || q.trim().length < 2} aria-label="Search">{loading ? <span className="spinner" /> : <Icon name="search" size={16} />}</button>
       </form>
       {!asked && (
-        <div className="flex g8 wrap" style={{ marginTop: 10 }}>
-          {EXAMPLES.map((ex) => <button key={ex} className="chip" onClick={() => ask(ex)}>{ex}</button>)}
+        <div className="ask-fallback-prompts">
+          {EXAMPLES.map((ex) => <button key={ex} className="cncg-starter" onClick={() => ask(ex)}>{ex}</button>)}
         </div>
       )}
       <div aria-live="polite">
@@ -165,7 +195,7 @@ function SingleShotConcierge() {
           <p className="faint" style={{ marginTop: 16 }}>No matching places yet — try a different area or cuisine.</p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -201,8 +231,8 @@ function ChatConcierge({ onUnavailable }: { onUnavailable: () => void }) {
         {messages.length === 0 && (
           <div className="cncg-empty">
             <div className="cncg-empty-ico"><Icon name="sparkles" size={22} /></div>
-            <h3>Ask for exactly what you want</h3>
-            <p className="muted">Area, cuisine, prayer space, halal status — in plain words. Follow up to narrow it down.</p>
+            <h3>Start with a plain-English request</h3>
+            <p className="muted">Ask like you would message a local friend. The concierge will search the directory and explain the match.</p>
             <div className="cncg-starters">{EXAMPLES.map((s) => <button key={s} type="button" className="cncg-starter" onClick={() => ask(s)}>{s}</button>)}</div>
           </div>
         )}
@@ -257,29 +287,73 @@ export function ConciergeScreen() {
     return () => { alive = false; };
   }, []);
   return (
-    <div className="screen-in hh-page">
-      <div className="hh-wrap" style={{ paddingTop: 28, paddingBottom: 40, maxWidth: 760 }}>
-        <span className="eyebrow" style={{ color: "var(--emerald)" }}>Halal concierge</span>
-        <h1 style={{ fontSize: "2rem", margin: "8px 0 6px" }}>Ask for exactly what you want</h1>
-        <p className="faint" style={{ fontSize: ".95rem", marginBottom: 16 }}>
-          Describe the place you&apos;re after — area, cuisine, prayer space, halal status — in plain words.
-        </p>
+    <div className="screen-in hh-page ask-page">
+      <section className="ask-hero">
+        <div className="ask-hero-copy">
+          <span className="eyebrow">Humble Halal AI concierge</span>
+          <h1>Find halal places by asking like a human.</h1>
+          <p>
+            Skip the filter hunt. Tell Ask AI the area, cuisine, occasion, halal confidence,
+            prayer-space need, or business type, and get grounded matches from the Humble Halal directory.
+          </p>
+          <div className="ask-hero-actions">
+            <a className="btn btn-primary" href="#ask-console">Start asking</a>
+            <Link className="btn btn-soft" href="/explore">Browse directory</Link>
+          </div>
+          <div className="ask-trust-row" aria-label="Ask AI strengths">
+            {TRUST_POINTS.map((point) => (
+              <span key={point}><Icon name="check" size={14} /> {point}</span>
+            ))}
+          </div>
+        </div>
 
-        {!probed ? (
-          <div className="card" style={{ height: 120, opacity: 0.4 }} aria-busy="true" />
-        ) : fallback ? (
-          <SingleShotConcierge />
-        ) : (
-          <ChatConcierge onUnavailable={() => setFallback(true)} />
-        )}
+        <div className="ask-console-card" id="ask-console">
+          <div className="ask-console-head">
+            <div>
+              <span>Live concierge</span>
+              <strong>Ask AI</strong>
+            </div>
+            <span className="ask-live"><span /> Directory grounded</span>
+          </div>
+          {!probed ? (
+            <div className="ask-loading" aria-busy="true">
+              <span className="spinner" />
+              Preparing the halal concierge...
+            </div>
+          ) : fallback ? (
+            <SingleShotConcierge />
+          ) : (
+            <ChatConcierge onUnavailable={() => setFallback(true)} />
+          )}
+        </div>
+      </section>
 
-        <div className="card" style={{ marginTop: 22, padding: "14px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <Icon name="shield-check" size={18} style={{ color: "var(--emerald)", flex: "none", marginTop: 1 }} />
-          <p className="faint" style={{ fontSize: ".85rem", lineHeight: 1.5 }}>
-            Humble Halal is a discovery platform, not a certifier. We surface facts — MUIS-certified, Muslim-owned and self-declared badges — and always link to the official HalalSG register. The concierge never invents halal status.
+      <section className="ask-capabilities" aria-label="Ask AI features">
+        {CAPABILITIES.map((item) => (
+          <article key={item.title} className="ask-cap-card">
+            <span><Icon name={item.icon} size={20} /></span>
+            <h2>{item.title}</h2>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="ask-proof">
+        <div className="ask-proof-main">
+          <span className="eyebrow">Safer answers</span>
+          <h2>Promoted as AI, designed as a directory assistant.</h2>
+          <p>
+            Humble Halal is a discovery platform, not a certifier. Ask AI surfaces facts such as
+            MUIS-certified, Muslim-owned and self-declared badges, and should never invent halal status.
           </p>
         </div>
-      </div>
+        <div className="ask-prompt-card">
+          <h3>Better prompts get better matches</h3>
+          <ul>
+            {PROMPT_TIPS.map((tip) => <li key={tip}><Icon name="check" size={15} /> {tip}</li>)}
+          </ul>
+        </div>
+      </section>
     </div>
   );
 }

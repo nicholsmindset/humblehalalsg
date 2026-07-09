@@ -9,11 +9,14 @@ import { Icon } from "../ui";
 
 export function GrowthServicesCard({ onContact }: { onContact: () => void }) {
   return (
-    <div className="card mt20" style={{ padding: 20, display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+    <div className="growth-card mt20">
       <div style={{ flex: 1, minWidth: 240 }}>
-        <div className="flex g8 center">
-          <span className="attn-ico"><Icon name="trend" size={17} /></span>
-          <h3 style={{ fontSize: "1.05rem" }}>Want this handled for you?</h3>
+        <div className="flex g10 center">
+          <span className="growth-card-ico"><Icon name="trend" size={18} /></span>
+          <div>
+            <span className="eyebrow" style={{ color: "var(--gold)" }}>Managed growth</span>
+            <h3 style={{ fontSize: "1.2rem", marginTop: 3 }}>Want this handled for you?</h3>
+          </div>
         </div>
         <p className="muted" style={{ fontSize: ".9rem", marginTop: 8, lineHeight: 1.55 }}>
           <strong>Humble Halal Growth Partner</strong> — managed marketing by <strong>Onnifyworks</strong>, our
@@ -21,8 +24,8 @@ export function GrowthServicesCard({ onContact }: { onContact: () => void }) {
           From S$299/mo.
         </p>
       </div>
-      <button className="btn btn-outline btn-sm" onClick={onContact}>
-        Ask about Growth Partner <Icon name="arrow" size={15} />
+      <button className="btn btn-gold" onClick={onContact}>
+        Start 3-step intake <Icon name="arrow" size={15} />
       </button>
     </div>
   );

@@ -8,6 +8,7 @@
    (&placement=key) opens the builder preselected. */
 
 import { useCallback, useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { useApp } from "../app-context";
 import { Icon, ImagePh } from "../ui";
@@ -37,19 +38,28 @@ function lifecycle(c: OwnerCampaign): [string, string] {
 export function OwnerAds({ navigate, biz }: { navigate: ReturnType<typeof useApp>["navigate"]; biz: OwnerBiz | null }) {
   const { params, toast } = useApp();
   const supabase = useSupabaseBrowser();
+  const { isLoaded, isSignedIn } = useUser();
   const [rows, setRows] = useState<OwnerCampaign[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState(false);
   const [building, setBuilding] = useState(false);
 
   const load = useCallback(async () => {
+    if (!isLoaded) return;
     const sb = supabase;
-    if (!sb) { setLoading(false); return; }
+    if (!sb || !isSignedIn) {
+      setRows(null);
+      setLoadErr(false);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadErr(false);
     const { data, error } = await sb.rpc("owner_campaign_performance");
     if (!error && Array.isArray(data)) setRows(data as OwnerCampaign[]);
     else if (error) setLoadErr(true); // was silently swallowed → looked like "no campaigns"
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, isLoaded, isSignedIn]);
 
   useEffect(() => {
     let alive = true;
