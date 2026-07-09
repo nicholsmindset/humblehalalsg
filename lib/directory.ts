@@ -57,6 +57,7 @@ export function rowToListing(r: Row): Listing {
     blurb: str(r.description),
     seoTitle: str(r.seo_title) || undefined,
     seoDescription: str(r.seo_description) || undefined,
+    stallNo: str(r.stall_no) || undefined,
     img: "",
     tone: "emerald",
     open: true,

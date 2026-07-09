@@ -18,4 +18,5 @@ export const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
   leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
   passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
   listingEnrichment: { title: "Listing enrichment", desc: "AI drafts an improved description + SEO for submitted listings; admins review before it writes to the live listing. Adds a Listing-enrichment tab to admin." },
+  hawkerFinder: { title: "Hawker Finder", desc: "The halal hawker-stall finder (/hawker) — a map + centre pages grouping halal stalls by hawker centre. Surfaces the Hawker nav link." },
 };

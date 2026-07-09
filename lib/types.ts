@@ -76,6 +76,8 @@ export interface Listing {
    *  these in generateMetadata; fall back to the computed title/description. */
   seoTitle?: string;
   seoDescription?: string;
+  /** Hawker stall unit number (e.g. "#01-42"), when this listing is a hawker stall. */
+  stallNo?: string;
   img: string;
   tone: string;
   open: boolean;
