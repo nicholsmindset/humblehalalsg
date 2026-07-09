@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { categories } from "@/lib/data";
-import { allSeoPages } from "@/lib/seo-pages";
+import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
@@ -26,7 +26,7 @@ export default function Page() {
     "@type": "CollectionPage",
     name: "Halal directory Singapore",
     url: `${SITE.url}/halal`,
-    hasPart: catPages.map((p) => ({ "@type": "WebPage", name: p.h1, url: `${SITE.url}/halal/${p.slug}` })),
+    hasPart: catPages.map((p) => ({ "@type": "WebPage", name: p.h1, url: `${SITE.url}${seoPagePath(p)}` })),
   };
 
   return (
@@ -62,7 +62,7 @@ export default function Page() {
           <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>Browse by category</h2>
           <div className="hub-grid">
             {catPages.map((p) => (
-              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+              <Link key={p.slug} href={seoPagePath(p)} className="hub-link">
                 <span>Halal {catLabel(p.catId)}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>
@@ -72,7 +72,7 @@ export default function Page() {
           <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse by cuisine</h2>
           <div className="hub-grid">
             {cuisinePages.map((p) => (
-              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+              <Link key={p.slug} href={seoPagePath(p)} className="hub-link">
                 <span>{p.h1.replace(/ in Singapore$/, "")}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>
@@ -82,7 +82,7 @@ export default function Page() {
           <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse by area</h2>
           <div className="hub-grid">
             {areaPages.map((p) => (
-              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+              <Link key={p.slug} href={seoPagePath(p)} className="hub-link">
                 <span>Halal food in {p.areaName}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>
@@ -92,7 +92,7 @@ export default function Page() {
           <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Browse halal food by mall</h2>
           <div className="hub-grid">
             {venuePages.map((p) => (
-              <Link key={p.slug} href={`/halal/${p.slug}`} className="hub-link">
+              <Link key={p.slug} href={seoPagePath(p)} className="hub-link">
                 <span>Halal food at {p.areaName}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>

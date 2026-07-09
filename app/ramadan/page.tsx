@@ -53,8 +53,8 @@ export default function Page() {
             <Link href="/tools/islamic-calendar" className="hub-link"><span>Islamic calendar 2026</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/tools/zakat" className="hub-link"><span>Zakat calculator</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/events" className="hub-link"><span>Geylang Serai &amp; Ramadan bazaars</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/halal/halal-buffet-singapore" className="hub-link"><span>Halal buffets for iftar</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/halal/halal-catering-singapore" className="hub-link"><span>Ramadan &amp; Raya catering</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-buffet-singapore" className="hub-link"><span>Halal buffets for iftar</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-catering-singapore" className="hub-link"><span>Ramadan &amp; Raya catering</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/mosques" className="hub-link"><span>Mosques for tarawih</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/hari-raya" className="hub-link"><span>Hari Raya 2026 guide</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>

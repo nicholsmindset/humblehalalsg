@@ -1283,7 +1283,7 @@ export function DetailScreen() {
               name: item.area,
               screen: "seo",
               params: { slug: `halal-food-in-${item.area.toLowerCase().split(" ")[0]}` },
-              href: `/halal/halal-food-in-${item.area.toLowerCase().split(" ")[0]}`,
+              href: `/halal-food/${item.area.toLowerCase().split(" ")[0]}`,
             },
             { name: item.name },
           ]}
@@ -1422,7 +1422,7 @@ export function DetailScreen() {
                   </>
                 )}
                 <div className="area-links">
-                  <a className="chip" href={`/halal/halal-food-in-${areaSlug}`} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: `halal-food-in-${areaSlug}` }); }}>
+                  <a className="chip" href={`/halal-food/${areaSlug}`} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: `halal-food-in-${areaSlug}` }); }}>
                     Halal Food in {item.area} <Icon name="arrow" size={14} />
                   </a>
                   <a className="chip" href={`/halal/halal-${item.catId}-in-${areaSlug}`} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: `halal-${item.catId}-in-${areaSlug}` }); }}>

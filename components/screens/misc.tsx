@@ -980,12 +980,14 @@ export function DisclaimerScreen() {
 /* =============================================================
    SEO LANDING TEMPLATE
 ============================================================= */
-export function SeoScreen() {
+export function SeoScreen({ slug }: { slug?: string } = {}) {
   const { navigate, params } = useApp();
   const dir = useDirectory();
   // Server route 404s unknown slugs; this guard covers SPA navigation. The old
   // `|| allSeoPages()[0]` fallback silently rendered page-0 content instead.
-  const page = getSeoPage(String(params.slug || ""));
+  // `slug` prop comes from server routes whose URL segment isn't the raw slug
+  // (e.g. /halal-food/[location]); param fallback covers /halal/[slug] + SPA nav.
+  const page = getSeoPage(String(slug ?? params.slug ?? ""));
   if (!page) return <NotFoundScreen />;
   const areaName = page.areaName || "Singapore";
   const cat = page.catId ? HHData.categories.find((c) => c.id === page.catId) : null;

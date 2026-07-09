@@ -1,0 +1,12 @@
+# Humble Halal — Google disavow file (STARTER — needs full Ahrefs export)
+# Prepared 2026-07-10 from the SEO blueprint's named toxic/PBN domains.
+# ACTION (user): re-auth the Ahrefs MCP token (or export Backlinks > Referring
+# domains CSV from Ahrefs UI), append every PBN/spam domain (~244 total flagged),
+# then upload at https://search.google.com/search-console/disavow-links
+# for property https://www.humblehalal.com.
+# Rule of thumb for the export: disavow domains with spam signals
+# (is_spam=true, DR<10 with 0 organic traffic, obvious link-seller names).
+# Named in the blueprint:
+domain:rankyour.website
+domain:buybacklinks.agency
+domain:pbnseolinks.shop
