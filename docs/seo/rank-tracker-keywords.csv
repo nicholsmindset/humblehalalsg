@@ -1,52 +1,52 @@
 keyword,market,cluster,target_url,volume,kd,tier
-halal food orchard,SG,location,/halal/halal-food-in-orchard,1000,0,1
-bugis halal food,SG,location,/halal/halal-food-in-bugis,1100,0,1
-halal food tampines,SG,location,/halal/halal-food-in-tampines,600,0,1
-paya lebar halal food,SG,location,/halal/halal-food-in-paya-lebar,600,0,1
-halal food yishun,SG,location,/halal/halal-food-in-yishun,250,0,2
-arab street halal food,SG,location,/halal/halal-food-in-arab-street,700,4,2
-halal food jurong east,SG,location,/halal/halal-food-in-jurong-east,250,0,2
-jewel halal food,SG,venue,/halal/halal-food-at-jewel-changi-airport,1800,0,1
-jem halal food,SG,venue,/halal/halal-food-at-jem,1400,0,1
-vivocity halal food,SG,venue,/halal/halal-food-at-vivocity,1400,4,1
-suntec halal food,SG,venue,/halal/halal-food-at-suntec-city,1300,0,1
-northpoint halal food,SG,venue,/halal/halal-food-at-northpoint-city,1200,0,1
-jurong point halal food,SG,venue,/halal/halal-food-at-jurong-point,1100,1,1
-westgate halal food,SG,venue,/halal/halal-food-at-westgate,1100,0,1
-imm halal food,SG,venue,/halal/halal-food-at-imm,1000,0,1
-marina square halal food,SG,venue,/halal/halal-food-at-marina-square,900,0,2
-nex halal food,SG,venue,/halal/halal-food-at-nex,800,0,2
-funan halal food,SG,venue,/halal/halal-food-at-funan,800,0,2
-bugis junction halal food,SG,venue,/halal/halal-food-at-bugis-junction,700,0,2
-tampines mall halal food,SG,venue,/halal/halal-food-at-tampines-mall,700,0,2
-causeway point halal food,SG,venue,/halal/halal-food-at-causeway-point,700,0,2
-plaza singapura halal food,SG,venue,/halal/halal-food-at-plaza-singapura,600,0,2
-bedok mall halal food,SG,venue,/halal/halal-food-at-bedok-mall,500,0,2
-halal food near me,SG,discovery,/explore,15000,19,1
-halal food singapore,SG,discovery,/,2900,9,1
+halal food orchard,SG,location,/halal-food/orchard,1000,0,1
+bugis halal food,SG,location,/halal-food/bugis,1100,0,1
+halal food tampines,SG,location,/halal-food/tampines,600,0,1
+paya lebar halal food,SG,location,/halal-food/paya-lebar,600,0,1
+halal food yishun,SG,location,/halal-food/yishun,250,0,2
+arab street halal food,SG,location,/halal-food/arab-street,700,4,2
+halal food jurong east,SG,location,/halal-food/jurong-east,250,0,2
+jewel halal food,SG,venue,/halal-food/jewel-changi-airport,1800,0,1
+jem halal food,SG,venue,/halal-food/jem,1400,0,1
+vivocity halal food,SG,venue,/halal-food/vivocity,1400,4,1
+suntec halal food,SG,venue,/halal-food/suntec-city,1300,0,1
+northpoint halal food,SG,venue,/halal-food/northpoint-city,1200,0,1
+jurong point halal food,SG,venue,/halal-food/jurong-point,1100,1,1
+westgate halal food,SG,venue,/halal-food/westgate,1100,0,1
+imm halal food,SG,venue,/halal-food/imm,1000,0,1
+marina square halal food,SG,venue,/halal-food/marina-square,900,0,2
+nex halal food,SG,venue,/halal-food/nex,800,0,2
+funan halal food,SG,venue,/halal-food/funan,800,0,2
+bugis junction halal food,SG,venue,/halal-food/bugis-junction,700,0,2
+tampines mall halal food,SG,venue,/halal-food/tampines-mall,700,0,2
+causeway point halal food,SG,venue,/halal-food/causeway-point,700,0,2
+plaza singapura halal food,SG,venue,/halal-food/plaza-singapura,600,0,2
+bedok mall halal food,SG,venue,/halal-food/bedok-mall,500,0,2
+halal food near me,SG,discovery,/halal-food-near-me,15000,19,1
+halal food singapore,SG,discovery,/halal-food-singapore,2900,9,1
 halal restaurant singapore,SG,discovery,/halal,3200,14,1
-best halal restaurants singapore,SG,discovery,/halal,1000,1,1
+best halal restaurants singapore,SG,discovery,/best-halal-restaurants-singapore,1000,1,1
 halal food delivery singapore,SG,discovery,/explore,250,0,3
-halal sushi singapore,SG,cuisine,/halal/halal-sushi-singapore,1200,3,1
-halal fine dining singapore,SG,cuisine,/halal/halal-fine-dining-singapore,1100,2,1
-halal high tea singapore,SG,cuisine,/halal/halal-high-tea-singapore,800,0,1
-halal dim sum singapore,SG,cuisine,/halal/halal-dim-sum-singapore,700,1,1
-halal steamboat singapore,SG,cuisine,/halal/halal-steamboat-singapore,700,14,2
-halal korean bbq singapore,SG,cuisine,/halal/halal-korean-singapore,250,2,2
-halal western food singapore,SG,cuisine,/halal/halal-western-singapore,500,0,2
-halal breakfast singapore,SG,cuisine,/halal/halal-breakfast-singapore,700,0,2
-halal mookata,SG,cuisine,/halal/halal-steamboat-singapore,600,0,2
-halal mala,SG,cuisine,/halal/halal-steamboat-singapore,600,0,2
-halal steak,SG,cuisine,/halal/halal-steak-singapore,500,0,2
-nasi lemak singapore,SG,cuisine,/halal/halal-nasi-padang-singapore,800,0,2
-halal buffet singapore,SG,cuisine,/halal/halal-buffet-singapore,5100,38,3
-halal catering singapore,SG,catering,/halal/halal-catering-singapore,1200,22,1
-mini buffet singapore,SG,catering,/halal/halal-catering-singapore,1400,2,1
-wedding catering singapore,SG,catering,/halal/halal-catering-singapore,300,2,2
-malay wedding singapore,SG,wedding,/halal/halal-weddings-singapore,90,1,2
-abaya singapore,SG,retail,/halal/halal-fashion-singapore,350,0,2
-baju kurung singapore,SG,retail,/halal/halal-fashion-singapore,350,20,3
-cupping singapore,SG,retail,/halal/halal-health-singapore,300,0,2
+halal sushi singapore,SG,cuisine,/halal-sushi-singapore,1200,3,1
+halal fine dining singapore,SG,cuisine,/halal-fine-dining-singapore,1100,2,1
+halal high tea singapore,SG,cuisine,/halal-high-tea-singapore,800,0,1
+halal dim sum singapore,SG,cuisine,/halal-dim-sum-singapore,700,1,1
+halal steamboat singapore,SG,cuisine,/halal-steamboat-singapore,700,14,2
+halal korean bbq singapore,SG,cuisine,/halal-korean-singapore,250,2,2
+halal western food singapore,SG,cuisine,/halal-western-singapore,500,0,2
+halal breakfast singapore,SG,cuisine,/halal-breakfast-singapore,700,0,2
+halal mookata,SG,cuisine,/halal-steamboat-singapore,600,0,2
+halal mala,SG,cuisine,/halal-steamboat-singapore,600,0,2
+halal steak,SG,cuisine,/halal-steak-singapore,500,0,2
+nasi lemak singapore,SG,cuisine,/halal-nasi-padang-singapore,800,0,2
+halal buffet singapore,SG,cuisine,/halal-buffet-singapore,5100,38,3
+halal catering singapore,SG,catering,/halal-catering-singapore,1200,22,1
+mini buffet singapore,SG,catering,/halal-catering-singapore,1400,2,1
+wedding catering singapore,SG,catering,/halal-catering-singapore,300,2,2
+malay wedding singapore,SG,wedding,/halal-weddings-singapore,90,1,2
+abaya singapore,SG,retail,/halal-fashion-singapore,350,0,2
+baju kurung singapore,SG,retail,/halal-fashion-singapore,350,20,3
+cupping singapore,SG,retail,/halal-health-singapore,300,0,2
 is paris baguette halal,SG,brand,/is-halal/paris-baguette,1000,1,1
 is genki sushi halal,SG,brand,/is-halal/genki-sushi,700,0,1
 is chateraise halal,SG,brand,/is-halal/chateraise,700,0,1
@@ -77,3 +77,36 @@ umrah package singapore,SG,travel,/travel,250,3,2
 makkah hotels,Global,travel,/travel/mecca,1500,4,2
 madinah hotels,Global,travel,/travel/medina,1100,2,2
 halal restaurants near me,Global,discovery,/explore,23000,4,2
+malay wedding,SG,hub2,/malay-wedding-singapore,450,0,1
+malay wedding package,SG,hub2,/malay-wedding-packages-singapore,150,0,1
+malay wedding venue singapore,SG,hub2,/malay-wedding-venues-singapore,150,0,1
+halal catering,SG,hub2,/halal-catering-singapore,900,12,1
+malay catering singapore,SG,hub2,/malay-catering-singapore,150,16,1
+halal buffet catering singapore,SG,hub2,/halal-buffet-catering-singapore,600,23,2
+wedding buffet catering singapore,SG,hub2,/wedding-buffet-catering-singapore,200,4,1
+pelamin,SG,hub2,/pelamin-wedding-dais-singapore,150,0,1
+mas kahwin singapore,SG,hub2,/mas-kahwin-guide-singapore,200,0,1
+hantaran kahwin,SG,hub2,/hantaran-dulang-guide-singapore,150,0,2
+baju nikah,SG,hub2,/baju-nikah-attire-singapore,150,1,2
+bridal makeup artist singapore,SG,hub2,/malay-bridal-makeup-artists-singapore,150,23,2
+bridal car rental singapore,SG,hub2,/wedding-bridal-car-rental-singapore,200,4,1
+wedding photography package,SG,hub2,/malay-wedding-photography-singapore,150,0,1
+event space singapore,SG,hub2,/event-spaces-singapore,1400,26,2
+wedding venue singapore,SG,hub2,/wedding-venues-singapore,400,5,1
+halal certification singapore,SG,hub3,/halal-certification-singapore-guide,400,20,1
+how to get halal certified,SG,hub3,/how-to-get-halal-certified-muis,200,15,1
+muis halal certification,SG,hub3,/muis-halal-certification-explained,300,18,1
+halal certified restaurants list,SG,hub3,/muis-halal-certified-directory,200,8,1
+muslim owned business singapore,SG,hub3,/muslim-owned-businesses-singapore,150,6,1
+halal business singapore,SG,hub3,/halal-business-directory-singapore,150,12,1
+halal marketing agency,SG,hub3,/halal-marketing-services,100,10,2
+ramadan bazaar singapore,SG,seasonal,/ramadan-bazaar-singapore,150,0,1
+iftar buffet singapore,SG,seasonal,/iftar-buka-puasa-singapore,300,20,2
+hari raya catering singapore,SG,seasonal,/hari-raya-catering-singapore,200,15,1
+halal ramen singapore,SG,cuisine,/halal-ramen-singapore,400,8,1
+halal cake singapore,SG,cuisine,/halal-cakes-singapore,500,22,2
+halal food delivery,SG,cuisine,/halal-food-delivery-singapore,450,0,1
+is mos burger halal,SG,aio,/is-halal/mos-burger,700,0,1
+is chagee halal,SG,aio,/is-halal/chagee,600,0,1
+is cedele halal,SG,aio,/is-halal/cedele,450,0,1
+emicakes halal,SG,aio,/is-halal/emicakes,400,0,2

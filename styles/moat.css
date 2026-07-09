@@ -188,3 +188,34 @@
   .wizard-footer .btn { flex:1; min-height:48px; }
   .has-wizard-footer { padding-bottom: calc(var(--tab-h) + 84px); }
 }
+
+/* ── Halal Confidence ring (listing header, mock-up spec) ── */
+.hc-ring { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
+.hc-ring-label { font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.1; text-align: center; max-width: 86px; }
+
+/* ── Trust at a glance — 4-row status checklist (mock-up spec) ── */
+.tg-card { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--white); box-shadow: var(--sh-sm); overflow: hidden; }
+.tg-head { display: flex; align-items: center; gap: 7px; padding: 10px 14px; font-weight: 800; font-size: .82rem; letter-spacing: .05em; text-transform: uppercase; color: var(--emerald); background: var(--emerald-50); border-bottom: 1px solid var(--line); }
+.tg-row { display: grid; grid-template-columns: 26px minmax(110px, auto) 1fr auto; gap: 10px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.tg-row:last-child { border-bottom: 0; }
+.tg-state { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; align-self: center; font-weight: 800; font-size: .8rem; flex: none; }
+.tg-yes .tg-state { background: var(--emerald); color: #fff; }
+.tg-self .tg-state { background: var(--gold-100); color: var(--gold-700); }
+.tg-no .tg-state { background: var(--cream-200); color: var(--ink-faint); }
+.tg-label { font-weight: 700; color: var(--ink); }
+.tg-no .tg-label { color: var(--ink-soft); }
+.tg-sub { color: var(--ink-faint); font-size: .82rem; line-height: 1.4; }
+.tg-verdict { font-weight: 800; font-size: .78rem; white-space: nowrap; }
+.tg-yes .tg-verdict { color: var(--emerald); }
+.tg-self .tg-verdict { color: var(--gold-700); }
+.tg-no .tg-verdict { color: var(--ink-faint); }
+@media (max-width: 640px) {
+  .tg-row { grid-template-columns: 24px 1fr auto; }
+  .tg-sub { grid-column: 2 / -1; }
+}
+
+/* ── Help keep this accurate (community actions panel) ── */
+.tg-help { margin-top: 14px; padding: 14px; border-radius: var(--r-md); background: var(--emerald-50); border: 1px solid var(--emerald-100); }
+.tg-help-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.tg-help-head strong { font-size: .98rem; }
+.tg-help-head .muted { font-size: .84rem; }
