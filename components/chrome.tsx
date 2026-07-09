@@ -407,10 +407,11 @@ export function Onboarding() {
 
 /* ---------------- TOP NAV (desktop) ---------------- */
 export function TopNav() {
-  const { navigate, state, t } = useApp();
+  const { navigate, state, t, flags } = useApp();
   const user = state.user;
   const links = [
     { id: "explore", label: t("nav.explore") },
+    ...(flags?.hawkerFinder ? [{ id: "hawker", label: "Hawker" }] : []),
     { id: "ask", label: "Ask AI" },
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
@@ -728,6 +729,7 @@ export function Footer() {
       "For business",
       [
         ["List your business", "for-business"],
+        ["Owner getting-started", "for-business-onboarding"],
         ["Advertise with us", "advertise"],
         ["Host an event", "host-event"],
         ["Pricing", "pricing"],

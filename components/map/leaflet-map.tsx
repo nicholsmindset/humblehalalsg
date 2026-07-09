@@ -12,7 +12,7 @@ export interface MapPoint {
   name: string;
   coords: LatLng;
   active?: boolean;
-  kind?: "listing" | "mosque" | "prayer-room" | "user";
+  kind?: "listing" | "mosque" | "prayer-room" | "hawker" | "user";
   /* Popup enrichment — all optional so thin callers (location picker,
      travel maps) keep working with just id/name/coords. Callers pre-format
      strings so this component stays free of directory/geo imports. */
@@ -45,6 +45,15 @@ function pinIcon(point: MapPoint) {
     return L.divIcon({
       className: "hh-pin-wrap",
       html: `<span class="hh-prayer-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+  if (point.kind === "hawker") {
+    // Round warm badge — hawker centre (distinct from mosque gold / prayer emerald).
+    return L.divIcon({
+      className: "hh-pin-wrap",
+      html: `<span class="hh-hawker-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
       iconSize: [24, 24],
       iconAnchor: [12, 12],
     });

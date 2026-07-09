@@ -62,5 +62,10 @@ lite_api.postman_collection.json
 # Supabase CLI local artifacts
 supabase/.temp/
 
+# agent-browser (auth state + saved sessions contain plaintext tokens)
+.agent-browser/
+*.auth.json
+/shots/
+
 # clerk configuration (can include secrets)
 /.clerk/

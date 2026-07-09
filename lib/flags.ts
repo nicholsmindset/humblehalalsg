@@ -19,6 +19,9 @@ export interface Flags {
   leadRouting: boolean;
   paidLeads: boolean;
   passport: boolean;
+  listingEnrichment: boolean;
+  hawkerFinder: boolean;
+  tiktokUgc: boolean;
 }
 
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
@@ -40,6 +43,9 @@ export const FLAG_ENV: Record<FlagKey, string> = {
   leadRouting: "LEAD_ROUTING_ENABLED",
   paidLeads: "PAID_LEADS_ENABLED",
   passport: "PASSPORT_ENABLED",
+  listingEnrichment: "LISTING_ENRICHMENT_ENABLED",
+  hawkerFinder: "HAWKER_FINDER_ENABLED",
+  tiktokUgc: "TIKTOK_UGC_ENABLED",
 };
 
 /** flag → platform_settings column name (global admin override). */
@@ -57,6 +63,9 @@ export const FLAG_COLUMN: Record<FlagKey, string> = {
   leadRouting: "lead_routing_enabled",
   paidLeads: "paid_leads_enabled",
   passport: "passport_enabled",
+  listingEnrichment: "listing_enrichment_enabled",
+  hawkerFinder: "hawker_finder_enabled",
+  tiktokUgc: "tiktok_ugc_enabled",
 };
 
 /** Env-only flags (the fallback layer). Pure + sync — safe to import anywhere. */
@@ -66,4 +75,4 @@ export function envFlags(): Flags {
   return out;
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false, leadRouting: false, paidLeads: false, passport: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false, leadRouting: false, paidLeads: false, passport: false, listingEnrichment: false, hawkerFinder: false, tiktokUgc: false };

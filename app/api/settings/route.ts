@@ -32,8 +32,19 @@ export async function POST(req: Request) {
   }
   if (Object.keys(patch).length === 0) return NextResponse.json({ ok: false, reason: "no_changes" }, { status: 400 });
 
-  const { error } = await admin.from("platform_settings").update(patch).eq("id", 1);
-  if (error) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+  // Verify the write actually lands. A bare `.update().eq("id",1)` returns NO
+  // error when it matches 0 rows (missing singleton row, or an RLS/service-role
+  // misconfig silently blocking the write) — which used to report ok:true while
+  // persisting nothing, so admin toggles looked "on" but no gated surface ever
+  // rendered. `.select()` tells us the affected count; 0 rows → self-heal by
+  // inserting the singleton, and surface any real failure as an honest error.
+  const { data: updated, error } = await admin
+    .from("platform_settings").update(patch).eq("id", 1).select("id");
+  if (error) return NextResponse.json({ ok: false, reason: "db_error", detail: error.message }, { status: 500 });
+  if (!updated || updated.length === 0) {
+    const { error: insErr } = await admin.from("platform_settings").insert({ id: 1, ...patch });
+    if (insErr) return NextResponse.json({ ok: false, reason: "not_persisted", detail: insErr.message }, { status: 500 });
+  }
   bustFlagCache();
   return NextResponse.json({ ok: true });
 }

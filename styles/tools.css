@@ -342,7 +342,9 @@
 @media (max-width: 460px) {
   .tools-hero-copy h1 { font-size: 2.25rem; }
   .tools-search { align-items: flex-start; padding: 13px; }
-  .tools-search input { font-size: .92rem; }
+  /* Keep >=16px so iOS Safari doesn't auto-zoom the page on focus (mobile a11y
+     guard, e2e/mobile.spec.ts). .92rem = 14.7px tripped the zoom threshold. */
+  .tools-search input { font-size: 1rem; }
   .tools-category-pills button, .tools-quick-row button { width: 100%; justify-content: space-between; }
 }
 

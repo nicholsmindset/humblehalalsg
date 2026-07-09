@@ -1,6 +1,8 @@
 /* Mobile-audit probes. Each export is a SELF-CONTAINED function passed to
-   page.evaluate() — it runs in the browser, so no imports and no outer-scope
-   references. Shared by scripts/mobile-audit.mjs and e2e/mobile.spec.ts.
+   page.evaluate() / agent-browser eval — it runs in the browser, so no imports
+   and no outer-scope references. Shared by scripts/mobile-audit.mjs,
+   e2e/mobile.spec.ts, and the agent-browser scripts (scripts/ab-*.mjs) so every
+   surface measures with one source of truth.
 
    Why element-level: styles/styles.css sets html,body { overflow-x: clip },
    so the page never scrolls sideways — over-wide elements are silently CUT

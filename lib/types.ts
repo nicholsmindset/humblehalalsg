@@ -72,6 +72,15 @@ export interface Listing {
   reviews: number;
   badges: BadgeKey[];
   blurb: string;
+  /** Stored SEO overrides (from AI listing-enrichment, admin-approved). Prefer
+   *  these in generateMetadata; fall back to the computed title/description. */
+  seoTitle?: string;
+  seoDescription?: string;
+  /** Hawker stall unit number (e.g. "#01-42"), when this listing is a hawker stall. */
+  stallNo?: string;
+  /** Set when this listing belongs to a hawker centre — it lives in the /hawker
+   *  vertical and is excluded from the general /explore directory feed. */
+  hawkerCentreId?: string;
   img: string;
   tone: string;
   open: boolean;

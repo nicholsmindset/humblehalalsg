@@ -4,9 +4,9 @@ import { slugForListing, slugForEvent } from "./data";
 
 export type ScreenName =
   | "home" | "explore" | "map" | "detail" | "ask"
-  | "for-business" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise" | "growth-partner"
+  | "for-business" | "for-business-onboarding" | "pricing" | "add-listing" | "owner-dashboard" | "admin" | "advertise" | "growth-partner"
   | "login" | "user-dashboard" | "suggest" | "claim" | "report" | "request-quote"
-  | "mosques" | "prayer-rooms" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
+  | "mosques" | "prayer-rooms" | "hawker" | "tools" | "verify" | "disclaimer" | "seo" | "404" | "success"
   | "about" | "contact" | "faq"
   | "events" | "event-detail" | "ticket-detail" | "checkout" | "host-event" | "is-halal" | "blog" | "saved"
   | "travel" | "travel-city" | "travel-hotel" | "travel-booking" | "travel-trips" | "travel-flights";
@@ -20,6 +20,7 @@ const BASE_PATH: Record<string, string> = {
   ask: "/ask",
   map: "/map",
   "for-business": "/for-business",
+  "for-business-onboarding": "/for-business/onboarding",
   advertise: "/advertise",
   "growth-partner": "/growth-partner",
   pricing: "/pricing",
@@ -34,6 +35,7 @@ const BASE_PATH: Record<string, string> = {
   "request-quote": "/quotes",
   mosques: "/mosques",
   "prayer-rooms": "/prayer-rooms",
+  hawker: "/hawker",
   tools: "/tools",
   "is-halal": "/is-halal",
   about: "/about",

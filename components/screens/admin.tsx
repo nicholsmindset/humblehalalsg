@@ -15,6 +15,8 @@ import { FLAG_COLUMN, type FlagKey } from "@/lib/flags";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { useUser } from "@clerk/nextjs";
 import { AdminVerdicts } from "./admin-verdicts";
+import { AdminEnrichment } from "./admin-enrichment";
+import { AdminTiktok } from "./admin-tiktok";
 import { AdminLeads } from "./admin-leads";
 import { AdminBusinesses } from "./admin-businesses";
 import { FLAG_COPY } from "./admin-flag-copy";
@@ -86,7 +88,7 @@ function timeAgo(iso?: unknown): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled = false }: { halalVerdictsEnabled?: boolean; leadRoutingEnabled?: boolean }) {
+export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled = false, listingEnrichmentEnabled = false, tiktokUgcEnabled = false }: { halalVerdictsEnabled?: boolean; leadRoutingEnabled?: boolean; listingEnrichmentEnabled?: boolean; tiktokUgcEnabled?: boolean }) {
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -107,6 +109,8 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
     ["events", "Event approvals", "calendar"],
     ["verification", "Halal verification", "shield-check"],
     ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as [string, string, string]] : []),
+    ...(listingEnrichmentEnabled ? [["enrichment", "Listing enrichment", "sparkles"] as [string, string, string]] : []),
+    ...(tiktokUgcEnabled ? [["tiktok", "TikTok videos", "play"] as [string, string, string]] : []),
     ["hotels", "Hotel verification", "bed"],
     ["reviews", "Review moderation", "star"],
     ["reports", "Reports & corrections", "flag"],
@@ -158,6 +162,8 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
           {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
+          {section==='enrichment' && listingEnrichmentEnabled && <AdminEnrichment toast={toast} />}
+          {section==='tiktok' && tiktokUgcEnabled && <AdminTiktok toast={toast} />}
           {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}

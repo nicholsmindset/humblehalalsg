@@ -303,7 +303,7 @@ export function LoginScreen() {
    USER DASHBOARD
 ============================================================= */
 export function UserDashboardScreen({ passportEnabled = false }: { passportEnabled?: boolean }) {
-  const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection } = useApp();
+  const { navigate, params, state, setUser, setPref, toast, createCollection, toggleInCollection, flags } = useApp();
   const dir = useDirectory();
   const { signOut } = useClerk();
   const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -314,12 +314,20 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
     setUser({ loggedIn: false, role: "user", name: "Guest" });
     navigate("home");
   };
+  // /dashboard is a STATIC route, so the server `passportEnabled` prop is baked
+  // false at build time and never reflects an admin flag flip. The client flags
+  // context (refreshed from /api/flags after mount) is the source of truth — OR
+  // the prop so a dynamic render still works. Keeps the Passport tab reactive.
+  const passportOn = flags?.passport || passportEnabled;
   // Deep-linkable tab (email CTAs use /dashboard?tab=tickets).
-  const TAB_IDS = [...(passportEnabled ? ["passport"] : []), "saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
-  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : (passportEnabled ? "passport" : "saved"));
+  const TAB_IDS = [...(passportOn ? ["passport"] : []), "saved", "collections", "tickets", "requests", "wishlist", "recent", "reviews", "settings"];
+  const [tab, setTab] = useState(TAB_IDS.includes(String(params.tab)) ? String(params.tab) : (passportOn ? "passport" : "saved"));
+  // Honour a ?tab=passport deep-link once the flag arrives client-side (the tab
+  // isn't in TAB_IDS at first render on a static page).
+  useEffect(() => { if (passportOn && String(params.tab) === "passport") setTab("passport"); }, [passportOn, params.tab]);
   const get = (ids: string[]) => ids.map(id => dir.get(id)).filter(Boolean) as typeof dir.listings;
   const saved = get(state.saved), wish = get(state.wishlist), recent = get(state.recent);
-  const tabs: [string, string, string][] = [...(passportEnabled ? [['passport','Passport','trophy'] as [string,string,string]] : []),['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
+  const tabs: [string, string, string][] = [...(passportOn ? [['passport','Passport','trophy'] as [string,string,string]] : []),['saved','Saved places','heart'],['collections','Collections','bookmark'],['tickets','My tickets','ticket'],['requests','My requests','doc'],['wishlist','Want to try','clock'],['recent','Recently viewed','clock'],['reviews','My reviews','star'],['settings','Settings','settings']];
   const cur = ({ saved, wishlist:wish, recent } as Record<string, typeof saved>)[tab];
 
   // Profile settings — real save to /api/user/update (display name) + client pref (home area).
