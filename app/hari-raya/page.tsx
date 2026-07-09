@@ -50,9 +50,9 @@ export default function Page() {
           <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>Get ready for Raya</h2>
           <div className="hub-grid">
             <Link href="/events" className="hub-link"><span>Geylang Serai Hari Raya bazaar</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/halal/halal-catering-singapore" className="hub-link"><span>Hari Raya catering &amp; buffets</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/halal/halal-fashion-singapore" className="hub-link"><span>Baju kurung &amp; modest fashion</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/halal/halal-dessert-singapore" className="hub-link"><span>Raya cookies &amp; desserts</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-catering-singapore" className="hub-link"><span>Hari Raya catering &amp; buffets</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-fashion-singapore" className="hub-link"><span>Baju kurung &amp; modest fashion</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-dessert-singapore" className="hub-link"><span>Raya cookies &amp; desserts</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/tools/islamic-calendar" className="hub-link"><span>Islamic calendar 2026</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/ramadan" className="hub-link"><span>Ramadan 2026 guide</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>

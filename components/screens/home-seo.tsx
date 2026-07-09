@@ -34,11 +34,11 @@ export function HomeSeoContent() {
         <div>
           <h3 style={{ fontSize: "1.18rem", marginBottom: 8 }}>Browse by cuisine</h3>
           <p className="muted">
-            Craving something specific? Explore <Link href="/halal/halal-buffet-singapore">halal buffets</Link>,{" "}
-            <Link href="/halal/halal-sushi-singapore">halal sushi &amp; Japanese</Link>,{" "}
-            <Link href="/halal/halal-korean-singapore">halal Korean</Link>,{" "}
-            <Link href="/halal/halal-fine-dining-singapore">halal fine dining</Link> and{" "}
-            <Link href="/halal/halal-high-tea-singapore">halal high tea</Link> — each a curated guide to the best spots in
+            Craving something specific? Explore <Link href="/halal-buffet-singapore">halal buffets</Link>,{" "}
+            <Link href="/halal-sushi-singapore">halal sushi &amp; Japanese</Link>,{" "}
+            <Link href="/halal-korean-singapore">halal Korean</Link>,{" "}
+            <Link href="/halal-fine-dining-singapore">halal fine dining</Link> and{" "}
+            <Link href="/halal-high-tea-singapore">halal high tea</Link> — each a curated guide to the best spots in
             Singapore.
           </p>
         </div>

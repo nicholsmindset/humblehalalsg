@@ -1,6 +1,7 @@
 /* Maps the prototype's screen names <-> real Next.js URL paths so ported
    screens can keep calling navigate('detail', { id }). */
 import { slugForListing, slugForEvent } from "./data";
+import { seoPathForSlug } from "./seo-pages";
 
 export type ScreenName =
   | "home" | "explore" | "map" | "detail" | "ask"
@@ -77,7 +78,9 @@ export function screenToPath(screen: string, params: Params = {}): string {
     case "ticket-detail":
       return `/tickets/${String(params.id ?? "")}${qs(params, ["id"])}`;
     case "seo":
-      return `/halal/${String(params.slug ?? DEFAULT_SEO_SLUG)}${qs(params, ["slug"])}`;
+      // Canonical public path per page kind (flat-URL migration) — area/venue
+      // pages live at /halal-food/[location], cuisine/cat at top level.
+      return `${seoPathForSlug(String(params.slug ?? DEFAULT_SEO_SLUG))}${qs(params, ["slug"])}`;
     case "travel-city":
       return `/travel/${String(params.city ?? "")}${qs(params, ["city"])}`;
     case "travel-hotel":
@@ -96,6 +99,8 @@ export function pathToScreen(pathname: string): ScreenName {
   if (pathname.startsWith("/events/")) return "event-detail";
   if (pathname.startsWith("/tickets/")) return "ticket-detail";
   if (pathname === "/events") return "events";
+  // Covers /halal/[slug], /halal-food/[location] and the top-level
+  // /halal-…-singapore cuisine/category pages (nav-chrome highlighting only).
   if (pathname.startsWith("/halal")) return "seo";
   if (pathname.startsWith("/travel/hotel")) return "travel-hotel";
   if (pathname.startsWith("/travel/booking")) return "travel-booking";

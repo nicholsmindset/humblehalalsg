@@ -28,6 +28,8 @@ export interface SeoPage {
   /** Cuisine id (cuisine pages) — drives cuisine-aware FAQ content. */
   cuisineId?: string;
   kind?: "area" | "area-cat" | "cat" | "venue" | "cuisine" | "mrt" | "muslim-owned";
+  /** Unified location id for area/venue pages — powers /halal-food/[location]. */
+  locationId?: string;
 }
 
 // Categories that make sense as standalone landing pages (across all verticals).
@@ -174,7 +176,7 @@ function build(): SeoPage[] {
       // uniqueness bar — else the evergreen formula.
       intro: areaProfile(a.id)?.intro
         ?? `Discover the best halal food in ${a.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries, each with a halal-confidence score, reviews and directions.`,
-      areaId: a.id, areaName: a.name, kind: "area",
+      areaId: a.id, areaName: a.name, kind: "area", locationId: a.id,
     });
     pages.push({
       slug: `halal-food-near-${a.id}-mrt`,
@@ -213,7 +215,7 @@ function build(): SeoPage[] {
       // Hand-written local intro when authored; else the evergreen formula.
       intro: areaProfile(d.id)?.intro
         ?? `Discover the best halal food in ${d.name}, Singapore — MUIS-certified and Muslim-owned restaurants, cafés and eateries${d.mrt ? `, all within reach of ${d.mrt}` : ""}, with halal status, reviews and directions.`,
-      areaId: d.id, areaName: d.name, areaNames: d.match, kind: "area",
+      areaId: d.id, areaName: d.name, areaNames: d.match, kind: "area", locationId: d.id,
     });
   }
 
@@ -224,7 +226,7 @@ function build(): SeoPage[] {
       title: titleVenue(v.name),
       h1: `Halal Food at ${v.name}`,
       intro: `Find halal food at ${v.name} — MUIS-certified and Muslim-friendly restaurants, cafés and stalls${v.mrt ? `, a short walk from ${v.mrt} MRT` : ""}, with halal status, prayer info and directions.`,
-      areaName: v.name, areaNames: v.match, kind: "venue",
+      areaName: v.name, areaNames: v.match, kind: "venue", locationId: v.id,
     });
   }
 
@@ -323,3 +325,40 @@ export function relatedSeoPages(page: SeoPage, limit = 6): SeoPage[] {
 /** All venue ids (for sitemap / internal-link hubs). */
 export const SEO_VENUE_IDS = VENUES.map((v) => v.id);
 export const SEO_CUISINE_IDS = CUISINES.map((c) => c.id);
+
+/* =============================================================
+   CANONICAL PUBLIC PATHS (flat-URL migration, 2026-07)
+   Area + venue pages live at /halal-food/[location]; cuisine and
+   Singapore-wide category pages live at top level (/halal-…-singapore,
+   served via the next.config.ts afterFiles rewrite). Everything else
+   (area-cat, mrt, muslim-owned) stays under /halal/[slug]. EVERY
+   emitter of a SEO-page URL (metadata canonical, breadcrumbs, sitemap,
+   llms.txt, internal links, SPA router) must go through seoPagePath —
+   never string-build "/halal/…" directly.
+============================================================= */
+export function seoPagePath(page: SeoPage): string {
+  if ((page.kind === "area" || page.kind === "venue") && page.locationId) {
+    return `/halal-food/${page.locationId}`;
+  }
+  if (page.kind === "cuisine" || page.kind === "cat") return `/${page.slug}`;
+  return `/halal/${page.slug}`;
+}
+
+/** Canonical path for a slug (SPA router seam). Unknown slugs keep the legacy
+ *  /halal/ prefix so old deep links still resolve via the 301 layer. */
+export function seoPathForSlug(slug: string): string {
+  const p = BY_SLUG.get(slug);
+  return p ? seoPagePath(p) : `/halal/${slug}`;
+}
+
+/** SEO page for a /halal-food/[location] segment (area/venue union). */
+export function getSeoPageByLocation(locationId: string): SeoPage | undefined {
+  return PAGES.find(
+    (p) => (p.kind === "area" || p.kind === "venue") && p.locationId === locationId,
+  );
+}
+
+/** All /halal-food/[location] ids (route params + sitemap + tests). */
+export const SEO_LOCATION_IDS = PAGES.filter(
+  (p) => (p.kind === "area" || p.kind === "venue") && p.locationId,
+).map((p) => p.locationId as string);

@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SeoScreen } from "@/components/screens/misc";
-import { allSeoPages, getSeoPage, seoListings, seoFaqItems, seoPageIndexable } from "@/lib/seo-pages";
+import { allSeoPages, getSeoPage, seoListings, seoFaqItems, seoPageIndexable, seoPagePath } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, itemListJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 
+/* Flat-URL migration: area + venue pages moved to /halal-food/[location]
+   (old URLs 301 in next.config.ts), so they're excluded here. Cuisine and
+   Singapore-wide category pages KEEP their /halal/[slug] prerender — their
+   public top-level URLs (/halal-…-singapore) reach this route through the
+   afterFiles rewrite; canonicals point at the public path via seoPagePath. */
 export function generateStaticParams() {
-  return allSeoPages().map((p) => ({ slug: p.slug }));
+  return allSeoPages()
+    .filter((p) => p.kind !== "area" && p.kind !== "venue")
+    .map((p) => ({ slug: p.slug }));
 }
 
 // The SEO page set is fixed at build time, so any slug not in
@@ -30,7 +37,8 @@ export async function generateMetadata({
   return pageMeta({
     title: p.title || p.h1,
     description: p.intro,
-    path: `/halal/${p.slug}`,
+    // Canonical is the PUBLIC path (top-level for cuisine/cat via rewrite).
+    path: seoPagePath(p),
     absoluteTitle: true,
     index: indexable,
   });
@@ -56,7 +64,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             breadcrumbJsonLd([
               { name: "Home", path: "/" },
               { name: "Explore", path: "/explore" },
-              { name: p.h1, path: `/halal/${p.slug}` },
+              { name: p.h1, path: seoPagePath(p) },
             ]),
             faqJsonLd(seoFaqItems(p)),
           ]}

@@ -1,7 +1,7 @@
 import { areas } from "@/lib/data";
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
-import { allSeoPages } from "@/lib/seo-pages";
+import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { allBrands, STATUS_META } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
 import { SITE } from "@/lib/seo";
@@ -51,11 +51,11 @@ officially certified places from self-declared ones.
 ## Browse by category
 ${allSeoPages()
   .filter((p) => p.catId && !p.areaId)
-  .map((p) => `- [${p.h1}](${u}/halal/${p.slug})`)
+  .map((p) => `- [${p.h1}](${u}${seoPagePath(p)})`)
   .join("\n")}
 
 ## Areas covered
-${areas.map((a) => { const n = areaCount(a.name); return `- [${a.name}](${u}/halal/halal-food-in-${a.id})${n > 0 ? `: ${n} halal places` : ""}`; }).join("\n")}
+${areas.map((a) => { const n = areaCount(a.name); return `- [${a.name}](${u}/halal-food/${a.id})${n > 0 ? `: ${n} halal places` : ""}`; }).join("\n")}
 
 ## Featured listings
 ${featured
@@ -65,7 +65,7 @@ ${featured
 ## Popular halal searches (SEO landing pages)
 ${allSeoPages()
   .slice(0, 20)
-  .map((p) => `- [${p.h1}](${u}/halal/${p.slug})`)
+  .map((p) => `- [${p.h1}](${u}${seoPagePath(p)})`)
   .join("\n")}
 
 ## Upcoming events

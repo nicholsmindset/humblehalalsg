@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { seoRedirects, seoRewrites } from "./lib/redirects";
 
 // Security headers applied to every route (security audit H5). The CSP is kept
 // deliberately conservative — it sets ONLY the directives that have no fallback
@@ -27,31 +28,18 @@ const supabaseImageHost = (() => {
   }
 })();
 
-/* Legacy /halal slugs that shipped with truncated or renamed area ids. Each
-   301s (permanent:true → 308) to its canonical page so link equity and GSC
-   impressions consolidate instead of soft-404ing. Extend from GSC as more
-   surface. */
-const LEGACY_HALAL_REDIRECTS = [
-  { from: "halal-food-in-marine", to: "halal-food-in-marine-parade" },
-  { from: "halal-cafes-in-marine", to: "halal-food-in-marine-parade" },
-  { from: "halal-food-in-sultan", to: "halal-food-in-kampong-glam" },
-  { from: "halal-restaurants-in-sultan", to: "halal-food-in-kampong-glam" },
-  { from: "halal-food-in-botanic", to: "halal-food-in-botanic-gardens" },
-  { from: "halal-restaurants-in-botanic", to: "halal-food-in-botanic-gardens" },
-];
-
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (a stray parent lockfile otherwise
   // makes Next infer the wrong root).
   turbopack: {
     root: __dirname,
   },
+  // Flat-URL migration (301s) + the cuisine/category rewrite — see lib/redirects.ts.
   async redirects() {
-    return LEGACY_HALAL_REDIRECTS.map(({ from, to }) => ({
-      source: `/halal/${from}`,
-      destination: `/halal/${to}`,
-      permanent: true,
-    }));
+    return seoRedirects();
+  },
+  async rewrites() {
+    return seoRewrites();
   },
   images: {
     remotePatterns: [

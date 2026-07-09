@@ -5,7 +5,7 @@
    convention, which does not emit an index alongside generateSitemaps. */
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
-import { allSeoPages, seoPageIndexable } from "@/lib/seo-pages";
+import { allSeoPages, seoPageIndexable, seoPagePath } from "@/lib/seo-pages";
 import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrands } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
@@ -103,7 +103,9 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       return allSeoPages()
         .filter((p) => seoPageIndexable(p, listings))
         .map((p) => ({
-          loc: `${base}/halal/${p.slug}`,
+          // Canonical public path (flat-URL migration): /halal-food/[location]
+          // for places, top-level for cuisine/cat, /halal/[slug] for the rest.
+          loc: `${base}${seoPagePath(p)}`,
           lastmod: now,
           changefreq: "weekly",
           priority: 0.7,
