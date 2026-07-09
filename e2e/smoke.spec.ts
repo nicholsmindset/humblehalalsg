@@ -8,7 +8,8 @@ test("home renders key sections", async ({ page }) => {
   await expect(page).toHaveTitle(/Humble Halal/);
   // Unique h2 section headings (avoid footer text collisions under strict mode).
   await expect(page.getByRole("heading", { name: "Discover halal places" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Why Humble Halal" })).toBeVisible();
+  // 3-hub entry row (replaced the old "Why Humble Halal" pillars band).
+  await expect(page.getByRole("heading", { name: "Food. Weddings & catering. Business." })).toBeVisible();
 });
 
 test("business detail has real contact actions", async ({ page }) => {
