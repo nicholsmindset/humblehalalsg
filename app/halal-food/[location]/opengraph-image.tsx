@@ -22,18 +22,18 @@ export default async function OgImage({ params }: { params: Promise<{ location: 
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "#FAF7EF",
+          background: "#F8F6F1",
           fontFamily: "Georgia, serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#B98B36", letterSpacing: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#A96430", letterSpacing: 3 }}>
           HUMBLE HALAL · SINGAPORE
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 70, fontWeight: 700, color: "#0F5C4A", lineHeight: 1.05, maxWidth: 1000 }}>{h1}</div>
+          <div style={{ fontSize: 70, fontWeight: 700, color: "#12525B", lineHeight: 1.05, maxWidth: 1000 }}>{h1}</div>
           <div style={{ fontSize: 30, color: "#586471", maxWidth: 920 }}>{intro}</div>
         </div>
-        <div style={{ fontSize: 26, color: "#0F5C4A", fontWeight: 700 }}>{SITE.url.replace(/^https?:\/\//, "")}</div>
+        <div style={{ fontSize: 26, color: "#12525B", fontWeight: 700 }}>{SITE.url.replace(/^https?:\/\//, "")}</div>
       </div>
     ),
     { ...size },

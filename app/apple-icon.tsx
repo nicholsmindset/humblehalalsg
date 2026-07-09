@@ -13,7 +13,7 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0F5C4A",
+          background: "#12525B",
           borderRadius: 40,
         }}
       >
@@ -21,7 +21,7 @@ export default function AppleIcon() {
           <path
             d="M41 41a13 13 0 11-13-23 10.4 10.4 0 0013 23z"
             fill="none"
-            stroke="#D6A84F"
+            stroke="#C97D3F"
             strokeWidth={3.4}
             strokeLinecap="round"
             strokeLinejoin="round"

@@ -83,7 +83,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0F5C4A",
+  themeColor: "#12525B",
   width: "device-width",
   initialScale: 1,
   // No maximumScale/user-scalable lock — pinch-zoom must stay enabled (WCAG 1.4.4).
@@ -156,7 +156,7 @@ export default async function RootLayout({
       <body>
         <GoogleTagManager />
         <AdsenseScript />
-        <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#0F5C4A" } }}>
+        <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#12525B" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directory} categories={categories} areas={areas}>

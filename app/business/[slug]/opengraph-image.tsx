@@ -24,12 +24,12 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "#0F5C4A",
+          background: "#12525B",
           fontFamily: "Georgia, serif",
-          color: "#FAF7EF",
+          color: "#F8F6F1",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#D6A84F", letterSpacing: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#C97D3F", letterSpacing: 3 }}>
           HUMBLE HALAL · SINGAPORE
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -38,7 +38,7 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
               style={{
                 display: "flex",
                 alignSelf: "flex-start",
-                background: "#D6A84F",
+                background: "#C97D3F",
                 color: "#3a2c08",
                 fontSize: 24,
                 fontWeight: 700,
@@ -50,9 +50,9 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
             </div>
           )}
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05, maxWidth: 1000 }}>{name}</div>
-          <div style={{ fontSize: 32, color: "#DDEAE4" }}>{meta}</div>
+          <div style={{ fontSize: 32, color: "#DCE9EA" }}>{meta}</div>
         </div>
-        <div style={{ fontSize: 30, fontWeight: 700, color: "#D6A84F" }}>{rating}</div>
+        <div style={{ fontSize: 30, fontWeight: 700, color: "#C97D3F" }}>{rating}</div>
       </div>
     ),
     { ...size },

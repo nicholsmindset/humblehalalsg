@@ -200,7 +200,7 @@ export function HomeScreen() {
             <div>
               <span className="eyebrow" style={{ color: "var(--gold)" }}>For business owners</span>
               <h2 style={{ color: "#fff", fontSize: "1.9rem", marginTop: 10, maxWidth: 520 }}>List your business on Humble Halal</h2>
-              <p style={{ color: "#DDEAE4", marginTop: 10, maxWidth: 480 }}>
+              <p style={{ color: "#DCE9EA", marginTop: 10, maxWidth: 480 }}>
                 Get discovered by Singapore’s Muslim community, earn trust with clear halal labels, and turn searches into visits.
               </p>
               <div className="flex g10 wrap" style={{ marginTop: 18 }}>

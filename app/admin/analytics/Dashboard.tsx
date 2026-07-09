@@ -418,5 +418,5 @@ function VendorDetail({ v, onBack }: { v: VendorRow; onBack: () => void }) {
 }
 
 function Skeleton() {
-  return <div style={{ height: 300, borderRadius: 18, background: "rgba(15,92,74,.08)" }} />;
+  return <div style={{ height: 300, borderRadius: 18, background: "rgba(18,82,91,.08)" }} />;
 }
