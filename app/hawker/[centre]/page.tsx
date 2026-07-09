@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerFlags } from "@/lib/feature-flags";
-import { getHawkerCentres, getHawkerCentre, getStallsForCentre } from "@/lib/hawker";
+import { getHawkerCentre, getStallsForCentre } from "@/lib/hawker";
 import { pageMeta } from "@/lib/seo";
 import { mapsSearchUrl } from "@/lib/geo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { HawkerMap } from "@/components/hawker-map";
 import { HalalConfidenceBadge } from "@/components/halal-confidence-badge";
 
-export async function generateStaticParams() {
-  return (await getHawkerCentres()).map((c) => ({ centre: c.id }));
-}
+// Flag-gated: render on demand so a hawkerFinder toggle reflects immediately
+// (a prerendered notFound() would otherwise stay cached after the flag flips).
+// Low page count + low traffic, so on-demand rendering is fine; still SSR'd for SEO.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ centre: string }> }): Promise<Metadata> {
   const { centre } = await params;

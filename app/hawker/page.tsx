@@ -7,6 +7,10 @@ import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { HawkerMap } from "@/components/hawker-map";
 
+// Flag-gated: render on every request so an admin toggle of hawkerFinder is
+// reflected immediately (no stale ISR 404 lingering after the flag flips on).
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = pageMeta({
   title: "Halal Hawker Finder — halal stalls by hawker centre in Singapore",
   description:
