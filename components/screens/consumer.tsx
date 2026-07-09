@@ -18,7 +18,8 @@ import { FreshnessActions } from "../freshness-actions";
 import { TikTokVideos } from "../tiktok-videos";
 import { canUse, galleryMax } from "@/lib/plans";
 import { dailyRotate } from "@/lib/rotate";
-import { HalalConfidenceBadge } from "../halal-confidence-badge";
+import { HalalConfidenceRing } from "../halal-confidence-badge";
+import { TrustAtAGlance } from "../trust-glance";
 import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
@@ -1285,7 +1286,9 @@ export function DetailScreen() {
                 </button>
               )}
             </div>
-            <div className="flex g8 detail-headbtns">
+            <div className="flex g8 detail-headbtns" style={{ alignItems: "center" }}>
+              {/* Mock-up: at-a-glance confidence ring in the header. */}
+              <HalalConfidenceRing item={item} />
               <button className="btn btn-outline btn-sm" onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
                 <Icon name="heart" size={17} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : undefined }} /> {saved ? "Saved" : "Save"}</button>
             </div>
@@ -1298,21 +1301,44 @@ export function DetailScreen() {
               <span className={`status-dot ${openNow ? "open" : "closed"}`}></span>{hoursLabel}</span>
           </div>
 
-          {/* badge row — halal status (muis/admin) is shown once in the confidence
-              card below, so keep only the non-status badges here (owned/family). */}
-          <div className="lc-badges" style={{ marginTop: 16, gap: 8 }}>
-            {item.badges.filter((b) => b !== "muis" && b !== "admin").map((b) => <Badge key={b} type={b} lg />)}
+          {/* Trust at a glance — the mock-up's explicit 4-row status checklist
+              (MUIS / Admin Verified / Muslim-Owned / Halal-Friendly). Non-status
+              extras (family, prayer) keep their badges beneath it. */}
+          <TrustAtAGlance item={item} />
+          <div className="lc-badges" style={{ marginTop: 10, gap: 8 }}>
+            {item.badges.filter((b) => b !== "muis" && b !== "admin" && b !== "owned" && b !== "friendly").map((b) => <Badge key={b} type={b} lg />)}
             {item.prayer && <Badge type="prayer" lg />}
           </div>
 
-          {/* Halal Confidence pill — only when the richer verification card (below)
-              isn't shown, so the score+tier never appear twice. */}
-          {!(item.certified && !muisUnbacked(item)) && <HalalConfidenceBadge item={item} />}
+          {/* (The old standalone confidence pill was removed — the header ring
+              is now the single at-a-glance score; details live in the card.) */}
 
           {/* Verification provenance + community confirmation */}
           <VerificationCard item={item} navigate={navigate} toast={toast} />
-          {/* Community freshness one-tap (still here / report closed) */}
-          <FreshnessActions businessId={item.id} lastVerifiedAgo={timeAgo(item.verify?.verified)} />
+
+          {/* Help keep this accurate — community actions (mock-up spec). */}
+          <div className="tg-help">
+            <div className="tg-help-head">
+              <strong>Help keep this accurate</strong>
+              <span className="muted">Your input helps the Muslim community.</span>
+            </div>
+            <FreshnessActions businessId={item.id} lastVerifiedAgo={timeAgo(item.verify?.verified)} />
+            <div className="flex g8 wrap" style={{ marginTop: 8 }}>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={async () => {
+                  logLead("share");
+                  const r = await shareOrCopy({ title: item.name, text: item.blurb, path: `/business/${item.slug}` });
+                  toast(r === "shared" ? "Shared — jazakallahu khairan!" : r === "copied" ? "Link copied to clipboard" : "Couldn't share");
+                }}
+              >
+                <Icon name="share" size={15} /> I&apos;ll share this place
+              </button>
+              <button className="btn btn-outline btn-sm" onClick={() => navigate("report", { id: item.id })}>
+                <Icon name="flag" size={15} /> Something&apos;s wrong
+              </button>
+            </div>
+          </div>
 
           {/* contact buttons — real intents (tel:, wa.me, maps, web, ig) */}
           <div className="contact-grid">

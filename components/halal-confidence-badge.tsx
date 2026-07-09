@@ -50,3 +50,35 @@ export function HalalConfidenceBadge(props: Props) {
     </div>
   );
 }
+
+/* Circular score ring (mock-up spec) — the at-a-glance "88/100 · High
+   Confidence" dial shown in the listing header. Same HalalRank score as the
+   chip; the visible tier label keeps FAQPage/AIO copy consistent. */
+export function HalalConfidenceRing(props: Props) {
+  const hs: HalalScore = props.score ?? scoreListing(props.item);
+  const tone = scoreTone(hs.tier);
+  const R = 30;
+  const C = 2 * Math.PI * R;
+  const filled = (Math.max(0, Math.min(100, hs.score)) / 100) * C;
+  return (
+    <div
+      className="hc-ring"
+      role="img"
+      aria-label={`Halal confidence score ${hs.score} out of 100 — ${hs.label}. ${hs.blurb}`}
+      title={hs.blurb}
+    >
+      <svg viewBox="0 0 72 72" width="72" height="72" aria-hidden="true">
+        <circle cx="36" cy="36" r={R} fill="none" stroke="var(--line)" strokeWidth="5" />
+        <circle
+          cx="36" cy="36" r={R} fill="none"
+          stroke={tone} strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={`${filled} ${C - filled}`}
+          transform="rotate(-90 36 36)"
+        />
+        <text x="36" y="34" textAnchor="middle" fontSize="19" fontWeight="800" fill="var(--ink)">{hs.score}</text>
+        <text x="36" y="47" textAnchor="middle" fontSize="8.5" fontWeight="700" fill="var(--ink-faint)">/100</text>
+      </svg>
+      <span className="hc-ring-label" style={{ color: tone }}>{hs.label}</span>
+    </div>
+  );
+}
