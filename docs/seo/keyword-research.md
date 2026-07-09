@@ -4,6 +4,28 @@
 
 ---
 
+## ⚠️ July 2026 addendum — flat-URL migration + blueprint build-out (PRs #175–#180)
+
+URL references below predate the **flat-URL migration**. The canonical scheme is now
+(single source: `seoPagePath()` in `lib/seo-pages.ts` — never string-build URLs):
+
+| Page class | Old | Canonical now |
+|---|---|---|
+| Area/district/mall food pages | `/halal/halal-food-{in,at}-{x}` | **`/halal-food/{x}`** (app/halal-food/[location]) |
+| Cuisine + SG-wide category pages | `/halal/halal-{x}-singapore` | **`/halal-{x}-singapore`** (top level via rewrite) |
+| area-cat / mrt / muslim-owned | unchanged | `/halal/[slug]` |
+
+All old URLs 301 in one hop (`lib/redirects.ts`, enforced by `tests/unit/seo-paths.test.ts`).
+
+**Built from the Keyword Master Plan (marketing blueprint), July 2026:**
+- Hub 1: `/halal-food-singapore` pillar, `/halal-food-near-me`, `/best-` + `/new-halal-restaurants-singapore`, cuisines mookata/ramen/cakes/food-delivery, locations amk-hub/compass-one/clarke-quay/holland-village
+- Hub 2 (all new, 19 pages): `/malay-wedding-singapore` pillar + packages/venues/attire/pelamin/mas-kahwin/hantaran/photography/makeup/bridal-car + the catering cluster (`/halal-catering-singapore` is now a real directory hub, not a cuisine page) + `/event-spaces-singapore`, `/wedding-venues-singapore` — `weddings` sitemap segment
+- Hub 3: certification guide trio, `/muis-halal-certified-directory`, `/halal-business-directory-singapore`, `/muslim-owned-businesses-singapore`, `/halal-marketing-services`, seasonal `/ramadan-bazaar-`, `/iftar-buka-puasa-`, `/hari-raya-catering-singapore`
+- is-halal brands +4: mos-burger, chagee, cedele, emicakes
+- **Known cannibalisation watch:** `/best-halal-restaurants-singapore` (dynamic ranking) vs `/blog/best-halal-restaurants-singapore-2026` (editorial) — monitor GSC; if they compete, canonical or 301 the blog post into the page.
+
+---
+
 ## 1. Executive summary
 
 Humble Halal competes **entirely on organic search**. The research confirms an unusually favourable landscape: the Singapore halal niche is **high-intent and low-competition** — most money keywords sit at **KD 0–15** with 300–2,000 monthly searches, and the Islamic-tools niche offers **global** terms in the tens of thousands at KD 1–8.

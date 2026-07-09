@@ -1,5 +1,8 @@
 {
   "byAreaCat": {
+    "East": {
+      "hawker": 3
+    },
     "One-North": {
       "cafes": 1,
       "restaurants": 1
@@ -17,6 +20,9 @@
     "CBD": {
       "cafes": 1
     },
+    "Harbourfront": {
+      "cafes": 1
+    },
     "City Hall": {
       "restaurants": 1
     },
@@ -25,9 +31,6 @@
     },
     "Sentosa": {
       "restaurants": 2
-    },
-    "Harbourfront": {
-      "cafes": 1
     },
     "Bras Basah": {
       "restaurants": 2
@@ -45,6 +48,9 @@
     "Bugis": {
       "cafes": 3,
       "restaurants": 1
+    },
+    "Central": {
+      "hawker": 6
     },
     "Haji Lane": {
       "cafes": 3,
@@ -279,6 +285,7 @@
     }
   },
   "byCat": {
+    "hawker": 9,
     "cafes": 96,
     "restaurants": 125,
     "muslim-owned": 1,
