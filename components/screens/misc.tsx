@@ -8,6 +8,7 @@ import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import type { BadgeKey, EventItem } from "@/lib/types";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
+import { HelpCallout } from "../help-callout";
 import { useClerk } from "@clerk/nextjs";
 // Classic (resource-based) sign-in/up API: create → prepare → attempt → setActive.
 // v7's default useSignIn/useSignUp are the newer signals API; the legacy entry
@@ -423,6 +424,7 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
           )}
           {tab==='collections' && (
             <div className="stack g16">
+              <HelpCallout feature="collections" />
               <div className="flex between center wrap g10">
                 <p className="muted" style={{fontWeight:600}}>Organise your saved places into named lists.</p>
                 <button className="btn btn-primary btn-sm" onClick={newCollection}><Icon name="plus" size={16}/> New collection</button>
@@ -458,10 +460,11 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
             </div>
           )}
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
-          {tab==='requests' && <MyRequests navigate={navigate} state={state} />}
-          {tab==='passport' && <PassportScreen />}
-          {tab==='reviews' && (
-            reviewsLoaded && myReviews.length===0
+          {tab==='requests' && <><HelpCallout feature="requests" /><MyRequests navigate={navigate} state={state} /></>}
+          {tab==='passport' && <><HelpCallout feature="passport" /><PassportScreen /></>}
+          {tab==='reviews' && (<>
+            <HelpCallout feature="reviews-user" />
+            {reviewsLoaded && myReviews.length===0
               ? <Empty icon="star" title="No reviews yet" body="You haven’t written any reviews yet. Explore places and share your experience." action="Start exploring" onAction={()=>navigate('explore')} />
               : <div className="stack g14">
                   {myReviews.map(r=>(
@@ -479,8 +482,8 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
                       <p className="faint" style={{marginTop:8, fontSize:'.78rem'}}>{new Date(r.created_at).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' })}</p>
                     </div>
                   ))}
-                </div>
-          )}
+                </div>}
+          </>)}
           {tab==='settings' && (
             <div className="card" style={{padding:22, maxWidth:540}}>
               <h3 style={{fontSize:'1.2rem'}}>Profile settings</h3>
@@ -1133,14 +1136,14 @@ export function SeoScreen() {
           </div>
 
           <section className="newsletter-card mt24">
-            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Free guide</span>
-            <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>Get the Ultimate Halal Food Guide by MRT</h2>
+            <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Weekly halal guide</span>
+            <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>New halal finds, every week</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Be first to hear about new {noun} {placeLabel} in our weekly newsletter. Subscribe and we&apos;ll email you
-              the free guide — MUIS-verified spots sorted by MRT station.
+              Be first to hear about new {noun} {placeLabel} — Muslim-owned openings, verified spots and community
+              favourites — in our free weekly newsletter.
             </p>
             <div style={{ marginTop: 14 }}>
-              <Newsletter source="directory" cta="Send me the guide" />
+              <Newsletter source="directory" cta="Subscribe" />
             </div>
           </section>
 

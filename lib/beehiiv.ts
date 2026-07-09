@@ -23,7 +23,7 @@ export function deriveIntent(source: string): string {
   return "foodie";
 }
 
-export type BeehiivResult = { ok: boolean; already?: boolean; simulated?: boolean };
+export type BeehiivResult = { ok: boolean; already?: boolean; simulated?: boolean; status?: number; configured?: boolean };
 
 /* Upsert a subscriber into beehiiv with source/intent/stage attribution.
    - `sendWelcome` defaults true (newsletter opt-ins); set false for transactional
@@ -41,7 +41,7 @@ export async function beehiivSubscribe(p: {
 }): Promise<BeehiivResult> {
   const apiKey = process.env.BEEHIIV_API_KEY;
   const publicationId = process.env.BEEHIIV_PUBLICATION_ID;
-  if (!apiKey || !publicationId) return { ok: true, simulated: true };
+  if (!apiKey || !publicationId) return { ok: true, simulated: true, configured: false };
 
   const custom_fields: BeehiivField[] = [
     { name: "source", value: p.source },
@@ -71,9 +71,9 @@ export async function beehiivSubscribe(p: {
         }),
       },
     );
-    if (res.ok) return { ok: true, ...(res.status === 200 ? { already: true } : {}) };
-    return { ok: false };
+    if (res.ok) return { ok: true, configured: true, ...(res.status === 200 ? { already: true } : {}) };
+    return { ok: false, configured: true, status: res.status };
   } catch {
-    return { ok: false };
+    return { ok: false, configured: true };
   }
 }
