@@ -659,3 +659,14 @@ body[data-accent="vibrant"] .tag { background:var(--gold-50); color:var(--gold-7
 .faq-jump-link { font-size: .82rem; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line, #e7e2d6); color: var(--emerald, #0f5c4a); text-decoration: none; white-space: nowrap; }
 .faq-jump-link:hover { background: var(--emerald-50, #e9f6f0); }
 .faq-subgroup { scroll-margin-top: 110px; }
+
+/* Dashboard help callout */
+.help-callout { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; padding: 12px 14px; margin-bottom: 16px; border: 1px solid var(--emerald-200, #bfe3d6); border-radius: 12px; background: var(--emerald-50, #e9f6f0); }
+.help-callout-title { font-weight: 800; font-size: .95rem; display: flex; align-items: center; gap: 6px; color: var(--emerald-800, #0b4a3b); }
+.help-callout-what { margin: 4px 0 0; font-size: .88rem; color: var(--ink, #23271f); line-height: 1.45; }
+.help-callout-how { margin-top: 6px; }
+.help-callout-how > summary { cursor: pointer; font-size: .82rem; font-weight: 700; color: var(--emerald, #0f5c4a); }
+.help-callout-how ol { margin: 8px 0 0 18px; font-size: .85rem; line-height: 1.5; display: grid; gap: 4px; }
+.help-callout-more { display: inline-block; margin-top: 8px; font-size: .82rem; font-weight: 700; color: var(--emerald, #0f5c4a); }
+.help-callout-x { flex: none; border: 0; background: transparent; cursor: pointer; color: var(--ink-soft, #5b6d64); padding: 2px; }
+.help-reopen { border: 0; background: transparent; cursor: pointer; color: var(--emerald, #0f5c4a); padding: 2px; }
