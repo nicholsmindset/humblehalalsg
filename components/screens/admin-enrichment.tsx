@@ -80,6 +80,32 @@ export function AdminEnrichment({ toast }: { toast: (m: string) => void }) {
 
   const setEdit = (id: string, field: keyof Gen, value: string) => setEdits((m) => ({ ...m, [id]: { ...m[id], [field]: value } }));
 
+  // Phase 2/3 — image acquisition. Keyed by business_id.
+  const [photo, setPhoto] = useState<Record<string, { url?: string; busy?: boolean }>>({});
+  const findPhoto = async (businessId: string) => {
+    setPhoto((p) => ({ ...p, [businessId]: { ...p[businessId], busy: true } }));
+    try {
+      const res = await fetch("/api/admin/enrich/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, action: "find" }) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) {
+        toast(d.error === "firecrawl_not_configured" ? "Set FIRECRAWL_API_KEY first" : d.error === "no_photo_found" ? "No real photo found" : "Photo search failed");
+        setPhoto((p) => ({ ...p, [businessId]: { busy: false } }));
+      } else {
+        toast(d.upscaled ? "Found + upscaled a photo" : "Found a photo");
+        setPhoto((p) => ({ ...p, [businessId]: { url: d.candidateUrl, busy: false } }));
+      }
+    } catch { toast("Photo search failed"); setPhoto((p) => ({ ...p, [businessId]: { busy: false } })); }
+  };
+  const applyPhoto = async (businessId: string, candidateUrl: string) => {
+    setPhoto((p) => ({ ...p, [businessId]: { ...p[businessId], busy: true } }));
+    try {
+      const res = await fetch("/api/admin/enrich/image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, action: "apply", candidateUrl }) });
+      const d = await res.json();
+      toast(res.ok && d.ok ? "Photo applied to listing" : "Apply failed");
+    } catch { toast("Apply failed"); }
+    setPhoto((p) => ({ ...p, [businessId]: { url: undefined, busy: false } }));
+  };
+
   return (
     <div className="stack g16">
       <div className="notice notice-warn">
@@ -144,6 +170,24 @@ export function AdminEnrichment({ toast }: { toast: (m: string) => void }) {
                   </div>
                 </div>
                 {r.generated.highlights?.length > 0 && <p className="faint" style={{ fontSize: ".82rem" }}><strong>Highlights:</strong> {r.generated.highlights.join(" · ")}</p>}
+              </div>
+
+              {/* Phase 2/3 — real photo acquisition (Firecrawl + optional upscale). */}
+              <div className="stack g8" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line,#e7e2d6)" }}>
+                <div className="flex between center wrap g8">
+                  <span className="faint" style={{ fontSize: ".82rem" }}><strong>Listing photo</strong> — find a real image from the web</span>
+                  <button className="btn btn-soft btn-sm" disabled={photo[r.business_id]?.busy} onClick={() => findPhoto(r.business_id)}>
+                    <Icon name="image" size={14} /> {photo[r.business_id]?.busy ? "Searching…" : "Find real photo"}
+                  </button>
+                </div>
+                {photo[r.business_id]?.url && (
+                  <div className="flex g10 center wrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo[r.business_id].url} alt="candidate" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: "1px solid var(--line,#e7e2d6)" }} />
+                    <button className="btn btn-primary btn-sm" disabled={photo[r.business_id]?.busy} onClick={() => applyPhoto(r.business_id, photo[r.business_id].url as string)}><Icon name="check" size={14} /> Use this photo</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setPhoto((p) => ({ ...p, [r.business_id]: { url: undefined } }))}>Discard</button>
+                  </div>
+                )}
               </div>
 
               <div className="flex g8 wrap" style={{ marginTop: 12 }}>
