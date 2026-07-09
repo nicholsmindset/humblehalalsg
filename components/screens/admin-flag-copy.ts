@@ -17,4 +17,5 @@ export const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
   halalVerdicts: { title: "Halal verdicts", desc: "Admin halal-verdict workflow surfaced on listing pages." },
   leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
   passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
+  listingEnrichment: { title: "Listing enrichment", desc: "AI drafts an improved description + SEO for submitted listings; admins review before it writes to the live listing. Adds a Listing-enrichment tab to admin." },
 };

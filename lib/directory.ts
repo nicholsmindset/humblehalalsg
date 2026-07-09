@@ -55,6 +55,8 @@ export function rowToListing(r: Row): Listing {
     reviews: num(r.review_count, 0),
     badges,
     blurb: str(r.description),
+    seoTitle: str(r.seo_title) || undefined,
+    seoDescription: str(r.seo_description) || undefined,
     img: "",
     tone: "emerald",
     open: true,

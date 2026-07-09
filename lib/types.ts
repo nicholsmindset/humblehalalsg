@@ -72,6 +72,10 @@ export interface Listing {
   reviews: number;
   badges: BadgeKey[];
   blurb: string;
+  /** Stored SEO overrides (from AI listing-enrichment, admin-approved). Prefer
+   *  these in generateMetadata; fall back to the computed title/description. */
+  seoTitle?: string;
+  seoDescription?: string;
   img: string;
   tone: string;
   open: boolean;

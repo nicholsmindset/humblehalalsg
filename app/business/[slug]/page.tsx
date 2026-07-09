@@ -25,8 +25,9 @@ export async function generateMetadata({
   const certified = l.certified ? "MUIS / verified halal" : "halal-friendly";
   const reviewLine = l.reviews > 0 ? ` ${l.rating}★ from ${l.reviews} reviews.` : "";
   return pageMeta({
-    title: joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
-    description: `${l.blurb} ${certified} listing in ${l.area}, Singapore.${reviewLine}`,
+    // Prefer admin-approved AI-enriched SEO when present; else the computed default.
+    title: l.seoTitle || joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
+    description: l.seoDescription || `${l.blurb} ${certified} listing in ${l.area}, Singapore.${reviewLine}`,
     path: `/business/${l.slug}`,
     image: l.image,
   });
