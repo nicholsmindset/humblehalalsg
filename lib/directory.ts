@@ -58,6 +58,7 @@ export function rowToListing(r: Row): Listing {
     seoTitle: str(r.seo_title) || undefined,
     seoDescription: str(r.seo_description) || undefined,
     stallNo: str(r.stall_no) || undefined,
+    hawkerCentreId: str(r.hawker_centre_id) || undefined,
     img: "",
     tone: "emerald",
     open: true,
@@ -121,7 +122,9 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
     if (!sb) return [] as Listing[];
     const { data, error } = await sb.from("businesses").select("*").eq("status", "published").limit(2000);
     const fromDb = !error && data && data.length > 0;
-    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing) : ([] as Listing[]);
+    // Hawker stalls live in their own /hawker vertical (like mosques / prayer
+    // rooms) — keep them out of the general /explore directory feed.
+    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing).filter((l) => !l.hawkerCentreId) : ([] as Listing[]);
     const ratings = await ratingsBySlug(sb);
     if (ratings.size) {
       for (const l of base) {
@@ -137,5 +140,15 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
 
 export async function getListingBySlug(slug: string): Promise<Listing | undefined> {
   const all = await getDirectory();
-  return all.find((l) => l.slug === slug) || all.find((l) => l.id === slug);
+  const hit = all.find((l) => l.slug === slug) || all.find((l) => l.id === slug);
+  if (hit) return hit;
+  // Hawker stalls are excluded from getDirectory (their own vertical) — resolve
+  // them directly so /business/[slug] still works for a stall.
+  if (!supabaseConfigured) return undefined;
+  try {
+    const sb = getSupabaseAdmin();
+    if (!sb) return undefined;
+    const { data } = await sb.from("businesses").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
+    return data ? rowToListing(data as Row) : undefined;
+  } catch { return undefined; }
 }

@@ -47,11 +47,6 @@ export default async function Page() {
               {stallTotal > 0 ? `${stallTotal} halal stalls across ${total} hawker centres` : `${total} hawker centres`} in Singapore — Muslim-owned and
               halal-friendly stalls grouped by centre, each with trust signals and a Halal Confidence Score. Always confirm on site.
             </p>
-            {stallTotal > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <Link href="/explore?cat=hawker" className="btn btn-primary">Find halal hawker stalls near you →</Link>
-              </div>
-            )}
             {groups.length > 1 && (
               <nav className="mosque-jump" aria-label="Jump to region">
                 {groups.map((g) => (

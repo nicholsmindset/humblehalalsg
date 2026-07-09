@@ -78,6 +78,9 @@ export interface Listing {
   seoDescription?: string;
   /** Hawker stall unit number (e.g. "#01-42"), when this listing is a hawker stall. */
   stallNo?: string;
+  /** Set when this listing belongs to a hawker centre — it lives in the /hawker
+   *  vertical and is excluded from the general /explore directory feed. */
+  hawkerCentreId?: string;
   img: string;
   tone: string;
   open: boolean;
