@@ -19,4 +19,5 @@ export const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
   passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
   listingEnrichment: { title: "Listing enrichment", desc: "AI drafts an improved description + SEO for submitted listings; admins review before it writes to the live listing. Adds a Listing-enrichment tab to admin." },
   hawkerFinder: { title: "Hawker Finder", desc: "The halal hawker-stall finder (/hawker) — a map + centre pages grouping halal stalls by hawker centre. Surfaces the Hawker nav link." },
+  tiktokUgc: { title: "TikTok features", desc: "Community TikTok videos: creators/users submit a TikTok about a listing (/feature-tiktok), an AI classifies + place-matches it as a draft, admins approve, and approved videos show on the listing as consent-gated embeds. Adds a TikTok-queue tab to admin." },
 };

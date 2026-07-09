@@ -14,6 +14,7 @@ import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hour
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
 import { timeAgo } from "@/lib/time";
 import { FreshnessActions } from "../freshness-actions";
+import { TikTokVideos } from "../tiktok-videos";
 import { canUse, galleryMax } from "@/lib/plans";
 import { dailyRotate } from "@/lib/rotate";
 import { HalalConfidenceBadge } from "../halal-confidence-badge";
@@ -1290,6 +1291,9 @@ export function DetailScreen() {
           {tab === "locations" && <LocationsPanel item={item} outletIdx={outletIdx} setOutletIdx={setOutletIdx} toast={toast} />}
           {tab === "reviews" && <DetailReviews item={item} />}
           {tab === "info" && <DetailInfo item={item} navigate={navigate} />}
+
+          {/* community TikTok videos (renders nothing unless approved videos exist) */}
+          <TikTokVideos slug={item.slug || item.id} name={item.name} />
 
           {/* footer actions */}
           <div className="detail-footactions">
