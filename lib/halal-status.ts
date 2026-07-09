@@ -194,6 +194,26 @@ export const brands: BrandHalal[] = [
     slug: "fish-and-co", brand: "Fish & Co.", category: "Seafood restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
     answer: "Fish & Co. is not MUIS halal-certified in Singapore — its outlets are not listed on the MUIS HalalSG register and it serves alcohol. Treat it as not halal-certified and verify on HalalSG.",
   },
+  // Blueprint AIO-engine targets (Keyword Master Plan, Is-X-Halal tab).
+  {
+    slug: "mos-burger", brand: "MOS Burger", category: "Fast food", status: "not-certified", lastChecked: "July 2026", source: PUBLIC_INFO,
+    answer: "MOS Burger is not MUIS halal-certified in Singapore. Its outlets are not listed on the MUIS HalalSG register, and the brand has stated it does not hold halal certification here. Treat it as not halal-certified and verify the latest status on MUIS HalalSG.",
+    aliases: ["mos"],
+  },
+  {
+    slug: "chagee", brand: "CHAGEE", category: "Tea & beverages", status: "not-certified", lastChecked: "July 2026", source: PUBLIC_INFO,
+    answer: "CHAGEE is not MUIS halal-certified in Singapore — its outlets are not listed on the MUIS HalalSG register. While its teas may not contain obvious non-halal ingredients, without certification the status of flavourings and cross-handling is unverified. Confirm on MUIS HalalSG.",
+    aliases: ["bawang chaji", "chagee tea"],
+  },
+  {
+    slug: "cedele", brand: "Cedele", category: "Bakery & café", status: "not-certified", lastChecked: "July 2026", source: PUBLIC_INFO,
+    answer: "Cedele is not MUIS halal-certified in Singapore. Its bakery-cafés are not on the MUIS HalalSG register, and some cakes and dishes may contain alcohol or non-halal ingredients. Treat it as not halal-certified and verify on MUIS HalalSG.",
+  },
+  {
+    slug: "emicakes", brand: "Emicakes", category: "Cake shop", status: "certified", lastChecked: "July 2026", source: PUBLIC_INFO,
+    answer: "Yes — Emicakes is MUIS halal-certified in Singapore. The long-running cake chain holds halal certification and is a popular choice for halal birthday and celebration cakes. As certificates are renewed periodically, confirm the current listing on the MUIS HalalSG register.",
+    aliases: ["emi cakes"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));

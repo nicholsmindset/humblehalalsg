@@ -53,6 +53,8 @@ const CUISINE_ALIASES: Array<[from: string, to: string]> = [
 export function seoRedirects(): Redirect[] {
   return [
     ...LEGACY_HALAL_REDIRECTS,
+    // Blueprint money-page keyword URL → the existing claim/submit funnel.
+    { source: "/add-your-business", destination: "/add-listing", permanent: true },
     ...LOCATION_ALIASES.map(([from, to]) => ({
       source: `/halal-food/${from}`,
       destination: `/halal-food/${to}`,
