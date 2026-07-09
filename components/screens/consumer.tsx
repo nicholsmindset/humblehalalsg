@@ -12,6 +12,8 @@ import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
+import { timeAgo } from "@/lib/time";
+import { FreshnessActions } from "../freshness-actions";
 import { canUse, galleryMax } from "@/lib/plans";
 import { dailyRotate } from "@/lib/rotate";
 import { HalalConfidenceBadge } from "../halal-confidence-badge";
@@ -1242,6 +1244,8 @@ export function DetailScreen() {
 
           {/* Verification provenance + community confirmation */}
           <VerificationCard item={item} navigate={navigate} toast={toast} />
+          {/* Community freshness one-tap (still here / report closed) */}
+          <FreshnessActions businessId={item.id} lastVerifiedAgo={timeAgo(item.verify?.verified)} />
 
           {/* contact buttons — real intents (tel:, wa.me, maps, web, ig) */}
           <div className="contact-grid">
@@ -1524,7 +1528,7 @@ export function VerificationCard({ item, navigate, toast }: {
             <div className="verif-meta">
               {v.certNo && <span className="verif-metaitem"><span className="faint">Cert no.</span> <span className="kbd-mono" style={{ fontWeight: 700 }}>{v.certNo}</span></span>}
               {v.expires && <span className="verif-metaitem"><span className="faint">Valid to</span> <strong>{v.expires}</strong></span>}
-              {v.verified && <span className="verif-metaitem"><span className="faint">Last verified</span> <strong>{v.verified}</strong></span>}
+              {v.verified && <span className="verif-metaitem"><span className="faint">Last verified</span> <strong>{timeAgo(v.verified) || v.verified}</strong></span>}
               <span className="verif-metaitem"><span className="faint">Verified by</span> <strong>{item.certBody}</strong></span>
             </div>
           </div>
