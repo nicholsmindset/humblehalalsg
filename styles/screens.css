@@ -260,7 +260,8 @@
 .home-feature-head { display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.25fr); gap:10px 34px; align-items:end; margin-bottom:18px; }
 .home-feature-head h2 { font-size:clamp(1.6rem, 3vw, 2.15rem); line-height:1.08; margin:6px 0 0; max-width:560px; }
 .home-feature-head p { margin:0; line-height:1.6; }
-.home-feature-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; align-items:stretch; }
+.home-feature-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; align-items:stretch; }
+a.home-feature-card { text-decoration:none; }
 .home-feature-card,
 .home-feature-panel { border:1px solid var(--line); border-radius:20px; background:var(--white); box-shadow:var(--sh-sm); }
 .home-feature-card {
