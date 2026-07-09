@@ -117,7 +117,8 @@ const CUISINES: Cuisine[] = [
   { id: "breakfast", label: "Breakfast & Brunch", match: ["brunch", "breakfast", "café", "cafe"] },
   { id: "dessert", label: "Desserts", match: ["dessert", "kueh", "ice cream", "cake", "chocolate"] },
   { id: "buffet", label: "Buffet", match: ["buffet", "steamboat", "bbq"] },
-  { id: "catering", label: "Catering", match: ["catering", "buffet", "event"] },
+  // "catering" graduated from a cuisine page to the real /halal-catering-singapore
+  // directory hub (Hub 2) — the app folder wins over the rewrite automatically.
   // Blueprint P1 additions (Keyword Master Plan, HUB1 tab).
   { id: "mookata", label: "Mookata", match: ["mookata", "thai bbq", "steamboat", "thai"] },
   { id: "ramen", label: "Ramen", match: ["ramen", "japanese"] },

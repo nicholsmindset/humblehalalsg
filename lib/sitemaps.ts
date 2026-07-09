@@ -24,6 +24,7 @@ export const SITEMAP_SEGMENTS = [
   "blog",
   "travel",
   "tools",
+  "weddings",
 ] as const;
 
 export type SitemapSegment = (typeof SITEMAP_SEGMENTS)[number];
@@ -193,6 +194,30 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       }));
       return [...toolEntries, ...quranEntries];
     }
+
+    case "weddings":
+      // Hub 2 — wedding/catering vertical (static editorial + directory pages).
+      return [
+        "/malay-wedding-singapore",
+        "/malay-wedding-packages-singapore",
+        "/malay-wedding-venues-singapore",
+        "/halal-catering-singapore",
+        "/halal-wedding-catering-singapore",
+        "/malay-catering-singapore",
+        "/halal-buffet-catering-singapore",
+        "/wedding-buffet-catering-singapore",
+        "/event-spaces-singapore",
+        "/wedding-venues-singapore",
+        "/pelamin-wedding-dais-singapore",
+        "/malay-bridal-makeup-artists-singapore",
+        "/wedding-bridal-car-rental-singapore",
+        "/malay-wedding-photography-singapore",
+        "/mas-kahwin-guide-singapore",
+        "/hantaran-dulang-guide-singapore",
+        "/baju-nikah-attire-singapore",
+        "/malay-wedding-attire-baju-guide",
+        "/aqiqah-kenduri-catering-singapore",
+      ].map((path) => ({ loc: `${base}${path}`, lastmod: now, changefreq: "weekly", priority: 0.7 }));
 
     default:
       return [];
