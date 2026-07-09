@@ -5,7 +5,9 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon } from "../ui";
-import { HOME_FAQ, VERIFY_FAQ } from "@/lib/faq";
+import { HOME_FAQ, VERIFY_FAQ, TRAVEL_FAQ, BUSINESS_FAQ, type QA } from "@/lib/faq";
+import { HELP, type FaqCategory } from "@/lib/help-content";
+import type { Flags } from "@/lib/flags";
 import { CONTACT_EMAILS } from "@/lib/contact";
 import { track } from "@/lib/analytics";
 
@@ -300,39 +302,68 @@ export function GrowthPartnerScreen() {
 }
 
 /* ── FAQ hub ──────────────────────────────────────────────────────────────── */
-const TRAVEL_FAQ = [
-  { q: "Are the hotels and flights “halal certified”?", a: "No — Humble Halal is a discovery platform, not a certifier. We surface factual, Muslim-friendly details (prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers, qibla) from each hotel's or airline's own information. Always confirm specifics with the hotel or airline." },
-  { q: "Can I book flights and a hotel together?", a: "Yes. Search Muslim-friendly hotels and flights for Umrah, Hajj or everyday Muslim travel, and plan your whole trip in one place. Payment is handled securely by our travel partner." },
-  { q: "Do you support Umrah and Hajj?", a: "Yes — use the Jeddah and Madinah presets, see the Hijri date and Ramadan/Hajj-season flags, and pair flights with a Muslim-friendly stay near the Haramain." },
-  { q: "When am I charged, and can I cancel?", a: "You're never charged without a confirmed booking, and cancellations follow the hotel's or airline's own policy (shown before you pay). You can manage and cancel eligible bookings in My Trips." },
-];
-const BUSINESS_FAQ = [
-  { q: "How do I list my business?", a: "Create a free listing from the For Business page. You can add your details, photos, opening hours and halal information, then upgrade for a verification review and more visibility." },
-  { q: "What does the Verified badge mean?", a: "It means our team has reviewed documentary proof for that business (for example a MUIS certificate or supplier certifications). Self-declared information is shown without a Verified badge. See How we verify for the full badge system." },
-  { q: "Can I advertise with Humble Halal?", a: "Yes — see Advertise with us for formats and how to reach Singapore's Muslim community, or email partners@humblehalal.com." },
-];
+function slugCat(c: string): string {
+  return c.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
 
-export function FaqScreen() {
-  const sections: [string, { q: string; a: string }[]][] = [
-    ["Getting started & the directory", HOME_FAQ],
-    ["Trust & verification", VERIFY_FAQ],
-    ["Halal travel — hotels & flights", TRAVEL_FAQ],
-    ["For businesses", BUSINESS_FAQ],
-  ];
+const FAQ_ORDER: FaqCategory[] = ["Getting started", "Features", "For businesses", "Travel", "Trust & verification"];
+
+/* Nested, flag-aware FAQ. Category-level (legacy) Q&As plus a per-feature
+   sub-group for every ENABLED feature (from lib/help-content), so the FAQ never
+   documents a hidden feature and stays in sync with the dashboard callouts. */
+export function FaqScreen({ flags }: { flags: Flags }) {
+  const legacy: Record<FaqCategory, QA[]> = {
+    "Getting started": [...HOME_FAQ],
+    "Features": [],
+    "For businesses": [...BUSINESS_FAQ],
+    "Travel": [...TRAVEL_FAQ],
+    "Trust & verification": [...VERIFY_FAQ],
+  };
+
+  const enabled = HELP.filter((h) => !h.flag || flags[h.flag]);
+  const featureGroups: Record<string, { key: string; label: string; faqs: QA[] }[]> = {};
+  for (const h of enabled) {
+    if (h.faqs.length === 0) continue;
+    (featureGroups[h.faqCategory] ||= []).push({ key: h.key, label: h.label, faqs: h.faqs });
+  }
+
+  const categories = FAQ_ORDER.filter(
+    (c) => legacy[c].length > 0 || (featureGroups[c] && featureGroups[c].length > 0),
+  );
+
   return (
     <div className="screen-in hh-page">
       <Crumb trail={[{ label: "Home", href: "/" }, { label: "FAQ" }]} />
-      <div className="hh-wrap hh-section" style={{ maxWidth: 860 }}>
+      <div className="hh-wrap hh-section" style={{ maxWidth: 900 }}>
         <h1 style={{ fontSize: "1.9rem", marginBottom: 6 }}>Frequently asked questions</h1>
-        <p className="muted" style={{ marginBottom: 26 }}>Everything about finding halal places, our trust badges, and booking Muslim-friendly travel. Still stuck? <Link href="/contact">Contact us</Link>.</p>
-        {sections.map(([title, items]) => (
-          <section key={title} style={{ marginBottom: 28 }}>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: 12 }}>{title}</h2>
+        <p className="muted" style={{ marginBottom: 18 }}>How Humble Halal works — finding halal places, our trust badges, features and travel. Still stuck? <Link href="/contact">Contact us</Link>.</p>
+
+        <nav className="faq-jump" aria-label="FAQ categories">
+          {categories.map((c) => (
+            <a key={c} href={`#${slugCat(c)}`} className="faq-jump-link">{c}</a>
+          ))}
+        </nav>
+
+        {categories.map((c) => (
+          <section key={c} id={slugCat(c)} style={{ marginBottom: 30 }}>
+            <h2 style={{ fontSize: "1.3rem", marginBottom: 12 }}>{c}</h2>
+
             <div className="flt-faq">
-              {items.map((it) => (
+              {legacy[c].map((it) => (
                 <details key={it.q} className="flt-faq-item"><summary>{it.q}<span className="faq-chevron" aria-hidden="true" /></summary><p>{it.a}</p></details>
               ))}
             </div>
+
+            {(featureGroups[c] || []).map((g) => (
+              <div key={g.key} id={g.key} className="faq-subgroup">
+                <h3 style={{ fontSize: "1.05rem", margin: "16px 0 8px" }}>{g.label}</h3>
+                <div className="flt-faq">
+                  {g.faqs.map((it) => (
+                    <details key={it.q} className="flt-faq-item"><summary>{it.q}<span className="faq-chevron" aria-hidden="true" /></summary><p>{it.a}</p></details>
+                  ))}
+                </div>
+              </div>
+            ))}
           </section>
         ))}
       </div>

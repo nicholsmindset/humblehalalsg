@@ -54,3 +54,16 @@ export const VERIFY_FAQ: QA[] = [
     a: "Every listing has a “Report incorrect info” option. You can flag a wrong halal status, closed business, wrong hours or changed ownership, and our team reviews it.",
   },
 ];
+
+export const TRAVEL_FAQ: QA[] = [
+  { q: "Are the hotels and flights “halal certified”?", a: "No — Humble Halal is a discovery platform, not a certifier. We surface factual, Muslim-friendly details (prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers, qibla) from each hotel's or airline's own information. Always confirm specifics with the hotel or airline." },
+  { q: "Can I book flights and a hotel together?", a: "Yes. Search Muslim-friendly hotels and flights for Umrah, Hajj or everyday Muslim travel, and plan your whole trip in one place. Payment is handled securely by our travel partner." },
+  { q: "Do you support Umrah and Hajj?", a: "Yes — use the Jeddah and Madinah presets, see the Hijri date and Ramadan/Hajj-season flags, and pair flights with a Muslim-friendly stay near the Haramain." },
+  { q: "When am I charged, and can I cancel?", a: "You're never charged without a confirmed booking, and cancellations follow the hotel's or airline's own policy (shown before you pay). You can manage and cancel eligible bookings in My Trips." },
+];
+
+export const BUSINESS_FAQ: QA[] = [
+  { q: "How do I list my business?", a: "Create a free listing from the For Business page. You can add your details, photos, opening hours and halal information, then upgrade for a verification review and more visibility." },
+  { q: "What does the Verified badge mean?", a: "It means our team has reviewed documentary proof for that business (for example a MUIS certificate or supplier certifications). Self-declared information is shown without a Verified badge. See How we verify for the full badge system." },
+  { q: "Can I advertise with Humble Halal?", a: "Yes — see Advertise with us for formats and how to reach Singapore's Muslim community, or email partners@humblehalal.com." },
+];
