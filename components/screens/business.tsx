@@ -12,6 +12,7 @@ import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
+import { HelpCallout } from "../help-callout";
 import { Badge, Icon, ImagePh, MobileHeader, WizardSteps } from "../ui";
 import { Newsletter } from "../newsletter";
 import { AddressAutocomplete, type AddrPick } from "../biz/address-autocomplete";
@@ -870,6 +871,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
 
         {tab === "events" && (
           <div className="dash-pane">
+            <HelpCallout feature="events" />
             <div className="flex between center wrap g10" style={{ marginBottom: 16 }}>
               <div><h3 style={{ fontSize: "1.2rem" }}>Your events</h3><p className="faint" style={{ fontSize: ".86rem" }}>Host bazaars, classes, talks and more — free or paid.</p></div>
               <button className="btn btn-gold" onClick={() => navigate("host-event")}><Icon name="plus" size={17} /> Host an event</button>
@@ -935,23 +937,25 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
           </div>
         )}
 
-        {tab === "cert" && <CertVault toast={toast} navigate={navigate} live={live} certVaultEnabled={flags.certVault} biz={myBiz} />}
+        {tab === "cert" && <><HelpCallout feature="cert-vault" /><CertVault toast={toast} navigate={navigate} live={live} certVaultEnabled={flags.certVault} biz={myBiz} /></>}
 
         {tab === "reviews" && (
           <>
+            <HelpCallout feature="reviews-owner" />
             {live && biz && biz.length > 0 && <ReviewRequestCard biz={biz.map((b) => ({ id: b.id, slug: b.slug, name: b.name }))} />}
             <OwnerReviews toast={toast} />
           </>
         )}
 
-        {tab === "leads" && leadRoutingEnabled && <OwnerLeads toast={toast} live={live} navigate={navigate} />}
+        {tab === "leads" && leadRoutingEnabled && <><HelpCallout feature="leads" /><OwnerLeads toast={toast} live={live} navigate={navigate} /></>}
 
-        {tab === "payouts" && <PayoutsPanel toast={toast} flags={flags} />}
+        {tab === "payouts" && <><HelpCallout feature="payouts" /><PayoutsPanel toast={toast} flags={flags} /></>}
 
-        {tab === "ads" && <OwnerAds navigate={navigate} biz={live ? myBiz : null} />}
+        {tab === "ads" && <><HelpCallout feature="sponsored-ads" /><OwnerAds navigate={navigate} biz={live ? myBiz : null} /></>}
 
         {tab === "billing" && (
           <div className="dash-pane stack g16">
+            <HelpCallout feature="billing" />
             <div className="card" style={{ padding: 22 }}>
               <div className="flex between center wrap g12">
                 <div>
