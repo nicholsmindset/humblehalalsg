@@ -17,6 +17,22 @@ import type { ConciergeUIMessage } from "@/lib/concierge-agent";
 import { ListingCard, Icon, ImagePh } from "../ui";
 import { RatingBadge } from "../ota";
 
+/* Safety net: the concierge is prompted to write plain prose, but LLMs still
+   occasionally emit markdown. Strip the syntax to clean text (the result cards
+   already carry names + links) so the bubble never shows raw ###, [](), --- etc.
+   Rendered with white-space:pre-wrap so line breaks survive. */
+function cleanMarkdown(text: string): string {
+  return text
+    .replace(/^\s*([-*_])\1{2,}\s*$/gm, "")                       // horizontal rules
+    .replace(/^\s*#{1,6}\s+/gm, "")                               // headings
+    .replace(/\[([^\]]+)\]\((?:https?:\/\/)?[^\s)]+\)/g, "$1")     // links → their text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")                            // bold
+    .replace(/(^|\s)\*([^*\s][^*]*?)\*(?=\s|$)/g, "$1$2")          // italics
+    .replace(/^\s*[-*]\s+/gm, "• ")                               // bullets
+    .replace(/\n{3,}/g, "\n\n")                                    // collapse extra blank lines
+    .trim();
+}
+
 const EXAMPLES = [
   "MUIS-certified nasi padang near Tampines with prayer space",
   "Halal brunch cafés in Bugis",
@@ -241,7 +257,7 @@ function ChatConcierge({ onUnavailable }: { onUnavailable: () => void }) {
             {m.role === "assistant" && <div className="cncg-avatar"><Icon name="crescent" size={14} /></div>}
             <div className="cncg-bubble">
               {m.parts.map((part, i) => {
-                if (part.type === "text") return <p key={i} className="cncg-text">{part.text}</p>;
+                if (part.type === "text") return <p key={i} className="cncg-text" style={{ whiteSpace: "pre-wrap" }}>{cleanMarkdown(part.text)}</p>;
                 if (part.type === "tool-searchDirectory") return part.state === "output-available"
                   ? <DirectoryResults key={i} out={part.output} />
                   : <p key={i} className="cncg-note"><span className="cncg-dot" /> Searching the halal directory…</p>;
