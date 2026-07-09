@@ -796,6 +796,15 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .hh-popchip-closed { background: #f7e9e7; color: #a5372a; }
 .hh-popcard-actions { display: flex; gap: 6px; margin-top: 2px; }
 .hh-popcard-actions .btn { flex: none; }
+/* Leaflet ships `.leaflet-container a { color:#0078A8 }` (specificity 0,1,1),
+   which overrode our button text colour on <a> buttons inside map popups — the
+   "Directions" link rendered in Leaflet's link-blue on the emerald button, so it
+   was nearly invisible. Restore each variant's own colour with a selector that
+   out-specifies Leaflet's. Applies to every map popup (prayer-rooms, hawker, …). */
+.leaflet-container a.btn-primary { color: var(--cream); }
+.leaflet-container a.btn-soft,
+.leaflet-container a.btn-outline,
+.leaflet-container a.btn-ghost { color: var(--emerald); }
 .map-loading { width: 100%; height: 100%; display: grid; place-items: center; background: var(--emerald-50); }
 .map-loading .spinner {
   width: 34px; height: 34px; border-radius: 50%;
