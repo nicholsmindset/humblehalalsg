@@ -71,7 +71,7 @@ export default async function Page() {
             <ol style={{ display: "grid", gap: 14, padding: 0, margin: 0, listStyle: "none" }}>
               {ranked.map((l, i) => (
                 <li key={l.id} style={{ display: "flex", gap: 14, alignItems: "baseline", borderBottom: "1px solid var(--line, #ECE7DB)", paddingBottom: 14 }}>
-                  <span style={{ fontWeight: 700, fontSize: "1.2rem", minWidth: 30, color: "var(--emerald, #0F5C4A)" }}>{i + 1}</span>
+                  <span style={{ fontWeight: 700, fontSize: "1.2rem", minWidth: 30, color: "var(--emerald, #12525B)" }}>{i + 1}</span>
                   <div style={{ flex: 1 }}>
                     <Link href={`/business/${l.slug}`} style={{ fontWeight: 700, fontSize: "1.08rem" }}>{l.name}</Link>
                     <div className="muted" style={{ fontSize: ".92rem", marginTop: 3 }}>

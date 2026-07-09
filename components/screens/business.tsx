@@ -78,7 +78,7 @@ export function ForBusinessScreen() {
           <div className="biz-cta-in" style={{ gridTemplateColumns: "1fr" }}>
             <div style={{ textAlign: "center", maxWidth: 560, margin: "0 auto" }}>
               <h2 style={{ color: "#fff", fontSize: "1.9rem" }}>Ready to be found?</h2>
-              <p style={{ color: "#DDEAE4", marginTop: 10 }}>Set up your free listing in minutes. Upgrade any time for verification and featured placement.</p>
+              <p style={{ color: "#DCE9EA", marginTop: 10 }}>Set up your free listing in minutes. Upgrade any time for verification and featured placement.</p>
               <div className="flex g10 center" style={{ justifyContent: "center", marginTop: 18 }}>
                 <button className="btn btn-gold btn-lg" onClick={() => navigate("add-listing")}>Get started</button>
                 <button className="btn btn-lg" style={{ background: "rgba(255,255,255,.12)", color: "#fff" }} onClick={() => navigate("claim")}>Claim existing listing</button>

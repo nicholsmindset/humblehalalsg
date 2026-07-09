@@ -32,15 +32,15 @@ export default async function OgImage({ params }: { params: Promise<{ token: str
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72, background: "#0F5C4A", fontFamily: "Georgia, serif", color: "#FAF7EF" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#D6A84F", letterSpacing: 3 }}>HALAL PASSPORT · HUMBLE HALAL</div>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 72, background: "#12525B", fontFamily: "Georgia, serif", color: "#F8F6F1" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 24, color: "#C97D3F", letterSpacing: 3 }}>HALAL PASSPORT · HUMBLE HALAL</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ display: "flex", alignSelf: "flex-start", background: "#D6A84F", color: "#3a2c08", fontSize: 28, fontWeight: 700, padding: "8px 22px", borderRadius: 999 }}>{tier}</div>
+          <div style={{ display: "flex", alignSelf: "flex-start", background: "#C97D3F", color: "#3a2c08", fontSize: 28, fontWeight: 700, padding: "8px 22px", borderRadius: 999 }}>{tier}</div>
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05, maxWidth: 1000 }}>{name}</div>
-          <div style={{ fontSize: 32, color: "#DDEAE4" }}>{line}</div>
+          <div style={{ fontSize: 32, color: "#DCE9EA" }}>{line}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: 40, fontWeight: 700, color: "#D6A84F" }}>
-          {points} <span style={{ fontSize: 26, color: "#DDEAE4" }}>points</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, fontSize: 40, fontWeight: 700, color: "#C97D3F" }}>
+          {points} <span style={{ fontSize: 26, color: "#DCE9EA" }}>points</span>
         </div>
       </div>
     ),

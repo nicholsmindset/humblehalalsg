@@ -7,21 +7,21 @@
 
 :root {
   /* Brand */
-  --emerald:        #0F5C4A;
-  --emerald-700:    #0C4A3C;
-  --emerald-600:    #156A55;
-  --emerald-300:    #6FA697;
-  --emerald-100:    #DDEAE4;
-  --emerald-50:     #EDF4F1;
+  --emerald:        #12525B;
+  --emerald-700:    #0D424A;
+  --emerald-600:    #17636D;
+  --emerald-300:    #6FA0A8;
+  --emerald-100:    #DCE9EA;
+  --emerald-50:     #EDF4F4;
 
-  --cream:          #FAF7EF;
-  --cream-200:      #F3EEE0;
-  --cream-300:      #E9E2CF;
+  --cream:          #F8F6F1;
+  --cream-200:      #F0EDE4;
+  --cream-300:      #E4E0D3;
 
-  --gold:           #D6A84F;
-  --gold-700:       #B98B36;
-  --gold-100:       #F6ECD5;
-  --gold-50:        #FBF5E7;
+  --gold:           #C97D3F;
+  --gold-700:       #A96430;
+  --gold-100:       #F7E7D6;
+  --gold-50:        #FBF2E9;
 
   --ink:            #1F2933;
   --ink-soft:       #586471;
@@ -50,7 +50,7 @@
   --sh-sm: 0 1px 2px rgba(31,41,51,.05), 0 1px 3px rgba(31,41,51,.06);
   --sh-md: 0 4px 14px rgba(31,41,51,.07), 0 2px 6px rgba(31,41,51,.05);
   --sh-lg: 0 18px 40px rgba(31,41,51,.12), 0 6px 14px rgba(31,41,51,.06);
-  --sh-emerald: 0 12px 28px rgba(15,92,74,.22);
+  --sh-emerald: 0 12px 28px rgba(18,82,91,.22);
 
   /* Layout */
   --nav-h: 64px;
@@ -325,7 +325,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
 
 /* CERTIFIED — solid fill, unmistakable */
-.badge--muis    { background: var(--emerald); color: #fff; box-shadow: 0 2px 6px rgba(15,92,74,.25); }
+.badge--muis    { background: var(--emerald); color: #fff; box-shadow: 0 2px 6px rgba(18,82,91,.25); }
 .badge--admin   { background: var(--gold); color: #3a2c08; box-shadow: 0 2px 6px rgba(214,168,79,.3); }
 /* VERIFIED-ADJACENT — emerald outline */
 .badge--owned   { background: var(--emerald-50); color: var(--emerald); border-color: var(--emerald-300); }
@@ -359,7 +359,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .imgph {
   position: relative; overflow: hidden;
   background:
-    repeating-linear-gradient(135deg, rgba(15,92,74,.05) 0 10px, rgba(15,92,74,0) 10px 20px),
+    repeating-linear-gradient(135deg, rgba(18,82,91,.05) 0 10px, rgba(18,82,91,0) 10px 20px),
     linear-gradient(140deg, var(--cream-200), var(--emerald-50));
   display: grid; place-items: center;
 }
@@ -380,7 +380,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
   color: var(--ink-soft); background: rgba(255,255,255,.78);
   padding: 3px 7px; border-radius: 6px; backdrop-filter: blur(4px);
 }
-.imgph[data-tone="emerald"] .imgph-label { color: #DDEAE4; background: rgba(12,74,60,.5); }
+.imgph[data-tone="emerald"] .imgph-label { color: #DCE9EA; background: rgba(12,74,60,.5); }
 .imgph .imgph-ico { opacity: .35; }
 .imgph .imgph-ico svg { width: 30px; height: 30px; }
 .imgph .imgph-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -761,7 +761,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .hh-pin-wrap:hover .hh-prayer-pin { transform: scale(1.14); }
 .hh-prayer-pin.on {
   width: 30px; height: 30px; border-color: var(--gold); z-index: 6;
-  box-shadow: 0 0 0 4px rgba(15,92,74,.3), 0 3px 9px rgba(0,0,0,.35);
+  box-shadow: 0 0 0 4px rgba(18,82,91,.3), 0 3px 9px rgba(0,0,0,.35);
 }
 /* Hawker centre pin — warm terracotta, distinct from mosque gold / prayer emerald. */
 .hh-hawker-pin {
@@ -791,7 +791,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
   font-style: normal; font-size: .68rem; font-weight: 600; line-height: 1;
   padding: 4px 7px; border-radius: 999px; background: var(--sand-100, #f2ede3); color: var(--ink-70, #47525b);
 }
-.hh-popchip-halal { background: var(--emerald-50, #e7f1ee); color: var(--emerald, #0F5C4A); }
+.hh-popchip-halal { background: var(--emerald-50, #e7f1ee); color: var(--emerald, #12525B); }
 .hh-popchip-open { background: #e7f5e9; color: #1e7a34; }
 .hh-popchip-closed { background: #f7e9e7; color: #a5372a; }
 .hh-popcard-actions { display: flex; gap: 6px; margin-top: 2px; }

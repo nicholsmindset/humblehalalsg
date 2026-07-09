@@ -200,6 +200,6 @@
 .blog-bullets { list-style: none; padding: 0; margin: 4px 0 12px; display: flex; flex-direction: column; gap: 8px; }
 .blog-bullets li { position: relative; padding-left: 24px; font-size: 1rem; line-height: 1.6; color: var(--ink); }
 .blog-bullets li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--emerald); font-weight: 800; }
-.blog-cta { margin-top: 30px; padding: 22px; border-radius: var(--r-lg); background: var(--cream, #faf7ef); border: 1px solid var(--line); }
-.blog-nl-inline { padding: 18px 20px; border-radius: var(--r-lg); background: var(--cream, #faf7ef); border: 1px solid var(--line); }
+.blog-cta { margin-top: 30px; padding: 22px; border-radius: var(--r-lg); background: var(--cream, #F8F6F1); border: 1px solid var(--line); }
+.blog-nl-inline { padding: 18px 20px; border-radius: var(--r-lg); background: var(--cream, #F8F6F1); border: 1px solid var(--line); }
 .blog-nl-band { margin-top: 30px; }

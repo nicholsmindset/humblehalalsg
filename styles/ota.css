@@ -24,7 +24,7 @@
   position: absolute; inset: 0; z-index: -1;
   background:
     linear-gradient(180deg, rgba(12,74,60,.42) 0%, rgba(12,74,60,.34) 38%, rgba(12,74,60,.72) 100%),
-    linear-gradient(90deg, rgba(15,92,74,.62), rgba(15,92,74,.12) 60%);
+    linear-gradient(90deg, rgba(18,82,91,.62), rgba(18,82,91,.12) 60%);
 }
 .ota-hero-scrim.pattern { opacity: 1; }
 .ota-hero-head { text-align: center; margin-bottom: 22px; }

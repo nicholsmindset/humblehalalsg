@@ -188,7 +188,7 @@
 .oo-flag { display:inline-block; margin-left:7px; padding:1px 7px; border-radius:999px; background:var(--gold); color:#3a2c08; font-size:.64rem; font-weight:800; vertical-align:middle; }
 
 .outlet-map { position:relative; height:200px; border-radius:var(--r-lg); border:1px solid var(--line); overflow:hidden; margin:16px 0; background:linear-gradient(135deg,#E8EEEA,#EEF2E8); }
-.outlet-map::after { content:''; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(90deg,rgba(15,92,74,.07) 1px,transparent 1px),linear-gradient(rgba(15,92,74,.07) 1px,transparent 1px); background-size:48px 48px; }
+.outlet-map::after { content:''; position:absolute; inset:0; pointer-events:none; background-image:linear-gradient(90deg,rgba(18,82,91,.07) 1px,transparent 1px),linear-gradient(rgba(18,82,91,.07) 1px,transparent 1px); background-size:48px 48px; }
 .outlet-list { display:flex; flex-direction:column; gap:12px; }
 .outlet-card { border:1px solid var(--line); border-radius:var(--r-lg); padding:16px; background:var(--white); cursor:pointer; transition:all .15s; }
 .outlet-card:hover { border-color:var(--emerald-300); box-shadow:var(--sh-sm); }

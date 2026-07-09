@@ -9,7 +9,7 @@
   padding: 44px 0 86px;
   border-bottom: 1px solid var(--line);
   background:
-    radial-gradient(70% 100% at 0% 0%, rgba(15,92,74,.18), transparent 58%),
+    radial-gradient(70% 100% at 0% 0%, rgba(18,82,91,.18), transparent 58%),
     linear-gradient(135deg, #fff9ec, var(--cream));
   overflow: hidden;
 }
@@ -229,7 +229,7 @@
 .tools-feature-card:hover { transform: translateY(-2px); border-color: var(--emerald-300); box-shadow: var(--sh-lg); }
 .tools-feature-card.primary {
   background:
-    linear-gradient(145deg, rgba(15,92,74,.92), rgba(10,72,58,.95)),
+    linear-gradient(145deg, rgba(18,82,91,.92), rgba(10,72,58,.95)),
     var(--emerald);
   color: #fff;
   box-shadow: var(--sh-emerald);
@@ -474,7 +474,7 @@
   position: absolute; left: 50%; top: 50%; transform-origin: bottom center;
   color: var(--emerald); transition: transform .2s ease;
 }
-.qibla-needle svg { filter: drop-shadow(0 1px 2px rgba(15,92,74,.4)); }
+.qibla-needle svg { filter: drop-shadow(0 1px 2px rgba(18,82,91,.4)); }
 .qibla-center { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--gold); transform: translate(-50%, -50%); box-shadow: 0 0 0 4px var(--cream); }
 .qibla-readout { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-height: 48px; }
 .qibla-bearing { font-family: var(--serif); font-size: 1.8rem; color: var(--emerald); line-height: 1.1; }
