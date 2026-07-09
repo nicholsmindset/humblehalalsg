@@ -6,6 +6,9 @@ import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 import { FeatureTikTokForm } from "@/components/feature-tiktok-form";
 
+// Flag-gated: evaluate tiktokUgc on every request so a toggle reflects at once.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = pageMeta({
   title: "Feature your TikTok — Humble Halal",
   description: "Made a TikTok about a halal spot in Singapore? Submit it and we'll feature it on the listing, with credit to you.",
