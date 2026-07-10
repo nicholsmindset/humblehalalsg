@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { bustFlagCache } from "@/lib/feature-flags";
-import { FLAG_COLUMN } from "@/lib/flags";
+import { FLAG_COLUMN, envFlags, type FlagKey } from "@/lib/flags";
 
 /* Admin-only monetization-flag writes (persisted to platform_settings).
    Until Supabase is wired, flags live client-side (localStorage) for demos;
@@ -50,10 +50,37 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
+  // Admin-only (mirrors POST): this returns the raw settings row + env-flag
+  // breakdown, which only the admin Monetization tab consumes. It previously
+  // answered unauthenticated requests with the full row.
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
+
   const admin = getSupabaseAdmin();
-  if (!admin) return NextResponse.json({ paid_tickets_enabled: false, paid_ads_enabled: false, paid_plans_enabled: false });
-  const { data } = await admin.from("platform_settings").select("*").eq("id", 1).maybeSingle();
-  return NextResponse.json(
-    data ?? { paid_tickets_enabled: false, paid_ads_enabled: false, paid_plans_enabled: false },
-  );
+  if (admin) {
+    const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    if (profile?.role !== "admin") return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
+  }
+
+  const { data } = admin
+    ? await admin.from("platform_settings").select("*").eq("id", 1).maybeSingle()
+    : { data: null };
+
+  // Per-flag source breakdown so the admin UI can show WHY a flag resolves the
+  // way it does. The resolution rule (lib/feature-flags.ts) is `override ?? env`
+  // — an explicit DB false BEATS an env true, which has silently killed
+  // env-enabled features before (audit R6). Surfacing all three values makes
+  // that footgun visible instead of a mystery.
+  const env = envFlags();
+  const flags: Record<string, { env: boolean; override: boolean | null; resolved: boolean }> = {};
+  for (const [k, col] of Object.entries(FLAG_COLUMN) as [FlagKey, string][]) {
+    const raw = data ? (data as Record<string, unknown>)[col] : null;
+    const override = typeof raw === "boolean" ? raw : null;
+    flags[k] = { env: env[k], override, resolved: override ?? env[k] };
+  }
+
+  return NextResponse.json({
+    ...(data ?? { paid_tickets_enabled: false, paid_ads_enabled: false, paid_plans_enabled: false }),
+    flags,
+  });
 }

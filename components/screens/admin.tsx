@@ -186,19 +186,32 @@ const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).fil
 /* Single flag row — reuses the cert-toggle/cert-switch/cert-knob switch markup
    used elsewhere in this file (Ramadan mode, Cert Vault, etc). `value` is the
    platform_settings column value: true/false = explicit override, null = no
-   override (falls back to the env var server-side). */
-function GlobalFlagRow({ flagKey, value, onToggle }: { flagKey: FlagKey; value: boolean | null; onToggle: (next: boolean) => void }) {
+   override. `envValue` is the env-var layer beneath it. The switch reflects the
+   RESOLVED state (override ?? env) — what the site actually runs with — and
+   the source line says why. "Reset to env" clears an explicit override (an
+   explicit DB false silently beats an env true, which has killed env-enabled
+   features before — audit R6). */
+function GlobalFlagRow({ flagKey, value, envValue, onToggle, onClear }: { flagKey: FlagKey; value: boolean | null; envValue: boolean | null; onToggle: (next: boolean) => void; onClear: () => void }) {
   const { title, desc } = FLAG_COPY[flagKey];
-  const on = value === true;
+  const on = value ?? envValue ?? false; // resolved: override ?? env
+  const source =
+    value === null
+      ? `following env (${envValue === null ? "unknown" : envValue ? "on" : "off"})`
+      : `admin override ${value ? "on" : "off"}${envValue !== null && envValue !== value ? ` — env says ${envValue ? "on" : "off"}` : ""}`;
   return (
     <div className="card" style={{ padding: 18, display: "flex", gap: 14, alignItems: "flex-start", justifyContent: "space-between" }}>
       <div style={{ flex: 1 }}>
-        <div className="flex g8 center" style={{ marginBottom: 4 }}>
+        <div className="flex g8 center wrap" style={{ marginBottom: 4 }}>
           <h3 style={{ fontSize: "1.05rem" }}>{title}</h3>
           <span className="tag" style={{ background: on ? "var(--emerald-50)" : "var(--cream-200)", color: on ? "var(--emerald)" : "var(--ink-soft)" }}>
             {on ? "Live" : "Off"}
           </span>
-          {value === null && <span className="faint" style={{ fontSize: ".72rem", fontStyle: "italic" }}>using env default</span>}
+          <span className="faint" style={{ fontSize: ".72rem", fontStyle: "italic" }}>{source}</span>
+          {value !== null && (
+            <button className="btn btn-ghost btn-sm" style={{ fontSize: ".72rem", padding: "1px 8px" }} onClick={onClear} title="Remove the admin override so the env var decides again">
+              Reset to env
+            </button>
+          )}
         </div>
         <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>{desc}</p>
       </div>
@@ -221,17 +234,28 @@ export function AdminMonetization() {
   // Global flag overrides — hydrated from platform_settings on mount so every
   // toggle reflects the persisted (server) state, not client-only demo state.
   const [values, setValues] = useState<Record<string, boolean | null>>({});
+  // Env-var layer per column (from the GET breakdown) so rows can show the
+  // resolved state + why. null = unknown (older API / fetch failed).
+  const [envVals, setEnvVals] = useState<Record<string, boolean | null>>({});
   // Columns with a save in flight (render-stable Set — no re-render needed).
   const [savingFlags] = useState(() => new Set<string>());
   useEffect(() => {
     (async () => {
       try {
         const r = await fetch("/api/settings");
-        const d = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        const d = (await r.json().catch(() => ({}))) as Record<string, unknown> & {
+          flags?: Record<string, { env: boolean; override: boolean | null; resolved: boolean }>;
+        };
         const next: Record<string, boolean | null> = {};
-        for (const col of Object.values(FLAG_COLUMN)) next[col] = col in d ? (d[col] === null ? null : !!d[col]) : null;
+        const env: Record<string, boolean | null> = {};
+        for (const [key, col] of Object.entries(FLAG_COLUMN)) {
+          const b = d.flags?.[key];
+          next[col] = b ? b.override : col in d ? (d[col] === null ? null : !!d[col]) : null;
+          env[col] = b ? b.env : null;
+        }
         setValues(next);
-      } catch { /* keep defaults — rows show "using env default" */ }
+        setEnvVals(env);
+      } catch { /* keep defaults — rows show "following env (unknown)" */ }
     })();
   }, []);
 
@@ -274,6 +298,30 @@ export function AdminMonetization() {
     }
   }
 
+  // Clear an explicit override → the env var decides again (writes NULL).
+  async function clearGlobalFlag(flagKey: FlagKey) {
+    const column = FLAG_COLUMN[flagKey];
+    if (savingFlags.has(column)) return;
+    savingFlags.add(column);
+    const prev = values[column] ?? null;
+    setValues((v) => ({ ...v, [column]: null }));
+    try {
+      const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [column]: null }) });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean };
+      if (!d.ok) {
+        setValues((v) => ({ ...v, [column]: prev }));
+        toast("Couldn't clear — try again.");
+      } else {
+        toast(`${FLAG_COPY[flagKey].title} now follows the env var`);
+      }
+    } catch {
+      setValues((v) => ({ ...v, [column]: prev }));
+      toast("Couldn't clear — try again.");
+    } finally {
+      savingFlags.delete(column);
+    }
+  }
+
   return (
     <div style={{ maxWidth: 720 }}>
       <div className="notice notice-warn" style={{ marginBottom: 18 }}>
@@ -287,14 +335,14 @@ export function AdminMonetization() {
       <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Payments</div>
       <div className="stack g12" style={{ marginBottom: 24 }}>
         {PAYMENT_FLAG_KEYS.map((k) => (
-          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, true)} />
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} envValue={envVals[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, true)} onClear={() => clearGlobalFlag(k)} />
         ))}
       </div>
 
       <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Features</div>
       <div className="stack g12" style={{ marginBottom: 24 }}>
         {FEATURE_FLAG_KEYS.map((k) => (
-          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, false)} />
+          <GlobalFlagRow key={k} flagKey={k} value={values[FLAG_COLUMN[k]] ?? null} envValue={envVals[FLAG_COLUMN[k]] ?? null} onToggle={(next) => setGlobalFlag(k, next, false)} onClear={() => clearGlobalFlag(k)} />
         ))}
       </div>
 
