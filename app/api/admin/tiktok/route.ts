@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { revalidatePublic } from "@/lib/revalidate";
-import { tiktokComplianceIssue, type TiktokClassification } from "@/lib/tiktok";
+import { tiktokComplianceIssue, normalizeBusinessSlugInput, type TiktokClassification } from "@/lib/tiktok";
 
 /* Admin TikTok review queue.
    GET  ?status=pending|approved|rejected|removed → submissions for review
@@ -62,7 +62,8 @@ export async function POST(req: Request) {
     // Resolve the target business: admin override slug > AI-matched slug > claimed id.
     let matchedId: string | null = null;
     let slug = "";
-    const wantSlug = String(b.businessSlug || gen.matchedBusinessSlug || "").trim();
+    // Admins naturally paste the full listing URL — normalise it to a slug.
+    const wantSlug = normalizeBusinessSlugInput(String(b.businessSlug || "")) || String(gen.matchedBusinessSlug || "").trim();
     if (wantSlug) {
       const { data: biz } = await db.from("businesses").select("id, slug").eq("slug", wantSlug).maybeSingle();
       if (biz) { matchedId = String(biz.id); slug = String(biz.slug); }
@@ -71,7 +72,12 @@ export async function POST(req: Request) {
       const { data: biz } = await db.from("businesses").select("id, slug").eq("id", row.claimed_business_id).maybeSingle();
       if (biz) { matchedId = String(biz.id); slug = String(biz.slug); }
     }
-    if (!matchedId) return NextResponse.json({ ok: false, error: "no_match", reason: "No business matched — set a business before approving." }, { status: 422 });
+    if (!matchedId) {
+      const reason = wantSlug
+        ? `No listing found for "${wantSlug}" — check the slug or paste the listing URL.`
+        : "No business matched — set a business (slug or listing URL) before approving.";
+      return NextResponse.json({ ok: false, error: "no_match", reason }, { status: 422 });
+    }
 
     const { error } = await db.from("tiktok_submissions")
       .update({ status: "approved", matched_business_id: matchedId, reviewed_by: gate.userId, reviewed_at: new Date().toISOString(), review_note: note || null, updated_at: new Date().toISOString() })
