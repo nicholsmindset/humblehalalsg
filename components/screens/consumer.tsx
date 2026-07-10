@@ -35,6 +35,7 @@ import { HomeSeoContent } from "./home-seo";
 import { HOME_FAQ } from "@/lib/faq";
 import { Breadcrumbs } from "../breadcrumbs";
 import { Newsletter } from "../newsletter";
+import { HomeCommunityVideos } from "../home-community-videos";
 import { verticalForCatId } from "@/lib/lead-verticals";
 
 /* =============================================================
@@ -113,6 +114,10 @@ export function HomeScreen() {
 
       {/* 3-HUB ENTRY — route intent into the hubs right after the hero. */}
       <HomeFeatureSection navigate={navigate} />
+
+      {/* FRESH FROM THE COMMUNITY — latest approved TikToks (self-hides when
+          the tiktokUgc flag is off or nothing is approved yet). */}
+      <HomeCommunityVideos />
 
       {/* CATEGORIES — top 8 + view all */}
       <section className="hh-wrap home-cats home-sec">
