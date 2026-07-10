@@ -51,7 +51,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           ]}
         />
       )}
-      <DetailScreen />
+      {/* Pass the server-resolved listing so hawker stalls (excluded from the
+          client directory context) render their real, claimable page instead
+          of a dead-end "not found". */}
+      <DetailScreen initial={l} />
     </>
   );
 }

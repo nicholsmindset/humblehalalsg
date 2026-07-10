@@ -1138,13 +1138,17 @@ export function MapScreen() {
 /* =============================================================
    BUSINESS DETAIL
 ============================================================= */
-export function DetailScreen() {
+export function DetailScreen({ initial }: { initial?: Listing } = {}) {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
   // Strict slug/id resolution — the old `|| dir.listings[0]` fallback silently
   // rendered the FIRST listing for any bad/stale slug instead of a not-found
   // state (same bug class fixed on the events screens).
-  const item = dir.get(String(params.slug || params.id || ""));
+  // `initial` is the server-resolved listing (app/business/[slug]/page.tsx via
+  // getListingBySlug). It's the ONLY way hawker stalls reach here — they're
+  // excluded from getDirectory()/the client context on purpose, so without it a
+  // stall's own page would always fall to the not-found state below.
+  const item = dir.get(String(params.slug || params.id || "")) ?? initial;
   const saved = item ? state.saved.includes(item.id) : false;
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);
@@ -1208,10 +1212,15 @@ export function DetailScreen() {
   }, [lb, galleryImgs.length]);
 
   // All hooks above run unconditionally; bail to a real not-found state here.
+  // Not a dead end: if a place isn't listed yet, offer to add it (owners can
+  // then claim it) rather than only sending people back to browse.
   if (!item) return (
     <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
-      <Empty icon="store" title="Listing not found" body="This place isn't in the directory (it may have been removed). Browse or search instead." />
-      <button className="btn btn-primary mt12" onClick={() => navigate("explore")}>Explore places</button>
+      <Empty icon="store" title="This place isn't listed yet" body="We couldn't find this business in our directory. If it's your business — or somewhere you know is halal — add it so others can find it too." />
+      <div className="mt12" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+        <button className="btn btn-primary" onClick={() => navigate("add-listing")}>Add this business</button>
+        <button className="btn btn-outline" onClick={() => navigate("explore")}>Explore places</button>
+      </div>
     </div>
   );
 
@@ -1482,11 +1491,13 @@ export function DetailScreen() {
 
         {/* sidebar (desktop) */}
         <aside className="detail-side">
-          {/* Halal Confidence Score card (mock-up): ring + tier + basis. */}
+          {/* Halal verification card: tier badge + basis. Leads with the tier,
+              not a 0–100 number (a low number next to "halal" reads as "barely
+              halal" and unfairly undersells genuinely-halal uncertified places). */}
           <div className="card" style={{ padding: 18, marginBottom: 14 }}>
             <div className="flex between center" style={{ marginBottom: 8 }}>
-              <h3 style={{ fontSize: "1.02rem" }}>Halal Confidence Score</h3>
-              <button className="btn-ghost-ico" title="A 0–100 score from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How the halal-confidence score works" onClick={() => navigate("verify")}>
+              <h3 style={{ fontSize: "1.02rem" }}>Halal verification</h3>
+              <button className="btn-ghost-ico" title="A trust level from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How halal verification works" onClick={() => navigate("verify")}>
                 <Icon name="info" size={15} />
               </button>
             </div>

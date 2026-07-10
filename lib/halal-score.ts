@@ -5,7 +5,8 @@
 import type { BadgeKey, Listing, VerifyInfo } from "./types";
 
 export type HalalTier =
-  | "muis" // MUIS Certified — official
+  | "muis" // MUIS Certified — official, certificate on file
+  | "muis-listed" // On the MUIS HalalSG register per our records; cert not yet on file
   | "admin" // Admin Verified — documents checked by us
   | "community" // Community-confirmed (not certified)
   | "declared" // Self-declared (not certified)
@@ -22,6 +23,7 @@ export interface HalalScore {
 
 const TIER_META: Record<HalalTier, { label: string; base: number; blurb: string }> = {
   muis: { label: "MUIS Certified", base: 90, blurb: "Officially halal-certified by MUIS." },
+  "muis-listed": { label: "MUIS-listed", base: 70, blurb: "On the MUIS HalalSG register per our records — shown as fully Certified once the certificate is on file." },
   admin: { label: "Admin Verified", base: 78, blurb: "Documents checked by the Humble Halal team." },
   community: { label: "Community Confirmed", base: 62, blurb: "Confirmed halal by the community — not officially certified." },
   declared: { label: "Self-declared", base: 42, blurb: "Self-declared by the business — not certified." },
@@ -34,17 +36,27 @@ interface ScoreInput {
   certified?: boolean;
   verify?: VerifyInfo;
   statusChanged?: boolean;
+  /** Raw `halal_tier` from the DB row. Drives the tier directly so a
+   *  community/admin/muis tag is honoured instead of collapsing to
+   *  "Self-declared" (which happened when the tier was inferred from badges
+   *  alone — 194 MUIS + 28 community listings all showed 42). */
+  halalTier?: string;
 }
 
 function resolveTier(i: ScoreInput): HalalTier {
   if (i.statusChanged) return "reported";
-  // A MUIS claim only counts as official certification when it is backed by a
-  // recorded certificate number (the owner-asserted evidence /verify promises).
-  // Without it we must NOT present "MUIS Certified" — fall through to admin /
-  // community / self-declared rather than asserting unbacked certification.
-  if (i.badges.includes("muis") && i.verify?.certNo) return "muis";
-  if (i.badges.includes("admin")) return "admin";
-  if (i.badges.includes("pending")) return "pending";
+  const raw = i.halalTier;
+  // MUIS: full "Certified" only when a certificate number is on file; otherwise
+  // "MUIS-listed" (on the register per our records). Honest, and it upgrades to
+  // Certified automatically the moment a cert number is recorded.
+  const isMuis = raw === "muis" || i.badges.includes("muis");
+  if (isMuis && i.verify?.certNo) return "muis";
+  // Admin (we checked the documents) outranks a register-only match, so an
+  // admin-backed business isn't masked by an unbacked MUIS claim.
+  if (raw === "admin" || i.badges.includes("admin")) return "admin";
+  if (isMuis) return "muis-listed";
+  if (raw === "pending" || i.badges.includes("pending")) return "pending";
+  if (raw === "community") return "community";
   const confirms = i.verify?.confirms ?? 0;
   if (i.badges.some((b) => b === "friendly" || b === "nopork")) {
     return confirms >= 50 ? "community" : "declared";
@@ -90,6 +102,7 @@ export function scoreListing(l: Listing): HalalScore {
     certified: l.certified,
     verify: l.verify,
     statusChanged: l.statusChanged,
+    halalTier: l.halalTier,
   });
 }
 
@@ -103,7 +116,7 @@ export function muisUnbacked(l: Pick<Listing, "badges" | "verify">): boolean {
 
 /** Colour token for the score ring/badge by tier. */
 export function scoreTone(tier: HalalTier): string {
-  if (tier === "muis") return "var(--emerald)";
+  if (tier === "muis" || tier === "muis-listed") return "var(--emerald)";
   if (tier === "admin") return "var(--gold-700)";
   if (tier === "community") return "var(--emerald-600)";
   if (tier === "reported") return "var(--danger)";

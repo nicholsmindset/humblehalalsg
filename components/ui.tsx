@@ -290,20 +290,19 @@ export function ListingCard({
 
   // Subtle "Claim" chip on unclaimed listings (sits above the full-card link via
   // z-index + stopPropagation, so it claims rather than opening the detail page).
-  // Halal-confidence pill — only when it DIFFERENTIATES. Nearly the whole seeded
-  // directory is tier "declared" (base score exactly 42), so a bare number pill
-  // made every card show an identical "42" that reads like a poor rating. Cards
-  // show the score for earned tiers (muis/admin/community), a warning chip for
-  // flagged listings, and nothing for declared/pending (the tier badge beside it
-  // already says "Muslim-Owned"/"Halal-friendly"); the detail page keeps the
-  // full score + reasons.
+  // Halal-verification pill — shows the tier LABEL (not a 0–100 number): a bare
+  // number next to "halal" reads like a grade ("42 = barely halal"), which
+  // undersells genuinely-halal-but-uncertified places. Shown only for earned
+  // tiers (muis / muis-listed / admin / community) and flagged listings; nothing
+  // for declared/pending, where the tier badge beside it ("Muslim-Owned" /
+  // "Halal-friendly") already carries the signal. Detail page keeps the reasons.
   const hsPill = (() => {
     const hs = scoreListing(item);
     if (hs.tier === "declared" || hs.tier === "pending") return null;
     return (
-      <span className="hs-pill" title={`Halal confidence ${hs.score}/100 · ${hs.label}`}>
+      <span className="hs-pill" title={hs.blurb}>
         <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
-        {hs.tier === "reported" ? hs.label : hs.score}
+        {hs.label}
       </span>
     );
   })();
