@@ -4,6 +4,7 @@ import { DetailScreen } from "@/components/screens/consumer";
 import { getDirectory, getListingBySlug } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import { joinParts } from "@/lib/format";
+import { muisUnbacked } from "@/lib/halal-score";
 import {
   JsonLd,
   listingJsonLd,
@@ -22,7 +23,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const l = await getListingBySlug(slug);
   if (!l) return pageMeta({ title: "Business", path: `/business/${slug}`, index: false });
-  const certified = l.certified ? "MUIS / verified halal" : "halal-friendly";
+  // "MUIS / verified" only when the claim is backed; register-sourced places
+  // without a cert number on file say "MUIS-listed" (matches the on-page tier).
+  const certified = l.certified ? (muisUnbacked(l) ? "MUIS-listed halal" : "MUIS / verified halal") : "halal-friendly";
   const reviewLine = l.reviews > 0 ? ` ${l.rating}★ from ${l.reviews} reviews.` : "";
   return pageMeta({
     // Prefer admin-approved AI-enriched SEO when present; else the computed default.

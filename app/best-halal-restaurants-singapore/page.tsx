@@ -3,6 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
+import { certSuffix } from "@/lib/halal-score";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd, itemListJsonLd } from "@/components/seo/json-ld";
 
 /* Editorial ranking for "best halal restaurants singapore" (1k/mo, KD 10).
@@ -76,7 +77,7 @@ export default async function Page() {
                     <Link href={`/business/${l.slug}`} style={{ fontWeight: 700, fontSize: "1.08rem" }}>{l.name}</Link>
                     <div className="muted" style={{ fontSize: ".92rem", marginTop: 3 }}>
                       {[l.cuisine, l.area, l.price].filter(Boolean).join(" · ")}
-                      {l.certified ? ` · ${l.certBody} certified` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
+                      {certSuffix(l) ? ` · ${certSuffix(l)}` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
                       {l.rating > 0 ? ` · ${l.rating.toFixed(1)}★ (${l.reviews})` : ""}
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { allBrands, STATUS_META } from "@/lib/halal-status";
 import { allPosts } from "@/lib/blog";
+import { certSuffix } from "@/lib/halal-score";
 import { SITE } from "@/lib/seo";
 
 // llms.txt — a concise, AI-crawler-friendly map of the site + key facts.
@@ -28,7 +29,8 @@ certification status and links to the MUIS HalalSG register, and clearly separat
 officially certified places from self-declared ones.
 
 ## Trust badges (key definitions)
-- MUIS Certified: holds a valid official MUIS (Majlis Ugama Islam Singapura) halal certificate.
+- MUIS Certified: holds a valid official MUIS (Majlis Ugama Islam Singapura) halal certificate, with the certificate number on file.
+- MUIS-listed: on the MUIS HalalSG register per our records, but the certificate number is not yet on file — always confirm on the official register.
 - Admin Verified: documents checked by the Humble Halal team (a trust signal, not MUIS certification).
 - Muslim-Owned: confirmed Muslim-owned business.
 - Halal-Friendly: self-declared by the business — explicitly NOT certified.
@@ -59,7 +61,7 @@ ${areas.map((a) => { const n = areaCount(a.name); return `- [${a.name}](${u}/hal
 
 ## Featured listings
 ${featured
-  .map((l) => `- [${l.name}](${u}/business/${l.slug}): ${l.cuisine}, ${l.area}${l.certified ? ` — ${l.certBody} certified` : ""}${l.reviews > 0 ? `, ${l.rating}★` : ""}`)
+  .map((l) => `- [${l.name}](${u}/business/${l.slug}): ${l.cuisine}, ${l.area}${certSuffix(l) ? ` — ${certSuffix(l)}` : ""}${l.reviews > 0 ? `, ${l.rating}★` : ""}`)
   .join("\n")}
 
 ## Popular halal searches (SEO landing pages)

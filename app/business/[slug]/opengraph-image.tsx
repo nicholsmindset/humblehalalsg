@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getListingBySlug } from "@/lib/directory";
 import { SITE } from "@/lib/seo";
+import { muisUnbacked } from "@/lib/halal-score";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -13,6 +14,8 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
   const meta = l ? `${l.cuisine} · ${l.area}` : SITE.tagline;
   const rating = l ? `★ ${l.rating} (${l.reviews})` : "";
   const certified = l?.certified;
+  // Social-card chip text: full "Certified" only with a cert on file.
+  const certChip = l && certified ? (muisUnbacked(l) ? "MUIS-listed Halal" : `${l.certBody} Certified Halal`) : "";
 
   return new ImageResponse(
     (
@@ -33,7 +36,7 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           HUMBLE HALAL · SINGAPORE
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {certified && (
+          {certChip && (
             <div
               style={{
                 display: "flex",
@@ -46,7 +49,7 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
                 borderRadius: 999,
               }}
             >
-              ✓ {l?.certBody} Certified Halal
+              ✓ {certChip}
             </div>
           )}
           <div style={{ fontSize: 72, fontWeight: 700, lineHeight: 1.05, maxWidth: 1000 }}>{name}</div>

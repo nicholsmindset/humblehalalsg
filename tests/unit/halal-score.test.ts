@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { halalScore, scoreTone, muisUnbacked } from "../../lib/halal-score";
+import { halalScore, scoreTone, muisUnbacked, certSuffix } from "../../lib/halal-score";
 import { halalSgVerifyUrl } from "../../lib/muis";
 import type { BadgeKey } from "../../lib/types";
 
@@ -82,6 +82,15 @@ describe("muisUnbacked — evidence gate", () => {
     expect(muisUnbacked({ badges: b("muis"), verify: { certNo: "MUIS-1" } as never })).toBe(false);
     expect(muisUnbacked({ badges: b("admin"), verify: undefined })).toBe(false);
     expect(muisUnbacked({ badges: b("friendly"), verify: undefined })).toBe(false);
+  });
+});
+
+describe("certSuffix — snippet copy gate", () => {
+  it("says 'MUIS certified' only with a cert on file; 'MUIS-listed' otherwise", () => {
+    expect(certSuffix({ badges: b("muis"), certified: true, certBody: "MUIS", verify: { certNo: "MUIS-1" } as never })).toBe("MUIS certified");
+    expect(certSuffix({ badges: b("muis"), certified: true, certBody: "MUIS", verify: undefined })).toBe("MUIS-listed");
+    expect(certSuffix({ badges: b("admin"), certified: true, certBody: "Humble Halal", verify: undefined })).toBe("Humble Halal certified");
+    expect(certSuffix({ badges: b("friendly"), certified: false, certBody: null, verify: undefined })).toBeNull();
   });
 });
 
