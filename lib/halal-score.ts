@@ -114,6 +114,15 @@ export function muisUnbacked(l: Pick<Listing, "badges" | "verify">): boolean {
   return l.badges.includes("muis") && !l.verify?.certNo;
 }
 
+/** Short suffix for list rows / snippets: "MUIS certified" (cert on file),
+ *  "MUIS-listed" (on the register per our records, no cert recorded yet), or
+ *  null when there's nothing certification-shaped to say. One helper so hub
+ *  pages / llms.txt can't drift from the on-page tier. */
+export function certSuffix(l: Pick<Listing, "badges" | "verify" | "certified" | "certBody">): string | null {
+  if (!l.certified) return null;
+  return muisUnbacked(l) ? "MUIS-listed" : `${l.certBody} certified`;
+}
+
 /** Colour token for the score ring/badge by tier. */
 export function scoreTone(tier: HalalTier): string {
   if (tier === "muis" || tier === "muis-listed") return "var(--emerald)";

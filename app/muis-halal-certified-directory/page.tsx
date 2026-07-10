@@ -3,6 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
+import { certSuffix } from "@/lib/halal-score";
 import { itemListJsonLd } from "@/components/seo/json-ld";
 import { ContentPage } from "@/components/seo/content-page";
 
@@ -21,7 +22,7 @@ export const metadata: Metadata = pageMeta({
 });
 
 const FAQ = [
-  { q: "Are all businesses on this page MUIS-certified?", a: "Yes — this directory lists only businesses labelled MUIS Certified on Humble Halal, each linking to its evidence. Certificates expire and can be suspended, so always confirm the current status on the official MUIS HalalSG register." },
+  { q: "Are all businesses on this page MUIS-certified?", a: "Every business here is on the MUIS HalalSG register per our records. Entries with the certificate number on file are labelled MUIS Certified; the rest are labelled MUIS-listed until the certificate is recorded. Certificates expire and can be suspended, so always confirm the current status on the official MUIS HalalSG register." },
   { q: "Why isn't a certified restaurant I know listed here?", a: "Our directory grows as businesses are verified and added — it's not a mirror of the full MUIS register. Suggest a missing place and we'll verify and add it." },
   { q: "Where is the official list of halal-certified businesses?", a: "The authoritative source is the MUIS HalalSG register at halal.gov.sg (and the HalalSG app). This page is a discovery layer on top — we always link back to the register." },
 ];
@@ -42,9 +43,10 @@ export default async function Page() {
       h1="MUIS Halal-Certified Directory"
       intro={
         <>
-          <strong>Every business below is labelled MUIS Certified</strong> — Singapore&apos;s official halal certification —
-          with evidence linked on its listing. This is a discovery directory, not the official register: always confirm the
-          live certificate on MUIS HalalSG before you rely on it.
+          <strong>Every business below is on the MUIS HalalSG register per our records</strong> — Singapore&apos;s official
+          halal certification. Entries show MUIS Certified once the certificate is on file, and MUIS-listed until then.
+          This is a discovery directory, not the official register: always confirm the live certificate on MUIS HalalSG
+          before you rely on it.
         </>
       }
       links={[
@@ -63,7 +65,7 @@ export default async function Page() {
               <div style={{ flex: 1 }}>
                 <Link href={`/business/${l.slug}`} style={{ fontWeight: 700, fontSize: "1.08rem" }}>{l.name}</Link>
                 <div className="muted" style={{ fontSize: ".92rem", marginTop: 3 }}>
-                  {[l.cuisine, l.area].filter(Boolean).join(" · ")} · MUIS certified
+                  {[l.cuisine, l.area].filter(Boolean).join(" · ")}{certSuffix(l) ? ` · ${certSuffix(l)}` : ""}
                   {l.rating > 0 ? ` · ${l.rating.toFixed(1)}★ (${l.reviews})` : ""}
                 </div>
               </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { allSeoPages, seoPagePath, SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
+import { certSuffix } from "@/lib/halal-score";
 import { itemListJsonLd } from "@/components/seo/json-ld";
 import { ContentPage } from "@/components/seo/content-page";
 
@@ -59,7 +60,7 @@ export default async function Page() {
                 <Link href={`/business/${l.slug}`} style={{ fontWeight: 700, fontSize: "1.08rem" }}>{l.name}</Link>
                 <div className="muted" style={{ fontSize: ".92rem", marginTop: 3 }}>
                   {[l.cat, l.cuisine, l.area].filter(Boolean).join(" · ")} · Muslim-owned
-                  {l.certified ? " · MUIS certified" : ""}
+                  {certSuffix(l) ? ` · ${certSuffix(l)}` : ""}
                   {l.rating > 0 ? ` · ${l.rating.toFixed(1)}★ (${l.reviews})` : ""}
                 </div>
               </div>

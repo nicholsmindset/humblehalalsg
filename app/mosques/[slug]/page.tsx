@@ -6,6 +6,7 @@ import { mosqueProfile, profiledMosqueSlugs } from "@/lib/mosque-content";
 import { getPrayerTimes } from "@/lib/prayer-times";
 import { getDirectory } from "@/lib/directory";
 import { qiblaBearing, compassLabel } from "@/lib/qibla";
+import { certSuffix } from "@/lib/halal-score";
 import { haversineKm, formatKm, directionsUrl } from "@/lib/geo";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, mosqueJsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
@@ -150,7 +151,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                         <Link href={`/business/${l.slug}`} style={{ fontWeight: 700 }}>{l.name}</Link>
                         <div className="muted" style={{ fontSize: ".9rem", marginTop: 2 }}>
                           {[l.cuisine, l.area].filter(Boolean).join(" · ")}
-                          {l.certified ? ` · ${l.certBody} certified` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
+                          {certSuffix(l) ? ` · ${certSuffix(l)}` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
                         </div>
                       </div>
                       <span className="faint" style={{ fontSize: ".84rem", whiteSpace: "nowrap" }}>{formatKm(km)}</span>

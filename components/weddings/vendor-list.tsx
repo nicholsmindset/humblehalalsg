@@ -4,6 +4,7 @@
    when there are real matches. */
 import Link from "next/link";
 import { getDirectory } from "@/lib/directory";
+import { certSuffix } from "@/lib/halal-score";
 import type { Listing } from "@/lib/types";
 import { JsonLd, itemListJsonLd } from "@/components/seo/json-ld";
 
@@ -60,7 +61,7 @@ export async function VendorList({
               <Link href={`/business/${l.slug}`} style={{ fontWeight: 700, fontSize: "1.08rem" }}>{l.name}</Link>
               <div className="muted" style={{ fontSize: ".92rem", marginTop: 3 }}>
                 {[l.cuisine, l.area, l.price].filter(Boolean).join(" · ")}
-                {l.certified ? ` · ${l.certBody} certified` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
+                {certSuffix(l) ? ` · ${certSuffix(l)}` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
                 {l.rating > 0 ? ` · ${l.rating.toFixed(1)}★ (${l.reviews})` : ""}
               </div>
             </div>

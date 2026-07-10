@@ -8,6 +8,7 @@ import { mapsSearchUrl } from "@/lib/geo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { HawkerMap } from "@/components/hawker-map";
 import { HalalConfidenceBadge } from "@/components/halal-confidence-badge";
+import { scoreListing } from "@/lib/halal-score";
 
 // Flag-gated: render on demand so a hawkerFinder toggle reflects immediately
 // (a prerendered notFound() would otherwise stay cached after the flag flips).
@@ -83,7 +84,10 @@ export default async function Page({ params }: { params: Promise<{ centre: strin
                   <div style={{ margin: "8px 0 4px" }}><HalalConfidenceBadge item={s} /></div>
                   {s.blurb && <div className="prayer-card-notes">{s.blurb}</div>}
                   <div className="prayer-card-foot">
-                    <span className="prayer-card-src">{s.certified ? "MUIS / verified" : "Self-declared"}</span>
+                    {/* Same tier label as the badge above — the old certified?
+                        "MUIS / verified":"Self-declared" caption contradicted it
+                        (community-verified stalls read "Self-declared"). */}
+                    <span className="prayer-card-src">{scoreListing(s).label}</span>
                     <span className="prayer-card-dir">View stall →</span>
                   </div>
                 </Link>
