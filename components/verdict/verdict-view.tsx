@@ -10,6 +10,10 @@ import type { StoredVerdict } from "@/lib/verdicts-data";
 const ING_TONE: Record<string, string> = { halal: "yes", mushbooh: "warn", haram: "no", unknown: "warn" };
 const ING_LABEL: Record<string, string> = { halal: "Halal", mushbooh: "Doubtful", haram: "Avoid", unknown: "Unclear" };
 
+// Only ever turn a source into a clickable link when it is a plain http(s) URL —
+// a stored `javascript:`/`data:` "url" must render as inert text, never an <a>.
+const isHttpUrl = (u: string | undefined | null): u is string => !!u && /^https?:\/\//i.test(u);
+
 export function VerdictView({ v }: { v: StoredVerdict }) {
   const m = VERDICT_META[v.verdict];
   const title = v.h1 || `Is ${v.name} Halal in Singapore?`;
@@ -73,7 +77,7 @@ export function VerdictView({ v }: { v: StoredVerdict }) {
               {v.official_sources.map((s, i) => (
                 <li key={i} className="card" style={{ padding: "10px 12px" }}>
                   <strong>{s.body}</strong> — {s.claim}
-                  {s.url && <> · <a className="link-inline" href={s.url} target="_blank" rel="noopener noreferrer">source</a></>}
+                  {isHttpUrl(s.url) && <> · <a className="link-inline" href={s.url} target="_blank" rel="noopener noreferrer">source</a></>}
                 </li>
               ))}
             </ul>

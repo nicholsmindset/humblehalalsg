@@ -36,6 +36,19 @@ describe("VerdictSchema", () => {
   it("every verdict value has display metadata", () => {
     for (const v of VERDICTS) expect(VERDICT_META[v]).toBeTruthy();
   });
+  it("rejects an official source with a javascript: URL (XSS guard)", () => {
+    const evil = { ...base, official_sources: [{ body: "MUIS", claim: "x", url: "javascript:alert(1)" }] };
+    expect(VerdictSchema.safeParse(evil).success).toBe(false);
+  });
+  it("rejects other dangerous URL schemes on a source", () => {
+    for (const url of ["data:text/html,<script>1</script>", " vbscript:msgbox", "file:///etc/passwd"]) {
+      expect(VerdictSchema.safeParse({ ...base, official_sources: [{ body: "X", claim: "y", url }] }).success).toBe(false);
+    }
+  });
+  it("still accepts an https official source", () => {
+    const ok = { ...base, official_sources: [{ body: "MUIS", claim: "certifies", url: "https://halal.muis.gov.sg/x" }] };
+    expect(VerdictSchema.safeParse(ok).success).toBe(true);
+  });
 });
 
 describe("verdictBlocksApproval — the compliance gate", () => {

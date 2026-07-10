@@ -43,7 +43,16 @@ const IngredientRow = z.object({
   note: z.string().max(160).optional(),
 });
 const LookFor = z.object({ icon: z.string().max(4), text: z.string().max(160) });
-const OfficialSource = z.object({ body: z.string().max(80), claim: z.string().max(200), url: z.string().max(300) });
+/** A source URL is refused at the trust boundary if it uses a dangerous scheme
+   (javascript:/data:/vbscript:/file:/blob:), so an approved verdict can never
+   carry a script-bearing "source" link. The render layer additionally only
+   links http(s) (see verdict-view). Kept permissive otherwise so realistic AI
+   drafts (bare/relative strings) don't fail generation — only unsafe schemes. */
+const OfficialSource = z.object({
+  body: z.string().max(80),
+  claim: z.string().max(200),
+  url: z.string().max(300).refine((u) => !/^\s*(javascript|data|vbscript|file|blob):/i.test(u), "unsafe url scheme"),
+});
 const ScholarlyView = z.object({ view: z.string().max(60), position: z.string().max(300) });
 
 export const VerdictSchema = z.object({
