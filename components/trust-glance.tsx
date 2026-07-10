@@ -1,27 +1,28 @@
 "use client";
 
-/* "Trust at a glance" (mock-up spec) — the explicit 4-row halal-status
-   checklist on listing pages: MUIS Certified / Admin Verified / Muslim-Owned /
-   Halal-Friendly, each with an honest verified / not-verified state. This is
-   deliberately a CHECKLIST, not badges: showing what a place is NOT verified
-   for is the trust product. */
+/* "Trust at a glance" (mock-up spec, v2) — a compact single row of four mini
+   status cards: MUIS Certified / Admin Verified / Muslim-Owned / Halal-Friendly.
+   The listing page is about the BUSINESS, so trust reads as a quick positive
+   summary, not a wall of "Not verified" rows — unverified states say
+   "Not enough info" with the detail one tap away (ⓘ tooltip), and the honest
+   distinction is never dropped: an unbacked MUIS claim shows "Pending",
+   never "Certified". */
 import type { Listing } from "@/lib/types";
 import { halalSgVerifyUrl } from "@/lib/muis";
 import { muisUnbacked } from "@/lib/halal-score";
 import { Icon } from "./ui";
 
-interface Row {
+interface Cell {
   key: string;
+  icon: string;
   label: string;
-  sub: string;
-  state: "yes" | "no" | "self";
+  state: "yes" | "pending" | "info";
+  verdict: string;
+  tip: string;
   href?: string;
-  hrefLabel?: string;
 }
 
 export function TrustAtAGlance({ item }: { item: Listing }) {
-  // A MUIS claim WITHOUT a certificate number on file is unbacked — show it as
-  // pending/self-declared, never as a verified "Yes" (lib/halal-score policy).
   const muisClaim = item.certBody === "MUIS";
   const muisPending = muisClaim && muisUnbacked(item);
   const muis = muisClaim && !muisPending;
@@ -29,68 +30,82 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
   const owned = item.badges.includes("owned");
   const friendly = item.badges.includes("friendly");
 
-  const rows: Row[] = [
+  const cells: Cell[] = [
     {
       key: "muis",
+      icon: "shield-check",
       label: "MUIS Certified",
-      sub: muis
-        ? item.verify?.certNo
-          ? `Cert ${item.verify.certNo}`
-          : "Holds official MUIS halal certification"
+      state: muis ? "yes" : muisPending ? "pending" : "info",
+      verdict: muis ? "Certified" : muisPending ? "Pending" : "Not enough info",
+      tip: muis
+        ? `Holds official MUIS halal certification${item.verify?.certNo ? ` (cert ${item.verify.certNo})` : ""} — verify on HalalSG.`
         : muisPending
-          ? "Claimed by the business — certificate not yet on file"
-          : "No MUIS certificate on record",
-      state: muis ? "yes" : muisPending ? "self" : "no",
+          ? "Claimed by the business but the certificate isn't on file yet — we only show the badge once it is. Check HalalSG."
+          : "No MUIS certificate on record for this business.",
       href: muisClaim ? halalSgVerifyUrl(item.verify?.certNo, item.name) : undefined,
-      hrefLabel: muis ? "view on HalalSG" : "check HalalSG",
     },
     {
       key: "admin",
+      icon: "badge-check",
       label: "Admin Verified",
-      sub: admin ? "Documents checked by the Humble Halal team" : "Not yet reviewed by our team",
-      state: admin ? "yes" : "no",
+      state: admin ? "yes" : "info",
+      verdict: admin ? "Verified" : "Not enough info",
+      tip: admin
+        ? "Documents checked by the Humble Halal team (a trust signal, not MUIS certification)."
+        : "Not yet reviewed by the Humble Halal team.",
     },
     {
       key: "owned",
+      icon: "store",
       label: "Muslim-Owned",
-      sub: owned ? "Confirmed Muslim-owned business" : "Ownership not verified",
-      state: owned ? "yes" : "no",
+      state: owned ? "yes" : "info",
+      verdict: owned ? "Yes" : "Not enough info",
+      tip: owned ? "Confirmed Muslim-owned business." : "Ownership hasn't been verified.",
     },
     {
       key: "friendly",
+      icon: "heart",
       label: "Halal-Friendly",
-      sub: friendly
-        ? "Self-declared by the business — not a certification"
+      state: friendly ? "yes" : "info",
+      verdict: friendly ? "Self-declared" : "Not enough info",
+      tip: friendly
+        ? "Self-declared by the business — not a certification."
         : muis || admin
-          ? "Superseded by verified status above"
-          : "No self-declaration recorded",
-      state: friendly ? "self" : "no",
+          ? "Superseded by the verified status."
+          : "No self-declaration recorded.",
     },
   ];
 
   return (
-    <div className="tg-card" role="list" aria-label="Halal trust status at a glance">
-      <div className="tg-head">
-        <Icon name="shield-check" size={16} /> Trust at a glance
+    <section className="tg2" aria-label="Halal trust status at a glance">
+      <div className="tg2-head">
+        <Icon name="shield-check" size={16} />
+        <strong>Trust at a glance</strong>
+        <span className="muted">Based on verification checks and community feedback.</span>
       </div>
-      {rows.map((r) => (
-        <div key={r.key} className={`tg-row tg-${r.state}`} role="listitem">
-          <span className="tg-state" aria-hidden="true">
-            {r.state === "yes" ? <Icon name="check" size={13} /> : r.state === "self" ? "~" : "–"}
-          </span>
-          <span className="tg-label">{r.label}</span>
-          <span className="tg-sub">
-            {r.sub}
-            {r.href && (
-              <>
-                {" · "}
-                <a href={r.href} target="_blank" rel="noopener noreferrer" className="link-inline">{r.hrefLabel}</a>
-              </>
-            )}
-          </span>
-          <span className="tg-verdict">{r.state === "yes" ? "Yes" : r.state === "self" ? (r.key === "muis" ? "Pending" : "Self-declared") : "Not verified"}</span>
-        </div>
-      ))}
-    </div>
+      <div className="tg2-row" role="list">
+        {cells.map((c) => {
+          const inner = (
+            <>
+              <span className={`tg2-ico tg2-${c.state}`}><Icon name={c.icon} size={16} /></span>
+              <span className="tg2-label">{c.label}</span>
+              <span className={`tg2-verdict tg2-v-${c.state}`}>
+                {c.verdict}
+                {c.state === "yes" ? <Icon name="check" size={11} /> : <span aria-hidden="true" className="tg2-i">i</span>}
+              </span>
+            </>
+          );
+          return c.href ? (
+            <a key={c.key} role="listitem" className="tg2-cell" href={c.href} target="_blank" rel="noopener noreferrer" title={`${c.tip} Opens HalalSG.`}>
+              {inner}
+            </a>
+          ) : (
+            <span key={c.key} role="listitem" className="tg2-cell" title={c.tip} tabIndex={0} aria-label={`${c.label}: ${c.verdict}. ${c.tip}`}>
+              {inner}
+            </span>
+          );
+        })}
+      </div>
+    </section>
   );
 }

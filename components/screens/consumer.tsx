@@ -57,10 +57,13 @@ export function HomeScreen() {
   // in) if the directory is empty (e.g. static/preview data) so the section is
   // never blank.
   const popularAreas = useMemo(() => {
+    // Non-geographic area labels (islandwide caterers, online-only services)
+    // are real listing data but not neighbourhoods — never render them as tiles.
+    const NOT_AREAS = new Set(["islandwide", "singapore", "online"]);
     const counts = new Map<string, number>();
     for (const l of dir.listings) {
       const name = (l.area || "").trim();
-      if (name) counts.set(name, (counts.get(name) || 0) + 1);
+      if (name && !NOT_AREAS.has(name.toLowerCase())) counts.set(name, (counts.get(name) || 0) + 1);
     }
     const meta = new Map(catAreas.map((a) => [a.name, a] as const));
     const ranked = [...counts.entries()]
@@ -70,8 +73,9 @@ export function HomeScreen() {
         const m = meta.get(name);
         return { id: m?.id ?? name.toLowerCase(), name, count, tone: m?.tone ?? "cream", image: m?.image };
       });
-    if (ranked.length >= 4) return ranked.slice(0, 8);
-    return catAreas.map((a) => ({ ...a, count: counts.get(a.name) ?? a.count }));
+    // Cap at 6 (two clean rows of 3) — 7–8 tiles left a ragged orphan row.
+    if (ranked.length >= 4) return ranked.slice(0, 6);
+    return catAreas.map((a) => ({ ...a, count: counts.get(a.name) ?? a.count })).slice(0, 6);
   }, [dir.listings, catAreas]);
 
   return (
@@ -111,7 +115,7 @@ export function HomeScreen() {
       <HomeFeatureSection navigate={navigate} />
 
       {/* CATEGORIES — top 8 + view all */}
-      <section className="hh-wrap home-cats" style={{ marginTop: 30 }}>
+      <section className="hh-wrap home-cats home-sec">
         <SectionHead title="Browse by category" action="View all" onAction={() => navigate("explore")} />
         <div className="cat-grid">
           {catCategories.slice(0, 8).map((c) => (
@@ -176,13 +180,8 @@ export function HomeScreen() {
       {/* EVENTS STRIP */}
       <EventsStrip />
 
-      {/* EMAIL CAPTURE — after the browse sections, before the business CTA.
-          (The old "Why Humble Halal" pillars band was cut: it repeated the hub
-          row + trust strip; one trust story per page.) */}
-      <HomeNewsletterCapture />
-
       {/* BUSINESS CTA */}
-      <section className="hh-wrap" style={{ paddingBottom: 48 }}>
+      <section className="hh-wrap home-sec" style={{ paddingBottom: 8 }}>
         <div className="biz-cta hh-pattern-gold">
           <div className="biz-cta-in">
             <div>
@@ -207,6 +206,10 @@ export function HomeScreen() {
 
       {/* Long-form SEO content (collapsible) — targets the halal-food head cluster */}
       <HomeSeoContent />
+
+      {/* EMAIL CAPTURE — moved to the end of the journey so the two dark bands
+          (travel + business CTA) no longer stack against a third. */}
+      <HomeNewsletterCapture />
 
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
       <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />
@@ -305,13 +308,13 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
   const [tab, setTab] = useState<"featured" | "newest" | "top">("featured");
   // Daily deterministic rotation so every Featured-plan business gets homepage
   // time (the tier promise) instead of the same first 8 forever.
-  const featured = useMemo(() => dailyRotate(dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)), "home").slice(0, 8), [dir.listings, certifiedOnly]);
-  const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 8), [dir.listings, certifiedOnly]);
-  const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 8), [dir.listings, certifiedOnly]);
+  const featured = useMemo(() => dailyRotate(dir.listings.filter((l) => l.featured && (!certifiedOnly || l.certified)), "home").slice(0, 6), [dir.listings, certifiedOnly]);
+  const newest = useMemo(() => dir.listings.slice(-12).reverse().filter((l) => !certifiedOnly || l.certified).slice(0, 6), [dir.listings, certifiedOnly]);
+  const top = useMemo(() => [...dir.listings].filter((l) => !certifiedOnly || l.certified).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 6), [dir.listings, certifiedOnly]);
   const picked = tab === "newest" ? newest : tab === "top" ? top : featured;
   // Never render a bare heading over an empty grid: if the selected tab is empty
   // (e.g. no listings carry the `featured` flag), fall back to real listings.
-  const items = picked.length ? picked : dir.listings.filter((l) => !certifiedOnly || l.certified).slice(0, 8);
+  const items = picked.length ? picked : dir.listings.filter((l) => !certifiedOnly || l.certified).slice(0, 6);
   const sort = tab === "newest" ? "newest" : tab === "top" ? "rating" : "featured";
   const tabs: [typeof tab, string][] = [["featured", "Featured"], ["newest", "Newest"], ["top", "Top rated"]];
   return (
@@ -1229,28 +1232,40 @@ export function DetailScreen() {
         right={<button className="btn btn-ghost" style={{ padding: 8 }} aria-label={saved ? "Remove from saved" : "Save this place"} aria-pressed={saved} onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
           <Icon name="heart" size={22} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : "var(--ink-soft)" }} /></button>} />
 
-      {/* cover */}
-      <div className="detail-cover">
-        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" />
-        {(!hasRealPhotos || gallery.length > 1) && (
-          <div className="detail-gallery">
-            {hasRealPhotos
-              ? gallery.slice(1, 4).map((g, gi) => (
-                  <button key={g.url} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 2}`}>
-                    <ImagePh label={g.caption || `photo ${gi + 2}`} tone="cream" src={g.url} style={{ width: 64, height: 48, borderRadius: 8 }} />
-                  </button>
-                ))
-              : ["interior", "dish detail", "storefront"].map((g, gi) => (
-                  <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
-                    <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
-                  </button>
-                ))}
-            <button className="gallery-more" onClick={() => setLb(0)} aria-label={`View all ${galleryImgs.length} photos`}>
-              {hasRealPhotos ? `${galleryImgs.length} photos` : `+${Math.max(1, galleryImgs.length - 3)}`}
+      {/* Photo strip hero (mock-up): a row of photos leads the page when the
+          listing has ≥3 real photos; otherwise the classic single cover. */}
+      {hasRealPhotos && gallery.length >= 3 ? (
+        <div className="detail-photostrip" role="group" aria-label={`${item.name} photos`}>
+          {gallery.slice(0, 4).map((g, gi) => (
+            <button key={g.url} className="dps-cell" onClick={() => setLb(gi)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 1}`}>
+              <ImagePh label={g.caption || `photo ${gi + 1}`} tone={item.tone} src={g.url} style={{ position: "absolute", inset: 0 }} icon="camera" priority={gi === 0} sizes="(max-width: 760px) 50vw, 25vw" />
+              {gi === 3 && galleryImgs.length > 4 && <span className="dps-more">+{galleryImgs.length - 4} photos</span>}
             </button>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="detail-cover">
+          <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" />
+          {(!hasRealPhotos || gallery.length > 1) && (
+            <div className="detail-gallery">
+              {hasRealPhotos
+                ? gallery.slice(1, 4).map((g, gi) => (
+                    <button key={g.url} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 2}`}>
+                      <ImagePh label={g.caption || `photo ${gi + 2}`} tone="cream" src={g.url} style={{ width: 64, height: 48, borderRadius: 8 }} />
+                    </button>
+                  ))
+                : ["interior", "dish detail", "storefront"].map((g, gi) => (
+                    <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
+                      <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
+                    </button>
+                  ))}
+              <button className="gallery-more" onClick={() => setLb(0)} aria-label={`View all ${galleryImgs.length} photos`}>
+                {hasRealPhotos ? `${galleryImgs.length} photos` : `+${Math.max(1, galleryImgs.length - 3)}`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="hh-wrap" style={{ paddingTop: 14 }}>
         <Breadcrumbs
@@ -1280,6 +1295,14 @@ export function DetailScreen() {
                 <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.price}</span>
               </div>
               <h1 style={{ fontSize: "2rem" }}>{item.name}</h1>
+              {/* Business first (mock-up): the address sits with the name. */}
+              {item.address && (
+                <p className="detail-addr">
+                  <Icon name="pin" size={14} />
+                  <span>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
+                  <a href={dirHref} target="_blank" rel="noopener noreferrer" className="link-inline" onClick={() => logLead("directions")}>View on map</a>
+                </p>
+              )}
               {item.franchise && (
                 <button className="franchise-tag" onClick={() => setTab("locations")}>
                   <Icon name="building" size={14} /> Franchise · {item.outletCount} locations across Singapore
@@ -1301,39 +1324,33 @@ export function DetailScreen() {
               <span className={`status-dot ${openNow ? "open" : "closed"}`}></span>{hoursLabel}</span>
           </div>
 
-          {/* Trust at a glance — the mock-up's explicit 4-row status checklist
-              (MUIS / Admin Verified / Muslim-Owned / Halal-Friendly). Non-status
-              extras (family, prayer) keep their badges beneath it. */}
+          {/* Trust at a glance — compact single-row summary (mock-up v2). The
+              page leads with the BUSINESS; verification detail lives in the
+              Info tab. Non-status extras keep their badges beneath. */}
           <TrustAtAGlance item={item} />
           <div className="lc-badges" style={{ marginTop: 10, gap: 8 }}>
             {item.badges.filter((b) => b !== "muis" && b !== "admin" && b !== "owned" && b !== "friendly").map((b) => <Badge key={b} type={b} lg />)}
             {item.prayer && <Badge type="prayer" lg />}
           </div>
 
-          {/* (The old standalone confidence pill was removed — the header ring
-              is now the single at-a-glance score; details live in the card.) */}
-
-          {/* Verification provenance + community confirmation */}
-          <VerificationCard item={item} navigate={navigate} toast={toast} />
-
           {/* Help keep this accurate — community actions (mock-up spec). */}
           <div className="tg-help">
             <div className="tg-help-head">
               <strong>Help keep this accurate</strong>
-              <span className="muted">Your input helps the Muslim community.</span>
+              <span className="muted">Your feedback helps the Muslim community.</span>
             </div>
-            <FreshnessActions businessId={item.id} lastVerifiedAgo={timeAgo(item.verify?.verified)} />
-            <div className="flex g8 wrap" style={{ marginTop: 8 }}>
+            <div className="flex g8 wrap">
               <button
-                className="btn btn-outline btn-sm"
+                className="btn btn-primary btn-sm"
                 onClick={async () => {
                   logLead("share");
                   const r = await shareOrCopy({ title: item.name, text: item.blurb, path: `/business/${item.slug}` });
                   toast(r === "shared" ? "Shared — jazakallahu khairan!" : r === "copied" ? "Link copied to clipboard" : "Couldn't share");
                 }}
               >
-                <Icon name="share" size={15} /> I&apos;ll share this place
+                <Icon name="share" size={15} /> I&apos;ll share
               </button>
+              <FreshnessActions businessId={item.id} lastVerifiedAgo={timeAgo(item.verify?.verified)} bare />
               <button className="btn btn-outline btn-sm" onClick={() => navigate("report", { id: item.id })}>
                 <Icon name="flag" size={15} /> Something&apos;s wrong
               </button>
@@ -1382,7 +1399,15 @@ export function DetailScreen() {
           {tab === "overview" && <DetailOverview item={item} />}
           {tab === "locations" && <LocationsPanel item={item} outletIdx={outletIdx} setOutletIdx={setOutletIdx} toast={toast} />}
           {tab === "reviews" && <DetailReviews item={item} />}
-          {tab === "info" && <DetailInfo item={item} navigate={navigate} />}
+          {tab === "info" && (
+            <>
+              {/* Verification provenance + community confirmation — demoted
+                  from the main flow: the page is about the business, the
+                  paperwork detail lives here. */}
+              <VerificationCard item={item} navigate={navigate} toast={toast} />
+              <DetailInfo item={item} navigate={navigate} />
+            </>
+          )}
 
           {/* community TikTok videos (renders nothing unless approved videos exist) */}
           <TikTokVideos slug={item.slug || item.id} name={item.name} />
@@ -1452,6 +1477,25 @@ export function DetailScreen() {
 
         {/* sidebar (desktop) */}
         <aside className="detail-side">
+          {/* Halal Confidence Score card (mock-up): ring + tier + basis. */}
+          <div className="card" style={{ padding: 18, marginBottom: 14 }}>
+            <div className="flex between center" style={{ marginBottom: 8 }}>
+              <h3 style={{ fontSize: "1.02rem" }}>Halal Confidence Score</h3>
+              <button className="btn-ghost-ico" title="A 0–100 score from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How the halal-confidence score works" onClick={() => navigate("verify")}>
+                <Icon name="info" size={15} />
+              </button>
+            </div>
+            <div className="flex g14 center">
+              <HalalConfidenceRing item={item} />
+              <div style={{ minWidth: 0 }}>
+                <div className="muted" style={{ fontSize: ".84rem", lineHeight: 1.45 }}>
+                  Rated on verification signals &amp; community feedback.
+                  {(item.verify?.confirms ?? 0) > 0 && <> Based on <strong>{item.verify!.confirms}</strong> community confirmation{item.verify!.confirms === 1 ? "" : "s"}.</>}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {item.franchise && item.outlets && outlet ? (
             <div className="card" style={{ padding: 18 }}>
               <div className="flex between center"><h3 style={{ fontSize: "1.05rem" }}>Choose an outlet</h3>
@@ -1481,7 +1525,7 @@ export function DetailScreen() {
                 <Icon name="shield-check" size={18} style={{ color: "var(--emerald)", flex: "none" }} />
                 <span className="muted" style={{ fontSize: ".84rem" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
               </div>
-              <ImagePh label={`${outlet.area} map`} tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
+              {/* No fake map image — the Directions intent is the honest CTA. */}
               <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Directions to this outlet</a>
             </div>
           ) : (
@@ -1496,19 +1540,30 @@ export function DetailScreen() {
                 </div>
               ))}
             </div>
-            <hr className="divider" style={{ margin: "14px 0" }} />
-            <div className="flex g8" style={{ alignItems: "flex-start" }}>
-              <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
-              <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
-            </div>
-            {item.coords ? (
+            {item.address && (
+              <>
+                <hr className="divider" style={{ margin: "14px 0" }} />
+                <div className="flex g8" style={{ alignItems: "flex-start" }}>
+                  <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
+                  <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
+                </div>
+              </>
+            )}
+            {/* Real mini map when we have coordinates; no fake map image otherwise. */}
+            {item.coords && (
               <div style={{ height: 200, borderRadius: 12, marginTop: 12, overflow: "hidden", position: "relative" }}>
                 <MapView center={item.coords} zoom={16} points={[{ id: item.id, name: item.name, coords: item.coords as LatLng, kind: "listing" as const }]} />
               </div>
-            ) : (
-              <ImagePh label="map location" tone="emerald" style={{ height: 120, borderRadius: 12, marginTop: 12 }} icon="map" />
             )}
-            <a className="btn btn-primary btn-block mt12" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Get directions</a>
+            <a className="btn btn-primary btn-block mt12" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={18} /> Directions</a>
+            <div className="flex g8" style={{ marginTop: 8 }}>
+              <button className="btn btn-outline btn-sm f1" onClick={async () => { logLead("share"); const r = await shareOrCopy({ title: item.name, text: item.blurb, path: `/business/${item.slug}` }); toast(r === "shared" ? "Shared" : r === "copied" ? "Link copied" : "Couldn't share"); }}>
+                <Icon name="share" size={15} /> Share
+              </button>
+              <button className="btn btn-outline btn-sm f1" onClick={() => { if (!saved) logLead("shortlist"); toggleSave(item.id); }}>
+                <Icon name="heart" size={15} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : undefined }} /> {saved ? "Saved" : "Save"}
+              </button>
+            </div>
           </div>
           )}
         </aside>

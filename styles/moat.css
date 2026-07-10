@@ -219,3 +219,48 @@
 .tg-help-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
 .tg-help-head strong { font-size: .98rem; }
 .tg-help-head .muted { font-size: .84rem; }
+
+/* ── Trust at a glance v2 — compact mini-card row (mock-up spec) ── */
+.tg2 { margin-top: 16px; }
+.tg2-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.tg2-head svg { color: var(--emerald); align-self: center; flex: none; }
+.tg2-head strong { font-size: 1rem; }
+.tg2-head .muted { font-size: .82rem; }
+.tg2-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tg2-cell {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--white); box-shadow: var(--sh-sm); min-width: 0;
+  text-decoration: none; color: inherit; cursor: default; font: inherit; text-align: left;
+}
+a.tg2-cell { cursor: pointer; }
+a.tg2-cell:hover { border-color: var(--emerald-300); box-shadow: var(--sh-md); }
+.tg2-ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.tg2-ico.tg2-yes { background: var(--emerald); color: #fff; }
+.tg2-ico.tg2-pending { background: var(--gold-100); color: var(--gold-700); }
+.tg2-ico.tg2-info { background: var(--cream-200); color: var(--ink-faint); }
+.tg2-label { font-weight: 700; font-size: .82rem; color: var(--ink); line-height: 1.2; }
+.tg2-verdict { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: .76rem; }
+.tg2-v-yes { color: var(--emerald); }
+.tg2-v-pending { color: var(--gold-700); }
+.tg2-v-info { color: var(--ink-faint); font-weight: 600; }
+.tg2-i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid currentColor; display: inline-grid; place-items: center; font-size: .6rem; font-style: normal; font-weight: 800; line-height: 1; }
+@media (max-width: 700px) { .tg2-row { grid-template-columns: 1fr 1fr; } }
+
+/* ── Listing header address line ── */
+.detail-addr { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; color: var(--ink-soft); font-size: .92rem; }
+.detail-addr svg { color: var(--emerald); align-self: center; flex: none; }
+.detail-addr .link-inline { font-weight: 700; font-size: .86rem; }
+
+/* ── Photo strip hero (mock-up) ── */
+.detail-photostrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 220px; }
+.detail-photostrip .dps-cell { position: relative; border: 0; padding: 0; cursor: pointer; overflow: hidden; background: var(--cream-200); }
+.detail-photostrip .dps-more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff; border-radius: var(--r-pill); padding: 4px 10px; font-size: .78rem; font-weight: 700; }
+@media (max-width: 760px) { .detail-photostrip { grid-template-columns: 1fr 1fr; height: 180px; } .detail-photostrip .dps-cell:nth-child(n+3) { display: none; } }
+
+/* Desktop shows the score in the sidebar card — avoid a duplicate header ring. */
+@media (min-width: 861px) { .detail-headbtns .hc-ring { display: none; } }
+
+/* tiny ghost icon button (info affordances) */
+.btn-ghost-ico { border: 0; background: none; padding: 4px; color: var(--ink-faint); cursor: pointer; border-radius: 50%; display: grid; place-items: center; }
+.btn-ghost-ico:hover { color: var(--emerald); background: var(--emerald-50); }
