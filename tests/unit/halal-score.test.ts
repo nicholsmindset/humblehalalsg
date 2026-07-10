@@ -49,12 +49,26 @@ describe("halalScore — the trust signal", () => {
   });
 
   // Audit #1 — a MUIS claim with no certificate number on file must NOT be
-  // presented as officially certified (no evidence = no definitive badge/score).
-  it("MUIS claim WITHOUT a cert number is downgraded (not the muis tier)", () => {
+  // presented as officially "Certified". It now resolves to the honest
+  // "MUIS-listed" tier (on the register per our records) rather than being
+  // dumped to "Self-declared", which mislabelled ~194 register-sourced places.
+  it("MUIS claim WITHOUT a cert number → muis-listed (not full muis, not declared)", () => {
     const r = halalScore({ badges: b("muis") });
+    expect(r.tier).toBe("muis-listed");
     expect(r.tier).not.toBe("muis");
-    expect(r.tier).toBe("declared");
     expect(r.score).toBeLessThan(90);
+  });
+
+  it("raw halal_tier drives the tier: community tag → community (not declared)", () => {
+    expect(halalScore({ badges: b("friendly"), halalTier: "community" }).tier).toBe("community");
+  });
+
+  it("muis-listed ranks below full muis and above community", () => {
+    const listed = halalScore({ badges: b("muis") }).score;
+    const cert = halalScore({ badges: b("muis"), verify: { certNo: "X", confirms: 0 } as never }).score;
+    const community = halalScore({ badges: b("friendly"), halalTier: "community" }).score;
+    expect(listed).toBeLessThan(cert);
+    expect(listed).toBeGreaterThan(community);
   });
 
   it("an admin-backed MUIS claim with no cert still resolves to admin (own assertion)", () => {

@@ -109,6 +109,9 @@ export interface Listing {
   photos?: { url: string; caption?: string }[];
   certified?: boolean;
   certBody?: string | null;
+  /** Raw `halal_tier` from the DB (muis | admin | community | declared | pending).
+   *  Drives the halal-confidence tier directly so a tagged tier is honoured. */
+  halalTier?: string;
   /** True when an owner has claimed this business (owner_id or claimed_by set).
    *  Drives the "Is this your business? Claim it" prompt on unclaimed pages. */
   claimed?: boolean;

@@ -30,9 +30,11 @@ export function HalalConfidenceBadge(props: Props) {
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="hc-score" style={{ background: tone }}>{hs.score}</span>
+        <span className="hc-score" style={{ background: tone, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name={badgeIcon(hs.tier)} size={15} />
+        </span>
         <span className="hc-label">{hs.label}</span>
-        <span className="hc-sub">Halal confidence</span>
+        <span className="hc-sub">Halal verification</span>
         <Icon name="chevron" size={16} className={`hc-caret ${open ? "up" : ""}`} />
       </button>
       {open && (
@@ -51,33 +53,38 @@ export function HalalConfidenceBadge(props: Props) {
   );
 }
 
-/* Circular score ring (mock-up spec) — the at-a-glance "88/100 · High
-   Confidence" dial shown in the listing header. Same HalalRank score as the
-   chip; the visible tier label keeps FAQPage/AIO copy consistent. */
+/** Tier → header/badge icon. A shield for certified/register tiers, a check for
+ *  community/self-declared, a warning for a changed status. */
+function badgeIcon(tier: HalalScore["tier"]): string {
+  if (tier === "muis" || tier === "muis-listed" || tier === "admin") return "shield-check";
+  if (tier === "reported") return "warning";
+  return "check";
+}
+
+/* Listing-header trust badge. Leads with the tier LABEL (not a 0–100 number):
+   a small number next to the word "halal" reads as "42% halal / barely halal",
+   which unfairly undersells genuinely-halal-but-uncertified places. The label
+   ("MUIS Certified" / "Community Confirmed" / "Self-declared") is honest and
+   clear; the numeric score lives only in the expandable "why" panel/tooltip. */
 export function HalalConfidenceRing(props: Props) {
   const hs: HalalScore = props.score ?? scoreListing(props.item);
   const tone = scoreTone(hs.tier);
-  const R = 30;
-  const C = 2 * Math.PI * R;
-  const filled = (Math.max(0, Math.min(100, hs.score)) / 100) * C;
   return (
     <div
       className="hc-ring"
       role="img"
-      aria-label={`Halal confidence score ${hs.score} out of 100 — ${hs.label}. ${hs.blurb}`}
+      aria-label={`Halal verification: ${hs.label}. ${hs.blurb}`}
       title={hs.blurb}
     >
-      <svg viewBox="0 0 72 72" width="72" height="72" aria-hidden="true">
-        <circle cx="36" cy="36" r={R} fill="none" stroke="var(--line)" strokeWidth="5" />
-        <circle
-          cx="36" cy="36" r={R} fill="none"
-          stroke={tone} strokeWidth="5" strokeLinecap="round"
-          strokeDasharray={`${filled} ${C - filled}`}
-          transform="rotate(-90 36 36)"
-        />
-        <text x="36" y="34" textAnchor="middle" fontSize="19" fontWeight="800" fill="var(--ink)">{hs.score}</text>
-        <text x="36" y="47" textAnchor="middle" fontSize="8.5" fontWeight="700" fill="var(--ink-faint)">/100</text>
-      </svg>
+      <span
+        aria-hidden="true"
+        style={{
+          width: 52, height: 52, borderRadius: "50%", background: tone, color: "#fff",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <Icon name={badgeIcon(hs.tier)} size={26} />
+      </span>
       <span className="hc-ring-label" style={{ color: tone }}>{hs.label}</span>
     </div>
   );

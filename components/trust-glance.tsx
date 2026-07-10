@@ -36,11 +36,11 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
       icon: "shield-check",
       label: "MUIS Certified",
       state: muis ? "yes" : muisPending ? "pending" : "info",
-      verdict: muis ? "Certified" : muisPending ? "Pending" : "Not enough info",
+      verdict: muis ? "Certified" : muisPending ? "Listed" : "Not enough info",
       tip: muis
         ? `Holds official MUIS halal certification${item.verify?.certNo ? ` (cert ${item.verify.certNo})` : ""} — verify on HalalSG.`
         : muisPending
-          ? "Claimed by the business but the certificate isn't on file yet — we only show the badge once it is. Check HalalSG."
+          ? "On the MUIS HalalSG register per our records — shown as 'MUIS-listed' rather than full Certified until the certificate is on file. Check HalalSG."
           : "No MUIS certificate on record for this business.",
       href: muisClaim ? halalSgVerifyUrl(item.verify?.certNo, item.name) : undefined,
     },

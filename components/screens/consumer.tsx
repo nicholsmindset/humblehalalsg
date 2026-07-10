@@ -1491,11 +1491,13 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
 
         {/* sidebar (desktop) */}
         <aside className="detail-side">
-          {/* Halal Confidence Score card (mock-up): ring + tier + basis. */}
+          {/* Halal verification card: tier badge + basis. Leads with the tier,
+              not a 0–100 number (a low number next to "halal" reads as "barely
+              halal" and unfairly undersells genuinely-halal uncertified places). */}
           <div className="card" style={{ padding: 18, marginBottom: 14 }}>
             <div className="flex between center" style={{ marginBottom: 8 }}>
-              <h3 style={{ fontSize: "1.02rem" }}>Halal Confidence Score</h3>
-              <button className="btn-ghost-ico" title="A 0–100 score from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How the halal-confidence score works" onClick={() => navigate("verify")}>
+              <h3 style={{ fontSize: "1.02rem" }}>Halal verification</h3>
+              <button className="btn-ghost-ico" title="A trust level from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How halal verification works" onClick={() => navigate("verify")}>
                 <Icon name="info" size={15} />
               </button>
             </div>
