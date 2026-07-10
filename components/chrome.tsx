@@ -412,7 +412,7 @@ export function TopNav() {
   const links = [
     { id: "explore", label: t("nav.explore") },
     ...(flags?.hawkerFinder ? [{ id: "hawker", label: "Hawker" }] : []),
-    { id: "ask", label: "Ask AI" },
+    ...(flags?.aiConcierge ? [{ id: "ask", label: "Ask AI" }] : []),
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "tools", label: "Tools" },
@@ -491,7 +491,7 @@ export function TopNav() {
 
 /* ---------------- MOBILE TOP BAR + MENU DRAWER ---------------- */
 export function MobileBar() {
-  const { navigate, state, t } = useApp();
+  const { navigate, state, t, flags } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -508,7 +508,7 @@ export function MobileBar() {
   // Travel and Tools were missing from the drawer).
   const links: [string, string, string][] = [
     ["explore", t("nav.explore"), "search"],
-    ["ask", "Ask AI", "sparkles"],
+    ...(flags?.aiConcierge ? ([["ask", "Ask AI", "sparkles"]] as [string, string, string][]) : []),
     ["travel", "Travel", "globe"],
     ["events", t("nav.events"), "calendar"],
     ["tools", "Tools", "grid"],

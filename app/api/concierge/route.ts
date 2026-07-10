@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDirectory } from "@/lib/directory";
+import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { runHotelSearch, defaultStayDates } from "@/lib/travel-data";
 import { travelCities } from "@/lib/travel-locations";
@@ -68,6 +69,12 @@ function rank(listings: Listing[], q: string): Listing[] {
 }
 
 export async function POST(req: Request) {
+  // Kill-switch parity with /api/concierge/chat: the aiConcierge flag must turn
+  // off EVERY concierge entry point — this single-shot route was ungated, so
+  // flipping the flag off left a live AI-spend path (audit R4).
+  if (!(await getServerFlags()).aiConcierge) {
+    return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
+  }
   // Paid LLM call — throttle per IP so the endpoint can't be scripted into a
   // token-burn / cost-DoS (it's unauthenticated by design for public search).
   const rl = await rateLimit(req, "concierge", 20, 60);
