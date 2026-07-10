@@ -336,6 +336,35 @@ export function faqJsonLd(items: { q: string; a: string }[]) {
   };
 }
 
+/** Mosque (schema.org Mosque → PlaceOfWorship) for /mosques/[slug] pages. */
+export function mosqueJsonLd(m: {
+  name: string;
+  path: string;
+  address: string;
+  postalCode?: string;
+  lat: number;
+  lng: number;
+  image?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Mosque",
+    name: m.name,
+    url: `${SITE.url}${m.path}`,
+    ...(m.image ? { image: absUrl(m.image) } : {}),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: m.address,
+      addressLocality: "Singapore",
+      ...(m.postalCode ? { postalCode: m.postalCode } : {}),
+      addressCountry: "SG",
+    },
+    geo: { "@type": "GeoCoordinates", latitude: m.lat, longitude: m.lng },
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}`,
+    areaServed: { "@type": "Country", name: "Singapore" },
+  };
+}
+
 /** ItemList of event pages — used by the /events/c/* and /events/in/* hubs. */
 export function eventItemListJsonLd(events: EventItem[], name: string) {
   return {

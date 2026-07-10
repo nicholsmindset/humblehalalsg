@@ -3,14 +3,17 @@ import Link from "next/link";
 import { mosques } from "@/lib/data";
 import type { Mosque } from "@/lib/types";
 import { mapsSearchUrl } from "@/lib/geo";
+import { mosqueSlug } from "@/lib/mosques";
+import { mosqueProfile } from "@/lib/mosque-content";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMeta({
-  title: "Mosques in Singapore — find a masjid near you",
+  title: "Mosques in Singapore (Masjid) — Directory, Prayer Times & Jumu'ah",
   description:
-    "A directory of mosques (masjid) across Singapore — find a masjid near you and get directions. Browse all mosques grouped by region: Central, East, North-East, North and West.",
+    "Every masjid (mosque) in Singapore, grouped by region — with prayer times, Friday (Jumu'ah) info, qibla and directions. Find a masjid near you in Central, East, North-East, North or West.",
   path: "/mosques",
+  absoluteTitle: true,
 });
 
 const REGION_ORDER: Mosque["region"][] = ["Central", "East", "North-East", "North", "West"];
@@ -88,22 +91,35 @@ export default function Page() {
                 <span className="mosque-region-count">{g.items.length} mosques</span>
               </h2>
               <div className="hub-grid">
-                {g.items.map((m) => (
-                  <div key={m.id} className="mosque-row">
-                    <div style={{ minWidth: 0 }}>
-                      <div className="mosque-row-name">{m.name}</div>
-                      <div className="mosque-row-area">{m.area}</div>
+                {g.items.map((m) => {
+                  // Profiled mosques have a rich detail page; others link to the map.
+                  const slug = mosqueSlug(m);
+                  const profiled = !!mosqueProfile(slug);
+                  return (
+                    <div key={m.id} className="mosque-row">
+                      <div style={{ minWidth: 0 }}>
+                        {profiled ? (
+                          <Link href={`/mosques/${slug}`} className="mosque-row-name link-inline">{m.name}</Link>
+                        ) : (
+                          <div className="mosque-row-name">{m.name}</div>
+                        )}
+                        <div className="mosque-row-area">{m.area}</div>
+                      </div>
+                      {profiled ? (
+                        <Link className="mosque-row-dir" href={`/mosques/${slug}`}>Details →</Link>
+                      ) : (
+                        <a
+                          className="mosque-row-dir"
+                          href={mapsSearchUrl(`${m.name} Singapore`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Map →
+                        </a>
+                      )}
                     </div>
-                    <a
-                      className="mosque-row-dir"
-                      href={mapsSearchUrl(`${m.name} Singapore`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Map →
-                    </a>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))}
