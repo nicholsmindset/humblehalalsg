@@ -13,6 +13,7 @@ import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
+import { profiledMosqueSlugs } from "@/lib/mosque-content";
 import { SITE } from "@/lib/seo";
 
 export const SITEMAP_SEGMENTS = [
@@ -25,6 +26,7 @@ export const SITEMAP_SEGMENTS = [
   "travel",
   "tools",
   "weddings",
+  "mosques",
 ] as const;
 
 export type SitemapSegment = (typeof SITEMAP_SEGMENTS)[number];
@@ -218,6 +220,15 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         "/malay-wedding-attire-baju-guide",
         "/aqiqah-kenduri-catering-singapore",
       ].map((path) => ({ loc: `${base}${path}`, lastmod: now, changefreq: "weekly", priority: 0.7 }));
+
+    case "mosques":
+      // Only PROFILED mosques get an indexable detail page (thin-content gate).
+      return profiledMosqueSlugs().map((slug) => ({
+        loc: `${base}/mosques/${slug}`,
+        lastmod: now,
+        changefreq: "weekly",
+        priority: 0.6,
+      }));
 
     default:
       return [];
