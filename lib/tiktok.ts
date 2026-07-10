@@ -50,6 +50,19 @@ export function embedUrl(handle: string, videoId: string): string {
   return `https://www.tiktok.com/@${handle || "placeholder"}/video/${videoId}`;
 }
 
+/** Normalise an admin-entered business reference to a slug. Admins naturally
+ *  paste the full listing URL ("https://…/business/atrium-restaurant") into the
+ *  attach field — accept that, a bare slug, or a slug with stray slashes.
+ *  Anything that still isn't a slug falls through to the no-match error. */
+export function normalizeBusinessSlugInput(raw: string): string {
+  let s = String(raw || "").trim();
+  if (!s) return "";
+  s = s.split("?")[0].split("#")[0];
+  const m = s.match(/\/business\/([^/]+)\/?$/);
+  if (m) return m[1].toLowerCase();
+  return s.replace(/^\/+|\/+$/g, "").toLowerCase();
+}
+
 // ── AI classification ──────────────────────────────────────────────────────
 export const TiktokSchema = z.object({
   foodRelated: z.boolean().describe("True if the video is about a specific food business, dish, café, restaurant, hawker stall, or eating experience in Singapore. False for unrelated/generic content."),

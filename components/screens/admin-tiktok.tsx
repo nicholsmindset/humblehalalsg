@@ -126,8 +126,8 @@ export function AdminTiktok({ toast }: { toast: (m: string) => void }) {
               {tab === "pending" && (
                 <>
                   <div className="field" style={{ marginTop: 10 }}>
-                    <label htmlFor={`slug-${r.id}`}>Attach to business (slug) <span className="hint">— overrides the AI/submitter match</span></label>
-                    <input id={`slug-${r.id}`} className="input" placeholder={g.matchedBusinessSlug || claimed?.slug || "business-slug"} value={slugEdit[r.id] ?? ""} onChange={(e) => setSlugEdit((m) => ({ ...m, [r.id]: e.target.value }))} />
+                    <label htmlFor={`slug-${r.id}`}>Attach to business <span className="hint">— slug or listing URL; overrides the AI/submitter match</span></label>
+                    <input id={`slug-${r.id}`} className="input" placeholder={g.matchedBusinessSlug || claimed?.slug || "business-slug or https://…/business/…"} value={slugEdit[r.id] ?? ""} onChange={(e) => setSlugEdit((m) => ({ ...m, [r.id]: e.target.value }))} />
                   </div>
                   <div className="flex g8 wrap" style={{ marginTop: 12 }}>
                     <button className="btn btn-soft btn-sm" disabled={busy === r.id} onClick={() => classify(r)}><Icon name="sparkles" size={15} /> {busy === r.id ? "Working…" : hasDraft ? "Re-classify" : "Classify with AI"}</button>
