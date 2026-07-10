@@ -82,6 +82,14 @@ export function HomeCommunityVideos() {
       </div>
       <div className="tiktok-grid">
         {videos.map((v) => <VideoCard key={v.id} v={v} consented={consented} />)}
+        {/* Submission CTA tile — fills the row while community content is young
+            and keeps the funnel visible as it grows. */}
+        <Link className="tiktok-card tiktok-cta" href="/feature-tiktok" aria-label="Share your TikTok about a halal spot and get featured">
+          <span className="tiktok-cta-ico"><Icon name="camera" size={26} /></span>
+          <strong>Your find here?</strong>
+          <span className="tiktok-cta-sub">Made a TikTok about a halal spot? Share the link — we feature it with credit to you.</span>
+          <span className="btn btn-primary btn-sm">Share your find</span>
+        </Link>
       </div>
     </section>
   );

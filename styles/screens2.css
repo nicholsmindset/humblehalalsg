@@ -578,6 +578,14 @@ body[data-accent="vibrant"] .tag { background:var(--gold-50); color:var(--gold-7
 .tiktok-cap-txt { font-size: .85rem; color: var(--ink, #23271f); line-height: 1.35; }
 .tiktok-cap-handle { font-size: .8rem; font-weight: 700; color: var(--emerald, #12525B); display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
 .tiktok-cap-handle:hover { text-decoration: underline; }
+/* Submission CTA tile — same silhouette as a video card (grid stretches it to
+   the row height); dashed = "this slot is yours". */
+.tiktok-cta { border: 1.5px dashed var(--emerald-300, #9dbcbf); background: var(--cream, #F8F6F1); align-items: center; justify-content: center; text-align: center; padding: 26px 20px; gap: 10px; text-decoration: none; color: inherit; transition: background .15s ease, border-color .15s ease; }
+.tiktok-cta:hover { background: var(--emerald-50, #eef4f3); border-color: var(--emerald, #12525B); }
+.tiktok-cta-ico { width: 54px; height: 54px; border-radius: 999px; background: var(--emerald, #12525B); color: #fff; display: flex; align-items: center; justify-content: center; }
+.tiktok-cta strong { font-size: 1.05rem; }
+.tiktok-cta-sub { font-size: .85rem; line-height: 1.5; color: var(--ink-soft, #5a6157); max-width: 230px; }
+.tiktok-cta .btn { margin-top: 4px; }
 /* =========================== ASK AI CONCIERGE =========================== */
 .ask-page { background:linear-gradient(180deg,#fbf7ef 0%,#fffaf0 52%,#f5efe2 100%); padding:34px 20px 64px; }
 .ask-hero { width:100%; max-width:var(--maxw); margin:0 auto; display:grid; grid-template-columns:minmax(0,0.92fr) minmax(420px,1fr); gap:28px; align-items:center; }
