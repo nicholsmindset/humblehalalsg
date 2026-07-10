@@ -70,7 +70,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     <>
       <JsonLd
         data={[
-          mosqueJsonLd({ name: m.name, path, address: p.address, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng }),
+          mosqueJsonLd({ name: m.name, path, address: p.address ?? `${m.area}, Singapore`, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng }),
           breadcrumbJsonLd([
             { name: "Home", path: "/" },
             { name: "Mosques", path: "/mosques" },
@@ -181,7 +181,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <aside className="detail-side">
             <div className="card" style={{ padding: 18 }}>
               <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Location</h3>
-              <p className="muted" style={{ fontSize: ".9rem" }}>{p.address}{p.postal ? `, Singapore ${p.postal}` : ""}</p>
+              <p className="muted" style={{ fontSize: ".9rem" }}>{p.address ? `${p.address}${p.postal ? `, Singapore ${p.postal}` : ""}` : `${m.area}, Singapore`}</p>
               {p.nearestMrt && <p className="faint" style={{ fontSize: ".85rem", marginTop: 4 }}><Icon name="pin" size={13} /> {p.nearestMrt}</p>}
               <div style={{ height: 200, borderRadius: 12, marginTop: 12, overflow: "hidden", position: "relative" }}>
                 <MapView center={m.coords} zoom={16} points={[{ id: m.id, name: m.name, coords: m.coords, kind: "mosque" as const }]} />
