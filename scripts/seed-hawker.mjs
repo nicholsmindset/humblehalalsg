@@ -141,6 +141,61 @@ const CENTRES = [
       { name: "Satay Solo", stall_no: "#01-01", cuisine: "Indonesian Satay", tier: "community" },
     ],
   },
+
+  // ---- Build Wave 3 Batch 2 (highest-traffic centres from the Ahrefs CSV —
+  //      halal-filtered ONLY; every stall below is web-verified Muslim-owned/
+  //      halal. Tanglin Halt SKIPPED (closed/redeveloped, stalls moved to
+  //      Margaret Drive) and People's Park *Complex* SKIPPED (no halal stalls). ----
+  {
+    id: "newton-food-centre", name: "Newton Food Centre", address: "500 Clemenceau Ave North, Singapore 229495",
+    region: "Central", lat: 1.31283, lng: 103.83919, nearestMrt: "Newton MRT", hours: "12pm–2am",
+    blurb: "Singapore's most famous supper hawker centre (of Crazy Rich Asians fame) — best known for BBQ seafood and satay, with a solid row of Muslim-owned halal stalls.",
+    stalls: [
+      { name: "22 Best Satay", stall_no: "#01-22", cuisine: "Satay / Malay", tier: "community" },
+      { name: "Al-Amin Indian Muslim Food", stall_no: "#01-26", cuisine: "Indian-Muslim", tier: "community" },
+      { name: "Pirate's Seafood", stall_no: "#01-56", cuisine: "Halal BBQ Seafood", tier: "community" },
+      { name: "Hajah Monah", stall_no: "#01-83", cuisine: "Malay / Nasi Padang", tier: "community" },
+    ],
+  },
+  {
+    id: "tiong-bahru-market", name: "Tiong Bahru Market & Food Centre", address: "30 Seng Poh Rd, Singapore 168898",
+    region: "Central", lat: 1.28509, lng: 103.83200, nearestMrt: "Tiong Bahru MRT", hours: "7am–8pm",
+    blurb: "A heritage Tiong Bahru favourite famous for its Chinese hawker fare — with a handful of Muslim-owned and halal stalls tucked among them.",
+    stalls: [
+      { name: "Ali Corner", stall_no: "#02-17", cuisine: "Indonesian / Malay", tier: "community" },
+      { name: "The Coco Rice", stall_no: "#02-58", cuisine: "Halal Nasi Lemak", tier: "community" },
+      { name: "Super Shiok Nasi Lemak", stall_no: "#02-38", cuisine: "Nasi Lemak", tier: "community" },
+    ],
+  },
+  {
+    id: "alexandra-village-food-centre", name: "Alexandra Village Food Centre", address: "120 Bukit Merah Lane 1, Singapore 150120",
+    region: "Central", lat: 1.28730, lng: 103.80480, nearestMrt: "Redhill / Queenstown MRT (bus)", hours: "7am–10pm",
+    blurb: "A Bukit Merah institution loved for its variety — with a genuine cluster of halal and Muslim-owned stalls, from Indian-Muslim classics to a halal bakery.",
+    stalls: [
+      { name: "AJ Delights", stall_no: "#01-82", cuisine: "Halal Bakes / Muffins", tier: "community" },
+      { name: "Ashes Burnnit", stall_no: "#01-61", cuisine: "Charcoal Burgers / Roti John", tier: "community" },
+      { name: "Sarapan Pagi", stall_no: "#01-66", cuisine: "Malay / Breakfast", tier: "community" },
+      { name: "Haji K. Abdul Rehunan Muslim Food", stall_no: "#01-09", cuisine: "Indian-Muslim", tier: "community" },
+    ],
+  },
+  {
+    id: "peoples-park-food-centre", name: "People's Park Food Centre", address: "32 New Market Rd, Singapore 050032",
+    region: "Central", lat: 1.28490, lng: 103.84370, nearestMrt: "Chinatown MRT", hours: "7am–9pm",
+    blurb: "A bustling Chinatown food centre that's mostly Chinese — but home to a Muslim-owned Indonesian-Malay stall and a halal Penang laksa for the community.",
+    stalls: [
+      { name: "Muslim Food @ People's Park", stall_no: "#01-1002A", cuisine: "Indonesian-Muslim / Malay", tier: "community" },
+      { name: "Superstar Original Famous Penang Laksa", stall_no: "#01-1002B", cuisine: "Halal Penang Laksa", tier: "community" },
+    ],
+  },
+  {
+    id: "maxwell-food-centre", name: "Maxwell Food Centre", address: "1 Kadayanallur St, Singapore 069118",
+    region: "Central", lat: 1.28030, lng: 103.84470, nearestMrt: "Maxwell / Chinatown MRT", hours: "8am–10pm",
+    blurb: "The famous Chinatown hawker centre (of Tian Tian chicken rice fame) is mostly non-halal — but there is genuinely halal food here, led by the well-loved Pakistani Dum Briyani.",
+    stalls: [
+      { name: "Pakistani Dum Briyani SG", stall_no: "#01-69", cuisine: "Pakistani Biryani / Halal", tier: "community" },
+      { name: "Traditional Family Cuisine", stall_no: "", cuisine: "Indian-Muslim / Halal", tier: "community" },
+    ],
+  },
 ];
 
 async function main() {
@@ -159,6 +214,10 @@ async function main() {
     centreN++;
     for (const s of c.stalls) {
       const slug = `${slugify(s.name)}-${c.id}`.slice(0, 80);
+      // Unit number is nice-to-have, not required — some genuinely-halal stalls
+      // are confirmed by a halal directory without a documented #01-XX. Omit the
+      // parenthetical rather than print an empty "()".
+      const unit = s.stall_no ? ` (${s.stall_no})` : "";
       const { error: sErr } = await sb.from("businesses").upsert({
         id: randomUUID(),
         slug,
@@ -166,12 +225,12 @@ async function main() {
         cat_id: "hawker",
         area: c.region,
         hawker_centre_id: c.id,
-        stall_no: s.stall_no,
+        stall_no: s.stall_no || null,
         lat: c.lat, lng: c.lng,
         halal_tier: s.tier,          // 'community' — honest, never 'muis'
         status: "published",
         source: "community",
-        description: `${s.cuisine} stall at ${c.name} (${s.stall_no}). Community-known halal — confirm on site.`,
+        description: `${s.cuisine} stall at ${c.name}${unit}. Community-known halal — confirm on site.`,
         price_level: "$",
         attributes: ["halal-food-onsite"],
       }, { onConflict: "slug", ignoreDuplicates: false });
