@@ -84,6 +84,63 @@ const CENTRES = [
       { name: "Tok Ayah Nasi Padang", stall_no: "#01-36", cuisine: "Nasi Padang", tier: "community" },
     ],
   },
+  // ---- Build Wave 3 Batch 1 (high-traffic centres from the Ahrefs CSV;
+  //      halal-filtered — every stall below is web-verified Muslim-owned/halal). ----
+  {
+    id: "golden-mile-food-centre", name: "Golden Mile Food Centre", address: "505 Beach Rd, Singapore 199583",
+    region: "Central", lat: 1.30256, lng: 103.86353, nearestMrt: "Nicoll Highway / Lavender MRT", hours: "7am–10pm",
+    blurb: "A Beach Road institution known for Thai food — and a strong cluster of halal stalls, from chicken rice to charcoal burgers.",
+    stalls: [
+      { name: "Adimann", stall_no: "#B1-12", cuisine: "Halal Chicken Rice / Seafood", tier: "community" },
+      { name: "Ashes Burnnit", stall_no: "#B1-24", cuisine: "Charcoal Burgers / Roti John", tier: "community" },
+      { name: "Deen Tiga Rasa", stall_no: "#B1-56", cuisine: "Indian-Muslim", tier: "community" },
+    ],
+  },
+  {
+    id: "bedok-corner-food-centre", name: "Bedok Corner Food Centre", address: "1 Bedok Rd, Singapore 469572",
+    region: "East", lat: 1.32320, lng: 103.95300, nearestMrt: "Bedok MRT (bus)", hours: "7am–11pm",
+    blurb: "One of the east's most halal-friendly hawker centres, with a musollah and a deep bench of Muslim-owned Malay stalls.",
+    stalls: [
+      { name: "Malek Satay", stall_no: "#01-19", cuisine: "Satay / Malay", tier: "community" },
+      { name: "Ayam Goreng Berempah", stall_no: "#01-24", cuisine: "Malay / Fried Chicken", tier: "community" },
+      { name: "Sinaran Cahaya", stall_no: "#01-17", cuisine: "Malay / Nasi Campur", tier: "community" },
+    ],
+  },
+  {
+    id: "berseh-food-centre", name: "Berseh Food Centre", address: "166 Jln Besar, Singapore 208877",
+    region: "Central", lat: 1.30862, lng: 103.85740, nearestMrt: "Jalan Besar / Farrer Park MRT", hours: "7am–10pm",
+    blurb: "A Jalan Besar favourite with several Muslim-owned stalls, including one of Singapore's first halal-certified mookata.",
+    stalls: [
+      { name: "Tree Coconut Nasi Lemak", stall_no: "#02-30", cuisine: "Nasi Lemak", tier: "community" },
+      { name: "Salai M'an", stall_no: "#02-04", cuisine: "Smoked Meats / Burgers", tier: "community" },
+      { name: "Sedap Thai", stall_no: "#02-27", cuisine: "Halal Mookata / Thai", tier: "community" },
+    ],
+  },
+  {
+    id: "east-coast-lagoon-food-village", name: "East Coast Lagoon Food Village", address: "1220 East Coast Parkway, Singapore 468960",
+    region: "East", lat: 1.30720, lng: 103.92450, nearestMrt: "Marine Parade area (bus)", hours: "10am–11pm",
+    blurb: "The seaside hawker village on East Coast Park — home to Haron Satay, one of Singapore's most-loved halal satay institutions.",
+    stalls: [
+      { name: "Haron Satay", stall_no: "#01-55", cuisine: "Satay / Malay", tier: "community" },
+    ],
+  },
+  {
+    id: "amoy-street-food-centre", name: "Amoy Street Food Centre", address: "7 Maxwell Rd, Singapore 069111",
+    region: "Central", lat: 1.27930, lng: 103.84640, nearestMrt: "Telok Ayer / Tanjong Pagar MRT", hours: "7am–3pm",
+    blurb: "A CBD lunch institution with a section of Muslim-owned and halal stalls on the first floor, from poke bowls to Indian-Muslim classics.",
+    stalls: [
+      { name: "Big Bowls Project", stall_no: "#01-01", cuisine: "Halal Poke Bowls", tier: "community" },
+      { name: "Bismillah Muslim Food", stall_no: "#01-27", cuisine: "Indian-Muslim / Mee Goreng", tier: "community" },
+    ],
+  },
+  {
+    id: "dunman-food-centre", name: "Dunman Food Centre", address: "271 Onan Rd, Singapore 424768",
+    region: "East", lat: 1.30860, lng: 103.90100, nearestMrt: "Dakota / Paya Lebar MRT", hours: "7am–9pm",
+    blurb: "A small, well-loved Joo Chiat hawker centre — home to the Muslim-owned Satay Solo, serving Solo-style Indonesian satay for generations.",
+    stalls: [
+      { name: "Satay Solo", stall_no: "#01-01", cuisine: "Indonesian Satay", tier: "community" },
+    ],
+  },
 ];
 
 async function main() {
