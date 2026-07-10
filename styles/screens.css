@@ -257,7 +257,7 @@
 @media (max-width: 600px) { .home-cats .cat-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .home-feature-section { padding-top: 24px; }
-.home-feature-head { display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.25fr); gap:10px 34px; align-items:end; margin-bottom:18px; }
+.home-feature-head { display:grid; gap:8px; margin-bottom:22px; max-width:720px; }
 .home-feature-head h2 { font-size:clamp(1.6rem, 3vw, 2.15rem); line-height:1.08; margin:6px 0 0; max-width:560px; }
 .home-feature-head p { margin:0; line-height:1.6; }
 .home-feature-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; align-items:stretch; }
@@ -343,3 +343,6 @@ a.home-feature-card { text-decoration:none; }
 .hts-badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .hts-link { margin-left: auto; border: 0; background: none; color: var(--emerald, #12525B); font-weight: 700; font-size: .86rem; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
 @media (max-width: 600px) { .hts-link { margin-left: 0; } }
+
+/* ── Homepage vertical rhythm (2026-07 spacing pass) ── */
+.home-sec { margin-top: clamp(36px, 5vw, 56px); }
