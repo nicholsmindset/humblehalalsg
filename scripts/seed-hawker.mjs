@@ -64,6 +64,26 @@ const CENTRES = [
       { name: "Nasi Lemak Kukus Tradisional", stall_no: "#01-96", cuisine: "Nasi Lemak", tier: "community" },
     ],
   },
+  {
+    id: "haig-road-market-food-centre", name: "Haig Road Market & Food Centre", address: "14 Haig Rd, Singapore 430014",
+    region: "East", lat: 1.31437, lng: 103.89729, nearestMrt: "Dakota MRT", hours: "7am–10pm",
+    blurb: "One side is a row of beloved Malay/Muslim halal stalls — putu piring, mee rebus and satay institutions.",
+    stalls: [
+      { name: "Haig Road Putu Piring", stall_no: "#01-06", cuisine: "Putu Piring / Kueh", tier: "community" },
+      { name: "Afandi Hawa & Family", stall_no: "#01-21", cuisine: "Mee Rebus / Malay", tier: "community" },
+      { name: "Warong Sudi Mampir", stall_no: "#01-13", cuisine: "Satay / Malay", tier: "community" },
+    ],
+  },
+  {
+    id: "tampines-round-market", name: "Tampines Round Market & Food Centre", address: "Blk 137 Tampines St 11, Singapore 521137",
+    region: "East", lat: 1.35296, lng: 103.94012, nearestMrt: "Tampines MRT", hours: "6am–10pm",
+    blurb: "The Tampines heartland's round market — a strong cluster of Muslim-owned nasi lemak and nasi padang stalls.",
+    stalls: [
+      { name: "Nasi Lemak Specialist", stall_no: "#01-14", cuisine: "Nasi Lemak", tier: "community" },
+      { name: "Kayat Nasi Padang", stall_no: "#01-37", cuisine: "Nasi Padang", tier: "community" },
+      { name: "Tok Ayah Nasi Padang", stall_no: "#01-36", cuisine: "Nasi Padang", tier: "community" },
+    ],
+  },
 ];
 
 async function main() {
