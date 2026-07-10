@@ -163,6 +163,12 @@ export async function GET() {
   const ids = (owned || []).map((b) => b.id as string);
   if (!ids.length) return NextResponse.json({ ok: true, certs: [] });
 
+  // Per-business resolved vault state (any owned business enabled) — the UI's
+  // pilot banner must match what POST will actually enforce, not the global
+  // flag (a per-business override would otherwise contradict it). Audit R5.
+  const enabledFlags = await Promise.all(ids.map((id) => resolveBusinessFlag("certVault", id)));
+  const enabled = enabledFlags.some(Boolean);
+
   const { data: certs } = await db
     .from("halal_certs")
     .select("id, business_id, issuer, scheme, cert_no, issued_on, expires_on, file_path, status, review_note, created_at")
@@ -192,5 +198,5 @@ export async function GET() {
     }),
   );
 
-  return NextResponse.json({ ok: true, certs: out });
+  return NextResponse.json({ ok: true, certs: out, enabled });
 }

@@ -46,6 +46,10 @@ export function CertVault({
   biz: OwnerBiz | null;
 }) {
   const [certs, setCerts] = useState<OwnerCert[] | null>(null);
+  // Server truth for the vault state: the prop is the GLOBAL flag (initial
+  // render), but a per-business override can differ — the GET returns the
+  // per-business resolved value the POST will actually enforce (audit R5).
+  const [enabled, setEnabled] = useState(certVaultEnabled);
   const [file, setFile] = useState<File | null>(null);
   const [issuer, setIssuer] = useState("MUIS");
   const [scheme, setScheme] = useState("");
@@ -64,6 +68,7 @@ export function CertVault({
       const d = await r.json().catch(() => ({ ok: false }));
       if (d.ok && Array.isArray(d.certs)) setCerts(d.certs as OwnerCert[]);
       else setCerts([]);
+      if (d.ok && typeof d.enabled === "boolean") setEnabled(d.enabled);
     } catch {
       setCerts([]);
     }
@@ -125,7 +130,7 @@ export function CertVault({
 
   return (
     <div className="dash-pane stack g16">
-      {!certVaultEnabled && (
+      {!enabled && (
         <div className="notice notice-warn">
           <Icon name="info" size={18} />
           <span>The Halal Certificate Vault is in <strong>pilot</strong>. You can prepare your details now — uploads go live the moment it’s switched on.</span>

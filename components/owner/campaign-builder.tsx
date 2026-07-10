@@ -64,7 +64,9 @@ export function CampaignBuilder({
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/owner/ads/options");
+        // Pass the business so paidAds comes back per-business resolved —
+        // the same value the checkout route will enforce (audit R5).
+        const res = await fetch(`/api/owner/ads/options?business=${encodeURIComponent(businessId)}`);
         const j = await res.json().catch(() => ({}));
         if (!alive) return;
         if (j?.ok && Array.isArray(j.options)) {
@@ -76,7 +78,7 @@ export function CampaignBuilder({
       }
     })();
     return () => { alive = false; };
-  }, []);
+  }, [businessId]);
 
   const placement = options?.find((o) => o.key === placementKey) || null;
   const totalCents = placement ? placement.monthlyRateCents * months : 0;
