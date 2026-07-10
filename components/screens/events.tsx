@@ -79,7 +79,7 @@ function PrayerAwareBanner({ ev }: { ev: EventItem }) {
         This event runs through <strong>{names}</strong>.{" "}
         {ev.prayerNearby
           ? "A prayer space is available at or near the venue, in shaa Allah."
-          : <>Plan to pray nearby — <a href="/mosques" style={{ color: "var(--emerald)", fontWeight: 700 }}>find a mosque</a>.</>}
+          : <>Plan to pray nearby — <Link href="/mosques" style={{ color: "var(--emerald)", fontWeight: 700 }}>find a mosque</Link>.</>}
       </span>
     </div>
   );

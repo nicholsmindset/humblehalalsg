@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { mosqueBySlug, mosqueSlug } from "@/lib/mosques";
+import { mosqueBySlug } from "@/lib/mosques";
 import { mosqueProfile, profiledMosqueSlugs } from "@/lib/mosque-content";
 import { getPrayerTimes } from "@/lib/prayer-times";
 import { getDirectory } from "@/lib/directory";
