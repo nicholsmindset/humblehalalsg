@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/feature-flags";
+import { getServerFlags, resolveBusinessFlag } from "@/lib/feature-flags";
 
 /* Placement catalogue for the owner self-serve campaign builder: every active,
    direct-capable placement with its rate card + live booking count so the UI
@@ -9,11 +9,21 @@ import { getServerFlags } from "@/lib/feature-flags";
    single source of truth for self-serve pricing. */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
+
+  // Optional ?business=<id>: resolve paidAds PER-BUSINESS (what checkout will
+  // actually enforce) instead of the global flag, so the builder UI can never
+  // contradict the purchase gate (audit R5). Ownership-checked like checkout.
+  let bizForFlag = "";
+  const businessId = new URL(req.url).searchParams.get("business") || "";
+  if (businessId) {
+    const { data: biz } = await sb.from("businesses").select("id, owner_id, claimed_by").eq("id", businessId).maybeSingle();
+    if (biz && (biz.owner_id === userId || biz.claimed_by === userId)) bizForFlag = String(biz.id);
+  }
 
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const [{ data: placements }, { data: campaigns }] = await Promise.all([
@@ -45,5 +55,6 @@ export async function GET() {
       booked: liveCount.get(String(p.key)) || 0,
     }));
 
-  return NextResponse.json({ ok: true, options, paidAds: (await getServerFlags()).paidAds });
+  const paidAds = bizForFlag ? await resolveBusinessFlag("paidAds", bizForFlag) : (await getServerFlags()).paidAds;
+  return NextResponse.json({ ok: true, options, paidAds });
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getServerFlags } from "@/lib/feature-flags";
+import { getServerFlags, resolveBusinessFlag } from "@/lib/feature-flags";
 import { remainingQuota } from "@/lib/lead-routing";
 import { maskName, maskEmail, maskPhone } from "@/lib/lead-mask";
 import { verticalLabel } from "@/lib/lead-verticals";
@@ -24,7 +24,7 @@ async function ownedBusinessIds(db: Db, userId: string): Promise<string[]> {
 }
 
 export async function GET() {
-  const { leadRouting, paidLeads } = await getServerFlags();
+  const { leadRouting, paidLeads: globalPaidLeads } = await getServerFlags();
   if (!leadRouting) return NextResponse.json({ ok: true, enabled: false, routes: [] });
 
   const { userId } = await auth();
@@ -33,7 +33,14 @@ export async function GET() {
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
   const bizIds = await ownedBusinessIds(db, userId);
-  if (bizIds.length === 0) return NextResponse.json({ ok: true, enabled: true, paidLeads, routes: [], quota: null });
+  if (bizIds.length === 0) return NextResponse.json({ ok: true, enabled: true, paidLeads: globalPaidLeads, routes: [], quota: null });
+
+  // Per-business resolved paidLeads (what /accept will actually enforce) — a
+  // business override must not be contradicted by the global flag here (R5).
+  // Top-level `paidLeads` = any owned business resolved true (drives quota UI).
+  const paidByBiz: Record<string, boolean> = {};
+  await Promise.all(bizIds.map(async (id) => { paidByBiz[id] = await resolveBusinessFlag("paidLeads", id); }));
+  const paidLeads = bizIds.some((id) => paidByBiz[id]);
 
   const { data: routes } = await db
     .from("lead_routes")
