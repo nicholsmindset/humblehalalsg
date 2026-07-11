@@ -27,6 +27,44 @@ type AdminLead = {
 
 const FILTERS: [string, string][] = [["new", "New"], ["routed", "Routed"], ["contacted", "In progress"], ["", "All"]];
 
+/* Funnel stats — captures by surface + route→accept + free-taste→claim. */
+type Stats = {
+  windowDays: number;
+  leads: { total: number; consented: number; bySurface: Record<string, number> };
+  routes: { sent: number; accepted: number; expired: number; exclusive: number; freeSent: number };
+  acceptRate: number;
+  freeTaste: { sent: number; claimed: number | null };
+};
+function LeadStats() {
+  const [s, setS] = useState<Stats | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try { const d = await (await fetch("/api/admin/leads/stats?days=30")).json(); if (alive && d?.ok) setS(d); }
+      catch { /* silent */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+  if (!s) return null;
+  const Tile = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
+    <div className="card" style={{ padding: "10px 14px", flex: "1 1 130px", minWidth: 120 }}>
+      <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>{value}</div>
+      <div className="faint" style={{ fontSize: ".76rem" }}>{label}</div>
+      {sub && <div className="faint" style={{ fontSize: ".72rem", marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+  const topSurface = Object.entries(s.leads.bySurface).sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className="flex g8 wrap">
+      <Tile label={`Leads · last ${s.windowDays}d`} value={s.leads.total} sub={`${s.leads.consented} consented`} />
+      <Tile label="Top source" value={topSurface && topSurface[1] > 0 ? topSurface[0] : "—"} sub={topSurface ? `${topSurface[1]} leads` : undefined} />
+      <Tile label="Accept rate" value={`${s.acceptRate}%`} sub={`${s.routes.accepted}/${s.routes.sent} routes`} />
+      <Tile label="Free leads sent" value={s.freeTaste.sent} sub={s.freeTaste.claimed != null ? `${s.freeTaste.claimed} claimed` : undefined} />
+      <Tile label="Cascade expiries" value={s.routes.expired} />
+    </div>
+  );
+}
+
 /* Per-surface capture toggles (jsonb; master flag lives on the Monetization tab). */
 function CaptureSettings({ toast }: { toast: (m: string) => void }) {
   const [surfaces, setSurfaces] = useState<Record<string, boolean> | null>(null);
@@ -240,6 +278,7 @@ export function AdminLeads({ toast }: { toast: (m: string) => void }) {
 
   return (
     <div className="stack g14">
+      <LeadStats />
       <CaptureSettings toast={toast} />
       <RotationPool toast={toast} />
 
