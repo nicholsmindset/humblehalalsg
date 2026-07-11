@@ -97,6 +97,16 @@ export async function GET() {
     payoutReadyOrganisers = count ?? 0;
   }
 
+  // Customer Portal: /api/portal 400s until a default configuration is saved
+  // in the CURRENT mode's dashboard — subscribers couldn't self-cancel.
+  let portalConfigured: boolean | null = null;
+  if (stripe) {
+    try {
+      const cfgs = await stripe.billingPortal.configurations.list({ limit: 1 });
+      portalConfigured = cfgs.data.length > 0;
+    } catch { portalConfigured = null; }
+  }
+
   // Paid flags vs reality — the checks above only matter for streams that are ON.
   const flags = await getServerFlags();
   const paidOn = (["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"] as const).filter((k) => flags[k]);
@@ -109,6 +119,7 @@ export async function GET() {
   }
   if (flags.paidTickets && !connect.activated) warnings.push("paidTickets is ON but Connect isn't usable on this key — organiser onboarding will fail.");
   if (flags.paidTickets && payoutReadyOrganisers === 0) warnings.push("paidTickets is ON but no organiser has completed payout onboarding — every paid checkout will refuse (business_not_onboarded).");
+  if (flags.paidPlans && portalConfigured === false) warnings.push("paidPlans is ON but no Customer Portal configuration exists in this mode — subscribers can't self-manage billing (/api/portal will fail). Save one: Stripe → Settings → Billing → Customer portal.");
 
   return NextResponse.json({
     ok: true,
@@ -117,6 +128,7 @@ export async function GET() {
     webhookSecret,
     prices,
     connect: { ...connect, payoutReadyOrganisers },
+    portalConfigured,
     paidFlagsOn: paidOn,
     warnings,
   });
