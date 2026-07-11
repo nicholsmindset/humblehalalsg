@@ -1,4 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// lib/lead-routing transitively imports server-only modules (lib/email etc.);
+// the `server-only` marker throws outside Next's react-server resolution, so
+// stub it exactly like tests/unit/feature-flags.test.ts does. Only the PURE
+// pickNextExclusive is under test — no server behaviour is weakened.
+vi.mock("server-only", () => ({}));
+
 import { pickNextExclusive, type MatchCandidate } from "@/lib/lead-routing";
 
 const c = (id: string, over: Partial<MatchCandidate> = {}): MatchCandidate => ({
