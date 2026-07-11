@@ -172,8 +172,37 @@ export async function POST(req: Request) {
   const id = String(body.id || "");
   const action = String(body.action || "");
   const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 500) : "";
-  if (!id || (action !== "suspend" && action !== "restore")) {
+  if (!id || (action !== "suspend" && action !== "restore" && action !== "delete")) {
     return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
+  }
+
+  // SAFE hard delete — only when the row has NO dependent data. A raw delete
+  // would cascade-destroy reviews/certs/audit and orphan orders (#148 rejected
+  // it for that reason), so we refuse if anything references the business and
+  // point the admin at Suspend instead. Intended for mistaken/test seeds.
+  if (action === "delete") {
+    const del = (await findBusiness(db, id, "id, slug, name")) as { id: string; slug: string; name: string } | null;
+    if (!del) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+    const deps: Record<string, string> = {
+      reviews: "business_id", orders: "business_id", halal_certs: "business_id",
+      subscriptions: "business_id", ad_campaigns: "business_id", lead_routes: "business_id",
+      tiktok_submissions: "matched_business_id", offers: "business_id", events: "business_id",
+    };
+    const blocking: string[] = [];
+    for (const [table, col] of Object.entries(deps)) {
+      try {
+        const { count } = await db.from(table).select("id", { count: "exact", head: true }).eq(col, del.id);
+        if (count && count > 0) blocking.push(`${count} ${table}`);
+      } catch { /* table may not exist in this env — ignore */ }
+    }
+    if (blocking.length) {
+      return NextResponse.json({ ok: false, error: "has_dependents", detail: `This business has linked data (${blocking.join(", ")}). Suspend it instead — delete would destroy that data.`, blocking }, { status: 409 });
+    }
+    const { error } = await db.from("businesses").delete().eq("id", del.id);
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    await logAudit(db, { actor: gate.userId, action: "listing_delete", target: del.id, meta: { slug: del.slug, name: del.name, reason: reason || null } });
+    revalidatePublic([`/business/${del.slug}`, "/explore", "/halal"]);
+    return NextResponse.json({ ok: true, deleted: true });
   }
 
   const row = (await findBusiness(db, id, "id, slug, name, status")) as
