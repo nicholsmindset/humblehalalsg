@@ -164,9 +164,11 @@ export function CampaignBuilder({
       }
       const msg: Record<string, string> = {
         placement_unavailable: "That placement isn’t available right now.",
+        placement_soldout: "That placement is fully booked for those dates — try different dates or another placement. You have not been charged.",
         bad_start_date: "Choose a start date from today onwards.",
         forbidden: "You don’t have access to this listing.",
         stripe_not_configured: "Payments aren’t available yet — try again soon.",
+        stripe_error: "Payments are having a moment — you have not been charged. Please try again shortly.",
       };
       toast(msg[j?.reason] || "Couldn’t start your campaign — try again.");
     } catch {
