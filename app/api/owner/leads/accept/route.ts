@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags, resolveBusinessFlag } from "@/lib/feature-flags";
+import { leadAcceptedConsumerEmail } from "@/lib/emails/templates";
+import { verticalLabel } from "@/lib/lead-verticals";
+import { sendEmail } from "@/lib/email";
 
 /* Accept a routed lead → unmask the consumer's contact details. This is the
    quota gate:
@@ -41,10 +44,20 @@ export async function POST(req: Request) {
   try { routeId = String(((await req.json()) as { routeId?: string }).routeId || ""); } catch { /* noop */ }
   if (!routeId) return NextResponse.json({ ok: false, error: "missing_route" }, { status: 400 });
 
-  const { data: route } = await db
-    .from("lead_routes")
-    .select("id, lead_id, business_id, status, quota_consumed, leads(name,email,phone)")
-    .eq("id", routeId).maybeSingle();
+  // delivery is 0066 — retry without it pre-paste (treated as teaser).
+  let route: { id: string; lead_id: string; business_id: string; status: string; quota_consumed: boolean | null; delivery?: string; leads: unknown } | null;
+  {
+    const r = await db.from("lead_routes")
+      .select("id, lead_id, business_id, status, quota_consumed, delivery, leads(name,email,phone,vertical_id)")
+      .eq("id", routeId).maybeSingle();
+    if (r.error && /column|schema cache/i.test(r.error.message || "")) {
+      route = (await db.from("lead_routes")
+        .select("id, lead_id, business_id, status, quota_consumed, leads(name,email,phone,vertical_id)")
+        .eq("id", routeId).maybeSingle()).data as typeof route;
+    } else {
+      route = r.data as typeof route;
+    }
+  }
   if (!route) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!(await ownsBusiness(db, route.business_id, userId)))
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -54,7 +67,18 @@ export async function POST(req: Request) {
 
   // Idempotent: already accepted → just return contact.
   const already = ["accepted", "contacted", "won", "lost"].includes(route.status);
-  if (!already) {
+  const freeTaste = route.delivery === "full";
+  if (!already && freeTaste) {
+    // The gifted first lead: contact was already delivered in full, so
+    // accepting is just an acknowledgement — no quota, no beta slot. Direct
+    // conditional update (status-guarded, idempotent) instead of the RPC.
+    const { data: flipped } = await db.from("lead_routes")
+      .update({ status: "accepted", accepted_at: new Date().toISOString(), quota_consumed: false })
+      .eq("id", routeId).in("status", ["sent", "viewed"]).select("id");
+    if (flipped?.length) {
+      try { await db.from("leads").update({ status: "contacted" }).eq("id", route.lead_id).eq("status", "routed"); } catch { /* noop */ }
+    }
+  } else if (!already) {
     // Derive the cap + window; the RPC re-checks it under a per-business advisory
     // lock and flips the route in the same transaction, so two concurrent accepts
     // of different routes for the same business can't both slip past the cap
@@ -89,6 +113,24 @@ export async function POST(req: Request) {
   }
 
   const raw = route.leads as unknown;
-  const lead = (Array.isArray(raw) ? raw[0] : raw) as { name?: string; email?: string; phone?: string } | undefined ?? {};
+  const lead = (Array.isArray(raw) ? raw[0] : raw) as { name?: string; email?: string; phone?: string; vertical_id?: string } | undefined ?? {};
+
+  // Close the loop for the CONSUMER (post-response): they never used to hear
+  // that a provider picked up their request. First accept only.
+  if (!already && lead.email) {
+    const consumerEmail = lead.email;
+    const consumerName = lead.name ?? null;
+    const vertical = lead.vertical_id ? verticalLabel(String(lead.vertical_id)) : null;
+    const businessId = route.business_id;
+    after(async () => {
+      try {
+        const { data: biz } = await db.from("businesses").select("name").eq("id", businessId).maybeSingle();
+        if (!biz?.name) return;
+        const t = leadAcceptedConsumerEmail({ name: consumerName, businessName: String(biz.name), vertical });
+        await sendEmail({ to: consumerEmail, subject: t.subject, html: t.html, template: "lead-accepted-consumer" });
+      } catch { /* email best-effort */ }
+    });
+  }
+
   return NextResponse.json({ ok: true, contact: { name: lead.name ?? null, email: lead.email ?? null, phone: lead.phone ?? null } });
 }

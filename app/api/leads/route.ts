@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { leadConfirmationEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { verticalIdFromLabel, LEAD_CONSENT_VERSION } from "@/lib/lead-verticals";
+import { getServerFlags } from "@/lib/feature-flags";
+import { autoRouteLead, advanceLeadCascade } from "@/lib/lead-routing";
 
 /* Lead-gen "Request a quote" intake for high-ticket verticals
    (catering, weddings, umrah, Islamic finance, services).
@@ -94,18 +96,36 @@ export async function POST(req: Request) {
     consented_at: body.consent === true ? new Date().toISOString() : null,
   };
 
+  let leadId: string | null = null;
   try {
-    let { error } = await db.from("leads").insert({ ...lead, ...marketplace });
+    let ins = await db.from("leads").insert({ ...lead, ...marketplace }).select("id").maybeSingle();
     // Never drop a lead because the 0046 columns aren't live yet — fall back
     // to the legacy shape if the insert failed on a missing column.
-    if (error && /column|schema cache/i.test(error.message || "")) {
-      ({ error } = await db.from("leads").insert(lead));
+    if (ins.error && /column|schema cache/i.test(ins.error.message || "")) {
+      ins = await db.from("leads").insert(lead).select("id").maybeSingle();
     }
-    if (error) {
+    if (ins.error) {
       return NextResponse.json({ ok: false, error: "Could not submit request" }, { status: 502 });
     }
+    leadId = (ins.data?.id as string) ?? null;
   } catch {
     return NextResponse.json({ ok: false, error: "Could not submit request" }, { status: 502 });
+  }
+
+  // Auto-route (leads growth loop): exclusive round-robin to ONE vendor,
+  // post-response so intake latency never grows. Consent-gated twice (the
+  // marketplace insert above + routeLeadExclusive's own hard guard); both
+  // flags must be on. Cascade advance rides along opportunistically.
+  if (leadId && marketplace.consent_contact) {
+    after(async () => {
+      try {
+        const flags = await getServerFlags();
+        if (flags.leadRouting && flags.leadAutoRoute) {
+          await autoRouteLead(db, leadId);
+          await advanceLeadCascade(db, 10);
+        }
+      } catch { /* routing best-effort — the lead is safely stored either way */ }
+    });
   }
 
   // Best-effort: confirmation email to the enquirer if they left one (non-blocking).

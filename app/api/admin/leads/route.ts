@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { matchBusinessesForLead, routeLead, type LeadRow } from "@/lib/lead-routing";
+import { matchBusinessesForLead, routeLead, autoRouteLead, routeLeadExclusive, lastRoutedByBusiness, pickNextExclusive, advanceLeadCascade, type LeadRow } from "@/lib/lead-routing";
 import { verticalLabel } from "@/lib/lead-verticals";
 
 /* Admin lead pipeline (beta: admin approves + routes each lead).
@@ -95,6 +95,44 @@ export async function POST(req: Request) {
     const n = await routeLead(db, lead as LeadRow, candidates);
     await logAudit(db, { actor: gate.userId, action: `lead_${action}`, target: id, meta: { routed: n } });
     return NextResponse.json({ ok: true, routed: n });
+  }
+
+  // Round-robin: send this lead EXCLUSIVELY to the next vendor in rotation
+  // (or to an explicit businessIds[0] override). First-ever lead for that
+  // business goes free with full contact; cascades after 24h of no action.
+  if (action === "route-exclusive") {
+    if (businessIds.length) {
+      const { data: lead } = await db
+        .from("leads")
+        .select("id, name, email, phone, vertical_id, area, budget, event_date, details, source_listing_slug, status, consent_contact")
+        .eq("id", id).maybeSingle();
+      if (!lead) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+      if (!lead.consent_contact) return NextResponse.json({ ok: false, error: "no_consent" }, { status: 409 });
+      const match = await matchBusinessesForLead(db, lead as LeadRow, { includeUnclaimed: true, uncapped: true });
+      const { data: prior } = await db.from("lead_routes").select("business_id").eq("lead_id", id);
+      const routed = new Set((prior || []).map((p) => String(p.business_id)));
+      const pool = match.candidates.filter((c) => businessIds.includes(c.business_id));
+      const lastByBiz = await lastRoutedByBusiness(db, pool.map((c) => c.business_id));
+      const next = pickNextExclusive(pool, lastByBiz, routed, null);
+      if (!next) return NextResponse.json({ ok: false, error: "no_matches" }, { status: 409 });
+      const res = await routeLeadExclusive(db, lead as LeadRow, next);
+      await logAudit(db, { actor: gate.userId, action: "lead_route_exclusive", target: id, meta: { business: next.business_id, result: res } });
+      return res.startsWith("routed")
+        ? NextResponse.json({ ok: true, routed: 1, delivery: res === "routed-full" ? "full" : "teaser", business: next.name })
+        : NextResponse.json({ ok: false, error: res }, { status: res === "schema" ? 503 : 409 });
+    }
+    const res = await autoRouteLead(db, id);
+    await logAudit(db, { actor: gate.userId, action: "lead_route_exclusive", target: id, meta: { result: res } });
+    if (res === "routed-full" || res === "routed-teaser") {
+      return NextResponse.json({ ok: true, routed: 1, delivery: res === "routed-full" ? "full" : "teaser" });
+    }
+    return NextResponse.json({ ok: false, error: res }, { status: res === "schema" ? 503 : 409 });
+  }
+
+  // Opportunistic cascade sweep (admin working the queue keeps holds moving).
+  if (action === "cascade") {
+    const { advanced, exhausted } = await advanceLeadCascade(db, 50);
+    return NextResponse.json({ ok: true, advanced, exhausted });
   }
 
   return NextResponse.json({ ok: false, error: "bad_action" }, { status: 400 });
