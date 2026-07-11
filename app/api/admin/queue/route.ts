@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getServerFlags } from "@/lib/feature-flags";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/slug";
 import { revalidatePublic } from "@/lib/revalidate";
@@ -96,7 +97,22 @@ export async function POST(req: Request) {
       case "reviews": {
         const status = action === "approve" ? "published" : action === "reject" ? "removed" : null;
         if (!status) return badAction();
+        // Read the reviewer BEFORE the update so we can award passport points on
+        // approval (moved off the pending insert so spam can't farm — review
+        // hardening, PR #145). dedupeKey review:<id> makes re-approval a no-op.
+        const { data: rev } = await admin.from("reviews").select("user_id, status").eq("id", id).maybeSingle();
         await admin.from("reviews").update({ status }).eq("id", id);
+        if (status === "published" && rev?.user_id && rev.status !== "published" && (await getServerFlags()).passport) {
+          try {
+            const { award, qualifyReferralIfPending, loadStats, emitProgress } = await import("@/lib/passport-server");
+            const { POINTS } = await import("@/lib/passport");
+            const uid = rev.user_id as string;
+            const before = await loadStats(admin, uid);
+            await award(admin, { userId: uid, source: "review", sourceId: id, points: POINTS.review, reason: "Wrote a review", dedupeKey: `review:${id}` });
+            await qualifyReferralIfPending(admin, uid);
+            await emitProgress(admin, uid, before, await loadStats(admin, uid));
+          } catch { /* passport best-effort — never blocks moderation */ }
+        }
         await logAudit(admin, { actor: gate.userId, action: status === "published" ? "Approved review" : "Removed review", target: id });
         revalidatePublic();
         return NextResponse.json({ ok: true, status });
