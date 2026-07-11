@@ -398,10 +398,18 @@ export async function POST(req: Request) {
             status: sub.status,
             current_period_end: cpe ? new Date(cpe * 1000).toISOString() : null,
           }, { onConflict: "stripe_subscription_id" });
-          await supa.from("businesses").update({
-            plan: active && plan ? plan : "free",
-            featured: active && FEATURED_PLANS.has(plan || ""),
-          }).eq("id", businessId);
+          // Dunning grace: 'past_due' means ONE renewal charge failed and
+          // Stripe Smart Retries (up to ~2 weeks) are still running — yanking
+          // the paid listing to free on the first declined card punishes a
+          // paying customer mid-recovery. Keep their plan untouched during
+          // past_due; downgrade only on terminal/none-paying states
+          // (canceled, unpaid, incomplete, paused …).
+          if (sub.status !== "past_due") {
+            await supa.from("businesses").update({
+              plan: active && plan ? plan : "free",
+              featured: active && FEATURED_PLANS.has(plan || ""),
+            }).eq("id", businessId);
+          }
         }
         break;
       }
