@@ -14,6 +14,8 @@ import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
 import { profiledMosqueSlugs } from "@/lib/mosque-content";
+import { getHawkerCentres } from "@/lib/hawker";
+import { getServerFlags } from "@/lib/feature-flags";
 import { SITE } from "@/lib/seo";
 
 export const SITEMAP_SEGMENTS = [
@@ -27,6 +29,7 @@ export const SITEMAP_SEGMENTS = [
   "tools",
   "weddings",
   "mosques",
+  "hawker",
 ] as const;
 
 export type SitemapSegment = (typeof SITEMAP_SEGMENTS)[number];
@@ -229,6 +232,23 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         changefreq: "weekly",
         priority: 0.6,
       }));
+
+    case "hawker": {
+      // The /hawker hub + /hawker/[centre] pages are live & indexable but were
+      // absent from the sitemap (audit hawker-01). Flag-gated like the pages
+      // themselves (notFound when hawkerFinder is off), so emit nothing when off.
+      if (!(await getServerFlags()).hawkerFinder) return [];
+      const centres = await getHawkerCentres();
+      return [
+        { loc: `${base}/hawker`, lastmod: now, changefreq: "weekly", priority: 0.6 },
+        ...centres.map((c) => ({
+          loc: `${base}/hawker/${c.id}`,
+          lastmod: now,
+          changefreq: "weekly" as ChangeFreq,
+          priority: 0.5,
+        })),
+      ];
+    }
 
     default:
       return [];

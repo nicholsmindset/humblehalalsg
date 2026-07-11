@@ -131,6 +131,17 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!cert) return NextResponse.json({ ok: false, error: "Certificate not found" }, { status: 404 });
 
+  // Don't grant a halal tier from a certificate that has already expired — the
+  // approve path copies the cert + re-runs the grant, so an expired cert would
+  // otherwise mint live trust (audit certVault-01). SGT date compare (both are
+  // YYYY-MM-DD). The owner should upload a current cert; admin can still reject.
+  if (action === "approve" && cert.expires_on) {
+    const todaySgt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+    if (String(cert.expires_on) < todaySgt) {
+      return NextResponse.json({ ok: false, error: "cert_expired", detail: `Certificate expired on ${cert.expires_on}. Reject it or ask the owner for a current one.` }, { status: 409 });
+    }
+  }
+
   const reviewedAt = new Date().toISOString();
   const newStatus = action === "approve" ? "approved" : "rejected";
 
