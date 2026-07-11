@@ -16,6 +16,8 @@ export const FLAG_COPY: Record<FlagKey, { title: string; desc: string }> = {
   aiConcierge: { title: "AI concierge", desc: "The AI concierge / Ask-Hotel assistant surfaced to visitors." },
   halalVerdicts: { title: "Halal verdicts", desc: "Admin halal-verdict workflow surfaced on listing pages." },
   leadRouting: { title: "Lead routing", desc: "Automatically route customer enquiries to matching businesses." },
+  leadCapture: { title: "Lead capture surfaces", desc: "Show the subtle 'get free quotes' capture blocks on vertical blog posts, guide pages, listings and the vertical popup. Per-surface toggles live in the Leads tab. When OFF, no capture surface renders anywhere." },
+  leadAutoRoute: { title: "Lead auto-routing", desc: "Route each new consented lead automatically to ONE matching vendor (round-robin, cascades after ~24h). When OFF, leads wait for manual routing in the Leads tab. Only effective while Lead routing is also on." },
   passport: { title: "Halal Passport", desc: "The gamified Halal Passport check-in feature." },
   listingEnrichment: { title: "Listing enrichment", desc: "AI drafts an improved description + SEO for submitted listings; admins review before it writes to the live listing. Adds a Listing-enrichment tab to admin." },
   hawkerFinder: { title: "Hawker Finder", desc: "The halal hawker-stall finder (/hawker) — a map + centre pages grouping halal stalls by hawker centre. Surfaces the Hawker nav link." },

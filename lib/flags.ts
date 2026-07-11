@@ -18,6 +18,8 @@ export interface Flags {
   halalVerdicts: boolean;
   leadRouting: boolean;
   paidLeads: boolean;
+  leadCapture: boolean;
+  leadAutoRoute: boolean;
   passport: boolean;
   listingEnrichment: boolean;
   hawkerFinder: boolean;
@@ -42,6 +44,8 @@ export const FLAG_ENV: Record<FlagKey, string> = {
   halalVerdicts: "HALAL_VERDICTS_ENABLED",
   leadRouting: "LEAD_ROUTING_ENABLED",
   paidLeads: "PAID_LEADS_ENABLED",
+  leadCapture: "LEAD_CAPTURE_ENABLED",
+  leadAutoRoute: "LEAD_AUTO_ROUTE",
   passport: "PASSPORT_ENABLED",
   listingEnrichment: "LISTING_ENRICHMENT_ENABLED",
   hawkerFinder: "HAWKER_FINDER_ENABLED",
@@ -62,6 +66,8 @@ export const FLAG_COLUMN: Record<FlagKey, string> = {
   halalVerdicts: "halal_verdicts_enabled",
   leadRouting: "lead_routing_enabled",
   paidLeads: "paid_leads_enabled",
+  leadCapture: "lead_capture_enabled",
+  leadAutoRoute: "lead_auto_route_enabled",
   passport: "passport_enabled",
   listingEnrichment: "listing_enrichment_enabled",
   hawkerFinder: "hawker_finder_enabled",
@@ -75,4 +81,4 @@ export function envFlags(): Flags {
   return out;
 }
 
-export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false, leadRouting: false, paidLeads: false, passport: false, listingEnrichment: false, hawkerFinder: false, tiktokUgc: false };
+export const DEFAULT_FLAGS: Flags = { paidTickets: false, paidAds: false, paidPlans: false, paidHotels: false, paidFlights: false, payNow: false, certVault: false, semanticSearch: false, aiConcierge: false, halalVerdicts: false, leadRouting: false, paidLeads: false, leadCapture: false, leadAutoRoute: false, passport: false, listingEnrichment: false, hawkerFinder: false, tiktokUgc: false };

@@ -16,6 +16,7 @@ describe("envFlags", () => {
   it("covers every flag key with an env var name", () => {
     expect(Object.keys(FLAG_ENV).sort()).toEqual([
       "aiConcierge","certVault","halalVerdicts","hawkerFinder","leadRouting",
+      "leadAutoRoute","leadCapture",
       "listingEnrichment","paidAds","paidFlights","paidHotels","paidLeads",
       "paidPlans","paidTickets","passport","payNow","semanticSearch","tiktokUgc",
     ].sort());
