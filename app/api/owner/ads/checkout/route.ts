@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { resolveBusinessFlag } from "@/lib/feature-flags";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STATEMENT_SUFFIX } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
@@ -147,7 +147,8 @@ Business: ${String(biz.name || businessId)}<br>Campaign id: ${campaign.id}</p>`,
         },
       ],
       metadata: meta,
-      payment_intent_data: { metadata: meta },
+      // Shared Stripe account → carry our brand onto the card statement.
+      payment_intent_data: { metadata: meta, statement_descriptor_suffix: STATEMENT_SUFFIX },
       success_url: `${SITE.url}/owner?tab=ads&purchase=done&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE.url}/owner?tab=ads`,
     });

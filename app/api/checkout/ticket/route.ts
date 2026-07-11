@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerFlags } from "@/lib/feature-flags";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STATEMENT_SUFFIX } from "@/lib/stripe";
 import { computeOrder, CURRENCY, type FeeMode } from "@/lib/fees";
 import { getEvent } from "@/lib/data";
 import { rowToEvent } from "@/lib/events-source";
@@ -255,7 +255,9 @@ export async function POST(req: Request) {
     // balance until the cron transfers the organiser's net after the event.
     // transfer_group pairs this charge with that transfer (cron sets the same
     // group) so an event's money movement reconciles in one dashboard filter.
-    payment_intent_data: { metadata: meta, transfer_group: `event_${ev.id}` },
+    // statement_descriptor_suffix: shared Stripe account → buyers must see OUR
+    // brand on their card statement, not the account default.
+    payment_intent_data: { metadata: meta, transfer_group: `event_${ev.id}`, statement_descriptor_suffix: STATEMENT_SUFFIX },
     metadata: meta,
     // Reserved seats must recycle fast during a busy sale — 30 min (Stripe's
     // minimum) instead of the 24h default, then checkout.session.expired
