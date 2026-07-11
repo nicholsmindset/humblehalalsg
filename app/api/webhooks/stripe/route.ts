@@ -8,6 +8,7 @@ import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
+import { reverseOrderTransferIfPaid, setPayoutStatus } from "@/lib/payout-reversal";
 
 const addDaysISO = (base: Date, days: number) => {
   const d = new Date(base);
@@ -406,13 +407,20 @@ export async function POST(req: Request) {
         if (supa && pi && charge.refunded) {
           // Read first so we only reverse once (avoids double-decrementing the
           // event's taken counter if charge.refunded fires for the same order).
-          const { data: ord } = await supa.from("orders").select("id, status, event_id, qty").eq("stripe_payment_intent", pi).maybeSingle();
+          const { data: ord } = await supa.from("orders").select("id, status, event_id, qty, payout_status, stripe_transfer_id").eq("stripe_payment_intent", pi).maybeSingle();
           if (ord?.id && ord.status !== "refunded") {
             await supa.from("orders").update({ status: "refunded" }).eq("id", ord.id);
             await supa.from("tickets").update({ status: "refunded" }).eq("order_id", ord.id).neq("status", "used");
             // Free the refunded capacity back to the event (atomic, clamped ≥0).
             if (ord.event_id && ord.qty) {
               await supa.rpc("decrement_event_taken", { p_event_id: ord.event_id, p_qty: ord.qty });
+            }
+            // Buyer money returned → the organiser must not keep (or later
+            // receive) the payout for it. Reverse an already-sent transfer;
+            // otherwise make sure the pending payout can never fire.
+            const result = await reverseOrderTransferIfPaid(stripe, supa, ord);
+            if (result === "not_needed" && ord.payout_status !== "none") {
+              await setPayoutStatus(supa, ord.id, "none");
             }
           } else if (!ord) {
             // No order matched → it may be a donation refund (e.g. issued from the
@@ -426,6 +434,37 @@ export async function POST(req: Request) {
             }
           }
         }
+        break;
+      }
+      // A chargeback debits the PLATFORM (separate-charges model) — never pay
+      // the organiser for contested money, and claw back a payout that already
+      // went out. The cron only processes payout_status='pending', so 'held'
+      // stops it with no cron change. If the dispute is later WON, an admin
+      // flips the order back to 'pending' manually (rare; deliberate).
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const pi = typeof dispute.payment_intent === "string" ? dispute.payment_intent : undefined;
+        type DisputedOrder = { id: string; payout_status: string | null; stripe_transfer_id: string | null };
+        let ord: DisputedOrder | null = null;
+        if (supa && pi) {
+          const { data } = await supa.from("orders").select("id, payout_status, stripe_transfer_id").eq("stripe_payment_intent", pi).maybeSingle();
+          ord = (data as DisputedOrder | null) ?? null;
+          if (ord?.id) {
+            if (ord.payout_status === "paid") await reverseOrderTransferIfPaid(stripe, supa, ord);
+            else if (ord.payout_status === "pending") await setPayoutStatus(supa, ord.id, "held");
+          }
+        }
+        // Disputes have evidence deadlines — alert the inbox (best-effort).
+        try {
+          const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+          const amount = `${String(dispute.currency || "sgd").toUpperCase()} ${((dispute.amount || 0) / 100).toFixed(2)}`;
+          await sendEmail({
+            to: inbox,
+            subject: `⚠️ Stripe dispute opened — ${amount}`,
+            template: "dispute-alert",
+            html: `<p>A dispute (${dispute.id}) was opened for ${amount}.</p><p>${ord?.id ? `Ticket order <strong>${ord.id}</strong>: ${ord.payout_status === "paid" ? "payout reversal attempted" : "payout held"}.` : "No ticket order matched — likely a plan/ad/donation charge."}</p><p>Respond in the Stripe dashboard before the evidence deadline.</p>`,
+          });
+        } catch { /* alert best-effort */ }
         break;
       }
       // A session that will never fulfil must give back the seats it held at

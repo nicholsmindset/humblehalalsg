@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { reverseOrderTransferIfPaid } from "@/lib/payout-reversal";
 
 /* Organiser/admin-initiated refund for a paid ticket order. Issues the Stripe
    refund (the charge.refunded webhook then reverses the order + tickets); we
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
   if (!orderId) return NextResponse.json({ ok: false, reason: "no_order" }, { status: 422 });
 
   const { data: order } = await admin
-    .from("orders").select("id, event_id, business_id, status, amount_cents, stripe_payment_intent, qty").eq("id", orderId).maybeSingle();
+    .from("orders").select("id, event_id, business_id, status, amount_cents, stripe_payment_intent, qty, payout_status, stripe_transfer_id").eq("id", orderId).maybeSingle();
   if (!order) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
   if (order.status === "refunded") return NextResponse.json({ ok: true, already: true });
   if (order.status !== "confirmed") return NextResponse.json({ ok: false, reason: "not_refundable" }, { status: 409 });
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
 
   // Paid order → issue the Stripe refund. Free RSVP → just cancel. The
   // idempotency key dedupes at Stripe even if this runs twice for one order.
+  let reversal: "reversed" | "not_needed" | "failed" = "not_needed";
   if (order.amount_cents && order.stripe_payment_intent) {
     const stripe = getStripe();
     if (!stripe) {
@@ -61,9 +63,13 @@ export async function POST(req: Request) {
       await admin.from("orders").update({ status: order.status }).eq("id", orderId);
       return NextResponse.json({ ok: false, reason: "refund_failed" }, { status: 502 });
     }
+    // If the organiser was already paid for this order, claw the transfer back
+    // NOW (their balance may drain later) — otherwise the platform refunds the
+    // buyer while the organiser keeps the payout, and we pay twice.
+    reversal = await reverseOrderTransferIfPaid(stripe, admin, order);
   }
 
-  await admin.from("orders").update({ payout_status: "none" }).eq("id", orderId);
+  if (reversal === "not_needed") await admin.from("orders").update({ payout_status: "none" }).eq("id", orderId);
   await admin.from("tickets").update({ status: "refunded" }).eq("order_id", orderId).eq("status", "valid");
   if (order.event_id) {
     const qty = Math.max(1, Number(order.qty) || 1);
