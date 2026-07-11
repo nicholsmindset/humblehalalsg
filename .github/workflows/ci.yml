@@ -32,6 +32,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       LITEAPI_SAND_KEY: ${{ secrets.LITEAPI_SAND_KEY }}
+      # The travel AI-search spec exercises the grounded no-AI-key fallback, but
+      # since the aiConcierge kill-switch gate (#206) the route 403s when the
+      # flag is off — mirror prod (flag ON) so the spec tests the real path.
+      AI_CONCIERGE_ENABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
