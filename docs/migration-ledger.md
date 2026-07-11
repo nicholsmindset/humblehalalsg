@@ -8,8 +8,8 @@ whenever a migration is applied or added.
 
 ## Numbering policy
 
-- **Next new migration number: `0066`.** Numbers 0049–0052 are claimed (see below),
-  0054 is a known duplicate, 0061–0065 are the 11-Jul payments batch — never reuse any number below 0066.
+- **Next new migration number: `0067`.** Numbers 0049–0052 are claimed (see below),
+  0054 is a known duplicate, 0061–0066 are 11-Jul batches (payments + leads) — never reuse any number below 0067.
 - One migration number = one file. If two branches need migrations concurrently,
   reserve numbers here first (the 0049–0052 note in `0054_listing_enrichment.sql`
   is the precedent).
@@ -44,6 +44,7 @@ whenever a migration is applied or added.
 | 0063_orders_pi_unique | yes | yes (pasted + probe-verified 11 Jul) | partial unique index on orders.stripe_payment_intent (dup-event dedupe) |
 | 0064_track_scheduled_ads | yes | yes (pasted + probe-verified 11 Jul) | track_ad_event gate = serving gate (active|scheduled + approved) |
 | 0065_ads_price_align_donation_refunds | yes | yes (pasted + probe-verified 11 Jul) | directory_inline $89→$49 + donations.refunded_cents |
+| 0066_lead_growth_loop | yes | **check — full SQL handed to user in chat 11 Jul** | lead_routes mode/delivery/expires_at + cascade index, businesses.contact_email, platform_settings lead capture columns, accept_lead_route v2 (free-taste never burns beta cap). Code degrades gracefully until pasted. |
 
 ## Open items
 
@@ -54,4 +55,4 @@ whenever a migration is applied or added.
    integrity/review-hardening subset of #145 should be cherry-picked (program
    item A8) so prod code matches the integrity schema it already has.
 4. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
-   applied migrations creates worse drift). Next free number: **0066**.
+   applied migrations creates worse drift). Next free number: **0067**.
