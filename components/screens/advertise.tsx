@@ -7,7 +7,7 @@ import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
 import { CONTACT_EMAILS } from "@/lib/contact";
-import { PRODUCT_PLACEMENT } from "@/lib/ad-products";
+import { AD_PRODUCTS, PRODUCT_PLACEMENT } from "@/lib/ad-products";
 
 /* Honest, defensible value props — not fabricated metrics. Current audience
    figures are shared in the media kit once they can be reported accurately. */
@@ -19,13 +19,19 @@ const STATS: [string, string][] = [
 ];
 
 /* `product` maps to the server-trusted price map in /api/checkout/promo.
-   Sponsored Content is bespoke (no fixed price) → contact instead of checkout. */
+   Sponsored Content is bespoke (no fixed price) → contact instead of checkout.
+   Displayed prices DERIVE from AD_PRODUCTS (the amount actually charged) so
+   the sales page can never drift from checkout again (audit streams-P2-5). */
+const fromPrice = (product: string, unit: string) => {
+  const cents = AD_PRODUCTS[product]?.cents;
+  return cents ? `from $${Math.round(cents / 100)}/${unit}` : "Custom";
+};
 const FORMATS: { icon: string; name: string; desc: string; price: string; product?: string }[] = [
-  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map — our Featured plan.", price: "from $49/mo", product: "featured-listing" },
-  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: "from $450/mo", product: "homepage-spotlight" },
-  { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: "from $300/mo", product: "category-sponsorship" },
-  { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: "from $250/send", product: "newsletter-sponsorship" },
-  { icon: "calendar", name: "Event Promotion", desc: "Boost your bazaar, class or community event across the Events page and homepage strip.", price: "from $120/event", product: "event-promotion" },
+  { icon: "trophy", name: "Featured Listing", desc: "Top placement in your category and area with a Featured badge, priority in search and map — our Featured plan.", price: fromPrice("featured-listing", "mo"), product: "featured-listing" },
+  { icon: "home", name: "Homepage Spotlight", desc: "Premium hero or “Featured this week” slot seen by every visitor to humblehalal.com.", price: fromPrice("homepage-spotlight", "mo"), product: "homepage-spotlight" },
+  { icon: "store", name: "Category Sponsorship", desc: "Own a whole category (e.g. Restaurants in Tampines) — exclusive banner + featured slots.", price: fromPrice("category-sponsorship", "mo"), product: "category-sponsorship" },
+  { icon: "mail", name: "Newsletter Sponsorship", desc: "A dedicated placement in the weekly halal guide email to our subscriber community.", price: fromPrice("newsletter-sponsorship", "send"), product: "newsletter-sponsorship" },
+  { icon: "calendar", name: "Event Promotion", desc: "Boost your bazaar, class or community event across the Events page and homepage strip.", price: fromPrice("event-promotion", "event"), product: "event-promotion" },
   { icon: "megaphone", name: "Sponsored Content", desc: "An editorial feature or area guide written with your brand — built for search and AI citation.", price: "Custom" },
 ];
 
