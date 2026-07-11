@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
@@ -87,14 +87,18 @@ export async function POST(req: Request) {
               business_id: businessId, stripe_subscription_id: subscription,
               kind: "leads", plan: leadPlan, status: "active", monthly_quota: quota,
             }, { onConflict: "stripe_subscription_id" });
-            try {
-              const owner = await emailForBusinessOwner(supa, businessId);
-              const to = owner.email || s.customer_details?.email || null;
-              if (to) {
-                const t = leadPlanStartedEmail({ name: owner.name || s.customer_details?.name, quota: quota || 15 });
-                await sendEmail({ to, subject: t.subject, html: t.html, template: "lead-plan-started", businessId });
-              }
-            } catch { /* email best-effort */ }
+            // Post-response (after()): Checkout waits ≤10s for this webhook
+            // before redirecting the buyer — emails must never spend that.
+            after(async () => {
+              try {
+                const owner = await emailForBusinessOwner(supa, businessId);
+                const to = owner.email || s.customer_details?.email || null;
+                if (to) {
+                  const t = leadPlanStartedEmail({ name: owner.name || s.customer_details?.name, quota: quota || 15 });
+                  await sendEmail({ to, subject: t.subject, html: t.html, template: "lead-plan-started", businessId });
+                }
+              } catch { /* email best-effort */ }
+            });
           }
           break;
         }
@@ -111,19 +115,21 @@ export async function POST(req: Request) {
             }
             // Welcome / plan-started email to the customer (best-effort). Prefer the
             // owner's profile (name) resolved via the business; fall back to the
-            // email Stripe collected at checkout.
-            try {
-              const owner = await emailForBusinessOwner(supa, businessId);
-              const to = owner.email || s.customer_details?.email || null;
-              if (to) {
-                const t = planStartedEmail({ name: owner.name || s.customer_details?.name, plan });
-                await sendEmail({ to, subject: t.subject, html: t.html, template: "plan-started", businessId });
-                // Flip the owner's beehiiv lifecycle stage → subscribed so the
-                // abandoned-checkout recovery automation stops and any "upgraded"
-                // nurture can trigger (best-effort, transactional — no welcome).
-                await beehiivSubscribe({ email: to, source: "checkout", stage: "subscribed", sendWelcome: false, extraFields: [{ name: "plan", value: plan }] });
-              }
-            } catch { /* email best-effort — never affect the webhook ack */ }
+            // email Stripe collected at checkout. Post-response via after().
+            after(async () => {
+              try {
+                const owner = await emailForBusinessOwner(supa, businessId);
+                const to = owner.email || s.customer_details?.email || null;
+                if (to) {
+                  const t = planStartedEmail({ name: owner.name || s.customer_details?.name, plan });
+                  await sendEmail({ to, subject: t.subject, html: t.html, template: "plan-started", businessId });
+                  // Flip the owner's beehiiv lifecycle stage → subscribed so the
+                  // abandoned-checkout recovery automation stops and any "upgraded"
+                  // nurture can trigger (best-effort, transactional — no welcome).
+                  await beehiivSubscribe({ email: to, source: "checkout", stage: "subscribed", sendWelcome: false, extraFields: [{ name: "plan", value: plan }] });
+                }
+              } catch { /* email best-effort — never affect the webhook ack */ }
+            });
           }
         }
         // Event-ticket checkout (separate charges). Record the order + tickets and
@@ -180,6 +186,12 @@ export async function POST(req: Request) {
             session_id: m.sessionId || null,
             utm,
           }).select("id").single();
+          // Stripe can emit two distinct events for one occurrence — the
+          // per-event idempotency claim can't catch that, but the unique index
+          // on stripe_payment_intent (0063) can: a duplicate insert 23505s.
+          // The order already exists with its tickets → ack and stop, never
+          // double-issue tickets or double-count seats.
+          if (ordErr?.code === "23505") break;
           // The order is the root of fulfillment — if it fails to insert, DON'T
           // silently issue no tickets while holding the idempotency claim (buyer
           // paid, gets nothing, no retry — audit paidTickets-02). Throw so the
@@ -216,14 +228,19 @@ export async function POST(req: Request) {
               if (incErr) await supa.from("events").update({ taken: (dbEvent.taken || 0) + qty }).eq("id", dbEvent.id);
             }
             if (buyerEmail) {
-              try {
-                const t = ticketConfirmationEmail({
-                  eventTitle: m.eventTitle || m.tier || "Event",
-                  qty,
-                  ref: paidRef,
-                });
-                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ticket-confirmation" });
-              } catch { /* email best-effort */ }
+              // Post-response (after()): during a flash sale hundreds of these
+              // fire — email latency must never delay the Stripe ack/redirect.
+              const emailRef = paidRef;
+              after(async () => {
+                try {
+                  const t = ticketConfirmationEmail({
+                    eventTitle: m.eventTitle || m.tier || "Event",
+                    qty,
+                    ref: emailRef,
+                  });
+                  await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ticket-confirmation" });
+                } catch { /* email best-effort */ }
+              });
             }
           }
         }
@@ -284,25 +301,28 @@ export async function POST(req: Request) {
             } catch { /* replay or ledger drift — campaign update is authoritative */ }
 
             const buyerEmail = s.customer_details?.email || null;
-            if (updated && buyerEmail) {
-              try {
-                const currency = (s.currency || "sgd").toUpperCase();
-                const amount = s.amount_total ? `${currency} ${(s.amount_total / 100).toFixed(2)}` : undefined;
-                const t = adPurchaseEmail({ productName: `${updated.title} (${updated.starts_on} → ${updated.ends_on})`, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
-                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
-              } catch { /* email best-effort */ }
-            }
-            // Nudge the review queue — payment is confirmed, creative awaits approval.
+            // Post-response (after()): receipts + review nudges never hold the ack.
             if (updated) {
-              try {
-                const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
-                await sendEmail({
-                  to: inbox,
-                  subject: `Paid self-serve campaign awaiting review: ${updated.title}`,
-                  template: "ad-selfserve-review",
-                  html: `<p>A self-serve campaign has been PAID and is waiting for creative review in the admin dashboard.</p><p><strong>${updated.title}</strong> · ${updated.placement_key} · ${updated.starts_on} → ${updated.ends_on}</p>`,
-                });
-              } catch { /* alert best-effort */ }
+              after(async () => {
+                if (buyerEmail) {
+                  try {
+                    const currency = (s.currency || "sgd").toUpperCase();
+                    const amount = s.amount_total ? `${currency} ${(s.amount_total / 100).toFixed(2)}` : undefined;
+                    const t = adPurchaseEmail({ productName: `${updated.title} (${updated.starts_on} → ${updated.ends_on})`, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
+                    await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
+                  } catch { /* email best-effort */ }
+                }
+                // Nudge the review queue — payment is confirmed, creative awaits approval.
+                try {
+                  const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+                  await sendEmail({
+                    to: inbox,
+                    subject: `Paid self-serve campaign awaiting review: ${updated.title}`,
+                    template: "ad-selfserve-review",
+                    html: `<p>A self-serve campaign has been PAID and is waiting for creative review in the admin dashboard.</p><p><strong>${updated.title}</strong> · ${updated.placement_key} · ${updated.starts_on} → ${updated.ends_on}</p>`,
+                  });
+                } catch { /* alert best-effort */ }
+              });
             }
           }
         }
@@ -317,18 +337,20 @@ export async function POST(req: Request) {
             stripe_payment_intent: pi,
             status: "paid",
           });
-          // Receipt / confirmation email to the buyer (best-effort).
+          // Receipt / confirmation email to the buyer (best-effort, post-response).
           const buyerEmail = s.customer_details?.email || null;
           if (buyerEmail) {
-            try {
-              const catalog = m.product ? AD_PRODUCTS[m.product] : undefined;
-              const productName = catalog?.name || m.product || "Advertising purchase";
-              const cents = s.amount_total ?? catalog?.cents ?? 0;
-              const currency = (s.currency || "sgd").toUpperCase();
-              const amount = cents ? `${currency} ${(cents / 100).toFixed(2)}` : undefined;
-              const t = adPurchaseEmail({ productName, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
-              await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
-            } catch { /* email best-effort */ }
+            after(async () => {
+              try {
+                const catalog = m.product ? AD_PRODUCTS[m.product] : undefined;
+                const productName = catalog?.name || m.product || "Advertising purchase";
+                const cents = s.amount_total ?? catalog?.cents ?? 0;
+                const currency = (s.currency || "sgd").toUpperCase();
+                const amount = cents ? `${currency} ${(cents / 100).toFixed(2)}` : undefined;
+                const t = adPurchaseEmail({ productName, amount, ref: pi ? pi.slice(-8).toUpperCase() : undefined });
+                await sendEmail({ to: buyerEmail, subject: t.subject, html: t.html, template: "ad-purchase", businessId: m.businessId || undefined });
+              } catch { /* email best-effort */ }
+            });
           }
         }
         break;
@@ -454,17 +476,48 @@ export async function POST(req: Request) {
             else if (ord.payout_status === "pending") await setPayoutStatus(supa, ord.id, "held");
           }
         }
-        // Disputes have evidence deadlines — alert the inbox (best-effort).
-        try {
-          const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
-          const amount = `${String(dispute.currency || "sgd").toUpperCase()} ${((dispute.amount || 0) / 100).toFixed(2)}`;
-          await sendEmail({
-            to: inbox,
-            subject: `⚠️ Stripe dispute opened — ${amount}`,
-            template: "dispute-alert",
-            html: `<p>A dispute (${dispute.id}) was opened for ${amount}.</p><p>${ord?.id ? `Ticket order <strong>${ord.id}</strong>: ${ord.payout_status === "paid" ? "payout reversal attempted" : "payout held"}.` : "No ticket order matched — likely a plan/ad/donation charge."}</p><p>Respond in the Stripe dashboard before the evidence deadline.</p>`,
-          });
-        } catch { /* alert best-effort */ }
+        // Disputes have evidence deadlines — alert the inbox (best-effort,
+        // post-response). Snapshot the fields the callback needs.
+        const disputedOrder = ord;
+        after(async () => {
+          try {
+            const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+            const amount = `${String(dispute.currency || "sgd").toUpperCase()} ${((dispute.amount || 0) / 100).toFixed(2)}`;
+            await sendEmail({
+              to: inbox,
+              subject: `⚠️ Stripe dispute opened — ${amount}`,
+              template: "dispute-alert",
+              html: `<p>A dispute (${dispute.id}) was opened for ${amount}.</p><p>${disputedOrder?.id ? `Ticket order <strong>${disputedOrder.id}</strong>: ${disputedOrder.payout_status === "paid" ? "payout reversal attempted" : "payout held"}.` : "No ticket order matched — likely a plan/ad/donation charge."}</p><p>Respond in the Stripe dashboard before the evidence deadline.</p>`,
+            });
+          } catch { /* alert best-effort */ }
+        });
+        break;
+      }
+      // A PayNow (or other async-method) refund settles LATER and can FAIL —
+      // in which case the money bounced back to our balance and the buyer got
+      // nothing, while our DB already says "refunded" (the /api/refunds flow
+      // flips optimistically). Flag it loudly for a manual make-good; card
+      // refunds never fire this.
+      case "refund.failed": {
+        const refund = event.data.object as Stripe.Refund;
+        const pi = typeof refund.payment_intent === "string" ? refund.payment_intent : undefined;
+        let orderId: string | null = null;
+        if (supa && pi) {
+          const { data: ord2 } = await supa.from("orders").select("id").eq("stripe_payment_intent", pi).maybeSingle();
+          orderId = (ord2?.id as string) ?? null;
+        }
+        after(async () => {
+          try {
+            const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+            const amount = `${String(refund.currency || "sgd").toUpperCase()} ${((refund.amount || 0) / 100).toFixed(2)}`;
+            await sendEmail({
+              to: inbox,
+              subject: `🚨 Refund FAILED — buyer not repaid (${amount})`,
+              template: "refund-failed",
+              html: `<p>Stripe could not complete refund ${refund.id} for ${amount} (payment ${pi || "unknown"}).${orderId ? ` Ticket order <strong>${orderId}</strong> is marked refunded in the DB but the buyer has NOT received money.` : ""}</p><p>The amount returned to the platform balance — arrange an alternative refund (e.g. PayNow transfer) and reply to the buyer.</p>`,
+            });
+          } catch { /* alert best-effort */ }
+        });
         break;
       }
       // A session that will never fulfil must give back the seats it held at
@@ -486,14 +539,16 @@ export async function POST(req: Request) {
           if (to) {
             // Organiser-supplied title → escape before interpolating into HTML.
             const safeTitle = m.eventTitle ? String(m.eventTitle).replace(/[<>&"]/g, "") : "";
-            try {
-              await sendEmail({
-                to,
-                subject: "Your payment didn't go through",
-                template: "payment-failed",
-                html: `<p>Assalamualaikum,</p><p>Unfortunately your payment${safeTitle ? ` for <strong>${safeTitle}</strong>` : ""} didn't go through, so no tickets were issued and you have not been charged. Your seats have been released — you're welcome to try booking again.</p>`,
-              });
-            } catch { /* email best-effort */ }
+            after(async () => {
+              try {
+                await sendEmail({
+                  to,
+                  subject: "Your payment didn't go through",
+                  template: "payment-failed",
+                  html: `<p>Assalamualaikum,</p><p>Unfortunately your payment${safeTitle ? ` for <strong>${safeTitle}</strong>` : ""} didn't go through, so no tickets were issued and you have not been charged. Your seats have been released — you're welcome to try booking again.</p>`,
+                });
+              } catch { /* email best-effort */ }
+            });
           }
         }
         break;
