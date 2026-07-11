@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STATEMENT_SUFFIX } from "@/lib/stripe";
 import { CURRENCY } from "@/lib/fees";
 import { getEvent } from "@/lib/data";
 import { rowToEvent } from "@/lib/events-source";
@@ -63,7 +63,8 @@ export async function POST(req: Request) {
           product_data: { name: `Donation — ${ev.title}` },
         },
       }],
-      payment_intent_data: { metadata: meta },
+      // Shared Stripe account → carry our brand onto the card statement.
+      payment_intent_data: { metadata: meta, statement_descriptor_suffix: STATEMENT_SUFFIX },
       metadata: meta,
       success_url: `${SITE.url}/success?type=donation&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE.url}/events/${ev.slug}`,
