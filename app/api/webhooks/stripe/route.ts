@@ -62,8 +62,17 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      // async_payment_succeeded re-enters the SAME fulfilment for delayed
+      // methods (PayNow): their `completed` event arrives payment_status
+      // 'unpaid' and is skipped below; success fires this second event (its own
+      // event id, so the idempotency claim doesn't block it).
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const s = event.data.object as Stripe.Checkout.Session;
+        // Never fulfil an unpaid session (Stripe fulfillment guide). Cards are
+        // always 'paid' at completion; delayed methods come back via
+        // async_payment_succeeded / async_payment_failed.
+        if ((s.payment_status ?? "paid") === "unpaid") break;
         // Lead-subscription checkout (kind=leads) — a SEPARATE product that must
         // NOT touch businesses.plan (that column is the listing plan). Handled
         // first so the plan block below never sees it.
@@ -199,7 +208,9 @@ export async function POST(req: Request) {
             }
             // Atomic increment (security audit M2) so concurrent settlements don't
             // lose updates; fall back to read+write if the RPC isn't deployed yet.
-            if (dbEvent?.id) {
+            // Sessions flagged reserved="1" already counted their seats at
+            // creation (flash-sale hold) — counting again would double-book.
+            if (dbEvent?.id && m.reserved !== "1") {
               const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: dbEvent.id, p_qty: qty });
               if (incErr) await supa.from("events").update({ taken: (dbEvent.taken || 0) + qty }).eq("id", dbEvent.id);
             }
@@ -413,6 +424,37 @@ export async function POST(req: Request) {
                 await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -don.amount_cents });
               }
             }
+          }
+        }
+        break;
+      }
+      // A session that will never fulfil must give back the seats it held at
+      // creation: expired = abandoned before paying; async_payment_failed =
+      // completed but the delayed payment (PayNow) ultimately failed.
+      case "checkout.session.expired":
+      case "checkout.session.async_payment_failed": {
+        const s = event.data.object as Stripe.Checkout.Session;
+        const m = s.metadata || {};
+        if (supa && m.kind === "ticket" && m.reserved === "1" && m.eventId) {
+          const qty = Math.max(1, parseInt(m.qty || "1", 10));
+          await supa.rpc("decrement_event_taken", { p_event_id: m.eventId, p_qty: qty });
+        }
+        // Tell the buyer their delayed payment didn't go through (best-effort) —
+        // they saw a success-ish redirect at completion, so silence would read
+        // as "I have tickets" when they don't.
+        if (event.type === "checkout.session.async_payment_failed") {
+          const to = s.customer_details?.email || null;
+          if (to) {
+            // Organiser-supplied title → escape before interpolating into HTML.
+            const safeTitle = m.eventTitle ? String(m.eventTitle).replace(/[<>&"]/g, "") : "";
+            try {
+              await sendEmail({
+                to,
+                subject: "Your payment didn't go through",
+                template: "payment-failed",
+                html: `<p>Assalamualaikum,</p><p>Unfortunately your payment${safeTitle ? ` for <strong>${safeTitle}</strong>` : ""} didn't go through, so no tickets were issued and you have not been charged. Your seats have been released — you're welcome to try booking again.</p>`,
+              });
+            } catch { /* email best-effort */ }
           }
         }
         break;
