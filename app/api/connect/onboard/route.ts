@@ -25,23 +25,31 @@ export async function POST() {
     .eq("business_id", biz.id)
     .maybeSingle();
 
-  let accountId = acct?.stripe_account_id as string | undefined;
-  if (!accountId) {
-    const created = await stripe.accounts.create({
-      type: "express",
-      country: "SG",
-      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      business_type: "company",
-    });
-    accountId = created.id;
-    await admin.from("stripe_accounts").upsert({ business_id: biz.id, stripe_account_id: accountId });
-  }
+  // Guarded: in live mode these throw until Stripe Connect is activated on the
+  // platform account (Connect → platform profile) — surface a clean, logged
+  // reason instead of an unhandled 500 the owner can't act on.
+  try {
+    let accountId = acct?.stripe_account_id as string | undefined;
+    if (!accountId) {
+      const created = await stripe.accounts.create({
+        type: "express",
+        country: "SG",
+        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+        business_type: "company",
+      });
+      accountId = created.id;
+      await admin.from("stripe_accounts").upsert({ business_id: biz.id, stripe_account_id: accountId });
+    }
 
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    type: "account_onboarding",
-    refresh_url: `${SITE.url}/owner?payouts=refresh`,
-    return_url: `${SITE.url}/owner?payouts=done`,
-  });
-  return NextResponse.json({ ok: true, url: link.url });
+    const link = await stripe.accountLinks.create({
+      account: accountId,
+      type: "account_onboarding",
+      refresh_url: `${SITE.url}/owner?payouts=refresh`,
+      return_url: `${SITE.url}/owner?payouts=done`,
+    });
+    return NextResponse.json({ ok: true, url: link.url });
+  } catch (e) {
+    console.error(`[connect/onboard] stripe onboarding failed (business=${biz.id}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

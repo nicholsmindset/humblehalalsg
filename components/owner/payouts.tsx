@@ -20,6 +20,7 @@ export function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; fla
         db_not_configured: "Connect Supabase + Stripe to enable payouts.",
         unauthenticated: "Log in as the business owner first.",
         no_business: "Claim or add your business first.",
+        stripe_error: "Payout setup is having a moment — please try again shortly.",
       };
       toast(msg[data.reason] || "Payouts aren’t available yet.");
     } catch {

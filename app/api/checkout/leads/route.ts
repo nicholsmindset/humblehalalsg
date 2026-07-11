@@ -66,15 +66,23 @@ export async function POST(req: Request) {
   if (!price) return NextResponse.json({ ok: false, error: "price_not_configured" }, { status: 409 });
 
   const meta = { kind: "leads", lead_plan: plan.key, business_id: businessId, monthly_quota: String(plan.quota) };
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price, quantity: 1 }],
-    customer,
-    metadata: meta,
-    subscription_data: { metadata: meta },
-    success_url: `${SITE.url}/owner?tab=leads&billing=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/owner?tab=leads`,
-  });
+  // Guarded: a bad key or test-mode/archived price throws — return a clean,
+  // logged reason instead of an unhandled 500 (mirrors checkout/plan).
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price, quantity: 1 }],
+      customer,
+      metadata: meta,
+      subscription_data: { metadata: meta },
+      success_url: `${SITE.url}/owner?tab=leads&billing=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/owner?tab=leads`,
+    });
+  } catch (e) {
+    console.error(`[checkout/leads] stripe session create failed (price=${price}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, error: "stripe_error" }, { status: 502 });
+  }
 
   return NextResponse.json({ ok: true, url: session.url, founding, rate: founding ? FOUNDING_LEAD_MONTHLY : plan.monthly });
 }

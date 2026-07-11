@@ -939,6 +939,8 @@ function checkoutErrorMessage(reason: string | undefined, status: number): strin
       return "Online ticket payment isn't available for this event yet — no charge was made.";
     case "event_over":
       return "This event has already taken place.";
+    case "stripe_error":
+      return "Payments are having a moment — you have not been charged. Please try again shortly.";
     default:
       return status === 429
         ? "Too many attempts — please wait a moment and try again."

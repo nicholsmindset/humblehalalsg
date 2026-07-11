@@ -147,16 +147,29 @@ export function PricingScreen() {
         toast("Create or claim your business before choosing a paid plan.");
         return navigate("add-listing");
       }
-      if (data.reason === "price_not_configured") {
+      if (data.reason === "price_not_configured" || data.reason === "stripe_not_configured") {
         toast("Checkout for this plan is not configured yet.");
+        return;
+      }
+      if (data.reason === "stripe_error" || data.reason === "unavailable" || res.status >= 500) {
+        toast("Payments are having a moment — you have not been charged. Please try again shortly.");
+        return;
+      }
+      if (data.reason === "founding_sold_out") {
+        toast("The founding rate is fully claimed — standard plans below.");
+        return;
+      }
+      if (res.status === 429) {
+        toast("Too many attempts — please wait a minute and try again.");
         return;
       }
     } catch {
       toast("Checkout could not start — please try again.");
       return;
     }
-    toast("Create or claim your business before choosing a paid plan.");
-    navigate("add-listing");
+    // Only the no-business path should steer to add-listing; anything else
+    // unrecognised is a payment problem, not a missing listing.
+    toast("Checkout could not start — you have not been charged. Please try again.");
   };
   // The plan catalog (lib/plans) is the single source of truth — no duplicated
   // tier list here. Yearly shows the monthly-equivalent (yearly ÷ 12, ≈2 months free).
