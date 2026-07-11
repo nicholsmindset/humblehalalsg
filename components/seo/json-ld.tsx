@@ -11,12 +11,28 @@ function absUrl(src: string): string {
   return src.startsWith("/") ? `${SITE.url}${src}` : src;
 }
 
+/** Serialize JSON-LD for safe inlining in a <script> element. Some fields flow
+ *  from user/owner-editable input (a business owner's `description` → blurb →
+ *  listingJsonLd, AI-drafted verdict/enrichment text, event blurbs), so a raw
+ *  JSON.stringify is a stored-XSS vector: a `</script><img onerror=…>` payload
+ *  breaks out of the script element (prod CSP has no script-src to catch it).
+ *  Escape the HTML-significant characters + JS line/paragraph separators — this
+ *  keeps the JSON valid while making break-out impossible, site-wide. */
+export function serializeJsonLd(data: object | object[]): string {
+  // Escape < > & and the JS line/paragraph separators (U+2028/U+2029) to their
+  // \\uXXXX forms so no user/owner-supplied field can break out of the <script>.
+  // Char-code based (no raw separator chars in this source).
+  return JSON.stringify(data).replace(
+    /[\u003c\u003e\u0026\u2028\u2029]/g,
+    (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"),
+  );
+}
+
 export function JsonLd({ data }: { data: object | object[] }) {
   return (
     <script
       type="application/ld+json"
-      // structured data is static, server-rendered, and trusted
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }
