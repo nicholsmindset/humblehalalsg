@@ -31,11 +31,12 @@ export async function POST() {
   try {
     let accountId = acct?.stripe_account_id as string | undefined;
     if (!accountId) {
+      // No hardcoded business_type — many SG organisers are sole proprietors
+      // or individuals; Express onboarding collects the right structure itself.
       const created = await stripe.accounts.create({
         type: "express",
         country: "SG",
         capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-        business_type: "company",
       });
       accountId = created.id;
       await admin.from("stripe_accounts").upsert({ business_id: biz.id, stripe_account_id: accountId });

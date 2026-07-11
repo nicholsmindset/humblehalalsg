@@ -568,6 +568,66 @@ export async function POST(req: Request) {
       case "invoice.payment_succeeded":
         // Subscription state is authoritative via customer.subscription.* above.
         break;
+      // Renewal charge failed → the plan is KEPT during past_due (dunning
+      // grace) while Smart Retries run — but the owner needs to know and fix
+      // the card, or the sub eventually cancels and the listing downgrades.
+      case "invoice.payment_failed": {
+        const inv = event.data.object as Stripe.Invoice;
+        const businessId = (inv as unknown as { subscription_details?: { metadata?: Record<string, string> } }).subscription_details?.metadata?.business_id
+          || inv.metadata?.business_id || undefined;
+        if (supa && businessId) {
+          after(async () => {
+            try {
+              const owner = await emailForBusinessOwner(supa, businessId);
+              const to = owner.email || inv.customer_email || null;
+              if (to) {
+                await sendEmail({
+                  to,
+                  subject: "Your Humble Halal payment didn't go through",
+                  template: "payment-retry",
+                  html: `<p>Assalamualaikum${owner.name ? ` ${owner.name.split(/\s+/)[0]}` : ""},</p><p>We couldn't collect your latest listing-plan payment — your card may have expired. Your listing stays live while we retry over the next few days.</p><p>Please update your card from your dashboard (Billing) to keep your plan uninterrupted.</p>`,
+                  businessId,
+                });
+              }
+            } catch { /* email best-effort */ }
+          });
+        }
+        break;
+      }
+      // Stripe Radar early-fraud warning: the issuer says this charge looks
+      // stolen. Refunding BEFORE it becomes a dispute avoids the dispute fee
+      // and the strike on the account. Auto-refund only TICKET orders (bounded,
+      // idempotent — the refund flows through the normal charge.refunded path
+      // to void tickets/capacity/payout); anything else is alerted for a human.
+      case "radar.early_fraud_warning.created": {
+        const warning = event.data.object as Stripe.Radar.EarlyFraudWarning;
+        const pi = typeof warning.payment_intent === "string" ? warning.payment_intent : undefined;
+        let action = "no ticket order matched — review manually";
+        if (supa && pi && warning.actionable) {
+          const { data: ord3 } = await supa.from("orders").select("id, status").eq("stripe_payment_intent", pi).maybeSingle();
+          if (ord3?.id && ord3.status === "confirmed") {
+            try {
+              await stripe.refunds.create({ payment_intent: pi }, { idempotencyKey: `efw_refund_${ord3.id}` });
+              action = `ticket order ${ord3.id} auto-refunded pre-dispute`;
+            } catch (e) {
+              action = `auto-refund FAILED for order ${ord3.id}: ${(e instanceof Error ? e.message : "error").slice(0, 80)}`;
+            }
+          }
+        }
+        const efwAction = action;
+        after(async () => {
+          try {
+            const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+            await sendEmail({
+              to: inbox,
+              subject: "⚠️ Stripe early fraud warning",
+              template: "fraud-warning",
+              html: `<p>Stripe Radar flagged payment ${pi || warning.charge} as likely fraudulent (${warning.fraud_type || "unknown type"}).</p><p>Action taken: ${efwAction}.</p><p>Review in the Stripe dashboard.</p>`,
+            });
+          } catch { /* alert best-effort */ }
+        });
+        break;
+      }
       default:
         break;
     }
