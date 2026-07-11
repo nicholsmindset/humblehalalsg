@@ -31,4 +31,28 @@ describe("help-content", () => {
     expect(helpForTab("user", "passport")?.key).toBe("passport");
     expect(helpByKey("nope")).toBeUndefined();
   });
+
+  // Accuracy invariants — the copy must match how the feature actually works
+  // (audit found drift: passport omitted the business mechanic; semantic-search
+  // described a directory search that doesn't exist; cert-vault omitted the plan).
+  it("passport help serves both diners and businesses and explains the QR stamp", () => {
+    const p = helpByKey("passport")!;
+    expect(p.audience).toEqual(expect.arrayContaining(["user", "business"]));
+    const text = (p.what + p.how.join(" ") + p.faqs.map((f) => f.q + f.a).join(" ")).toLowerCase();
+    expect(text).toContain("qr");
+    expect(text).toContain("stamp");
+  });
+
+  it("cert-vault help states the Verified+ plan requirement", () => {
+    const c = helpByKey("cert-vault")!;
+    expect((c.how.join(" ") + c.faqs.map((f) => f.a).join(" "))).toMatch(/verified/i);
+  });
+
+  it("semantic-search help is scoped to travel/hotels, not directory search", () => {
+    const s = helpByKey("semantic-search")!;
+    const text = (s.what + s.how.join(" ")).toLowerCase();
+    expect(text).toContain("hotel");
+    expect(text).not.toContain("explore or the map");
+    expect(s.faqCategory).toBe("Travel");
+  });
 });
