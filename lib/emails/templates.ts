@@ -229,7 +229,7 @@ export function leadConfirmationEmail(o: { name?: string | null }): Out {
   );
 }
 /* ── Lead marketplace ────────────────────────────────────────────────── */
-export function leadRoutedEmail(o: { name?: string | null; vertical: string; area?: string | null; budget?: string | null; when?: string | null }): Out {
+export function leadRoutedEmail(o: { name?: string | null; vertical: string; area?: string | null; budget?: string | null; when?: string | null; exclusive?: boolean }): Out {
   // NEVER include the consumer's PII — the owner unmasks it in-app on accept.
   const bits = [o.area && `in ${esc(o.area)}`, o.budget && `budget ${esc(o.budget)}`, o.when && `for ${esc(o.when)}`].filter(Boolean).join(" · ");
   return wrap(
@@ -237,9 +237,58 @@ export function leadRoutedEmail(o: { name?: string | null; vertical: string; are
     "You've got a new lead",
     greet(o.name) +
       p(`A customer is looking for <strong>${esc(o.vertical)}</strong>${bits ? ` — ${bits}` : ""} and we've matched them to your business on Humble Halal.`) +
-      p(`Open your dashboard to see the full request and accept it to unlock their contact details. Leads are shared with a few providers, so quick replies win.`),
+      (o.exclusive
+        ? p(`This lead is <strong>reserved exclusively for you for the next 24 hours</strong> — after that it goes to the next matching business. Open your dashboard to see the full request and accept it to unlock their contact details.`)
+        : p(`Open your dashboard to see the full request and accept it to unlock their contact details. Leads are shared with a few providers, so quick replies win.`)),
     { label: "View this lead", url: `${U}/owner?tab=leads` },
     `You're receiving this because your listing matched this request. Manage your lead preferences in your dashboard.`,
+  );
+}
+export function leadFullContactEmail(o: {
+  name?: string | null;
+  businessName: string;
+  vertical: string;
+  claimed: boolean;
+  slug?: string | null;
+  lead: { name?: string | null; email?: string | null; phone?: string | null; area?: string | null; budget?: string | null; when?: string | null; details?: string | null };
+}): Out {
+  // The ONE email that carries consumer PII — sent only for consented leads
+  // (routeLeadExclusive hard-guards consent_contact) and only as a business's
+  // FIRST-EVER lead: the free taste that shows the service is real.
+  const L = o.lead;
+  const rows = [
+    L.name && `<strong>Name:</strong> ${esc(L.name)}`,
+    L.phone && `<strong>Phone / WhatsApp:</strong> ${esc(L.phone)}`,
+    L.email && `<strong>Email:</strong> ${esc(L.email)}`,
+    L.area && `<strong>Area:</strong> ${esc(L.area)}`,
+    L.budget && `<strong>Budget:</strong> ${esc(L.budget)}`,
+    L.when && `<strong>When:</strong> ${esc(L.when)}`,
+    L.details && `<strong>Request:</strong> ${esc(L.details)}`,
+  ].filter(Boolean).join("<br>");
+  const cta = o.claimed
+    ? { label: "Open your Lead Inbox", url: `${U}/owner?tab=leads` }
+    : { label: "Claim your free listing", url: o.slug ? `${U}/claim?id=${esc(o.slug)}` : `${U}/claim` };
+  return wrap(
+    `A free ${o.vertical} customer lead for ${o.businessName}`,
+    "A free customer lead — on us",
+    greet(o.name) +
+      p(`A customer on <strong>Humble Halal</strong> is looking for <strong>${esc(o.vertical)}</strong> and matched your business, <strong>${esc(o.businessName)}</strong>. This one's free — their full contact details are below. They're expecting to hear from providers, so a quick reply wins the job.`) +
+      p(rows) +
+      p(o.claimed
+        ? `Future leads land in your Lead Inbox first — reserved exclusively for you for 24 hours before anyone else sees them.`
+        : `Want more customers like this? Claim your free Humble Halal listing and future leads will be reserved exclusively for you in your Lead Inbox.`),
+    cta,
+    `This customer consented to sharing their request with matching halal providers via Humble Halal. Reply to this email if you'd rather not receive leads.`,
+  );
+}
+export function leadAcceptedConsumerEmail(o: { name?: string | null; businessName: string; vertical?: string | null }): Out {
+  return wrap(
+    `${o.businessName} will be in touch`,
+    "Good news — a provider picked up your request",
+    greet(o.name) +
+      p(`<strong>${esc(o.businessName)}</strong> has accepted your ${o.vertical ? esc(o.vertical) + " " : ""}request on Humble Halal and will contact you directly — usually within a day.`) +
+      p(`No response, or want more options? Just submit another request and we'll match you with the next provider.`),
+    { label: "Browse more providers", url: `${U}/explore` },
   );
 }
 export function leadPlanStartedEmail(o: { name?: string | null; quota: number }): Out {

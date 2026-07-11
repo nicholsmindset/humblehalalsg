@@ -14,7 +14,17 @@ type Route = {
   id: string; status: string; vertical: string; sentAt: string;
   area: string | null; budget: string | null; when: string | null; details: string | null;
   name: string | null; email: string | null; phone: string | null; accepted: boolean;
+  exclusive?: boolean; expiresAt?: string | null; freeLead?: boolean;
 };
+
+/** "22h left" style countdown for an exclusive hold (null once expired/absent). */
+function hoursLeft(expiresAt?: string | null): string | null {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  const h = Math.ceil(ms / 3_600_000);
+  return h >= 2 ? `${h}h left` : "under 1h left";
+}
 type Quota = { active: boolean; planName: string | null; monthly: number; remaining: number; used: number; periodEnd: string | null };
 
 const VLABEL: Record<string, string> = {
@@ -150,11 +160,21 @@ export function OwnerLeads({ toast, live }: { toast: (m: string) => void; live: 
 
               {r.details && <p className="muted" style={{ marginTop: 10, fontSize: ".9rem" }}>{r.details}</p>}
 
+              {pending && r.exclusive && hoursLeft(r.expiresAt) && (
+                <p className="faint" style={{ marginTop: 8, fontSize: ".8rem", fontWeight: 600 }}>
+                  ⏳ Reserved exclusively for you — {hoursLeft(r.expiresAt)} before it goes to the next business
+                </p>
+              )}
+
               <div className="card" style={{ marginTop: 10, padding: "10px 12px", background: pending ? "var(--wash,#f8f6f0)" : "var(--emerald-50,#e7f3ee)" }}>
                 {pending ? (
                   <div className="flex between center wrap g8">
-                    <span className="faint" style={{ fontSize: ".86rem" }}><Icon name="lock" size={13} /> {r.name} · contact hidden until you accept</span>
-                    <button className="btn btn-primary btn-sm" disabled={busy === r.id} onClick={() => accept(r.id)}>{busy === r.id ? "…" : (paidLeads ? "Accept (1 credit)" : "Accept lead")}</button>
+                    {r.freeLead ? (
+                      <span className="faint" style={{ fontSize: ".86rem" }}>🎁 <strong>{r.name}</strong> · your first lead is free — contact details are unlocked below once you accept (no credit used)</span>
+                    ) : (
+                      <span className="faint" style={{ fontSize: ".86rem" }}><Icon name="lock" size={13} /> {r.name} · contact hidden until you accept</span>
+                    )}
+                    <button className="btn btn-primary btn-sm" disabled={busy === r.id} onClick={() => accept(r.id)}>{busy === r.id ? "…" : r.freeLead ? "Accept free lead" : (paidLeads ? "Accept (1 credit)" : "Accept lead")}</button>
                   </div>
                 ) : (
                   <div className="stack g8">
