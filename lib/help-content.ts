@@ -182,7 +182,7 @@ export const HELP: HelpFeature[] = [
   {
     key: "payouts", label: "Payouts", audience: ["business"],
     what: "Where your ticket/ad earnings are paid out. Connect your payout account to receive money.",
-    how: ["Open the Payouts tab.", "Complete payout onboarding (bank details).", "Earnings are transferred to you on the platform's payout schedule."],
+    how: ["Open the Payouts tab.", "Complete payout onboarding (bank details).", "Ticket earnings are transferred to your Stripe account about 24 hours after your event ends (minus the booking fee)."],
     faqs: [], faqCategory: "For businesses", dashboard: { surface: "owner", tab: "payouts" },
   },
   {

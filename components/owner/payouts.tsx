@@ -44,7 +44,7 @@ export function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; fla
             <span className="eyebrow">Payouts</span>
             <h3 style={{ fontSize: "1.4rem", marginTop: 6 }}>Get paid for ticket sales</h3>
             <p className="faint" style={{ maxWidth: 460, marginTop: 4 }}>
-              We use <strong>Stripe Connect</strong>. When a ticket sells, your full ticket price lands in your Stripe balance and Stripe pays it out to your bank automatically — Humble Halal only takes the booking fee.
+              We use <strong>Stripe Connect</strong>. Buyers pay Humble Halal at checkout, and we transfer your ticket revenue to your Stripe account about <strong>24 hours after your event ends</strong> — we keep only the booking fee (5% + S$0.50 per ticket).
             </p>
           </div>
           <span className="tag" style={{ background: "var(--cream-200)", color: "var(--ink-soft)" }}>
@@ -66,8 +66,8 @@ export function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; fla
         <h3 style={{ fontSize: "1.1rem", marginBottom: 4 }}>How payouts work</h3>
         <ol className="payout-steps">
           <li><strong>Onboard once</strong> — verify identity + add a bank account (handled by Stripe).</li>
-          <li><strong>Sell tickets</strong> — buyers pay face value + a booking fee; you keep the full face value.</li>
-          <li><strong>Get paid automatically</strong> — Stripe transfers your balance to your bank on a rolling schedule.</li>
+          <li><strong>Sell tickets</strong> — by default buyers pay your ticket price + the booking fee, so you keep the full face value. (If your event absorbs the fee instead, it comes out of your share.)</li>
+          <li><strong>Get paid after your event</strong> — we transfer your net revenue to your Stripe account about 24 hours after the event ends; Stripe then pays it to your bank.</li>
         </ol>
       </div>
 

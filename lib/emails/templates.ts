@@ -257,7 +257,7 @@ export function payoutConnectedEmail(o: { name?: string | null }): Out {
     "Your payout account is ready",
     "Payouts are set up",
     greet(o.name) +
-      p(`Your payout account is connected. When you sell tickets, your earnings are paid out automatically to your bank — no extra steps needed.`),
+      p(`Your payout account is connected. When you sell tickets, we transfer your net revenue to your Stripe account about 24 hours after your event ends — Stripe then pays it to your bank. No extra steps needed.`),
     { label: "Open your dashboard", url: `${U}/owner` },
   );
 }

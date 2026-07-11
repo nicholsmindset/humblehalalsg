@@ -1696,8 +1696,8 @@ export function HostEventScreen() {
                     </div>
                     <span className="hint">
                       {d.feeMode === "absorb"
-                        ? "Buyers see your ticket price only — the fee comes out of your payout."
-                        : "The fee is added at checkout — you receive your full ticket price."}
+                        ? "Buyers see your ticket price only — the fee comes out of your payout (paid ~24h after your event)."
+                        : "The fee is added at checkout — you receive your full ticket price (paid ~24h after your event)."}
                     </span>
                   </div>
                 </>
