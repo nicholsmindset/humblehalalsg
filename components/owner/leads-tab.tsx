@@ -76,6 +76,7 @@ export function OwnerLeads({ toast, live }: { toast: (m: string) => void; live: 
       if (d.url) { window.location.href = d.url; return; }
       toast(
         d.error === "paid_leads_disabled" ? "Lead subscriptions open soon — you're on the free beta"
+        : d.error === "already_subscribed" ? "You already have an active lead subscription — manage it from Billing."
         : d.error === "stripe_error" ? "Payments are having a moment — you have not been charged. Please try again shortly."
         : "Couldn't start checkout",
       );
