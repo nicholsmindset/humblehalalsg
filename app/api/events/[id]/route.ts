@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { eventCancelledEmail } from "@/lib/emails/templates";
 import { getStripe } from "@/lib/stripe";
+import { reverseOrderTransferIfPaid } from "@/lib/payout-reversal";
 import { revalidatePublic } from "@/lib/revalidate";
 
 /* Organiser event management — edit + cancel. Authorised for the event's
@@ -76,7 +77,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const stripe = getStripe();
     if (stripe) {
       const { data: paid } = await admin
-        .from("orders").select("id, stripe_payment_intent")
+        .from("orders").select("id, stripe_payment_intent, payout_status, stripe_transfer_id")
         .eq("event_id", id).gt("amount_cents", 0).neq("status", "refunded");
       for (const o of paid || []) {
         if (!o.stripe_payment_intent) continue;
@@ -85,7 +86,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
             { payment_intent: o.stripe_payment_intent as string },
             { idempotencyKey: `refund_order_${o.id}` },
           );
-          await admin.from("orders").update({ status: "refunded", payout_status: "none" }).eq("id", o.id);
+          await admin.from("orders").update({ status: "refunded" }).eq("id", o.id);
+          // A late cancellation can land AFTER the 24h payout ran — claw the
+          // organiser transfer back, or the platform refunds buyers while the
+          // organiser keeps the money.
+          const reversal = await reverseOrderTransferIfPaid(stripe, admin, o);
+          if (reversal === "not_needed") await admin.from("orders").update({ payout_status: "none" }).eq("id", o.id);
         } catch (err) {
           console.error("event-cancel: order refund failed", o.id, err);
         }

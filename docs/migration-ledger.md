@@ -40,15 +40,17 @@ whenever a migration is applied or added.
 | 0057–0059 seed_wedding_vendors | yes | yes | data seeds (31 vendors), probe-verified counts |
 | 0060_tiktok_submissions_close_leak | yes | yes (pasted + probe-verified 11 Jul) | drops the anon-read policy leaking reviewed_by/raw/submitter_email on approved tiktok rows (audit tiktokUgc-01) |
 | 0061_reserve_event_capacity | yes | **NO — PASTE PENDING** | atomic capacity-aware seat reservation (`reserve_event_capacity`) for flash-sale ticket holds. Code falls back to the unconditional counter until pasted, so deploy order doesn't matter — but paste BEFORE any big paid event. |
+| 0062_payout_status_states | yes | **NO — PASTE PENDING** | extends the orders.payout_status check with 'held'/'reversed'/'reverse_failed' (dispute + refund-after-payout clawback). Code degrades to 'skipped' (also cron-safe) until pasted. |
 
 ## Open items
 
 1. ~~PASTE `0052_verdict_lead_hardening.sql`~~ — pasted + verified 11 Jul.
-2. **PASTE — `0061_reserve_event_capacity.sql`** before enabling paid tickets
-   for any high-demand event (flash-sale oversell protection).
+2. **PASTE — `0061_reserve_event_capacity.sql` + `0062_payout_status_states.sql`**
+   before enabling paid tickets for any high-demand event (flash-sale oversell
+   protection + dispute/reversal payout states).
 3. **Master is BEHIND prod for passport v2 schema** (0049–0051 applied, code on
    PR #145 unmerged). Harmless while the new tables sit unused, but the
    integrity/review-hardening subset of #145 should be cherry-picked (program
    item A8) so prod code matches the integrity schema it already has.
 4. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
-   applied migrations creates worse drift). Next free number: **0062**.
+   applied migrations creates worse drift). Next free number: **0063**.

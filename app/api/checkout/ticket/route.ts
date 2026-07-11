@@ -253,7 +253,9 @@ export async function POST(req: Request) {
     line_items: lineItems,
     // NO transfer_data / application_fee → the full charge stays on the platform
     // balance until the cron transfers the organiser's net after the event.
-    payment_intent_data: { metadata: meta },
+    // transfer_group pairs this charge with that transfer (cron sets the same
+    // group) so an event's money movement reconciles in one dashboard filter.
+    payment_intent_data: { metadata: meta, transfer_group: `event_${ev.id}` },
     metadata: meta,
     // Reserved seats must recycle fast during a busy sale — 30 min (Stripe's
     // minimum) instead of the 24h default, then checkout.session.expired
