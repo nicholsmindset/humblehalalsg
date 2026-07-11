@@ -16,6 +16,50 @@ const addDaysISO = (base: Date, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
+/** Donation refund reconciliation (audit streams-P2-7): decrement the PUBLIC
+ *  "raised" figure by the NEWLY-refunded delta — correct for partial refunds,
+ *  full refunds, and a full refund arriving after earlier partials, exactly
+ *  once each. Needs 0065's donations.refunded_cents; until pasted, falls back
+ *  to the original full-refund-only reversal. Returns whether a donation row
+ *  matched this payment (so callers can try other ledgers). */
+async function reconcileDonationRefund(
+  supa: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  charge: Stripe.Charge,
+  pi: string,
+): Promise<boolean> {
+  const { data: don, error } = await supa
+    .from("donations").select("id, status, event_id, amount_cents, refunded_cents")
+    .eq("stripe_payment_intent", pi).maybeSingle();
+  if (error) {
+    // Pre-0065 (refunded_cents column missing) — original behaviour.
+    if (!charge.refunded) return false;
+    const { data: d2 } = await supa.from("donations").select("id, status, event_id, amount_cents").eq("stripe_payment_intent", pi).maybeSingle();
+    if (d2?.id && d2.status !== "refunded") {
+      await supa.from("donations").update({ status: "refunded" }).eq("id", d2.id);
+      if (d2.event_id && d2.amount_cents) {
+        await supa.rpc("increment_donation_raised", { p_event_id: d2.event_id, p_amount: -d2.amount_cents });
+      }
+    }
+    return !!d2?.id;
+  }
+  if (!don?.id) return false;
+  const already = Number(don.refunded_cents) || 0;
+  // Clamp to the recorded donation so a weird Stripe payload can't drive the
+  // public total negative beyond this donation's own contribution.
+  const donated = Number(don.amount_cents) || 0;
+  const nowRefunded = Math.min(charge.amount_refunded || 0, donated || charge.amount_refunded || 0);
+  const delta = nowRefunded - already;
+  if (delta > 0) {
+    await supa.from("donations")
+      .update({ refunded_cents: nowRefunded, ...(charge.refunded ? { status: "refunded" } : {}) })
+      .eq("id", don.id);
+    if (don.event_id) {
+      await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -delta });
+    }
+  }
+  return true;
+}
+
 /* Stripe webhook — single signed endpoint, idempotent fulfillment.
    No-ops cleanly when keys/DB aren't configured. */
 export async function POST(req: Request) {
@@ -453,15 +497,11 @@ export async function POST(req: Request) {
               await setPayoutStatus(supa, ord.id, "none");
             }
           } else if (!ord) {
-            // No order matched → it may be a donation refund (e.g. issued from the
-            // Stripe dashboard). Reverse it so the public total stays honest.
-            const { data: don } = await supa.from("donations").select("id, status, event_id, amount_cents").eq("stripe_payment_intent", pi).maybeSingle();
-            if (don?.id && don.status !== "refunded") {
-              await supa.from("donations").update({ status: "refunded" }).eq("id", don.id);
-              if (don.event_id && don.amount_cents) {
-                await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -don.amount_cents });
-              }
-            } else if (!don) {
+            // No order matched → it may be a donation refund (e.g. issued from
+            // the Stripe dashboard). Delta-based so the public total stays
+            // honest across partial + full refunds.
+            const wasDonation = await reconcileDonationRefund(supa, charge, pi);
+            if (!wasDonation) {
               // Ad purchase refund (audit streams-P0-2): fix the revenue ledger
               // AND stop the campaign — a dashboard refund used to leave the ad
               // serving with ad_orders still 'paid'.
@@ -472,6 +512,11 @@ export async function POST(req: Request) {
               await supa.from("ad_campaigns").update({ status: "ended" }).eq("stripe_payment_intent", pi).neq("status", "ended");
             }
           }
+        } else if (supa && pi && (charge.amount_refunded || 0) > 0) {
+          // PARTIAL refund: orders stay a deliberate no-op (voiding every ticket
+          // over a partial refund would be wrong) — but the public donation
+          // "raised" figure must drop by the refunded delta (streams-P2-7).
+          await reconcileDonationRefund(supa, charge, pi);
         }
         break;
       }

@@ -8,8 +8,8 @@ whenever a migration is applied or added.
 
 ## Numbering policy
 
-- **Next new migration number: `0065`.** Numbers 0049–0052 are claimed (see below),
-  0054 is a known duplicate, 0061–0064 are the 11-Jul payments batch — never reuse any number below 0065.
+- **Next new migration number: `0066`.** Numbers 0049–0052 are claimed (see below),
+  0054 is a known duplicate, 0061–0065 are the 11-Jul payments batch — never reuse any number below 0066.
 - One migration number = one file. If two branches need migrations concurrently,
   reserve numbers here first (the 0049–0052 note in `0054_listing_enrichment.sql`
   is the precedent).
@@ -43,12 +43,13 @@ whenever a migration is applied or added.
 | 0062_payout_status_states | yes | **NO — PASTE PENDING** | extends the orders.payout_status check with 'held'/'reversed'/'reverse_failed' (dispute + refund-after-payout clawback). Code degrades to 'skipped' (also cron-safe) until pasted. |
 | 0063_orders_pi_unique | yes | **NO — PASTE PENDING** | partial unique index on orders.stripe_payment_intent — a duplicated Stripe event can't double-insert an order / double-issue tickets (paidTickets-01). Webhook treats the 23505 as already-fulfilled. |
 | 0064_track_scheduled_ads | yes | **NO — PASTE PENDING** | track_ad_event now records for status in (active,scheduled)+approved — self-serve ads were served but showed 0 impressions/clicks (streams-P1-2). |
+| 0065_ads_price_align_donation_refunds | yes | **NO — PASTE PENDING** | directory_inline $89→$49 (matches marketed price, streams-P1-1) + donations.refunded_cents for partial-refund honesty (streams-P2-7). |
 
 ## Open items
 
 1. ~~PASTE `0052_verdict_lead_hardening.sql`~~ — pasted + verified 11 Jul.
 2. **PASTE — `0061_reserve_event_capacity.sql` + `0062_payout_status_states.sql`
-   + `0063_orders_pi_unique.sql` + `0064_track_scheduled_ads.sql`** before enabling paid tickets/ads for any
+   + `0063_orders_pi_unique.sql` + `0064_track_scheduled_ads.sql` + `0065_ads_price_align_donation_refunds.sql`** before enabling paid tickets/ads for any
    high-demand event (flash-sale oversell protection + dispute/reversal payout
    states + duplicate-event order dedupe).
 3. **Master is BEHIND prod for passport v2 schema** (0049–0051 applied, code on
@@ -56,4 +57,4 @@ whenever a migration is applied or added.
    integrity/review-hardening subset of #145 should be cherry-picked (program
    item A8) so prod code matches the integrity schema it already has.
 4. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
-   applied migrations creates worse drift). Next free number: **0065**.
+   applied migrations creates worse drift). Next free number: **0066**.
