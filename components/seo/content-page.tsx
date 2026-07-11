@@ -4,6 +4,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { LeadInline } from "@/components/lead-capture/lead-inline";
+import { LeadCapturePopup } from "@/components/lead-capture/lead-capture-popup";
 
 export interface QAItem { q: string; a: string }
 export interface Crumb { name: string; path: string }
@@ -20,6 +22,7 @@ export function ContentPage({
   faq,
   extraJsonLd = [],
   children,
+  leadVertical,
 }: {
   /** Breadcrumb trail INCLUDING the current page as the last item. */
   crumbs: Crumb[];
@@ -32,6 +35,9 @@ export function ContentPage({
   faq?: QAItem[];
   extraJsonLd?: object[];
   children?: ReactNode;
+  /** Lead vertical id (lib/lead-verticals) — renders the subtle inline
+      capture + the vertical popup (both flag-gated client-side). */
+  leadVertical?: string;
 }) {
   const current = crumbs[crumbs.length - 1];
   return (
@@ -79,6 +85,11 @@ export function ContentPage({
           ))}
 
           {children}
+
+          {/* Subtle vertical lead capture (flag-gated client-side; renders
+              nothing while leadCapture is off) + the coordinated popup. */}
+          {leadVertical && <LeadInline vertical={leadVertical} surface="hub" />}
+          {leadVertical && <LeadCapturePopup vertical={leadVertical} />}
 
           {links?.length ? (
             <>

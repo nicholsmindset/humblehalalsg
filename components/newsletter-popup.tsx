@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icon, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
+import { claimPopupSession, isLeadPopupMounted, popupSessionTaken } from "./lead-capture/popup-guard";
 
 const STORE_KEY = "hh_nl_popup"; // "dismissed" | "subscribed"
 const DWELL_MS = 25_000;
@@ -53,6 +54,11 @@ export function NewsletterPopup() {
 
     const trigger = () => {
       if (shownRef.current || alreadyHandled()) return;
+      // Popup coordination (owner subtlety rule): yield entirely on pages
+      // where the lead-capture popup is mounted, and never show if any popup
+      // has already used this session's one-popup slot.
+      if (isLeadPopupMounted() || popupSessionTaken()) return;
+      if (!claimPopupSession("newsletter")) return;
       shownRef.current = true;
       setOpen(true);
       cleanup();

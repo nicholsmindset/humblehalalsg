@@ -28,6 +28,7 @@ const FAQ = [
 export default function Page() {
   return (
     <ContentPage
+      leadVertical="weddings"
       crumbs={[{ name: "Event spaces", path: "/event-spaces-singapore" }]}
       h1={`Event Spaces in Singapore (${SEO_YEAR}) — Halal-Friendly Venues`}
       intro={

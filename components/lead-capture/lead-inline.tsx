@@ -38,6 +38,22 @@ export function useLeadCaptureConfig(surface: SurfaceKey): boolean {
   return on;
 }
 
+/** Visibility for PRE-EXISTING capture surfaces (the /quotes banner on hub
+ *  pages and the listing "Request a quote" CTA), which shipped BEFORE the
+ *  leadCapture flag and must not vanish when the flag is simply off:
+ *  master flag OFF → visible (legacy behaviour, fail-open);
+ *  master flag ON  → the per-surface toggle governs, so the admin can hide
+ *  each one from the Leads tab. */
+export function useLegacySurfaceVisible(surface: SurfaceKey): boolean {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    let live = true;
+    fetchConfig().then((c) => { if (live) setVisible(!c.enabled || !!c.surfaces?.[surface]); });
+    return () => { live = false; };
+  }, [surface]);
+  return visible;
+}
+
 const TEASER: Record<string, string> = {
   weddings: "Planning a wedding? Get free quotes from halal wedding vendors",
   catering: "Feeding a crowd? Get free quotes from halal caterers",
@@ -45,7 +61,7 @@ const TEASER: Record<string, string> = {
   photography: "Need a photographer? Get free quotes from Muslim-owned studios",
 };
 
-export function LeadInline({ vertical, surface, defaultOpen = false }: { vertical: string; surface: SurfaceKey; defaultOpen?: boolean }) {
+export function LeadInline({ vertical, surface, defaultOpen = false, onDone }: { vertical: string; surface: SurfaceKey; defaultOpen?: boolean; onDone?: () => void }) {
   const on = useLeadCaptureConfig(surface);
   const [open, setOpen] = useState(defaultOpen);
   const [name, setName] = useState("");
@@ -88,6 +104,7 @@ export function LeadInline({ vertical, surface, defaultOpen = false }: { vertica
       if (res.ok && d?.ok !== false) {
         track.leadSubmit("quote", { listing_category: v.label });
         setDone(true);
+        onDone?.();
       } else {
         setErr("Couldn't send your request — please try again.");
       }

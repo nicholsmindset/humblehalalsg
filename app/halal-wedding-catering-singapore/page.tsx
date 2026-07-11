@@ -27,6 +27,7 @@ const FAQ = [
 export default function Page() {
   return (
     <ContentPage
+      leadVertical="catering"
       crumbs={[
         { name: "Halal catering", path: "/halal-catering-singapore" },
         { name: "Wedding catering", path: "/halal-wedding-catering-singapore" },
