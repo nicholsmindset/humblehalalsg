@@ -8,8 +8,8 @@ whenever a migration is applied or added.
 
 ## Numbering policy
 
-- **Next new migration number: `0060`.** Numbers 0049–0052 are claimed (see below)
-  and 0054 is a known duplicate — never reuse any number below 0060.
+- **Next new migration number: `0061`.** Numbers 0049–0052 are claimed (see below),
+  0054 is a known duplicate, 0060 is the tiktok-leak fix — never reuse any number below 0061.
 - One migration number = one file. If two branches need migrations concurrently,
   reserve numbers here first (the 0049–0052 note in `0054_listing_enrichment.sql`
   is the precedent).
@@ -38,6 +38,7 @@ whenever a migration is applied or added.
 | 0055_hawker_finder | yes | yes | hawker_centres + businesses.hawker_centre_id/stall_no |
 | 0056_tiktok_ugc | yes | yes | tiktok_submissions |
 | 0057–0059 seed_wedding_vendors | yes | yes | data seeds (31 vendors), probe-verified counts |
+| 0060_tiktok_submissions_close_leak | yes | **NO — PASTE PENDING** | ⚠️ drops the anon-read policy leaking reviewed_by/raw/submitter_email on approved tiktok rows (audit tiktokUgc-01). App reads via service role so paste is safe. |
 
 ## Open items
 
