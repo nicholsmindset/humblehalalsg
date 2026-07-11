@@ -25,13 +25,35 @@ export async function GET(req: Request) {
   if (status) q = q.eq("status", status);
   const { data: leads } = await q;
 
-  // Routes for these leads (for the routed/contacted view).
+  // Routes for these leads (routed/contacted view + the WhatsApp delivery
+  // queue: exclusive routes with delivered_at null need a manual send).
   const ids = (leads || []).map((l) => l.id);
-  const routesByLead: Record<string, { business_id: string; status: string }[]> = {};
+  type RouteShape = { business_id: string; status: string; mode?: string | null; delivery?: string | null; deliveredAt?: string | null; expiresAt?: string | null; businessName?: string | null; businessPhone?: string | null };
+  const routesByLead: Record<string, RouteShape[]> = {};
   if (ids.length) {
-    const { data: routes } = await db.from("lead_routes").select("lead_id, business_id, status, businesses(name)").in("lead_id", ids);
+    // mode/delivery/delivered_at/expires_at are 0066 — retry without pre-paste.
+    let routes: Record<string, unknown>[] | null;
+    {
+      const r = await db.from("lead_routes").select("lead_id, business_id, status, mode, delivery, delivered_at, expires_at, businesses(name, phone)").in("lead_id", ids);
+      if (r.error && /column|schema cache/i.test(r.error.message || "")) {
+        routes = (await db.from("lead_routes").select("lead_id, business_id, status, businesses(name, phone)").in("lead_id", ids)).data;
+      } else {
+        routes = r.data;
+      }
+    }
     for (const r of routes || []) {
-      (routesByLead[r.lead_id] ||= []).push({ business_id: r.business_id, status: r.status });
+      const rawBiz = (r as { businesses?: unknown }).businesses;
+      const biz = (Array.isArray(rawBiz) ? rawBiz[0] : rawBiz) as { name?: string; phone?: string } | undefined;
+      (routesByLead[String(r.lead_id)] ||= []).push({
+        business_id: String(r.business_id),
+        status: String(r.status),
+        mode: (r as { mode?: string }).mode ?? null,
+        delivery: (r as { delivery?: string }).delivery ?? null,
+        deliveredAt: (r as { delivered_at?: string }).delivered_at ?? null,
+        expiresAt: (r as { expires_at?: string }).expires_at ?? null,
+        businessName: biz?.name ?? null,
+        businessPhone: biz?.phone ?? null,
+      });
     }
   }
 
@@ -41,6 +63,10 @@ export async function GET(req: Request) {
     const base = {
       id: l.id, name: l.name, verticalId: l.vertical_id,
       vertical: l.vertical_id ? verticalLabel(l.vertical_id) : "—",
+      // Consumer contact — admin-only, and only for consented leads, so the
+      // WhatsApp delivery queue can forward the free lead to an unclaimed vendor.
+      email: l.consent_contact ? l.email : null,
+      phone: l.consent_contact ? l.phone : null,
       area: l.area, budget: l.budget, when: l.event_date, details: l.details,
       status: l.status, consent: l.consent_contact, createdAt: l.created_at,
       sourceSlug: l.source_listing_slug,
@@ -133,6 +159,20 @@ export async function POST(req: Request) {
   if (action === "cascade") {
     const { advanced, exhausted } = await advanceLeadCascade(db, 50);
     return NextResponse.json({ ok: true, advanced, exhausted });
+  }
+
+  // WhatsApp queue: admin sent the free lead manually via the wa.me deep-link
+  // → record it so the route stops showing as needing delivery. `id` here is
+  // the LEAD id + businessIds[0] identifies the route (matches the UI shape).
+  if (action === "mark-delivered") {
+    const businessId = businessIds[0] || "";
+    if (!businessId) return NextResponse.json({ ok: false, error: "missing_business" }, { status: 422 });
+    const { error } = await db.from("lead_routes")
+      .update({ delivered_at: new Date().toISOString(), delivery_channel: "whatsapp" })
+      .eq("lead_id", id).eq("business_id", businessId).is("delivered_at", null);
+    if (error) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
+    await logAudit(db, { actor: gate.userId, action: "lead_marked_delivered", target: id, meta: { business: businessId, channel: "whatsapp" } });
+    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ ok: false, error: "bad_action" }, { status: 400 });

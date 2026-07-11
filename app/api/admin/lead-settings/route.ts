@@ -11,6 +11,20 @@ import { logAudit } from "@/lib/audit";
 
 const SURFACES: LeadCaptureSurface[] = ["blog", "hub", "listing", "popup"];
 
+/** Raw per-surface toggles for the admin editor (independent of the master
+    flag — /api/leads/config returns the RESOLVED public view instead). */
+export async function GET() {
+  const gate = await requireAdmin();
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ ok: false, error: "db_not_configured" }, { status: 503 });
+  const { data } = await admin.from("platform_settings").select("lead_capture_surfaces").eq("id", 1).maybeSingle();
+  const raw = ((data as { lead_capture_surfaces?: Record<string, boolean> } | null)?.lead_capture_surfaces) || {};
+  const surfaces: Record<string, boolean> = { blog: true, hub: true, listing: true, popup: true };
+  for (const k of SURFACES) if (typeof raw[k] === "boolean") surfaces[k] = raw[k];
+  return NextResponse.json({ ok: true, surfaces });
+}
+
 export async function POST(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
