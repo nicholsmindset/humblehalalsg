@@ -37,6 +37,7 @@ import { Breadcrumbs } from "../breadcrumbs";
 import { Newsletter } from "../newsletter";
 import { HomeCommunityVideos } from "../home-community-videos";
 import { verticalForCatId } from "@/lib/lead-verticals";
+import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 
 /* =============================================================
    HOME
@@ -1141,6 +1142,9 @@ export function MapScreen() {
 export function DetailScreen({ initial }: { initial?: Listing } = {}) {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
+  // Admin surface toggle for the pre-existing "Request a quote" CTA (legacy
+  // fail-open: visible while the leadCapture master flag is off).
+  const legacyListingVisible = useLegacySurfaceVisible("listing");
   // Strict slug/id resolution — the old `|| dir.listings[0]` fallback silently
   // rendered the FIRST listing for any bad/stale slug instead of a not-found
   // state (same bug class fixed on the events screens).
@@ -1438,7 +1442,7 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
             >
               <Icon name="share" size={17} /> Share
             </button>
-            {quoteVertical && (
+            {quoteVertical && legacyListingVisible && (
               <button className="btn btn-gold" onClick={() => { logLead("enquiry_form"); navigate("request-quote", { category: quoteVertical, business: item.slug }); }}><Icon name="doc" size={17} /> Request a quote</button>
             )}
             <button className="btn btn-ghost" onClick={() => navigate("report", { id: item.id })}><Icon name="flag" size={17} /> Report incorrect info</button>

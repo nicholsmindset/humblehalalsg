@@ -20,6 +20,7 @@ import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
 import { allSeoPages, getSeoPage, relatedSeoPages, seoListings } from "@/lib/seo-pages";
 import { LEAD_VERTICALS, LEAD_CONSENT_VERSION, LEAD_ROUTE_CAP, verticalForCatId } from "@/lib/lead-verticals";
+import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 import { areaProfile, nearbyAreaIds } from "@/lib/area-content";
 import { categoryContent } from "@/lib/category-content";
 import { HALALSG_BASE } from "@/lib/muis";
@@ -983,6 +984,9 @@ export function DisclaimerScreen() {
 export function SeoScreen({ slug }: { slug?: string } = {}) {
   const { navigate, params } = useApp();
   const dir = useDirectory();
+  // Admin surface toggle for the pre-existing quotes banner (legacy fail-open:
+  // visible while the leadCapture master flag is off).
+  const legacyHubVisible = useLegacySurfaceVisible("hub");
   // Server route 404s unknown slugs; this guard covers SPA navigation. The old
   // `|| allSeoPages()[0]` fallback silently rendered page-0 content instead.
   // `slug` prop comes from server routes whose URL segment isn't the raw slug
@@ -1059,7 +1063,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
           )}
 
           {/* Lead-gen banner for high-ticket verticals (weddings, umrah, services…). */}
-          {verticalForCatId(page.catId) && (
+          {verticalForCatId(page.catId) && legacyHubVisible && (
             <div className="card mt16" style={{ padding: "18px 20px", display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ minWidth: 220, flex: 1 }}>
                 <strong style={{ fontSize: "1.02rem" }}>Planning something? Get up to {LEAD_ROUTE_CAP} free quotes</strong>

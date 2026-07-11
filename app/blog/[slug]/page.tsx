@@ -19,6 +19,7 @@ import { SectionDivider } from "@/components/blog/section-divider";
 import { ShareRow } from "@/components/blog/share-row";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 import { LeadInline } from "@/components/lead-capture/lead-inline";
+import { LeadCapturePopup } from "@/components/lead-capture/lead-capture-popup";
 import { leadInlineIndex } from "@/lib/lead-placement";
 
 export function generateStaticParams() {
@@ -162,6 +163,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                 {i === leadIndex && p.leadVertical && (
                   <LeadInline vertical={p.leadVertical} surface="blog" />
                 )}
+                {i === 0 && p.leadVertical && <LeadCapturePopup vertical={p.leadVertical} />}
 
                 {i === midIndex && (
                   <div className="article-ribbon">
