@@ -11,8 +11,23 @@ import {
   breadcrumbJsonLd,
 } from "@/components/seo/json-ld";
 
+// Prerendering all ~330 businesses at build time dominates Vercel build CPU.
+// Eagerly build only the highest-signal listings (certified, then most
+// reviewed) — every other slug still exists (dynamicParams stays true) and
+// renders + caches on its first real request instead of at build time.
+export const dynamicParams = true;
+export const revalidate = 3600;
+
+const EAGER_BUSINESS_COUNT = 25;
+
 export async function generateStaticParams() {
-  return (await getDirectory()).map((l) => ({ slug: l.slug as string }));
+  const listings = await getDirectory();
+  const ranked = [...listings].sort((a, b) => {
+    if (a.certified !== b.certified) return a.certified ? -1 : 1;
+    if (b.reviews !== a.reviews) return b.reviews - a.reviews;
+    return b.rating - a.rating;
+  });
+  return ranked.slice(0, EAGER_BUSINESS_COUNT).map((l) => ({ slug: l.slug as string }));
 }
 
 export async function generateMetadata({

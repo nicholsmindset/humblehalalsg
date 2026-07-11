@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // CI (.github/workflows/ci.yml) already runs `npm run typecheck` as a real
+  // merge gate on every push/PR. Re-running the ~90s type check inside every
+  // Vercel build is pure duplicate CPU — skip it here, not in CI.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Flat-URL migration (301s) + the cuisine/category rewrite — see lib/redirects.ts.
   async redirects() {
     return seoRedirects();
