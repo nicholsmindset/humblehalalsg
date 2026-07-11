@@ -1292,6 +1292,70 @@ const rawPosts: RawPost[] = [
     pullQuote: "“For non-food businesses there is no certificate to lean on — the trust signal is Muslim ownership and how the service is run.”",
     pullQuoteBy: "The Humble Halal Team",
   },
+  {
+    slug: "malay-wedding-cost-singapore",
+    title: "How Much Does a Malay Wedding Cost in Singapore? (2026 Budget Guide)",
+    dek: "A realistic 2026 breakdown of what a Malay wedding in Singapore costs — from the akad nikah to the sanding — with vendor-by-vendor price ranges and where couples actually save.",
+    answer:
+      "A Malay wedding in Singapore typically costs S$15,000–S$45,000 for 500–1,000 guests, depending on venue (void deck vs ballroom), catering per head, the bridal package and the pelamin. A void-deck kenduri can land under S$15,000; a hotel or community-club ballroom sanding runs S$25,000–S$45,000+. Book catering, venue and the bridal package first — they set 70% of the budget.",
+    datePublished: "2026-07-12",
+    author: AUTHOR,
+    readMins: 8,
+    tags: ["Weddings", "Budgeting", "Malay wedding"],
+    sections: [
+      {
+        h2: "The short answer: what a Malay wedding costs in 2026",
+        body: [
+          "Most couples in Singapore spend between S$15,000 and S$45,000 on a Malay wedding, and the single biggest lever is the venue. A void-deck or community-space kenduri with home-style catering can come in under S$15,000. A community-club or hotel ballroom sanding — with a full bridal package, a bigger pelamin and photography/videography — pushes S$25,000 to S$45,000 and beyond.",
+          "The number that matters most is cost per guest. Malay weddings are famously generous with the guest list — 800 to 1,200 is common — so even a small change in the per-head catering rate moves the total by thousands.",
+        ],
+        bullets: [
+          "Void-deck kenduri (500–800 guests): S$8,000–S$15,000",
+          "Community-club hall sanding (600–1,000 guests): S$18,000–S$30,000",
+          "Hotel / premium ballroom (400–700 guests): S$30,000–S$45,000+",
+          "Solemnisation-only (akad nikah + small majlis): S$3,000–S$8,000",
+        ],
+      },
+      {
+        h2: "Where the money actually goes",
+        body: [
+          "Three vendors set roughly 70% of a Malay wedding budget: catering, the venue, and the bridal package (baju, make-up, and often the pelamin). Lock these first — everything else fits around them.",
+        ],
+        bullets: [
+          "Catering: S$9–S$18 per guest (buffet or bufet berlauk) — usually the largest single line",
+          "Venue: free–S$1,500 for a void deck; S$2,000–S$8,000 for a hall or ballroom",
+          "Bridal package (baju nikah + sanding, make-up, hair): S$2,500–S$8,000",
+          "Pelamin / dais: S$1,200–S$5,000 depending on scale and flowers",
+          "Photography + videography: S$1,500–S$4,500",
+          "Hantaran, dulang, doorgifts and kompang: S$1,000–S$3,000 combined",
+        ],
+      },
+      {
+        h2: "Where couples save without cutting the celebration",
+        body: [
+          "You don't need to trim the guest list to control the budget. The couples who spend well tend to make a few deliberate swaps: a weekday or Sunday-afternoon slot instead of a Saturday evening, a void deck or community club instead of a hotel, and a package vendor who bundles baju, make-up and pelamin rather than booking each separately.",
+          "Getting three quotes per vendor is the highest-return hour you'll spend — Malay wedding pricing varies widely, and a good vendor will happily tailor a package to your budget if you ask early.",
+        ],
+        bullets: [
+          "Book 9–12 months ahead — the best-value vendors go first",
+          "Ask for package deals (baju + make-up + pelamin from one vendor)",
+          "Off-peak dates and daytime slots cut venue and catering rates",
+          "Confirm the caterer's halal status up front (MUIS-certified or clearly Muslim-run)",
+        ],
+      },
+    ],
+    faq: [
+      { q: "How much does a Malay wedding cost in Singapore in 2026?", a: "Most range from S$15,000 to S$45,000 for 500–1,000 guests. A void-deck kenduri can be under S$15,000; a hotel-ballroom sanding runs S$30,000–S$45,000 or more. Catering per head and the venue drive the total." },
+      { q: "What is the cheapest way to hold a Malay wedding?", a: "A void-deck or community-space kenduri with a Muslim-run caterer, an off-peak daytime slot, and a bundled bridal package (baju + make-up + pelamin) keeps most weddings under S$15,000 without shrinking the guest list." },
+      { q: "How far in advance should I book wedding vendors?", a: "Nine to twelve months for catering, venue and the bridal package — they set most of the budget and the popular, good-value vendors book out first. Get three quotes for each." },
+      { q: "How do I make sure the caterer is halal?", a: "Ask whether they're MUIS-certified or a Muslim-owned/-run kitchen, and confirm it before you pay a deposit. Humble Halal lists halal caterers and Muslim-owned wedding vendors you can compare." },
+    ],
+    related: ["muslim-owned-businesses-singapore", "halal-catering-singapore-guide"],
+    dropcap: true,
+    pullQuote: "“The couples who spend well don't cut the guest list — they make three deliberate swaps: the date, the venue, and a bundled bridal package.”",
+    pullQuoteBy: "The Humble Halal Team",
+    leadVertical: "weddings",
+  },
 ];
 
 /* ---- Feature image + category, keyed by slug ----
@@ -1326,6 +1390,7 @@ const META: Record<string, BlogMeta> = {
   "halal-catering-singapore-guide": { category: "seasonal-events", image: "/blog/halal-catering-singapore-guide.webp", imageAlt: "Halal catering buffet with chafing dishes and satay set up at a Singapore event", leadVertical: "catering" },
   "ramadan-singapore-2026-guide": { category: "seasonal-events", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and a meal for breaking fast during Ramadan" },
   "muslim-owned-businesses-singapore": { category: "community-business", image: "/blog/muslim-owned-businesses-singapore.webp", imageAlt: "Hijabi shopkeeper serving a customer at a Muslim-owned beauty and fashion store in Singapore" },
+  "malay-wedding-cost-singapore": { category: "community-business", image: bimg("1519741497674-611481863552"), imageAlt: "Elegantly set Malay wedding reception table with floral pelamin decor in Singapore", leadVertical: "weddings" },
 };
 
 const builtPosts: BlogPost[] = rawPosts.map((p) => {
@@ -1358,6 +1423,7 @@ const PUBLISHED_SLUGS = new Set<string>([
   "ramadan-singapore-2026-guide",
   "halal-dim-sum-singapore",
   "muslim-owned-businesses-singapore",
+  "malay-wedding-cost-singapore",
 ]);
 
 export const posts: BlogPost[] = builtPosts.filter((p) => PUBLISHED_SLUGS.has(p.slug));
