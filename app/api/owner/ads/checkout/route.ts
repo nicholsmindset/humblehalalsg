@@ -81,6 +81,25 @@ export async function POST(req: Request) {
   end.setUTCDate(end.getUTCDate() - 1);
   const endsOn = end.toISOString().slice(0, 10);
 
+  // Inventory cap enforced SERVER-SIDE (audit ads-oversell-02): the builder's
+  // disabled radio is client-trustable only. Without this, two owners can both
+  // PAY for a cap-1 slot (homepage hero) with overlapping dates — the later
+  // one silently never serves, and ads have no self-serve refund. Count every
+  // money-committed campaign (scheduled/active, not rejected) whose window
+  // overlaps the requested one.
+  const cap = Math.max(1, Number(placement.inventory_cap) || 1);
+  const { count: overlapping } = await sb
+    .from("ad_campaigns")
+    .select("id", { count: "exact", head: true })
+    .eq("placement_key", placementKey)
+    .in("status", ["scheduled", "active"])
+    .neq("review_status", "rejected")
+    .lte("starts_on", endsOn)
+    .gte("ends_on", startsOn);
+  if ((overlapping || 0) >= cap) {
+    return NextResponse.json({ ok: false, reason: "placement_soldout" }, { status: 409 });
+  }
+
   // Owner-scoped — businessId already validated above, so resolve per-business
   // (business override ?? global ?? env) rather than the global-only gate.
   const paidAds = await resolveBusinessFlag("paidAds", businessId);

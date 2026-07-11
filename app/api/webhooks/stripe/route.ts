@@ -461,6 +461,15 @@ export async function POST(req: Request) {
               if (don.event_id && don.amount_cents) {
                 await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -don.amount_cents });
               }
+            } else if (!don) {
+              // Ad purchase refund (audit streams-P0-2): fix the revenue ledger
+              // AND stop the campaign — a dashboard refund used to leave the ad
+              // serving with ad_orders still 'paid'.
+              const { data: adOrd } = await supa.from("ad_orders").select("id, status").eq("stripe_payment_intent", pi).maybeSingle();
+              if (adOrd?.id && adOrd.status !== "refunded") {
+                await supa.from("ad_orders").update({ status: "refunded" }).eq("id", adOrd.id);
+              }
+              await supa.from("ad_campaigns").update({ status: "ended" }).eq("stripe_payment_intent", pi).neq("status", "ended");
             }
           }
         }

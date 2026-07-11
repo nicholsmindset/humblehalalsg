@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getStripe } from "@/lib/stripe";
+import { sendEmail } from "@/lib/email";
+import { emailForBusinessOwner } from "@/lib/emails/recipient";
 
 /* Admin sponsored-ad manager. GET → rate card + campaigns with real performance
    (impressions/clicks). POST → create a campaign (sales team books a sponsor).
@@ -95,7 +98,49 @@ export async function PATCH(req: Request) {
   if (b.notes !== undefined) patch.notes = b.notes ? String(b.notes).slice(0, 500) : null;
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, error: "nothing_to_update" }, { status: 422 });
 
+  // Rejecting a PAID self-serve campaign must refund the owner (audit
+  // streams-P1-5 — the builder promises "we'll contact you to fix it or refund
+  // you") and stop the schedule. Idempotent refund per campaign; the
+  // charge.refunded webhook then flips the ad_orders ledger row too.
+  let refunded = false;
+  if (patch.review_status === "rejected") {
+    const { data: c } = await sb.from("ad_campaigns")
+      .select("id, created_via, stripe_payment_intent, status, business_id, title")
+      .eq("id", id).maybeSingle();
+    if (c?.created_via === "self_serve" && c.stripe_payment_intent && ["scheduled", "active"].includes(String(c.status))) {
+      const stripe = getStripe();
+      if (!stripe) return NextResponse.json({ ok: false, error: "stripe_not_configured_for_refund" }, { status: 503 });
+      try {
+        await stripe.refunds.create(
+          { payment_intent: c.stripe_payment_intent as string },
+          { idempotencyKey: `refund_campaign_${c.id}` },
+        );
+        refunded = true;
+        patch.status = "ended"; // a rejected creative must not stay scheduled
+        // Tell the owner (best-effort, post-response) — a silent reject +
+        // refund reads as a bug.
+        after(async () => {
+          try {
+            const { email, name } = await emailForBusinessOwner(sb, (c.business_id as string) || null);
+            if (email) {
+              await sendEmail({
+                to: email,
+                subject: "Your ad campaign couldn't run — you've been refunded",
+                template: "ad-rejected-refund",
+                html: `<p>Assalamualaikum${name ? ` ${String(name).split(/\s+/)[0]}` : ""},</p><p>Unfortunately your campaign "${String(c.title || "").replace(/[<>&"]/g, "")}" didn't pass our creative review, so we've refunded the full amount to your card (it typically lands within 5–10 business days).</p><p>You're welcome to rework the creative and book again — reply to this email if you'd like pointers on what to change.</p>`,
+                businessId: (c.business_id as string) || undefined,
+              });
+            }
+          } catch { /* email best-effort */ }
+        });
+      } catch (e) {
+        console.error(`[admin/campaigns] reject-refund failed (campaign=${id}):`, e instanceof Error ? e.message : e);
+        return NextResponse.json({ ok: false, error: "refund_failed" }, { status: 502 });
+      }
+    }
+  }
+
   const { error } = await sb.from("ad_campaigns").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, ...(refunded ? { refunded: true } : {}) });
 }
