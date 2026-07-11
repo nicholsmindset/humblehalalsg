@@ -18,6 +18,8 @@ import { AuthorBio } from "@/components/blog/author-bio";
 import { SectionDivider } from "@/components/blog/section-divider";
 import { ShareRow } from "@/components/blog/share-row";
 import { isUnoptimizedImageSrc } from "@/lib/img";
+import { LeadInline } from "@/components/lead-capture/lead-inline";
+import { leadInlineIndex } from "@/lib/lead-placement";
 
 export function generateStaticParams() {
   return allPosts().map((p) => ({ slug: p.slug }));
@@ -61,6 +63,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const midIndex = n >= 4 ? Math.floor(n / 2) - 1 : -1; // newsletter after this section
   const adIndex = n >= 3 ? n - 2 : -1; // sponsored slot before the final section
   const pqIndex = p.pullQuote ? Math.min(1, n - 1) : -1; // pull-quote after this section
+  // Subtle lead-capture teaser (vertical-tagged posts only): placement helper
+  // guarantees ≥2 sections from the newsletter ribbon or omits entirely; the
+  // component itself is flag-gated client-side (renders nothing when off).
+  const leadIndex = p.leadVertical ? leadInlineIndex(n, midIndex, adIndex) : -1;
 
   return (
     <>
@@ -152,6 +158,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                 {s.image && <ArticleFigure src={s.image} alt={s.imageAlt || s.h2} caption={s.caption} />}
 
                 {i === pqIndex && p.pullQuote && <PullQuote text={p.pullQuote} by={p.pullQuoteBy} />}
+
+                {i === leadIndex && p.leadVertical && (
+                  <LeadInline vertical={p.leadVertical} surface="blog" />
+                )}
 
                 {i === midIndex && (
                   <div className="article-ribbon">
