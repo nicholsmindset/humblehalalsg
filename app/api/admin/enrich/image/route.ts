@@ -43,7 +43,13 @@ export async function POST(req: Request) {
 
   if (action === "apply") {
     const candidateUrl = String(b.candidateUrl || "").trim();
-    if (!/^https:\/\//.test(candidateUrl)) return NextResponse.json({ ok: false, error: "bad_candidate" }, { status: 422 });
+    // Only a URL we REHOSTED into our own Supabase storage may become the cover
+    // — not an arbitrary external https URL (which would let a caller hotlink a
+    // tracking pixel / offsite image as the listing photo). audit listingEnrich-02.
+    const storagePrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL || ""}/storage/`;
+    if (!storagePrefix.startsWith("https://") || !candidateUrl.startsWith(storagePrefix)) {
+      return NextResponse.json({ ok: false, error: "bad_candidate", detail: "Apply only accepts a rehosted image URL from this project's storage." }, { status: 422 });
+    }
     const rest = Array.isArray(biz.photos) ? (biz.photos as { url: string; caption?: string }[]).filter((p) => p.url !== candidateUrl) : [];
     const photos = [{ url: candidateUrl, caption: biz.name }, ...rest].slice(0, 8);
     const { error } = await db.from("businesses").update({ photos }).eq("id", businessId);

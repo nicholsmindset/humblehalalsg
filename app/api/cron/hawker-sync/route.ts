@@ -17,6 +17,18 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").repla
 const pick = (r: Record<string, unknown>, re: RegExp): string => { for (const k of Object.keys(r)) if (re.test(k)) { const v = r[k]; if (v != null && v !== "") return String(v); } return ""; };
 const pickNum = (r: Record<string, unknown>, re: RegExp): number | null => { const v = pick(r, re); const n = Number(v); return Number.isFinite(n) && n !== 0 ? n : null; };
 
+/* Coarse SGT region from coords so NEA-synced centres group in the /hawker hub
+   instead of falling into a NULL-region bucket that never renders (audit
+   hawker-02). Approximate bands; a human curator can correct on review. */
+function regionFromCoords(lat: number | null, lng: number | null): string {
+  if (lat == null || lng == null) return "Central";
+  if (lng <= 103.75) return "West";
+  if (lng >= 103.90) return "East";
+  if (lat >= 1.40) return "North";
+  if (lat >= 1.35) return "North-East";
+  return "Central";
+}
+
 export async function GET(req: Request) {
   if (!authorizeCron(req)) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
@@ -39,11 +51,13 @@ export async function GET(req: Request) {
           if (!name) continue;
           const id = slugify(name).slice(0, 60);
           if (!id) continue;
+          const lat = pickNum(r, /^lat|latitude/i);
+          const lng = pickNum(r, /^lng|^long|longitude/i);
           const centre = {
             id, name,
             address: pick(r, /address|location_of_centre|street/i) || null,
-            lat: pickNum(r, /^lat|latitude/i),
-            lng: pickNum(r, /^lng|^long|longitude/i),
+            lat, lng,
+            region: regionFromCoords(lat, lng),
             source: "NEA",
             updated_at: new Date().toISOString(),
           };

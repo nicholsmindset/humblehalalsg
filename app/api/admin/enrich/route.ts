@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { getServerFlags } from "@/lib/feature-flags";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { revalidatePublic } from "@/lib/revalidate";
@@ -33,6 +34,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  // Kill-switch authoritative on the write path (audit listingEnrich-01) —
+  // matches the image route, which was already flag-gated.
+  if (!(await getServerFlags()).listingEnrichment) return NextResponse.json({ ok: false, error: "not_enabled" }, { status: 404 });
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
