@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { liteapiConfigured, searchAirports, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries, type FlightItinerary } from "@/lib/flights";
@@ -60,6 +61,11 @@ function reply(opts: { simulated?: boolean; answer: string; params: Params; itin
 }
 
 export async function POST(req: Request) {
+  // aiConcierge is the site-wide AI kill-switch — an AI-spend route must honour
+  // it (matches app/api/travel/concierge). Was ungated (audit aiConcierge-01).
+  if (!(await getServerFlags()).aiConcierge) {
+    return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
+  }
   const rl = await rateLimit(req, "ai-flights", 20, 60);
   if (!rl.ok) return tooMany(rl.retryAfter);
 

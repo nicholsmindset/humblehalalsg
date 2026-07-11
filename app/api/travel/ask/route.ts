@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { askHotel, liteapiConfigured } from "@/lib/liteapi";
+import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { hotelDetail } from "@/lib/travel-data";
 import { aiText, aiConfigured } from "@/lib/ai";
@@ -73,6 +74,11 @@ async function overlayGroundedAnswer(hotelId: string, q: string): Promise<string
 }
 
 export async function GET(req: Request) {
+  // aiConcierge is the site-wide AI kill-switch — an AI-spend route must honour
+  // it (matches app/api/travel/concierge). Was ungated (audit aiConcierge-01).
+  if (!(await getServerFlags()).aiConcierge) {
+    return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
+  }
   const rl = await rateLimit(req, "hotel-ask", 20, 60);
   if (!rl.ok) return tooMany(rl.retryAfter);
   const sp = new URL(req.url).searchParams;
