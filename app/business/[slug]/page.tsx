@@ -23,14 +23,26 @@ export async function generateMetadata({
   const { slug } = await params;
   const l = await getListingBySlug(slug);
   if (!l) return pageMeta({ title: "Business", path: `/business/${slug}`, index: false });
-  // "MUIS / verified" only when the claim is backed; register-sourced places
-  // without a cert number on file say "MUIS-listed" (matches the on-page tier).
-  const certified = l.certified ? (muisUnbacked(l) ? "MUIS-listed halal" : "MUIS / verified halal") : "halal-friendly";
+  // Trust wording rule (owner): "halal …" describes FOOD; services and
+  // professionals are "Muslim-owned" — never "halal dentist"/"halal lawyer".
+  // Within food, keep certification honesty: "MUIS / verified" only when the
+  // claim is backed; register-sourced places without a cert number say
+  // "MUIS-listed" (matches the on-page tier); Muslim-owned (uncertified) food
+  // says Muslim-owned, not halal.
+  const isFood = ["restaurants", "cafes", "groceries"].includes(l.catId);
+  const owned = l.badges?.includes("owned");
+  const descriptor = l.certified
+    ? (muisUnbacked(l) ? "MUIS-listed halal" : "MUIS / verified halal")
+    : owned
+      ? "Muslim-owned"
+      : isFood
+        ? "halal-friendly"
+        : "Muslim-friendly";
   const reviewLine = l.reviews > 0 ? ` ${l.rating}★ from ${l.reviews} reviews.` : "";
   return pageMeta({
     // Prefer admin-approved AI-enriched SEO when present; else the computed default.
     title: l.seoTitle || joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
-    description: l.seoDescription || `${l.blurb} ${certified} listing in ${l.area}, Singapore.${reviewLine}`,
+    description: l.seoDescription || `${l.blurb} ${descriptor} listing in ${l.area}, Singapore.${reviewLine}`,
     path: `/business/${l.slug}`,
     image: l.image,
   });
