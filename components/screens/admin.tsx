@@ -229,6 +229,79 @@ function GlobalFlagRow({ flagKey, value, envValue, onToggle, onClear }: { flagKe
   );
 }
 
+/* Live pre-flight for the payment toggles: probes /api/admin/payments-readiness
+   (key mode, webhook secret, every price id resolving on the live key, Connect
+   activation, onboarded organisers) so an admin sees red BEFORE flipping a paid
+   flag — the audit ads-stripe-testmode-03 ask. */
+type Readiness = {
+  ok: boolean;
+  key?: { present: boolean; mode: string };
+  webhookSecret?: boolean;
+  prices?: Record<string, { configured: boolean; exists?: boolean; active?: boolean }>;
+  connect?: { activated: boolean; error?: string; payoutReadyOrganisers: number | null };
+  warnings?: string[];
+};
+const ReadyDot = ({ good, warn }: { good: boolean; warn?: boolean }) => (
+  <span aria-hidden style={{ display: "inline-block", width: 9, height: 9, borderRadius: 9, background: good ? "var(--emerald)" : warn ? "#d97706" : "#dc2626", flex: "none" }} />
+);
+function ReadinessPanel() {
+  const [data, setData] = useState<Readiness | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Re-check = bump the nonce; the effect owns the fetch.
+  const [nonce, setNonce] = useState(0);
+  useEffect(() => {
+    let stale = false;
+    (async () => {
+      setBusy(true);
+      try {
+        const r = await fetch("/api/admin/payments-readiness");
+        const d = (await r.json()) as Readiness;
+        if (!stale) setData(d);
+      } catch {
+        if (!stale) setData({ ok: false });
+      } finally {
+        if (!stale) setBusy(false);
+      }
+    })();
+    return () => { stale = true; };
+  }, [nonce]);
+
+  const priceEntries = Object.entries(data?.prices || {});
+  const pricesOk = priceEntries.filter(([, p]) => p.configured && p.exists && p.active).length;
+  const pricesConfigured = priceEntries.filter(([, p]) => p.configured).length;
+  const keyOk = data?.key?.mode === "live";
+  return (
+    <div className="card" style={{ padding: 18, marginBottom: 18 }}>
+      <div className="flex between center wrap g10" style={{ marginBottom: 10 }}>
+        <h3 style={{ fontSize: "1.05rem" }}>Payments live-readiness</h3>
+        <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setNonce((n) => n + 1)}>{busy ? "Checking…" : "Re-check"}</button>
+      </div>
+      {!data ? (
+        <p className="faint" style={{ fontSize: ".85rem" }}>Running checks…</p>
+      ) : !data.ok ? (
+        <p className="faint" style={{ fontSize: ".85rem" }}>Couldn’t run the readiness checks — try again.</p>
+      ) : (
+        <>
+          <div className="stack g6" style={{ fontSize: ".88rem" }}>
+            <div className="flex g8 center"><ReadyDot good={keyOk} warn={data.key?.mode === "test"} /> Stripe key: <strong>{data.key?.mode === "live" ? "live" : data.key?.mode === "test" ? "test mode" : data.key?.mode === "missing" ? "missing" : "wrong key type"}</strong></div>
+            <div className="flex g8 center"><ReadyDot good={!!data.webhookSecret} /> Webhook secret {data.webhookSecret ? "configured" : "missing"}</div>
+            <div className="flex g8 center"><ReadyDot good={pricesConfigured > 0 && pricesOk === pricesConfigured} warn={pricesOk > 0} /> Prices: {pricesOk}/{pricesConfigured} configured ids resolve live + active</div>
+            <div className="flex g8 center"><ReadyDot good={!!data.connect?.activated} /> Connect {data.connect?.activated ? "activated" : "not usable"}{data.connect?.payoutReadyOrganisers != null ? ` — ${data.connect.payoutReadyOrganisers} organiser${data.connect.payoutReadyOrganisers === 1 ? "" : "s"} payout-ready` : ""}</div>
+          </div>
+          {!!data.warnings?.length && (
+            <div className="notice notice-warn" style={{ marginTop: 12 }}>
+              <Icon name="info" size={16} />
+              <div className="stack g4" style={{ fontSize: ".82rem" }}>
+                {data.warnings.map((w, i) => <span key={i}>{w}</span>)}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function AdminMonetization() {
   const { toast, ramadanModeEnabled, setRamadanModeEnabled } = useApp();
   // Global flag overrides — hydrated from platform_settings on mount so every
@@ -331,6 +404,8 @@ export function AdminMonetization() {
           Paid flows also require Stripe keys + each business to complete payout onboarding.
         </span>
       </div>
+
+      <ReadinessPanel />
 
       <div className="faint" style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>Payments</div>
       <div className="stack g12" style={{ marginBottom: 24 }}>
