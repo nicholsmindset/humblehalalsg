@@ -802,6 +802,19 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
               />
             )}
             <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
+            {/* Halal Passport for owners — the QR poster existed but had no
+                dashboard entry point, so owners couldn't find it (audit /
+                passport-clarity). A footfall/loyalty hook, not a trust signal. */}
+            {flags.passport && live && myBiz?.slug && (
+              <div className="card" style={{ padding: 20, display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+                <div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}><Icon name="crescent" size={22} /></div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Halal Passport — collect visits</h3>
+                  <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>Print your free QR poster and display it in-store. Customers scan it to collect a visit stamp on their Halal Passport — a reason to come back. It&apos;s a loyalty hook only; it never changes your halal status.</p>
+                </div>
+                <a className="btn btn-outline btn-sm" href={`/business/${myBiz.slug}/poster`} target="_blank" rel="noopener noreferrer" style={{ flex: "none" }}><Icon name="doc" size={15} /> Get your QR poster</a>
+              </div>
+            )}
             <GrowthServicesCard onContact={() => navigate("growth-partner")} />
           </div>
         )}
