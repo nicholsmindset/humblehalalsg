@@ -174,6 +174,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "business_not_onboarded" });
   }
 
+  // 5) RESERVE the seats now, atomically and capacity-aware — not at payment
+  //    completion. With many concurrently-open checkouts, the read-check above
+  //    alone lets every open session oversell (Stripe's managing-limited-
+  //    inventory pattern: hold on create, release on checkout.session.expired /
+  //    async_payment_failed — the webhook releases; sessions expire in 30 min).
+  //    Mock-only events have no row to reserve against and keep the old
+  //    count-at-completion behaviour.
+  let reserved = false;
+  const { data: dbEventRow } = await supa.from("events").select("id").eq("id", ev.id).maybeSingle();
+  if (dbEventRow) {
+    const { data: gotSeats, error: resErr } = await supa.rpc("reserve_event_capacity", { p_event_id: ev.id, p_qty: qty });
+    if (resErr) {
+      // RPC not deployed yet (pre-0061): fall back to the unconditional counter
+      // so holds/releases still balance; the read-based gate above already ran.
+      const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: ev.id, p_qty: qty });
+      reserved = !incErr;
+    } else if (gotSeats !== true) {
+      return NextResponse.json({ ok: false, reason: "sold_out", left: 0 }, { status: 409 });
+    } else {
+      reserved = true;
+    }
+  }
+  const releaseHold = async () => {
+    if (!reserved) return;
+    try { await supa.rpc("decrement_event_taken", { p_event_id: ev.id, p_qty: qty }); } catch { /* clamped RPC; webhook expiry is the backstop */ }
+  };
+
   // Metadata the webhook uses to record the order + schedule the post-event
   // payout. netCents is authoritative for the transfer; subtotalCents kept for
   // in-flight sessions created before the fee-mode/promo upgrade.
@@ -196,6 +223,9 @@ export async function POST(req: Request) {
     sessionId: sessionId ?? "",
     connectedAccount: acct.stripe_account_id,
     buyer: body.name ?? "",
+    // Seats were held at session creation → completion must NOT count them
+    // again, and expiry/async-failure must release them (webhook branches).
+    reserved: reserved ? "1" : "",
   };
 
   // Line items. The classic presentation (face × qty + booking fee) only works
@@ -225,6 +255,10 @@ export async function POST(req: Request) {
     // balance until the cron transfers the organiser's net after the event.
     payment_intent_data: { metadata: meta },
     metadata: meta,
+    // Reserved seats must recycle fast during a busy sale — 30 min (Stripe's
+    // minimum) instead of the 24h default, then checkout.session.expired
+    // releases the hold.
+    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
     success_url: `${SITE.url}/success?type=payment-event&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/events/${ev.slug}`,
   };
@@ -248,6 +282,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, url: session.url });
   } catch (e) {
     console.error(`[checkout/ticket] stripe session create failed (event=${ev.id}):`, e instanceof Error ? e.message : e);
+    // No session exists → no expiry webhook will ever release the hold. Do it here.
+    await releaseHold();
     return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
   }
 }

@@ -38,17 +38,17 @@ whenever a migration is applied or added.
 | 0055_hawker_finder | yes | yes | hawker_centres + businesses.hawker_centre_id/stall_no |
 | 0056_tiktok_ugc | yes | yes | tiktok_submissions |
 | 0057–0059 seed_wedding_vendors | yes | yes | data seeds (31 vendors), probe-verified counts |
-| 0060_tiktok_submissions_close_leak | yes | **NO — PASTE PENDING** | ⚠️ drops the anon-read policy leaking reviewed_by/raw/submitter_email on approved tiktok rows (audit tiktokUgc-01). App reads via service role so paste is safe. |
+| 0060_tiktok_submissions_close_leak | yes | yes (pasted + probe-verified 11 Jul) | drops the anon-read policy leaking reviewed_by/raw/submitter_email on approved tiktok rows (audit tiktokUgc-01) |
+| 0061_reserve_event_capacity | yes | **NO — PASTE PENDING** | atomic capacity-aware seat reservation (`reserve_event_capacity`) for flash-sale ticket holds. Code falls back to the unconditional counter until pasted, so deploy order doesn't matter — but paste BEFORE any big paid event. |
 
 ## Open items
 
-1. **PASTE NOW — `0052_verdict_lead_hardening.sql`**: merged to master (PR #146);
-   until pasted, admin verdict approval and owner lead-accept return db errors
-   (both features are flag-live). The file also drops the leaky anon-read policy
-   on `halal_verdicts` (audit-column exposure) — security-relevant.
-2. **Master is BEHIND prod for passport v2 schema** (0049–0051 applied, code on
+1. ~~PASTE `0052_verdict_lead_hardening.sql`~~ — pasted + verified 11 Jul.
+2. **PASTE — `0061_reserve_event_capacity.sql`** before enabling paid tickets
+   for any high-demand event (flash-sale oversell protection).
+3. **Master is BEHIND prod for passport v2 schema** (0049–0051 applied, code on
    PR #145 unmerged). Harmless while the new tables sit unused, but the
    integrity/review-hardening subset of #145 should be cherry-picked (program
    item A8) so prod code matches the integrity schema it already has.
-3. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
-   applied migrations creates worse drift). Next free number: **0060**.
+4. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
+   applied migrations creates worse drift). Next free number: **0062**.
