@@ -35,12 +35,18 @@ export async function award(
 
 /** Load a user's passport stats from the ledger (summed; no stored balance). */
 export async function loadStats(db: Db, userId: string): Promise<PassportStats & { rows: LedgerRow[] }> {
+  // The 500-row cap under-counted a heavy user's OWN total, tier, streak and
+  // badge counts once they passed 500 ledger events (an active user reaches that
+  // in ~1.5 years of daily activity) — the ledger is the only balance source, so
+  // a truncated read shows the wrong number to the user (audit passport-01).
+  // passport_points is per-user and small; read a generous cap that covers any
+  // realistic lifetime rather than silently truncating.
   const { data } = await db
     .from("passport_points")
     .select("delta, source_type, source_id, reason, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(20000);
   const rows = (data || []) as LedgerRow[];
   const count = (t: string) => rows.filter((r) => r.source_type === t).length;
   const visitIds = new Set(rows.filter((r) => r.source_type === "visit").map((r) => r.source_id));
