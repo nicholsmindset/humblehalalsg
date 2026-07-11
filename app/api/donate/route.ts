@@ -48,22 +48,30 @@ export async function POST(req: Request) {
   if (!stripe) return NextResponse.json({ ok: true, simulated: true }); // graceful pre-launch
 
   const meta: Record<string, string> = { kind: "donation", eventId: ev.id, amountCents: String(amountCents) };
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    submit_type: "donate",
-    line_items: [{
-      quantity: 1,
-      price_data: {
-        currency: CURRENCY,
-        unit_amount: amountCents,
-        product_data: { name: `Donation — ${ev.title}` },
-      },
-    }],
-    payment_intent_data: { metadata: meta },
-    metadata: meta,
-    success_url: `${SITE.url}/success?type=donation&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/events/${ev.slug}`,
-  });
+  // Guarded: a misconfigured live key throws — return a clean, logged reason
+  // instead of an unhandled 500 (mirrors checkout/plan).
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      submit_type: "donate",
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: CURRENCY,
+          unit_amount: amountCents,
+          product_data: { name: `Donation — ${ev.title}` },
+        },
+      }],
+      payment_intent_data: { metadata: meta },
+      metadata: meta,
+      success_url: `${SITE.url}/success?type=donation&eventId=${ev.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/events/${ev.slug}`,
+    });
+  } catch (e) {
+    console.error(`[donate] stripe session create failed (event=${ev.id}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 
   return NextResponse.json({ ok: true, url: session.url });
 }

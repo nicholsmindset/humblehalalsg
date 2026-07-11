@@ -74,7 +74,11 @@ export function OwnerLeads({ toast, live }: { toast: (m: string) => void; live: 
       const res = await fetch("/api/checkout/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "inbox15" }) });
       const d = await res.json();
       if (d.url) { window.location.href = d.url; return; }
-      toast(d.error === "paid_leads_disabled" ? "Lead subscriptions open soon — you're on the free beta" : "Couldn't start checkout");
+      toast(
+        d.error === "paid_leads_disabled" ? "Lead subscriptions open soon — you're on the free beta"
+        : d.error === "stripe_error" ? "Payments are having a moment — you have not been charged. Please try again shortly."
+        : "Couldn't start checkout",
+      );
     } catch { toast("Couldn't start checkout"); }
   };
 

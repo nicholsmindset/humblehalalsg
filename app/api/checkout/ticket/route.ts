@@ -240,6 +240,14 @@ export async function POST(req: Request) {
       /* fall through to card-only */
     }
   }
-  const session = await stripe.checkout.sessions.create(sessionParams);
-  return NextResponse.json({ ok: true, url: session.url });
+  // Guarded: a misconfigured live key throws — return a clean, logged reason
+  // instead of an unhandled 500 (the PayNow attempt above already falls back
+  // here, so this is the last stop before the buyer sees a blank failure).
+  try {
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    return NextResponse.json({ ok: true, url: session.url });
+  } catch (e) {
+    console.error(`[checkout/ticket] stripe session create failed (event=${ev.id}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 }

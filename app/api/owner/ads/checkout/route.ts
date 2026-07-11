@@ -130,22 +130,30 @@ Business: ${String(biz.name || businessId)}<br>Campaign id: ${campaign.id}</p>`,
   // Metadata carries ONLY identifiers — the campaign row already holds the
   // creative + dates (draft-first avoids Stripe's 500-char metadata limits).
   const meta = { kind: "ad_selfserve", campaignId: String(campaign.id), businessId };
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: CURRENCY,
-          unit_amount: rateCents,
-          product_data: { name: `${String(placement.label || placementKey)} — ${months} month${months > 1 ? "s" : ""} (from ${startsOn})` },
+  // Guarded: a misconfigured live key throws — return a clean, logged reason
+  // instead of an unhandled 500 that also strands the draft campaign row.
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: CURRENCY,
+            unit_amount: rateCents,
+            product_data: { name: `${String(placement.label || placementKey)} — ${months} month${months > 1 ? "s" : ""} (from ${startsOn})` },
+          },
         },
-      },
-    ],
-    metadata: meta,
-    payment_intent_data: { metadata: meta },
-    success_url: `${SITE.url}/owner?tab=ads&purchase=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/owner?tab=ads`,
-  });
+      ],
+      metadata: meta,
+      payment_intent_data: { metadata: meta },
+      success_url: `${SITE.url}/owner?tab=ads&purchase=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/owner?tab=ads`,
+    });
+  } catch (e) {
+    console.error(`[ads/checkout] stripe session create failed (campaign=${campaign.id}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
   return NextResponse.json({ ok: true, mode: "checkout", url: session.url, campaignId: campaign.id });
 }

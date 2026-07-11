@@ -99,15 +99,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price, quantity: 1 }],
-    customer,
-    metadata: { plan: plan!, business_id: businessId },
-    subscription_data: { metadata: { plan: plan!, business_id: businessId } },
-    success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/pricing`,
-  });
+  // Guarded: a bad key or a test-mode/archived price ID throws here — surface a
+  // clean, logged reason instead of an unhandled 500 the client can't explain
+  // (this exact failure shipped as a blank "Checkout could not start" toast).
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price, quantity: 1 }],
+      customer,
+      metadata: { plan: plan!, business_id: businessId },
+      subscription_data: { metadata: { plan: plan!, business_id: businessId } },
+      success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/pricing`,
+    });
+  } catch (e) {
+    console.error(`[checkout/plan] stripe session create failed (plan=${plan}, price=${price}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
 
   // Abandoned-checkout signal (best-effort, non-blocking): tag the owner as
   // checkout_started so a beehiiv recovery automation can follow up. Transactional
