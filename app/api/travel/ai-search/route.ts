@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { runHotelSearch, defaultStayDates } from "@/lib/travel-data";
 import { liteapiConfigured, searchPlaces } from "@/lib/liteapi";
@@ -97,6 +98,11 @@ function reply(opts: {
 }
 
 export async function POST(req: Request) {
+  // aiConcierge is the site-wide AI kill-switch — an AI-spend route must honour
+  // it (matches app/api/travel/concierge). Was ungated (audit aiConcierge-01).
+  if (!(await getServerFlags()).aiConcierge) {
+    return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
+  }
   // Paid LLM + LiteAPI calls — throttle per IP (unauthenticated public search).
   const rl = await rateLimit(req, "ai-travel", 20, 60);
   if (!rl.ok) return tooMany(rl.retryAfter);
