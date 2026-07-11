@@ -99,6 +99,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
   }
 
+  // NEVER create a second listing subscription (audit streams-P0-1): the
+  // dashboard "Upgrade" button routes straight here, so without this guard an
+  // owner on Verified who clicks Featured pays BOTH monthly prices, and
+  // cancelling either one wrongly frees the listing. Plan changes go through
+  // the Stripe billing portal (proration/swap), not a fresh checkout.
+  // DB first (authoritative post-webhook), then Stripe (catches the
+  // paid-but-webhook-lagged window). Fail open on a transient error — a blip
+  // here shouldn't block every new sale; Stripe can't double-bill one request.
+  try {
+    const { data: subs } = await admin
+      .from("subscriptions").select("kind, status")
+      .eq("business_id", businessId).in("status", ["active", "trialing", "past_due"]);
+    let hasListingSub = (subs || []).some((s) => s.kind !== "leads");
+    if (!hasListingSub && customer) {
+      const live = await stripe.subscriptions.list({ customer, status: "active", limit: 10 });
+      hasListingSub = live.data.some((s) => s.metadata?.kind !== "leads");
+    }
+    if (hasListingSub) {
+      return NextResponse.json({ ok: false, reason: "already_subscribed" }, { status: 409 });
+    }
+  } catch { /* transient — proceed */ }
+
   // Guarded: a bad key or a test-mode/archived price ID throws here — surface a
   // clean, logged reason instead of an unhandled 500 the client can't explain
   // (this exact failure shipped as a blank "Checkout could not start" toast).

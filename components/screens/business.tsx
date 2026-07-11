@@ -147,6 +147,10 @@ export function PricingScreen() {
         toast("Create or claim your business before choosing a paid plan.");
         return navigate("add-listing");
       }
+      if (data.reason === "already_subscribed") {
+        toast("You already have an active plan — change or cancel it from Billing.");
+        return navigate("owner-dashboard", { tab: "billing" });
+      }
       if (data.reason === "price_not_configured" || data.reason === "stripe_not_configured") {
         toast("Checkout for this plan is not configured yet.");
         return;

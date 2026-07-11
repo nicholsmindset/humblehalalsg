@@ -54,6 +54,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
   }
 
+  // Never create a SECOND leads subscription (audit streams-P1-6): the UI hides
+  // the CTA when one is active, but a double-click / webhook-lag race would
+  // bill twice. Mirrors checkout/plan's already_subscribed guard.
+  try {
+    const { data: subs } = await admin
+      .from("subscriptions").select("id")
+      .eq("business_id", businessId).eq("kind", "leads").in("status", ["active", "trialing", "past_due"]).limit(1);
+    let hasLeadsSub = !!subs?.length;
+    if (!hasLeadsSub && customer) {
+      const live = await stripe.subscriptions.list({ customer, status: "active", limit: 10 });
+      hasLeadsSub = live.data.some((s) => s.metadata?.kind === "leads");
+    }
+    if (hasLeadsSub) return NextResponse.json({ ok: false, error: "already_subscribed" }, { status: 409 });
+  } catch { /* transient — proceed */ }
+
   // Founding rate while under the per-vertical cap AND the price is configured.
   let founding = false;
   if (process.env.STRIPE_PRICE_LEADS_FOUNDING_M) {
