@@ -40,6 +40,9 @@ export interface BlogPost {
   dropcap?: boolean;
   pullQuote?: string;
   pullQuoteBy?: string;
+  /** Lead vertical (lib/lead-verticals id, e.g. "catering") — when set, the
+      post renders the subtle inline lead-capture teaser (flag-gated). */
+  leadVertical?: string;
 }
 
 const AUTHOR = "The Humble Halal Team";
@@ -1298,6 +1301,8 @@ interface BlogMeta {
   image: string;
   imageAlt: string;
   imageCredit?: string;
+  /** Lead vertical id (lib/lead-verticals) — enables the inline capture teaser. */
+  leadVertical?: string;
 }
 
 const META: Record<string, BlogMeta> = {
@@ -1305,20 +1310,20 @@ const META: Record<string, BlogMeta> = {
   "how-to-check-muis-halal-certification": { category: "halal-basics", image: "/blog/how-to-check-muis-halal-certification.webp", imageAlt: "Checking a restaurant's MUIS halal certificate on a phone outside a Singapore eatery" },
   "is-it-halal-how-to-tell-singapore": { category: "halal-basics", image: "/blog/is-it-halal-how-to-tell-singapore.webp", imageAlt: "Using a magnifying glass to check a snack's ingredient list for halal status in Singapore" },
   "best-halal-restaurants-singapore-2026": { category: "restaurants-cafes", image: "/blog/best-halal-restaurants-singapore-2026.webp", imageAlt: "Couple dining at a halal fine-dining restaurant with a Marina Bay view in Singapore" },
-  "halal-buffet-guide-singapore": { category: "restaurants-cafes", image: "/blog/halal-buffet-guide-singapore.webp", imageAlt: "Family at a halal buffet line with a wide spread of dishes in Singapore" },
+  "halal-buffet-guide-singapore": { category: "restaurants-cafes", image: "/blog/halal-buffet-guide-singapore.webp", imageAlt: "Family at a halal buffet line with a wide spread of dishes in Singapore", leadVertical: "catering" },
   "best-halal-cafes-singapore": { category: "restaurants-cafes", image: "/blog/best-halal-cafes-singapore.webp", imageAlt: "Latte art, brunch plates and cake on a marble table at a halal-friendly café in Singapore" },
-  "halal-high-tea-singapore": { category: "restaurants-cafes", image: "/blog/halal-high-tea-singapore.webp", imageAlt: "Tiered high-tea stand of scones, pastries and sandwiches at a halal-friendly Singapore hotel" },
+  "halal-high-tea-singapore": { category: "restaurants-cafes", image: "/blog/halal-high-tea-singapore.webp", imageAlt: "Tiered high-tea stand of scones, pastries and sandwiches at a halal-friendly Singapore hotel", leadVertical: "catering" },
   "best-halal-breakfast-singapore": { category: "restaurants-cafes", image: "/blog/best-halal-breakfast-singapore.webp", imageAlt: "Halal breakfast spread of kaya toast, soft-boiled eggs, teh tarik and pancakes in Singapore" },
   "halal-steamboat-hotpot-singapore": { category: "cuisines", image: "/blog/halal-steamboat-hotpot-singapore.webp", imageAlt: "Halal steamboat hotpot with sliced meat, seafood and vegetables in Singapore" },
   "halal-sushi-japanese-singapore": { category: "cuisines", image: "/blog/halal-sushi-japanese-singapore.webp", imageAlt: "Platter of halal-friendly sushi and sashimi at a Japanese restaurant in Singapore" },
   "halal-korean-food-singapore": { category: "cuisines", image: "/blog/halal-korean-food-singapore.webp", imageAlt: "Halal Korean spread of bibimbap, fried chicken, tteokbokki and stew at a Singapore restaurant" },
   "halal-fine-dining-singapore": { category: "cuisines", image: "/blog/halal-fine-dining-singapore.webp", imageAlt: "Plated halal fine-dining beef course at an elegant Singapore restaurant" },
   "halal-steak-singapore": { category: "cuisines", image: "/blog/halal-steak-singapore.webp", imageAlt: "Grilled halal steak sliced to show a medium centre at a Singapore steakhouse" },
-  "halal-cakes-bakeries-singapore": { category: "cuisines", image: "/blog/halal-cakes-bakeries-singapore.webp", imageAlt: "Display of halal celebration cakes, macarons and pastries at a Singapore bakery" },
+  "halal-cakes-bakeries-singapore": { category: "cuisines", image: "/blog/halal-cakes-bakeries-singapore.webp", imageAlt: "Display of halal celebration cakes, macarons and pastries at a Singapore bakery", leadVertical: "catering" },
   "halal-dim-sum-singapore": { category: "cuisines", image: "/blog/halal-dim-sum-singapore.webp", imageAlt: "Bamboo steamers of halal dim sum — har gow, siew mai and buns — with tea in Singapore" },
   "halal-food-jewel-changi-airport": { category: "areas-malls", image: "/blog/halal-food-jewel-changi-airport.webp", imageAlt: "Halal local dishes served in front of the Rain Vortex waterfall at Jewel Changi Airport" },
   "halal-food-bugis-arab-street": { category: "areas-malls", image: "/blog/halal-food-bugis-arab-street.webp", imageAlt: "Halal street-food spread with Sultan Mosque and Kampong Glam shophouses behind in Singapore" },
-  "halal-catering-singapore-guide": { category: "seasonal-events", image: "/blog/halal-catering-singapore-guide.webp", imageAlt: "Halal catering buffet with chafing dishes and satay set up at a Singapore event" },
+  "halal-catering-singapore-guide": { category: "seasonal-events", image: "/blog/halal-catering-singapore-guide.webp", imageAlt: "Halal catering buffet with chafing dishes and satay set up at a Singapore event", leadVertical: "catering" },
   "ramadan-singapore-2026-guide": { category: "seasonal-events", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and a meal for breaking fast during Ramadan" },
   "muslim-owned-businesses-singapore": { category: "community-business", image: "/blog/muslim-owned-businesses-singapore.webp", imageAlt: "Hijabi shopkeeper serving a customer at a Muslim-owned beauty and fashion store in Singapore" },
 };
