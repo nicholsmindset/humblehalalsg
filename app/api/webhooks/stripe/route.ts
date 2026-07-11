@@ -118,7 +118,13 @@ export async function POST(req: Request) {
         }
         // Event-ticket checkout (separate charges). Record the order + tickets and
         // schedule the organiser payout for 24h after the event (cron transfers it).
-        else if (s.mode === "payment" && s.metadata?.kind === "ticket" && supa) {
+        // `payment_status === "paid"` guard: card sessions are always paid at
+        // completion, but an async method (PayNow) can complete the session while
+        // still unpaid and settle later — never issue tickets before the money
+        // lands (audit payNow-01). The async_payment_succeeded handler that
+        // fulfills settled PayNow orders is a go-live prereq (docs/engineering/
+        // payment-go-live.md) — until then PayNow is safe-but-inert.
+        else if (s.mode === "payment" && s.metadata?.kind === "ticket" && (s.payment_status ?? "paid") === "paid" && supa) {
           const m = s.metadata;
           const qty = Math.max(1, parseInt(m.qty || "1", 10));
           const subtotal = parseInt(m.subtotalCents || "0", 10);
@@ -142,7 +148,7 @@ export async function POST(req: Request) {
           const { data: dbEvent } = await supa.from("events").select("id, date_iso, taken").eq("id", m.eventId || "").maybeSingle();
           const payoutDue = dbEvent?.date_iso ? addDaysISO(new Date(dbEvent.date_iso), 1) : addDaysISO(new Date(), 1);
 
-          const { data: ord } = await supa.from("orders").insert({
+          const { data: ord, error: ordErr } = await supa.from("orders").insert({
             event_id: dbEvent?.id ?? null,
             business_id: m.businessId || null,
             buyer_email: buyerEmail,
@@ -164,6 +170,11 @@ export async function POST(req: Request) {
             session_id: m.sessionId || null,
             utm,
           }).select("id").single();
+          // The order is the root of fulfillment — if it fails to insert, DON'T
+          // silently issue no tickets while holding the idempotency claim (buyer
+          // paid, gets nothing, no retry — audit paidTickets-02). Throw so the
+          // outer handler releases the claim and Stripe retries the event.
+          if (ordErr || !ord?.id) throw new Error(`ticket order insert failed: ${ordErr?.message || "no row"}`);
 
           // Count the redemption once the money is actually confirmed (accepting
           // the tiny max_redemptions oversell window vs. reserving at session
