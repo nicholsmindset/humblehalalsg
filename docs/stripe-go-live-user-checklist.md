@@ -1,9 +1,9 @@
 # Stripe go-live — owner checklist (everything code-side is DONE)
 
-All engineering shipped 11 Jul 2026 (PRs #216–#225): live prices created, payout
+All engineering shipped 11 Jul 2026 (PRs #216–#228): live prices created, payout
 copy fixed, checkout errors surfaced, admin readiness panel, flash-sale seat
 holds, dispute/refund clawback, balance-proof transfers, brand descriptor,
-webhook resilience, dunning grace, early-fraud auto-refund. What remains is
+webhook resilience, dunning grace, early-fraud auto-refund, double-billing guards, full ads lifecycle (booking cap/refunds/tracking/expiry), price-drift + donation-total fixes. What remains is
 owner-only access: Vercel env, the Stripe dashboard, and Supabase SQL pastes.
 
 Work top-to-bottom. Items 1–3 make **plans** sellable; 4–7 prepare **tickets**.
@@ -52,8 +52,12 @@ refund.failed, radar.early_fraud_warning.created, account.updated.
 - `supabase/migrations/0061_reserve_event_capacity.sql` — flash-sale seat holds
 - `supabase/migrations/0062_payout_status_states.sql` — dispute/reversal states
 - `supabase/migrations/0063_orders_pi_unique.sql` — duplicate-event order dedupe
+- `supabase/migrations/0064_track_scheduled_ads.sql` — self-serve ad tracking
+- `supabase/migrations/0065_ads_price_align_donation_refunds.sql` — Featured
+  Listing $89→$49 alignment + partial-donation-refund tracking
 
-Code degrades safely until pasted, but paste all three before any big paid event.
+Code degrades safely until pasted, but paste all five before enabling paid
+tickets or paid ads.
 
 ## 4. Stripe dashboard settings (~5 min, Live mode)
 - Settings → Business → Public details → **shortened descriptor**: `ONNGROUP`
