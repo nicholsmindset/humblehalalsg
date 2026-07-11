@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/feature-flags";
 import { getStripe } from "@/lib/stripe";
+import { FOUNDING } from "@/lib/plans";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { SITE } from "@/lib/seo";
@@ -36,6 +37,31 @@ export async function POST(req: Request) {
   if (founding) {
     if (plan !== "verified" || !PRICE_FOUNDING_Y) {
       return NextResponse.json({ ok: false, reason: "founding_not_available" }, { status: 409 });
+    }
+    // Enforce the advertised founding cap SERVER-SIDE (audit paidPlans-01) — the
+    // banner promises the locked rate to only the first FOUNDING.cap businesses,
+    // but nothing stopped it being sold forever. The dedicated founding price ID
+    // is the natural marker: any active subscription on it is a founding member.
+    // Count up to the cap; fail CLOSED (deny the discount, NOT the sale — the
+    // buyer can still take the standard rate) so we can never oversell it.
+    try {
+      let active = 0;
+      let startingAfter: string | undefined;
+      for (let page = 0; page < 5 && active < FOUNDING.cap; page++) {
+        const list = await stripe.subscriptions.list({
+          price: PRICE_FOUNDING_Y, status: "active", limit: 100,
+          ...(startingAfter ? { starting_after: startingAfter } : {}),
+        });
+        active += list.data.length;
+        if (!list.has_more || list.data.length === 0) break;
+        startingAfter = list.data[list.data.length - 1]?.id;
+      }
+      if (active >= FOUNDING.cap) {
+        return NextResponse.json({ ok: false, reason: "founding_sold_out", cap: FOUNDING.cap }, { status: 409 });
+      }
+    } catch {
+      // Couldn't verify the count → don't risk overselling the discount.
+      return NextResponse.json({ ok: false, reason: "founding_sold_out", cap: FOUNDING.cap }, { status: 409 });
     }
     price = PRICE_FOUNDING_Y;
   }
