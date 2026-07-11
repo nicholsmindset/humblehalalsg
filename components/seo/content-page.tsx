@@ -46,29 +46,35 @@ export function ContentPage({
       <div className="screen-in hh-page">
         <section className="seo-hero hh-pattern">
           <div className="hh-wrap">
-            <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
-              <Link className="link-inline" href="/">Home</Link>
-              {crumbs.map((c) => (
-                <span key={c.path} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-                  <span>›</span>
-                  {c.path === current.path ? (
-                    <span style={{ color: "var(--ink)" }}>{c.name}</span>
-                  ) : (
-                    <Link className="link-inline" href={c.path}>{c.name}</Link>
-                  )}
-                </span>
-              ))}
-            </nav>
-            <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 740 }}>{h1}</h1>
-            <p className="muted" style={{ maxWidth: 680, marginTop: 10, fontSize: "1.05rem" }}>{intro}</p>
+            {/* Centered reading column (owner rule: content centered on every
+                page) — mirrors the blog's .article-head treatment instead of
+                pinning a ~760px column to the left of the wide hh-wrap. */}
+            <div style={{ maxWidth: 760, margin: "0 auto" }}>
+              <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
+                <Link className="link-inline" href="/">Home</Link>
+                {crumbs.map((c) => (
+                  <span key={c.path} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                    <span>›</span>
+                    {c.path === current.path ? (
+                      <span style={{ color: "var(--ink)" }}>{c.name}</span>
+                    ) : (
+                      <Link className="link-inline" href={c.path}>{c.name}</Link>
+                    )}
+                  </span>
+                ))}
+              </nav>
+              <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)" }}>{h1}</h1>
+              <p className="muted" style={{ marginTop: 10, fontSize: "1.05rem" }}>{intro}</p>
+            </div>
           </div>
         </section>
 
         <div className="hh-wrap hh-section">
+          <div style={{ maxWidth: 760, margin: "0 auto" }}>
           {sections.map((s) => (
             <section key={s.heading} style={{ marginBottom: 28 }}>
               <h2 style={{ fontSize: "1.4rem", marginBottom: 12 }}>{s.heading}</h2>
-              <div className="muted" style={{ lineHeight: 1.7, maxWidth: 760 }}>{s.body}</div>
+              <div className="muted" style={{ lineHeight: 1.7 }}>{s.body}</div>
             </section>
           ))}
 
@@ -101,6 +107,7 @@ export function ContentPage({
               </div>
             </>
           ) : null}
+          </div>
         </div>
       </div>
     </>
