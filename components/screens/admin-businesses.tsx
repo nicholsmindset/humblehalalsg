@@ -42,6 +42,11 @@ const STATUS_FILTERS = ["all", "published", "suspended"] as const;
 const EMPTY_FORM = { name: "", cat_id: "", area: "", address: "", postal: "", phone: "", website: "", description: "", price_level: "" };
 
 const catLabel = (id: string | null | undefined) => HHData.categories.find((c) => c.id === id)?.label || id || "—";
+const fmtDate = (iso: string | null | undefined) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Singapore" });
+};
 
 function StatusChip({ status }: { status: string }) {
   const suspended = status === "suspended";
@@ -227,11 +232,12 @@ function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: 
 }
 
 /* ── Detail editor — used for BOTH manage (edit) and create ─────────────────── */
-function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, toast, gotoVerification }: {
+function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, onDeleted, toast, gotoVerification }: {
   businessId: string | null; // null = create mode
   onBack: () => void;
   onSaved: (row: AdminBizRow) => void;   // create-mode success
   onRowChanged: (row: Partial<AdminBizRow> & { id: string }) => void;
+  onDeleted: (id: string) => void;       // hard-delete success
   toast: (msg: string) => void;
   gotoVerification: () => void;
 }) {
@@ -335,6 +341,24 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, toast, goto
         toast(action === "suspend" ? "Listing suspended — hidden from the public site." : "Listing restored.");
       } else toast("Couldn't update — try again.");
     } catch { toast("Couldn't update — try again."); }
+    finally { setActing(false); }
+  };
+
+  const del = async () => {
+    if (!biz) return;
+    if (!confirm(`Delete "${biz.name}" permanently?\n\nThis removes the listing entirely (not reversible). Only works if it has no reviews, orders, certificates or other linked data — otherwise use Suspend. Best for mistaken or test entries.`)) return;
+    const reason = prompt("Reason (recorded in the audit log):", "Mistaken/test entry") || "";
+    setActing(true);
+    try {
+      const r = await fetch("/api/admin/listing", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: biz.id, action: "delete", reason }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { ok?: boolean; deleted?: boolean; detail?: string };
+      if (r.status === 409) { toast(d.detail || "Has linked data — suspend it instead."); return; }
+      if (d.ok && d.deleted) { toast("Listing deleted."); onDeleted(biz.id); }
+      else toast("Couldn't delete — try again.");
+    } catch { toast("Couldn't delete — try again."); }
     finally { setActing(false); }
   };
 
@@ -453,6 +477,15 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, toast, goto
                 <Icon name="x" size={15} /> {acting ? "Working…" : "Suspend listing"}
               </button>
             )}
+            {/* Permanent delete — only succeeds when there's no linked data
+                (reviews/orders/certs/etc.); otherwise the server refuses and
+                suggests Suspend. For mistaken/test entries. */}
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+              <p className="faint" style={{ fontSize: ".84rem", marginBottom: 8 }}>Permanently delete this listing. Only works if it has no reviews, orders or certificates — otherwise suspend it. Best for mistaken or test entries.</p>
+              <button className="btn btn-ghost btn-sm" style={{ color: "#A32D2D" }} disabled={acting} onClick={del}>
+                <Icon name="x" size={15} /> {acting ? "Working…" : "Delete permanently"}
+              </button>
+            </div>
           </div>
         </>
       )}
@@ -512,6 +545,7 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
         onBack={() => setView({ mode: "list" })}
         onSaved={(created) => { setRows((cur) => [created, ...(cur ?? [])]); setView({ mode: "manage", id: created.id }); }}
         onRowChanged={patchRow}
+        onDeleted={(delId) => { setRows((cur) => (cur ?? []).filter((r) => r.id !== delId)); setView({ mode: "list" }); }}
         toast={toast}
         gotoVerification={gotoVerification}
       />
@@ -551,7 +585,7 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
           <div style={{ padding: 24 }}><Empty icon="building" title="No businesses" body={q ? `Nothing matches "${q}".` : statusFilter !== "all" ? `No ${statusFilter} businesses.` : "No businesses in the directory yet."} /></div>
         ) : (
           <div className="tbl-scroll"><table className="tbl">
-            <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Status</th><th>Plan</th><th>Manage</th></tr></thead>
+            <thead><tr><th>Business</th><th>Category</th><th>Area</th><th>Status</th><th>Plan</th><th>Added</th><th>Manage</th></tr></thead>
             <tbody>{filtered.slice(0, 200).map((r) => (
               <tr key={r.id} className="rowhover">
                 <td style={{ fontWeight: 700 }}>{r.name}</td>
@@ -559,6 +593,7 @@ export function AdminBusinesses({ toast, gotoVerification }: { toast: (msg: stri
                 <td className="muted">{r.area || "—"}</td>
                 <td><StatusChip status={r.status} /></td>
                 <td><span className="pill-tag">{r.plan || "free"}</span></td>
+                <td className="muted" style={{ whiteSpace: "nowrap" }}>{fmtDate(r.created_at)}</td>
                 <td><button className="btn btn-soft btn-sm" onClick={() => setView({ mode: "manage", id: r.id })}>Manage</button></td>
               </tr>
             ))}</tbody>
