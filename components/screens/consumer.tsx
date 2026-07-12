@@ -39,6 +39,40 @@ import { HomeCommunityVideos } from "../home-community-videos";
 import { verticalForCatId } from "@/lib/lead-verticals";
 import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 
+const areaAsset = (file: string) => `/area-images/${file}.svg`;
+const HOME_AREA_IMAGES: Record<string, string> = {
+  "kampong-glam": areaAsset("kampong-glam"),
+  tampines: areaAsset("tampines"),
+  "arab-street": areaAsset("arab-street"),
+  "race-course-road": areaAsset("race-course-road"),
+  geylang: areaAsset("geylang"),
+  "geylang-serai": areaAsset("geylang"),
+  islandwide: areaAsset("islandwide"),
+  "tanjong-pagar": areaAsset("tanjong-pagar"),
+  bugis: areaAsset("bugis"),
+  "little-india": areaAsset("little-india"),
+  bedok: areaAsset("tampines"),
+  jurong: areaAsset("islandwide"),
+  "paya-lebar": areaAsset("geylang"),
+};
+const HOME_AREA_SEEDS = [
+  { id: "kampong-glam", name: "Kampong Glam", tone: "cream" },
+  { id: "tampines", name: "Tampines", tone: "emerald" },
+  { id: "arab-street", name: "Arab Street", tone: "cream" },
+  { id: "race-course-road", name: "Race Course Road", tone: "gold" },
+  { id: "geylang-serai", name: "Geylang Serai", tone: "gold" },
+  { id: "islandwide", name: "Islandwide", tone: "emerald" },
+  { id: "tanjong-pagar", name: "Tanjong Pagar", tone: "cream" },
+  { id: "bugis", name: "Bugis", tone: "gold" },
+  { id: "little-india", name: "Little India", tone: "gold" },
+] as const;
+
+const areaKey = (value: string) =>
+  value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+const homeAreaImage = (id: string | undefined, name: string, existing?: string) =>
+  HOME_AREA_IMAGES[areaKey(id || name)] || HOME_AREA_IMAGES[areaKey(name)] || existing || HOME_AREA_IMAGES.islandwide;
+
 /* =============================================================
    HOME
 ============================================================= */
@@ -59,9 +93,9 @@ export function HomeScreen() {
   // in) if the directory is empty (e.g. static/preview data) so the section is
   // never blank.
   const popularAreas = useMemo(() => {
-    // Non-geographic area labels (islandwide caterers, online-only services)
-    // are real listing data but not neighbourhoods — never render them as tiles.
-    const NOT_AREAS = new Set(["islandwide", "singapore", "online"]);
+    // Non-geographic area labels (online-only services) are real listing data
+    // but not neighbourhoods — never render them as tiles.
+    const NOT_AREAS = new Set(["singapore", "online"]);
     const counts = new Map<string, number>();
     for (const l of dir.listings) {
       const name = (l.area || "").trim();
@@ -73,11 +107,32 @@ export function HomeScreen() {
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => {
         const m = meta.get(name);
-        return { id: m?.id ?? name.toLowerCase(), name, count, tone: m?.tone ?? "cream", image: m?.image };
+        return {
+          id: m?.id ?? name.toLowerCase(),
+          name,
+          count,
+          tone: m?.tone ?? "cream",
+          image: homeAreaImage(m?.id, name, m?.image),
+        };
       });
-    // Cap at 6 (two clean rows of 3) — 7–8 tiles left a ragged orphan row.
-    if (ranked.length >= 4) return ranked.slice(0, 6);
-    return catAreas.map((a) => ({ ...a, count: counts.get(a.name) ?? a.count })).slice(0, 6);
+    const seen = new Set(ranked.map((a) => areaKey(a.name)));
+    for (const seed of HOME_AREA_SEEDS) {
+      if (seen.has(areaKey(seed.name))) continue;
+      const m = meta.get(seed.name);
+      ranked.push({
+        id: m?.id ?? seed.id,
+        name: m?.name ?? seed.name,
+        count: counts.get(seed.name) ?? m?.count ?? 0,
+        tone: m?.tone ?? seed.tone,
+        image: homeAreaImage(m?.id ?? seed.id, seed.name, m?.image),
+      });
+      seen.add(areaKey(seed.name));
+    }
+    // Cap at 9 so the homepage can render a complete three-by-three image grid.
+    if (ranked.length >= 4) return ranked.slice(0, 9);
+    return catAreas
+      .map((a) => ({ ...a, count: counts.get(a.name) ?? a.count, image: homeAreaImage(a.id, a.name, a.image) }))
+      .slice(0, 9);
   }, [dir.listings, catAreas]);
 
   return (
