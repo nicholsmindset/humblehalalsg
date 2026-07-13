@@ -1,0 +1,10 @@
+{
+  // Fail CI on HIGH or CRITICAL advisories in PRODUCTION dependencies only.
+  // Dev-only tooling advisories don't ship to users, so they don't block merges
+  // (Dependabot still opens PRs for them). Add triaged GHSA IDs to `allowlist`
+  // with a dated // comment when a fix isn't yet available.
+  "high": true,
+  "critical": true,
+  "skip-dev": true,
+  "allowlist": []
+}
