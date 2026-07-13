@@ -42,6 +42,14 @@ function clerkErr(err: unknown): string {
   return e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || "";
 }
 
+/* Clerk error CODE (not message) — used to branch the neutral sign-in-or-up flow
+   on form_identifier_not_found / form_identifier_exists without ever surfacing
+   "no account for that email" (account-enumeration). */
+function clerkErrCode(err: unknown): string {
+  const e = err as { errors?: Array<{ code?: string }> };
+  return e?.errors?.[0]?.code || "";
+}
+
 /* Halal Passport referral: read the `hh_ref` cookie (set by /i/[code]) so it can
    ride Clerk unsafeMetadata through signup. Guarded like captureAttribution. */
 function readRefCode(): string | undefined {
@@ -68,6 +76,9 @@ export function LoginScreen() {
   const [sending, setSending] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [authErr, setAuthErr] = useState("");
+  // Which flow the emailed code belongs to — may differ from the `mode` tab after
+  // a neutral fall-through (unknown email on login → sign-up, and vice versa).
+  const flowRef = useRef<"login" | "register">("login");
 
   // Clerk drives real auth (email code + Google). Without a publishable key we
   // fall back to the mock/demo password flow so dev/previews still work.
@@ -89,36 +100,65 @@ export function LoginScreen() {
   };
 
   // After Clerk activates the session, app-context (useUser) syncs the real
-  // user + role; we just route to the right dashboard.
+  // user + role; we just route to the right dashboard. Uses the RESOLVED flow
+  // (flowRef), not the tab, so the copy is truthful after a neutral fall-through.
   const afterAuth = () => {
+    const created = flowRef.current === "register";
     // Registration is a conversion; login is not. (Google OAuth signups complete
     // in the SSO callback route — tracked server-side in Phase 2.)
-    if (mode === "register") track.signUp("email", role, email);
-    toast(mode === "login" ? "Welcome back" : "Account created");
+    if (created) track.signUp("email", role, email);
+    toast(created ? "Account created" : "Welcome back");
     navigate(role === "owner" ? "owner-dashboard" : "user-dashboard");
   };
 
-  // Step 1 — email the 6-digit code (sign-in) or create the sign-up + send code.
+  // Start a sign-in: email the 6-digit code for an EXISTING account.
+  const startSignIn = async () => {
+    if (!siLoaded || !signIn) throw new Error("not_ready");
+    const res = await signIn.create({ identifier: email });
+    const factor = res.supportedFirstFactors?.find((f) => f.strategy === "email_code") as
+      | { emailAddressId: string }
+      | undefined;
+    if (!factor) throw Object.assign(new Error("no_email_factor"), { errors: [{ code: "form_identifier_not_found" }] });
+    await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
+    flowRef.current = "login";
+  };
+
+  // Start a sign-up: create the account + send the verification code. accountType
+  // rides Clerk unsafeMetadata → the user.created webhook provisions profiles.role
+  // so owners land in the right dashboard from their first session; refCode credits
+  // a referral.
+  const startSignUp = async () => {
+    if (!suLoaded || !signUp) throw new Error("not_ready");
+    const refCode = readRefCode();
+    await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) } });
+    await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+    flowRef.current = "register";
+  };
+
+  // Step 1 — email the 6-digit code. NEUTRAL: an unknown email on the login tab
+  // silently creates the account (and an existing email on the register tab
+  // silently signs in) rather than revealing whether an account exists
+  // (account-enumeration). The user sees the same "check your inbox" either way;
+  // no junk account is created (Clerk only materialises the user after the code
+  // is verified).
   const sendCode = async () => {
     setAuthErr("");
     setSending(true);
     try {
       if (mode === "login") {
-        if (!siLoaded || !signIn) throw new Error("not_ready");
-        const res = await signIn.create({ identifier: email });
-        const factor = res.supportedFirstFactors?.find((f) => f.strategy === "email_code") as
-          | { emailAddressId: string }
-          | undefined;
-        if (!factor) throw new Error("We couldn’t find an account for that email — try Sign up.");
-        await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
+        try {
+          await startSignIn();
+        } catch (e) {
+          if (clerkErrCode(e) === "form_identifier_not_found") await startSignUp();
+          else throw e;
+        }
       } else {
-        if (!suLoaded || !signUp) throw new Error("not_ready");
-        // accountType rides Clerk unsafeMetadata → the user.created webhook
-        // provisions profiles.role, so business owners land in the right
-        // dashboard from their very first session. refCode credits a referral.
-        const refCode = readRefCode();
-        await signUp.create({ emailAddress: email, unsafeMetadata: { accountType: role, ...(refCode ? { refCode } : {}) } });
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        try {
+          await startSignUp();
+        } catch (e) {
+          if (clerkErrCode(e) === "form_identifier_exists") await startSignIn();
+          else throw e;
+        }
       }
       setCodeSent(true);
       setTouched(false);
@@ -132,12 +172,13 @@ export function LoginScreen() {
     }
   };
 
-  // Step 2 — verify the code and activate the session.
+  // Step 2 — verify the code and activate the session, branching on the RESOLVED
+  // flow (flowRef), which may differ from the tab after a neutral fall-through.
   const verifyCode = async () => {
     setAuthErr("");
     setSending(true);
     try {
-      if (mode === "login") {
+      if (flowRef.current === "login") {
         if (!signIn || !setActiveSignIn) throw new Error("not_ready");
         const res = await signIn.attemptFirstFactor({ strategy: "email_code", code });
         if (res.status === "complete" && res.createdSessionId) {
@@ -291,6 +332,11 @@ export function LoginScreen() {
               </div>
             )}
             {authErr && <div className="notice notice-warn" role="alert"><Icon name="warning" size={16}/> <span>{authErr}</span></div>}
+            {/* Clerk Bot sign-up protection renders its (Smart/invisible) widget
+                here when enabled in the dashboard — required for a custom flow.
+                Present for both tabs since the neutral flow can sign up from
+                either. Invisible unless bot risk is detected. */}
+            {clerkConfigured && <div id="clerk-captcha" style={{ marginBottom: authErr ? 0 : 4 }} />}
             <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={sending} aria-busy={sending}>{sending ? 'Sending…' : (clerkConfigured ? 'Email me a code' : (mode==='login'?'Log in':'Create account'))}</button>
           </form>
           )}
