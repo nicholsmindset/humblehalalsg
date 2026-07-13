@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { bustFlagCache } from "@/lib/feature-flags";
+import { logAudit } from "@/lib/audit";
 
 // Only the features a server-side resolveBusinessFlag() call actually reads —
 // paidPlans/leadRouting are in the 0053 CHECK but have no per-business reader
@@ -37,5 +38,6 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
   }
   bustFlagCache();
+  await logAudit(admin, { actor: gate.userId, action: "Set per-business flag", target: businessId, meta: { feature, enabled: b.enabled } });
   return NextResponse.json({ ok: true });
 }

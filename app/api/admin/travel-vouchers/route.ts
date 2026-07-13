@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createVoucher, liteapiConfigured, LiteApiError } from "@/lib/liteapi";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 
 /* Create a discount voucher/promo for marketing campaigns (LiteAPI da.liteapi.travel).
    Admin-gated. Travellers redeem the code at hotel prebook (/api/travel/prebook) or
@@ -42,6 +44,8 @@ export async function POST(req: Request) {
   try {
     const v = await createVoucher(payload);
     if (!v) return NextResponse.json({ ok: false, error: "Voucher creation failed." }, { status: 502 });
+    const db = getSupabaseAdmin();
+    if (db) await logAudit(db, { actor: gate.userId, action: "Create travel voucher", target: code, meta: { discountType, discountValue } });
     return NextResponse.json({ ok: true, code });
   } catch (err) {
     // A 404/401/403 here usually means the da.liteapi.travel host is wrong or the
