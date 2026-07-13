@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 
 /* beehiiv newsletter capture.
@@ -22,6 +23,10 @@ export async function POST(req: Request) {
     if (body?.name) name = String(body.name).trim().slice(0, 80);
     // Optional owner-funnel lifecycle stage: lead | listed | claimed.
     if (body?.stage) stage = String(body.stage).trim().slice(0, 40);
+    // Bot gate — fail-OPEN (a Cloudflare blip must never eat a newsletter signup).
+    if (!(await verifyTurnstile(body?.turnstileToken, null, { failOpen: true }))) {
+      return NextResponse.json({ ok: false, error: "captcha" }, { status: 403 });
+    }
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
   }

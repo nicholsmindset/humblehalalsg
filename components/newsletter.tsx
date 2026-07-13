@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Icon } from "./ui";
 import { track } from "@/lib/analytics";
+import { Turnstile } from "./turnstile";
 
 export function Newsletter({
   source = "footer",
@@ -27,6 +28,7 @@ export function Newsletter({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
+  const [tsToken, setTsToken] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,7 @@ export function Newsletter({
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source, ...(collectName && name ? { name } : {}), ...(stage ? { stage } : {}) }),
+        body: JSON.stringify({ email, source, ...(collectName && name ? { name } : {}), ...(stage ? { stage } : {}), ...(tsToken ? { turnstileToken: tsToken } : {}) }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -108,6 +110,7 @@ export function Newsletter({
               {status === "loading" ? "Joining…" : cta}
             </button>
           </div>
+          <Turnstile onToken={setTsToken} />
           {status === "error" && (
             <span id={`nl-${source}-err`} className="field-error" style={{ marginTop: 6 }}>
               <Icon name="warning" size={13} /> {msg}

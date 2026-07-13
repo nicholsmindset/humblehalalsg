@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { CONTACT_EMAILS } from "@/lib/contact";
 import { contactAutoReplyEmail } from "@/lib/emails/templates";
 
@@ -12,6 +13,7 @@ export async function POST(req: Request) {
   const rl = await rateLimit(req, "contact", 5, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   if (body.website) return NextResponse.json({ ok: true, simulated: true }); // honeypot
+  if (!(await verifyTurnstile(body.turnstileToken))) return NextResponse.json({ ok: false, error: "captcha" }, { status: 403 });
   const name = String(body.name || "").trim().slice(0, 120);
   const email = String(body.email || "").trim().slice(0, 160);
   const subject = String(body.subject || "General enquiry").slice(0, 120);
