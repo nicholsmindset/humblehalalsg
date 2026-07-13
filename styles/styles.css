@@ -20,12 +20,13 @@
 
   --gold:           #C97D3F;
   --gold-700:       #A96430;
+  --gold-800:       #856520; /* accessible dark gold for text on light (a11y) */
   --gold-100:       #F7E7D6;
   --gold-50:        #FBF2E9;
 
   --ink:            #1F2933;
   --ink-soft:       #586471;
-  --ink-faint:      #6C7682; /* darkened for WCAG AA contrast on light bg */
+  --ink-faint:      #626C78; /* WCAG AA on cream/cream-200 (~4.6–5:1); was #6C7682 (~4.3:1, failed) */
 
   --white:          #FFFFFF;
   --line:           #ECE7DB;
@@ -57,6 +58,9 @@
   --tab-h: 68px;
   --mobilebar-h: 56px;
   --maxw: 1180px;
+
+  /* Spacing scale — 4/8 rhythm that backs the normalization (mirrors the g/mt/p/mb utility classes). */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
 }
 
 * { box-sizing: border-box; }
@@ -131,6 +135,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .hh-main { flex: 1; width: 100%; }
 .hh-wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 .hh-section { padding: 40px 0; }
+/* Vertical rhythm + gutter compact on phones (were fixed 40px/20px at every width). */
+@media (max-width: 640px) { .hh-section { padding: 28px 0; } }
+@media (max-width: 380px) { .hh-wrap { padding: 0 16px; } }
 
 /* ---- Scroll area below fixed bars ---- */
 .hh-page { padding-bottom: calc(var(--tab-h) + 28px); }
@@ -177,7 +184,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 }
 .hh-logo .mark svg { width: 20px; height: 20px; }
 .hh-logo .name { font-family: var(--serif); font-weight: 700; font-size: 1.18rem; letter-spacing: -.02em; color: var(--ink); line-height: 1; }
-.hh-logo .name small { display:block; font-family: var(--sans); font-weight: 600; font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold-700); margin-top: 3px; }
+.hh-logo .name small { display:block; font-family: var(--sans); font-weight: 600; font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold-800); margin-top: 3px; }
 
 /* ============================================================
    BOTTOM TAB BAR (mobile)
@@ -284,8 +291,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .btn svg { width: 18px; height: 18px; }
 .btn-primary { background: var(--emerald); color: var(--cream); box-shadow: var(--sh-sm); }
 .btn-primary:hover { background: var(--emerald-700); box-shadow: var(--sh-emerald); transform: translateY(-1px); }
-.btn-gold { background: var(--gold); color: #3a2c08; }
-.btn-gold:hover { background: var(--gold-700); color: #fff; transform: translateY(-1px); }
+.btn-gold { background: var(--gold); color: #2e2205; }
+.btn-gold:hover { background: var(--gold-700); color: #2e2205; transform: translateY(-1px); } /* was #fff on gold-700 (~3.1:1, failed AA); dark text stays ~5:1 */
 .btn-outline { background: var(--white); color: var(--emerald); border-color: var(--emerald-100); }
 .btn-outline:hover { border-color: var(--emerald); background: var(--emerald-50); }
 .btn-ghost { background: transparent; color: var(--ink-soft); }
@@ -326,7 +333,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 
 /* CERTIFIED — solid fill, unmistakable */
 .badge--muis    { background: var(--emerald); color: #fff; box-shadow: 0 2px 6px rgba(18,82,91,.25); }
-.badge--admin   { background: var(--gold); color: #3a2c08; box-shadow: 0 2px 6px rgba(214,168,79,.3); }
+.badge--admin   { background: var(--gold); color: #2a1e04; box-shadow: 0 2px 6px rgba(214,168,79,.3); } /* darkened for AA on teal gold (#C97D3F) */
 /* VERIFIED-ADJACENT — emerald outline */
 .badge--owned   { background: var(--emerald-50); color: var(--emerald); border-color: var(--emerald-300); }
 /* SELF-DECLARED — muted neutral, clearly "not certified" (AA-contrast text) */
@@ -456,7 +463,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 /* ============================================================
    MISC UTILITIES
    ============================================================ */
-.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold-700); }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--gold-800); } /* dark surfaces override this to var(--gold)/--emerald inline or via scoped rules */
 .muted { color: var(--ink-soft); }
 .faint { color: var(--ink-faint); }
 .divider { height: 1px; background: var(--line); border: none; margin: 0; }
@@ -818,6 +825,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .g4{gap:4px}.g6{gap:6px}.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}.g14{gap:14px}.g16{gap:16px}.g20{gap:20px}.g24{gap:24px}
 .mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mt24{margin-top:24px}.mt32{margin-top:32px}
 .tc{text-align:center} .f1{flex:1}
+/* padding + margin-bottom utilities (the layer only had gap + margin-top before) */
+.p8{padding:8px}.p12{padding:12px}.p16{padding:16px}.p20{padding:20px}.p24{padding:24px}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}
 
 /* Long-form SEO content lists (home + travel landing guide) reuse .faq-item / .flt-faq-item */
 .home-seo-list, .trv-guide-list { display: flex; flex-direction: column; gap: 10px; }

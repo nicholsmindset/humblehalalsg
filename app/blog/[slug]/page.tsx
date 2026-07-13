@@ -17,6 +17,7 @@ import { ArticleFigure } from "@/components/blog/article-figure";
 import { AuthorBio } from "@/components/blog/author-bio";
 import { SectionDivider } from "@/components/blog/section-divider";
 import { ShareRow } from "@/components/blog/share-row";
+import { BlogReadTracker } from "@/components/blog/blog-read-tracker";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 import { LeadInline } from "@/components/lead-capture/lead-inline";
 import { LeadCapturePopup } from "@/components/lead-capture/lead-capture-popup";
@@ -132,6 +133,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
         {/* Reading column */}
         <article className="article-col">
+          <BlogReadTracker slug={p.slug} />
           <div className="standfirst">
             <span className="standfirst-lbl">In short</span>
             <p>{p.answer}</p>

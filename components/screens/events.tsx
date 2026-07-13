@@ -18,7 +18,7 @@ import { shareOrCopy } from "@/lib/share";
 import { downloadIcs } from "@/lib/ics";
 import { computeOrder, fmtSGD } from "@/lib/fees";
 import { getEventSeoPage, eventSeoPageForArea, eventSeoPath } from "@/lib/event-seo-pages";
-import { track, getSessionId } from "@/lib/analytics";
+import { track, getSessionId, checkoutMeta } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Breadcrumbs } from "../breadcrumbs";
 import { AddressAutocomplete } from "../biz/address-autocomplete";
@@ -103,10 +103,14 @@ function DonatePanel({ ev }: { ev: EventItem }) {
       const res = await fetch("/api/donate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: ev.id, amountCents: amt }),
+        body: JSON.stringify({ eventId: ev.id, amountCents: amt, ...checkoutMeta() }),
       });
       const j = await res.json();
-      if (j?.url) { window.location.href = j.url as string; return; }
+      if (j?.url) {
+        track.checkoutStart(ev.id, `Donation: ${ev.title}`, amt / 100, { checkoutType: "donation" });
+        window.location.href = j.url as string;
+        return;
+      }
       toast(j?.ok ? "Jazākallāhu khayran — donation recorded." : "Donations aren’t open yet — please try again later.");
     } catch { toast("Something went wrong — please try again."); }
     setBusy(false);
@@ -161,7 +165,7 @@ function FollowButton({ businessId }: { businessId: string }) {
     try {
       const res = await fetch("/api/follow", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, follow: !following }) });
       const j = await res.json();
-      if (j?.ok) { setFollowing(j.following); setCount(j.count); }
+      if (j?.ok) { setFollowing(j.following); setCount(j.count); if (j.following) track.follow(businessId); }
       else if (j?.reason === "unauthenticated") { toast("Sign in to follow organisers"); navigate("login"); }
     } catch { toast("Couldn’t update — try again"); }
     setBusy(false);
@@ -201,7 +205,7 @@ function EventRatings({ ev }: { ev: EventItem }) {
         body: JSON.stringify({ rating, text, name: state.user?.name }),
       });
       const j = await res.json();
-      if (j?.ok) { setShow(false); setRating(0); setText(""); toast(j.pending ? "Jazākallāhu khayran — your rating is pending review." : "Thanks for the rating!"); }
+      if (j?.ok) { setShow(false); track.reviewSubmit(slug, rating, "event"); setRating(0); setText(""); toast(j.pending ? "Jazākallāhu khayran — your rating is pending review." : "Thanks for the rating!"); }
       else toast("Couldn’t submit — try again");
     } catch { toast("Couldn’t submit — try again"); }
     setBusy(false);
@@ -351,6 +355,7 @@ export function EventCard({ ev, variant }: { ev: EventItem; variant?: "row" }) {
           aria-label={saved ? `Remove ${ev.title} from saved` : `Save ${ev.title}`}
           onClick={(e) => {
             e.stopPropagation();
+            if (!saved) track.leadAction("shortlist", ev.id, ev.cat);
             toggleEventSave(ev.id);
           }}
           style={{ position: "absolute", top: 10, right: 10, color: saved ? "var(--danger)" : "var(--ink-soft)" }}
@@ -581,6 +586,13 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
   // Strict slug/id resolution — the old `|| list[0]` fallback silently rendered
   // an UNRELATED event (mismatching the page's metadata/JSON-LD) on a miss.
   const ev = get(String(params.slug || params.id || ""));
+  // Event-detail view (events' equivalent of view_listing) — before the
+  // not-found early return so the hook order stays stable.
+  const evViewKey = ev?.id ?? null;
+  useEffect(() => {
+    if (ev) track.viewEvent(ev.id, ev.title, ev.cat, ev.free);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evViewKey]);
   if (!ev) return (
     <div className="hh-wrap" style={{ padding: "48px 0", textAlign: "center" }}>
       <Empty icon="calendar" title="Event not found" body="This event isn’t available. Browse upcoming events instead." />
@@ -611,7 +623,7 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
           <button
             className="btn btn-ghost"
             style={{ padding: 8 }}
-            onClick={() => toggleEventSave(ev.id)}
+            onClick={() => { if (!saved) track.leadAction("shortlist", ev.id, ev.cat); toggleEventSave(ev.id); }}
             aria-label={saved ? "Remove from saved events" : "Save this event"}
             aria-pressed={saved}
           >
@@ -836,7 +848,7 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
           </div>
 
           <div className="detail-footactions">
-            <button className="btn btn-ghost" onClick={() => toggleEventSave(ev.id)}>
+            <button className="btn btn-ghost" onClick={() => { if (!saved) track.leadAction("shortlist", ev.id, ev.cat); toggleEventSave(ev.id); }}>
               <Icon name="heart" size={17} style={{ fill: saved ? "var(--danger)" : "none", color: saved ? "var(--danger)" : undefined }} />{" "}
               {saved ? "Saved" : "Save event"}
             </button>
@@ -844,6 +856,7 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
               className="btn btn-outline"
               onClick={async () => {
                 const r = await shareOrCopy({ title: ev.title, text: ev.blurb, path: `/events/${ev.slug}` });
+                if (r === "shared" || r === "copied") track.leadAction("share", ev.id, ev.cat);
                 toast(r === "shared" ? "Shared" : r === "copied" ? "Link copied to clipboard" : "Couldn't share");
               }}
             >
@@ -854,6 +867,7 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
               onClick={() => {
                 const url = `${window.location.origin}/events/${ev.slug}`;
                 const text = `${ev.title} — ${ev.dateLabel}, ${ev.venue}.\n${url}`;
+                track.leadAction("share", ev.id, ev.cat);
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
               }}
               aria-label="Share this event on WhatsApp"
@@ -900,6 +914,7 @@ export function EventDetailScreen({ certVerified }: { certVerified?: boolean } =
               className="evt-addcal"
               onClick={() => {
                 downloadIcs(ev);
+                track.addToCalendar(ev.id, ev.title);
                 toast("Calendar file downloaded");
               }}
             >
@@ -987,7 +1002,7 @@ export function CheckoutScreen() {
   // Funnel middle step (event page_view → checkout_start → purchase).
   const evKey = ev ? String(ev.slug || ev.id) : "";
   useEffect(() => {
-    if (evKey) track.checkoutStart(evKey, ev?.title);
+    if (evKey) track.checkoutStart(evKey, ev?.title, undefined, { checkoutType: "ticket" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evKey]);
 
@@ -1111,6 +1126,7 @@ export function CheckoutScreen() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...checkoutMeta(),
           eventId: ev.id,
           tier: tierName,
           qty,
@@ -1431,6 +1447,7 @@ export function HostEventScreen() {
   // steps of form data.
   const submitEvent = async () => {
     setSubmitting(true);
+    let createdEventId: string | undefined;
     try {
       const catLabel = HHData.eventCats.find((c) => c.id === d.cat)?.label || "Community";
       const timeLabel = d.time ? d.time + (d.endTime ? ` – ${d.endTime}` : "") : "";
@@ -1462,6 +1479,7 @@ export function HostEventScreen() {
         }),
       });
       const j = await res.json().catch(() => ({}));
+      createdEventId = typeof j?.id === "string" ? j.id : undefined;
       // Treat "backend not configured" (simulated) as success — demo mode.
       if (!res.ok && !j?.simulated) {
         toast(
@@ -1478,6 +1496,16 @@ export function HostEventScreen() {
       return;
     }
     setSubmitting(false);
+    // Owner conversion: an organiser created an event (canonical id from the
+    // server response when available; "pending" in simulated/demo mode).
+    track.ownerCreateEvent({
+      eventId: createdEventId ?? "pending",
+      title: d.title,
+      isFree: d.free,
+      price: Number(d.price) || 0,
+      capacity: Number(d.cap) || 0,
+      category: d.cat,
+    });
     try { localStorage.removeItem(EVENT_DRAFT_KEY); } catch { /* ignore */ }
     navigate("success", { type: "event-listing" });
   };

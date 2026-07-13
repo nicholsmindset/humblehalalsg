@@ -12,6 +12,8 @@ import { useSupabaseBrowser, supabaseConfigured } from "@/lib/supabase/client";
 import { REGIONS, townsInRegion, nearestTown, SG_CENTER } from "@/lib/sg-locations";
 import { useApp } from "../app-context";
 import { useDirectory } from "../directory-context";
+import { track, checkoutMeta } from "@/lib/analytics";
+import { planCheckoutValue } from "@/lib/pricing-map";
 import { HelpCallout } from "../help-callout";
 import { Badge, Icon, ImagePh, MobileHeader, WizardSteps } from "../ui";
 import { Newsletter } from "../newsletter";
@@ -128,10 +130,11 @@ export function PricingScreen() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // founding forces yearly billing at the locked founding rate.
-        body: JSON.stringify({ plan: id, yearly: founding || yearly, founding }),
+        body: JSON.stringify({ plan: id, yearly: founding || yearly, founding, ...checkoutMeta() }),
       });
       const data = await res.json();
       if (data.url) {
+        track.checkoutStart(id, `Plan: ${id}${founding ? " (founding)" : ""}`, planCheckoutValue(id, founding || yearly, founding), { checkoutType: "plan" });
         window.location.href = data.url;
         return;
       }
@@ -215,7 +218,7 @@ export function PricingScreen() {
           {tiers.map((t) => (
             <div key={t.id} className={`pricing-card card ${t.accent ? "feat" : ""}`}>
               {t.popular && <span className="pop-badge">Most popular</span>}
-              <span className="eyebrow" style={{ color: t.accent ? "var(--gold)" : "var(--gold-700)" }}>{t.tag}</span>
+              <span className="eyebrow" style={{ color: "var(--gold-800)" }}>{t.tag}</span>
               <h3 style={{ fontSize: "1.5rem", marginTop: 8 }}>{t.name}</h3>
               <div className="price-row"><span className="price-num">${t.price}</span><span className="price-per">{t.price === 0 ? "forever" : `/mo`}</span></div>
               {yearly && t.price > 0 && <div className="price-sub">${t.year}/year · billed annually</div>}
@@ -378,6 +381,7 @@ export function AddListingScreen() {
     } catch {
       /* graceful — still confirm to the user */
     }
+    track.ownerAddListing({ businessName: data.name, category: data.cat, area: data.town || data.region, halalTier: data.halal, franchise: data.franchise });
     try { localStorage.removeItem(LISTING_DRAFT_KEY); } catch { /* ignore */ }
     navigate("success", { type: "listing" });
   };
@@ -682,6 +686,11 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
     return () => { alive = false; };
   }, [supabase, user, loadBiz]);
   const myBiz = biz && biz.length ? biz[0] : null;
+  // GA4 owner context: business id/plan/tier as user_properties so every
+  // subsequent event from this owner is segmentable per business.
+  useEffect(() => {
+    if (myBiz) track.identifyOwner({ businessId: String(myBiz.id), plan: planKey(myBiz), halalTier: myBiz.halal_tier ?? undefined });
+  }, [myBiz]);
   // Current subscription tier (from the business `plan`). In mock/demo mode show
   // "verified" so the header isn't bare; the upgrade CTA shows below premium.
   const currentPlan = planKey(live ? myBiz : "verified");
@@ -695,7 +704,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
     try {
       const res = await fetch("/api/portal", { method: "POST" });
       const data = await res.json();
-      if (data.ok && data.url) { window.location.href = data.url; return; }
+      if (data.ok && data.url) { track.ownerAction("billing_portal", myBiz ? String(myBiz.id) : undefined); window.location.href = data.url; return; }
       if (data.reason === "no_customer") { toast("No active subscription yet — choose a plan to get started"); return navigate("pricing"); }
       if (data.reason === "unauthenticated") { toast("Please sign in to manage billing"); return navigate("login"); }
       toast("Billing portal isn’t available yet — try again soon");
@@ -710,6 +719,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
       const j = await res.json();
       if (j?.ok) {
         setOwnerEvents((evs) => (evs || []).map((e) => (e.id === id ? { ...e, status: "cancelled" } : e)));
+        track.ownerAction("event_cancel", myBiz ? String(myBiz.id) : undefined, { item_id: id });
         toast("Event cancelled — attendees notified");
       } else toast(j?.reason === "forbidden" ? "You can’t cancel this event" : "Couldn’t cancel — try again");
     } catch { toast("Couldn’t cancel — try again"); }
@@ -777,6 +787,9 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
 
         {tab === "overview" && (
           <div className="dash-pane">
+            {/* Bridges the page <h1> and the overview cards' <h3>s so the heading
+                order is h1 → h2 → h3 (axe heading-order). Visually hidden. */}
+            <h2 className="sr-only">Overview</h2>
             {!live && demoListings.some((l) => l?.verify?.expiringSoon) && (
               <div className="notice notice-warn" style={{ marginBottom: 16 }}>
                 <Icon name="info" size={18} />
@@ -1075,6 +1088,7 @@ function OwnerReviews({ toast }: { toast: (m: string) => void }) {
     } catch { return toast("Couldn’t send reply"); }
     setRows((rs) => (rs || []).map((r) => (r.id === id ? { ...r, reply } : r)));
     setOpen((o) => ({ ...o, [id]: false }));
+    track.ownerAction("review_reply", undefined, { review_id: id });
     toast("Reply posted");
   };
 

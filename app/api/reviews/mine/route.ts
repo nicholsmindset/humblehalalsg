@@ -3,8 +3,12 @@ import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 
 /* The signed-in user's own reviews, newest first, with the business name + slug
-   resolved for each. Graceful: returns an empty list when signed-out or when
-   Supabase isn't configured so the dashboard tab still renders in dev. */
+   resolved for each.
+
+   AUTH CONTRACT (intentional): returns 200 { ok:true, reviews:[] } for guests —
+   NOT 401 — so the dashboard "My reviews" tab still renders (and stays graceful
+   when Supabase isn't configured in dev). Deliberate read-endpoint choice, not a
+   missing auth check; write endpoints 401 signed-out callers. */
 
 type ReviewRow = {
   id: string;
@@ -19,7 +23,7 @@ type BusinessRow = { id: string; name: string; slug: string };
 
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ ok: true, reviews: [] });
+  if (!userId) return NextResponse.json({ ok: true, reviews: [] }); // guests: 200 empty by design (see header)
 
   if (!supabaseConfigured) return NextResponse.json({ ok: true, reviews: [], simulated: true });
   const admin = getSupabaseAdmin();

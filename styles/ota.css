@@ -57,11 +57,14 @@
 }
 
 /* segmented tabs on top of the widget (Search / ✦ Ask AI) */
-.ota-segtabs { display: inline-flex; gap: 2px; background: rgba(255,255,255,.16); border-radius: var(--r-pill); padding: 4px; margin-bottom: 12px; backdrop-filter: blur(6px); }
+/* Dark translucent pill: the inactive tab text is near-white (#eaf2ee); over the
+   old near-transparent-white bg axe computed ~1.06:1. A dark backdrop gives the
+   inactive label real contrast (~5.4:1) while the active .on tab stays white. */
+.ota-segtabs { display: inline-flex; gap: 2px; background: rgba(6,40,32,.72); border-radius: var(--r-pill); padding: 4px; margin-bottom: 12px; backdrop-filter: blur(6px); }
 .ota-segtab { border: 0; background: none; color: #eaf2ee; font-weight: 700; font-size: .9rem; padding: 8px 18px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s; }
 .ota-segtab.on { background: #fff; color: var(--emerald); }
 .ota-segtab .ai-spark { color: var(--gold); }
-.ota-segtab.on .ai-spark { color: var(--gold-700); }
+.ota-segtab.on .ai-spark { color: var(--gold-800); }
 
 /* Ask-AI single-input row */
 .ota-ai-row { display: flex; gap: 8px; align-items: center; padding: 8px; }
@@ -162,7 +165,7 @@
 .ota-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .ota-highlight { position: relative; border-radius: var(--r-lg); padding: 1.5px; background: linear-gradient(120deg, var(--emerald), var(--gold)); box-shadow: var(--sh-sm); }
 .ota-highlight-inner { background: var(--white); border-radius: calc(var(--r-lg) - 2px); padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
-.ota-highlight .ota-hl-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--gold-50); color: var(--gold-700); display: grid; place-items: center; }
+.ota-highlight .ota-hl-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--gold-50); color: var(--gold-800); display: grid; place-items: center; }
 .ota-highlight h4 { font-size: .98rem; }
 .ota-highlight p { font-size: .85rem; color: var(--ink-soft); line-height: 1.5; }
 .ota-highlights-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -187,7 +190,7 @@
    STICKY IN-PAGE TABS — additive active state on .hotel-tabs
 --------------------------------------------------------------- */
 .hotel-tabs a.active { color: var(--emerald); border-bottom-color: var(--emerald); }
-.hotel-tabs a.ai { color: var(--gold-700); display: inline-flex; align-items: center; gap: 5px; }
+.hotel-tabs a.ai { color: var(--gold-800); display: inline-flex; align-items: center; gap: 5px; }
 .hotel-tabs a.ai .ai-spark { color: var(--gold); }
 .hotel-tabs a.ai.active { border-bottom-color: var(--gold); }
 

@@ -89,8 +89,8 @@ export function ContactScreen() {
     <div className="screen-in hh-page">
       <Crumb trail={[{ label: "Home", href: "/" }, { label: "Contact" }]} />
       <div className="hh-wrap hh-section">
-        <h1 style={{ fontSize: "1.9rem", marginBottom: 6 }}>Contact us</h1>
-        <p className="muted" style={{ maxWidth: 620, marginBottom: 26 }}>Questions, feedback or a partnership in mind? We'd love to hear from you. We aim to reply within <strong>1–2 business days</strong>.</p>
+        <h1 style={{ fontSize: "1.9rem", marginBottom: 6, textAlign: "center" }}>Contact us</h1>
+        <p className="muted" style={{ maxWidth: 620, margin: "0 auto 26px", textAlign: "center" }}>Questions, feedback or a partnership in mind? We'd love to hear from you. We aim to reply within <strong>1–2 business days</strong>.</p>
 
         <div className="contact-grid">
           <div className="card" style={{ padding: 22 }}>

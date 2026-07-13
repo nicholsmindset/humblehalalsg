@@ -6,9 +6,10 @@
   background: linear-gradient(150deg, var(--emerald-700, #0D424A), var(--emerald, #12525B));
   color: #fff; padding: 46px 0 40px; position: relative; overflow: hidden;
 }
-.travel-hero .hh-wrap { position: relative; z-index: 1; }
+.travel-hero .hh-wrap { position: relative; z-index: 1; text-align: center; } /* owner rule: hero content centered */
+.travel-hero .hh-wrap > h1, .travel-hero .hh-wrap > p, .travel-hero .hh-wrap > div { margin-inline: auto; }
 .travel-hero h1 { color: #fff; font-size: clamp(1.9rem, 4.5vw, 2.8rem); line-height: 1.1; }
-.travel-hero .sub { color: #cfe0da; max-width: 620px; margin: 12px 0 0; font-size: 1.02rem; }
+.travel-hero .sub { color: #cfe0da; max-width: 620px; margin: 12px auto 0; font-size: 1.02rem; }
 .travel-breadcrumbs { background: var(--cream-200, #f3eee1); border-bottom: 1px solid var(--line, #e7e1d4); padding: 9px 0; font-size: .82rem; }
 .travel-breadcrumbs .crumb { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft, #5a6470); }
 .travel-breadcrumbs .crumb a { color: var(--ink-soft, #5a6470); text-decoration: none; }
@@ -284,7 +285,7 @@
 .price-tip { display: flex; align-items: center; gap: 12px; background: var(--gold-50, #f8efda); border: 1px solid var(--gold-200, #ecd9a8); border-radius: var(--r-md, 14px); padding: 12px 16px; margin-bottom: 16px; }
 .price-tip .pt-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--gold, #C97D3F); color: #1f1606; display: grid; place-items: center; flex: none; }
 .price-tip .pt-text { font-size: .9rem; color: var(--ink, #1f2933); }
-.price-tip .pt-text strong { color: var(--gold-700, #a9802f); }
+.price-tip .pt-text strong { color: var(--gold-800, #a9802f); }
 
 /* ask AI */
 .ask-ai { border: 1px solid var(--line, #e7e1d4); border-radius: var(--r-lg, 20px); padding: 18px; background: var(--white, #fff); }
@@ -294,7 +295,7 @@
 .ask-ai .aa-form { display: flex; gap: 8px; }
 .ask-ai .aa-form input { flex: 1; border: 1px solid var(--line-strong, #d8d0bf); border-radius: var(--r-sm, 10px); padding: 10px 12px; font-size: .92rem; background: var(--cream, #F8F6F1); }
 .ask-ai .aa-answer { margin-top: 14px; padding: 14px; background: var(--emerald-50, #e8f1ee); border-radius: var(--r-md, 14px); font-size: .92rem; line-height: 1.6; color: var(--ink, #1f2933); }
-.aa-beta { font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--gold-700, #a9802f); background: var(--gold-50, #f8efda); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+.aa-beta { font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--gold-800, #a9802f); background: var(--gold-50, #f8efda); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
 
 /* my trips */
 .trip-list { display: flex; flex-direction: column; gap: 12px; }
@@ -352,7 +353,9 @@
    ========================================================================== */
 
 /* trip-type toggle */
-.flt-triptype { display:inline-flex; background:rgba(255,255,255,.12); border-radius:var(--r-pill); padding:4px; gap:2px; margin:6px 0 14px; }
+/* Dark translucent pill so the near-white inactive labels (#cfe0da) clear WCAG AA;
+   was rgba(255,255,255,.12) which axe read as near-white-on-near-white. */
+.flt-triptype { display:inline-flex; background:rgba(6,40,32,.72); border-radius:var(--r-pill); padding:4px; gap:2px; margin:6px 0 14px; }
 .flt-triptype button { border:0; background:none; color:#cfe0da; font-weight:700; font-size:.86rem; padding:7px 18px; border-radius:var(--r-pill); cursor:pointer; }
 .flt-triptype button.on { background:#fff; color:var(--emerald); }
 .travel-search.flight-search.rt { grid-template-columns: 1.1fr 1.1fr .9fr .9fr .9fr .9fr auto; }
@@ -452,7 +455,7 @@
 .flt-terms { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 .flt-term { font-size:.72rem; padding:3px 8px; border-radius:var(--r-pill); background:var(--cream-200); color:var(--ink-soft); }
 .flt-term.success { background:var(--emerald-50); color:var(--emerald); }
-.flt-term.warning { background:var(--gold-50); color:var(--gold-700); }
+.flt-term.warning { background:var(--gold-50); color:var(--gold-800); }
 
 /* ── booking: stepper + 2-col + sticky rail ─────────────────────────────── */
 .flt-stepper { display:flex; align-items:center; justify-content:center; gap:8px; list-style:none; padding:0; margin:0 0 26px; flex-wrap:wrap; }
@@ -491,8 +494,8 @@
 
 /* price-hold countdown + rail cards */
 .price-hold { display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--gold-50); border:1px solid var(--gold-100); border-radius:var(--r-md); padding:11px 14px; margin-bottom:14px; }
-.price-hold span { display:inline-flex; align-items:center; gap:6px; font-size:.84rem; font-weight:700; color:var(--gold-700); }
-.price-hold strong { font-variant-numeric:tabular-nums; font-size:1.05rem; color:var(--gold-700); }
+.price-hold span { display:inline-flex; align-items:center; gap:6px; font-size:.84rem; font-weight:700; color:var(--gold-800); }
+.price-hold strong { font-variant-numeric:tabular-nums; font-size:1.05rem; color:var(--gold-800); }
 .price-hold.expired { background:var(--danger-50); border-color:var(--danger-50); }
 .price-hold.expired span, .price-hold.expired strong { color:var(--danger); }
 .flt-book-rail .flt-rail-card { padding:16px 18px; margin-bottom:14px; position:static; }
@@ -505,15 +508,15 @@
 /* ── flights Wave 2 — Muslim-first moat (HH tokens only) ─────────────────── */
 /* Umrah/Hajj presets sit inside the white search box now (light surface) */
 .flt-umrah { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:4px 8px 4px; padding:12px 0 2px; border-top:1px solid var(--line); }
-.flt-umrah-label { display:inline-flex; align-items:center; gap:5px; color:var(--gold-700); font-weight:700; font-size:.82rem; }
+.flt-umrah-label { display:inline-flex; align-items:center; gap:5px; color:var(--gold-800); font-weight:700; font-size:.82rem; }
 .flt-umrah button { border:1px solid var(--line-strong); background:var(--white); color:var(--emerald); font-weight:700; font-size:.8rem; padding:5px 12px; border-radius:var(--r-pill); cursor:pointer; transition:border-color .12s, background .12s; }
 .flt-umrah button:hover { border-color:var(--emerald); background:var(--emerald-50); }
 .flt-hijri-inline { margin-left:auto; color:var(--ink-soft); font-size:.8rem; font-weight:600; }
-.flt-season { color:var(--gold-700); font-style:normal; font-weight:700; }
+.flt-season { color:var(--gold-800); font-style:normal; font-weight:700; }
 
 .flt-muslim { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
 .flt-mtag { display:inline-flex; align-items:center; gap:5px; font-size:.74rem; font-weight:700; padding:4px 9px; border-radius:var(--r-pill); background:var(--emerald-50); color:var(--emerald); }
-.flt-mtag.tight { background:var(--gold-50); color:var(--gold-700); }
+.flt-mtag.tight { background:var(--gold-50); color:var(--gold-800); }
 .flt-mtag svg { flex:none; }
 
 .flt-faith { margin-top:14px; padding:12px 14px; background:var(--emerald-50); border-radius:var(--r-md); }
@@ -606,7 +609,7 @@
 .flt-route-chip:hover { border-color:var(--emerald); background:var(--emerald-50); }
 .frc-route { display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:.92rem; color:var(--ink); }
 .frc-route svg { color:var(--emerald); }
-.frc-tag { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:3px 8px; border-radius:var(--r-pill); background:var(--gold-50); color:var(--gold-700); }
+.frc-tag { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:3px 8px; border-radius:var(--r-pill); background:var(--gold-50); color:var(--gold-800); }
 
 .flt-how-steps { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
 @media (max-width:760px){ .flt-how-steps { grid-template-columns:1fr; } }

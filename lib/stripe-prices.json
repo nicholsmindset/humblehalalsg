@@ -1,0 +1,545 @@
+{
+  "generated_at": "2026-07-10T12:01:26.136Z",
+  "mode": "test",
+  "byLabel": {
+    "FEATURED_M": {
+      "price_id": "price_1ThlUnDjNCv7xF61mX2ASQIY",
+      "amount": 49,
+      "currency": "sgd",
+      "interval": "month",
+      "product": "Humble Halal — Featured"
+    },
+    "FEATURED_Y": {
+      "price_id": "price_1ThlUnDjNCv7xF61ZFQNxQ2v",
+      "amount": 490,
+      "currency": "sgd",
+      "interval": "year",
+      "product": "Humble Halal — Featured"
+    },
+    "PREMIUM_M": {
+      "price_id": "price_1ThlUoDjNCv7xF61yLAcCgHa",
+      "amount": 99,
+      "currency": "sgd",
+      "interval": "month",
+      "product": "Humble Halal — Premium"
+    },
+    "PREMIUM_Y": {
+      "price_id": "price_1ThlUpDjNCv7xF6183tyfH5c",
+      "amount": 990,
+      "currency": "sgd",
+      "interval": "year",
+      "product": "Humble Halal — Premium"
+    },
+    "VERIFIED_M": {
+      "price_id": "price_1ThlUlDjNCv7xF61AcI8vLtL",
+      "amount": 19,
+      "currency": "sgd",
+      "interval": "month",
+      "product": "Humble Halal — Verified"
+    },
+    "VERIFIED_Y": {
+      "price_id": "price_1ThlUmDjNCv7xF61KdImPKYy",
+      "amount": 190,
+      "currency": "sgd",
+      "interval": "year",
+      "product": "Humble Halal — Verified"
+    }
+  },
+  "prices": [
+    {
+      "id": "price_1TiBMADjNCv7xF61Tj9ra9OW",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 99000,
+      "amount": 990,
+      "nickname": null,
+      "interval": "year",
+      "product": "Humble Halal — Premium",
+      "livemode": false
+    },
+    {
+      "id": "price_1TiBM9DjNCv7xF61S8K88EbF",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 9900,
+      "amount": 99,
+      "nickname": null,
+      "interval": "month",
+      "product": "Humble Halal — Premium",
+      "livemode": false
+    },
+    {
+      "id": "price_1TiBM8DjNCv7xF61VTYvGzTs",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 49000,
+      "amount": 490,
+      "nickname": null,
+      "interval": "year",
+      "product": "Humble Halal — Featured",
+      "livemode": false
+    },
+    {
+      "id": "price_1TiBM7DjNCv7xF610Q1N0ZVX",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 4900,
+      "amount": 49,
+      "nickname": null,
+      "interval": "month",
+      "product": "Humble Halal — Featured",
+      "livemode": false
+    },
+    {
+      "id": "price_1TiBM7DjNCv7xF61rjZ3c2Hs",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 19000,
+      "amount": 190,
+      "nickname": null,
+      "interval": "year",
+      "product": "Humble Halal — Verified",
+      "livemode": false
+    },
+    {
+      "id": "price_1TiBM6DjNCv7xF61E3HjsMnw",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": null,
+      "interval": "month",
+      "product": "Humble Halal — Verified",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUpDjNCv7xF6183tyfH5c",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 99000,
+      "amount": 990,
+      "nickname": "Premium Yearly",
+      "interval": "year",
+      "product": "Humble Halal — Premium",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUoDjNCv7xF61yLAcCgHa",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 9900,
+      "amount": 99,
+      "nickname": "Premium Monthly",
+      "interval": "month",
+      "product": "Humble Halal — Premium",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUnDjNCv7xF61ZFQNxQ2v",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 49000,
+      "amount": 490,
+      "nickname": "Featured Yearly",
+      "interval": "year",
+      "product": "Humble Halal — Featured",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUnDjNCv7xF61mX2ASQIY",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 4900,
+      "amount": 49,
+      "nickname": "Featured Monthly",
+      "interval": "month",
+      "product": "Humble Halal — Featured",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUmDjNCv7xF61KdImPKYy",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 19000,
+      "amount": 190,
+      "nickname": "Verified Yearly",
+      "interval": "year",
+      "product": "Humble Halal — Verified",
+      "livemode": false
+    },
+    {
+      "id": "price_1ThlUlDjNCv7xF61AcI8vLtL",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": "Verified Monthly",
+      "interval": "month",
+      "product": "Humble Halal — Verified",
+      "livemode": false
+    },
+    {
+      "id": "price_1TNW4bDjNCv7xF619RffVHDh",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 95640,
+      "amount": 956.4,
+      "nickname": "Portfolio Annual",
+      "interval": "year",
+      "product": "ONNIFY WORKS Portfolio",
+      "livemode": false
+    },
+    {
+      "id": "price_1TNW4XDjNCv7xF615lU2995a",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 89700,
+      "amount": 897,
+      "nickname": "Portfolio Monthly",
+      "interval": "month",
+      "product": "ONNIFY WORKS Portfolio",
+      "livemode": false
+    },
+    {
+      "id": "price_1TM6ouDjNCv7xF61su3rkLON",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 476400,
+      "amount": 4764,
+      "nickname": "Professional Annual",
+      "interval": "year",
+      "product": "ONNIFY WORKS Professional",
+      "livemode": false
+    },
+    {
+      "id": "price_1TM6otDjNCv7xF61H5VRQOWk",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 49700,
+      "amount": 497,
+      "nickname": "Professional Monthly",
+      "interval": "month",
+      "product": "ONNIFY WORKS Professional",
+      "livemode": false
+    },
+    {
+      "id": "price_1TM6onDjNCv7xF61cl2LkKlW",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 296400,
+      "amount": 2964,
+      "nickname": "Starter Annual",
+      "interval": "year",
+      "product": "ONNIFY WORKS Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TM6oiDjNCv7xF61DXNcgCE2",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 29700,
+      "amount": 297,
+      "nickname": "Starter Monthly",
+      "interval": "month",
+      "product": "ONNIFY WORKS Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGrnUDjNCv7xF61H5N5A64n",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 75600,
+      "amount": 756,
+      "nickname": null,
+      "interval": "year",
+      "product": "ElumiHome Agent Pro",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGrnTDjNCv7xF61Ii6EdNew",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 7900,
+      "amount": 79,
+      "nickname": null,
+      "interval": "month",
+      "product": "ElumiHome Agent Pro",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGrnSDjNCv7xF61OzFWcB7Z",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 27600,
+      "amount": 276,
+      "nickname": null,
+      "interval": "year",
+      "product": "ElumiHome Agent Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGrnRDjNCv7xF61zYkOYXoQ",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 2900,
+      "amount": 29,
+      "nickname": null,
+      "interval": "month",
+      "product": "ElumiHome Agent Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhrDjNCv7xF618Xhlcz4v",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 143040,
+      "amount": 1430.4,
+      "nickname": "Agency Annual",
+      "interval": "year",
+      "product": "ElumiHome Agency",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhqDjNCv7xF61soU113Hw",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 14900,
+      "amount": 149,
+      "nickname": "Agency Monthly",
+      "interval": "month",
+      "product": "ElumiHome Agency",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhoDjNCv7xF61zK6BqEGh",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 66240,
+      "amount": 662.4,
+      "nickname": "Studio Annual",
+      "interval": "year",
+      "product": "ElumiHome Studio",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhnDjNCv7xF61CPP30QXE",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 6900,
+      "amount": 69,
+      "nickname": "Studio Monthly",
+      "interval": "month",
+      "product": "ElumiHome Studio",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhcDjNCv7xF61lGUHV6O9",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 47040,
+      "amount": 470.4,
+      "nickname": "Home Pro Annual",
+      "interval": "year",
+      "product": "ElumiHome Home Pro",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhbDjNCv7xF61phZlqXHc",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 4900,
+      "amount": 49,
+      "nickname": "Home Pro Monthly",
+      "interval": "month",
+      "product": "ElumiHome Home Pro",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhSDjNCv7xF614eONxWgG",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 18240,
+      "amount": 182.4,
+      "nickname": "Starter Annual",
+      "interval": "year",
+      "product": "ElumiHome Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TGIhRDjNCv7xF61JP34Ej2r",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": "Starter Monthly",
+      "interval": "month",
+      "product": "ElumiHome Starter",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGswDjNCv7xF611ebKBY6L",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 199000,
+      "amount": 1990,
+      "nickname": null,
+      "interval": "year",
+      "product": "SchemaCheck Scale",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGswDjNCv7xF61l1RjX5EA",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 19900,
+      "amount": 199,
+      "nickname": null,
+      "interval": "month",
+      "product": "SchemaCheck Scale",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGsvDjNCv7xF61hzVN13ME",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 79000,
+      "amount": 790,
+      "nickname": null,
+      "interval": "year",
+      "product": "SchemaCheck Growth",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGsvDjNCv7xF61llPqpi4v",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 7900,
+      "amount": 79,
+      "nickname": null,
+      "interval": "month",
+      "product": "SchemaCheck Growth",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGsuDjNCv7xF6113yHDben",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 19000,
+      "amount": 190,
+      "nickname": null,
+      "interval": "year",
+      "product": "SchemaCheck Basic",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCGsuDjNCv7xF617uQuyTAo",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": null,
+      "interval": "month",
+      "product": "SchemaCheck Basic",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYSDjNCv7xF61vUdzHCSW",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 199000,
+      "amount": 1990,
+      "nickname": "Scale Annual",
+      "interval": "year",
+      "product": "SchemaCheck Scale",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYRDjNCv7xF61qdyXoS8Y",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 19900,
+      "amount": 199,
+      "nickname": "Scale Monthly",
+      "interval": "month",
+      "product": "SchemaCheck Scale",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYQDjNCv7xF61Uf4nL3d8",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 79000,
+      "amount": 790,
+      "nickname": "Growth Annual",
+      "interval": "year",
+      "product": "SchemaCheck Growth",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYPDjNCv7xF619uPNMm1k",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 7900,
+      "amount": 79,
+      "nickname": "Growth Monthly",
+      "interval": "month",
+      "product": "SchemaCheck Growth",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYODjNCv7xF61uN3g3IUs",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 19000,
+      "amount": 190,
+      "nickname": "Basic Annual",
+      "interval": "year",
+      "product": "SchemaCheck Basic",
+      "livemode": false
+    },
+    {
+      "id": "price_1TCEYDDjNCv7xF61KZDCPorH",
+      "active": true,
+      "currency": "usd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": "Basic Monthly",
+      "interval": "month",
+      "product": "SchemaCheck Basic",
+      "livemode": false
+    },
+    {
+      "id": "price_1SZsGPDjNCv7xF610URnVCPT",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 4900,
+      "amount": 49,
+      "nickname": null,
+      "interval": "month",
+      "product": "Agency Package: $49/month recurring",
+      "livemode": false
+    },
+    {
+      "id": "price_1SZsG4DjNCv7xF61O6Sl3XI9",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 1900,
+      "amount": 19,
+      "nickname": null,
+      "interval": "month",
+      "product": "Creator Package: $19/month recurring",
+      "livemode": false
+    },
+    {
+      "id": "price_1RTzA2DjNCv7xF614W1jrqsa",
+      "active": true,
+      "currency": "sgd",
+      "unit_amount": 50000,
+      "amount": 500,
+      "nickname": "SEO Monthly Packege @ 500",
+      "interval": "month",
+      "product": "SEO Monthly Packege",
+      "livemode": false
+    }
+  ]
+}

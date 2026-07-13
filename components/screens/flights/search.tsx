@@ -15,6 +15,8 @@ import Image from "next/image";
 import { Icon, Empty } from "../../ui";
 import { Carousel, DateRangeField, AiAnswer, SkeletonCard, isoOf, parseISO } from "../../ota";
 import { fmtDuration, sortItineraries, type FlightItinerary } from "@/lib/flights";
+// Aliased: this screen has local `[track, setTrack]` price-alert state.
+import { track as analytics } from "@/lib/analytics";
 import { nearbyAirports } from "@/lib/airports";
 import { formatHijri, hijriSeason } from "@/lib/hijri";
 import { Crumbs } from "../travel/shared";
@@ -168,6 +170,7 @@ export function FlightsScreen({ bookingEnabled, embedded = false }: { bookingEna
       const d = await r.json();
       if (d.ok) {
         const list: FlightItinerary[] = d.itineraries || [];
+        analytics.search(`flight:${o.iata}-${dst.iata}`, list.length);
         setItems(list);
         setSearched({ origin: o.iata, destination: dst.iata, date: searchDate });
         setF(noFilters(Math.max(...list.map((x) => x.durationMin), 3000)));
@@ -190,6 +193,7 @@ export function FlightsScreen({ bookingEnabled, embedded = false }: { bookingEna
     const query = aiQuery.trim();
     if (query.length < 4) return;
     setAiLoading(true); setAiAnswer(null); setAiItins(null); setAiSimulated(false);
+    analytics.aiQuery(query);
     try {
       const r = await fetch("/api/travel/flights/ai-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query }) });
       const d = await r.json();

@@ -92,6 +92,41 @@ export function getSessionId(): string | null {
   return sessionId();
 }
 
+/** GA4 client id from the _ga cookie ("GA1.1.123456.7890" → "123456.7890").
+ *  Sent to checkout routes → Stripe metadata → webhook → GA4 Measurement
+ *  Protocol, so server-side purchases land in the SAME GA4 user journey.
+ *  Null when GA hasn't set the cookie (no consent / blocked). */
+export function getGaClientId(): string | null {
+  if (typeof document === "undefined") return null;
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
+    if (!m) return null;
+    const parts = decodeURIComponent(m[1]).split(".");
+    return parts.length >= 4 ? `${parts[2]}.${parts[3]}` : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Analytics context for checkout POST bodies → Stripe session metadata →
+ *  webhook → GA4 Measurement Protocol. Spread into the JSON body:
+ *  `{ ...payload, ...checkoutMeta() }`. */
+export function checkoutMeta(): { ga_client_id: string | null; hh_session_id: string | null } {
+  return { ga_client_id: getGaClientId(), hh_session_id: getSessionId() };
+}
+
+/** Has the visitor granted analytics consent? (banner writes hh_consent_v1 —
+ *  see components/cookie-consent.tsx). Used to gate the GA4 user_id push. */
+function analyticsConsented(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const c = JSON.parse(localStorage.getItem("hh_consent_v1") || "null");
+    return !!(c && typeof c === "object" && c.analytics);
+  } catch {
+    return false;
+  }
+}
+
 /** Stable per-browser-session id (sessionStorage). Null during SSR. */
 function sessionId(): string | null {
   if (typeof window === "undefined") return null;
@@ -272,12 +307,34 @@ export const track = {
     dl({ event: "lead_submit", lead_type: leadType, ...extra, event_id: eventId });
     postServerEvent("lead_submit", eventId, { user_data: userData, custom_data: { lead_type: leadType, ...extra } });
   },
-  // Buyer opened the checkout for an event — the middle step of the organiser
-  // funnel (event page_view → checkout_start → purchase). Persisted first-party
-  // (0042 admits the event_type) and mirrored as GA4's begin_checkout.
-  checkoutStart(itemId: string, itemName?: string, value?: number) {
+  // Buyer opened a checkout — the middle step of every revenue funnel
+  // (page_view → begin_checkout → purchase). Persisted first-party (0042 admits
+  // the event_type) and mirrored as GA4's begin_checkout with an ecommerce
+  // payload. `checkoutType` segments the revenue stream
+  // (ticket|plan|ad|leads|donation|hotel).
+  checkoutStart(
+    itemId: string,
+    itemName?: string,
+    value?: number,
+    opts: { checkoutType?: string; quantity?: number; itemCategory?: string } = {},
+  ) {
     emit({ p_event_type: "checkout_start", p_listing_slug: itemId });
-    dl({ event: "begin_checkout", item_id: itemId, item_name: itemName, value, currency: "SGD" });
+    const eventId = newEventId();
+    dl({
+      event: "begin_checkout",
+      item_id: itemId,
+      item_name: itemName,
+      value,
+      currency: "SGD",
+      checkout_type: opts.checkoutType,
+      event_id: eventId,
+      ecommerce: {
+        value,
+        currency: "SGD",
+        items: [{ item_id: itemId, item_name: itemName, item_category: opts.itemCategory ?? opts.checkoutType, price: value, quantity: opts.quantity ?? 1 }],
+      },
+    });
+    postServerEvent("begin_checkout", eventId, { custom_data: { value, currency: "SGD", content_ids: [itemId], checkout_type: opts.checkoutType } });
   },
   eventRsvp(itemId: string, itemName: string, quantity: number, email?: string) {
     const eventId = newEventId();
@@ -285,12 +342,34 @@ export const track = {
     postServerEvent("event_rsvp", eventId, { user_data: email ? { email } : undefined, custom_data: { content_ids: [itemId], content_name: itemName } });
   },
   purchase(
-    o: { transaction_id?: string; item_id?: string; item_name?: string; tier?: string; quantity?: number; value?: number; currency?: string },
+    o: {
+      transaction_id?: string;
+      item_id?: string;
+      item_name?: string;
+      item_category?: string;
+      checkout_type?: string;
+      tier?: string;
+      quantity?: number;
+      value?: number;
+      currency?: string;
+    },
     userData?: ServerUserData,
   ) {
     const eventId = newEventId();
-    dl({ event: "purchase", currency: "SGD", ...o, event_id: eventId });
-    postServerEvent("purchase", eventId, { user_data: userData, custom_data: { value: o.value, currency: o.currency ?? "SGD", content_ids: o.item_id ? [o.item_id] : undefined } });
+    const currency = o.currency ?? "SGD";
+    dl({
+      event: "purchase",
+      currency,
+      ...o,
+      event_id: eventId,
+      ecommerce: {
+        transaction_id: o.transaction_id,
+        value: o.value,
+        currency,
+        items: [{ item_id: o.item_id, item_name: o.item_name, item_category: o.item_category ?? o.checkout_type, price: o.value, quantity: o.quantity ?? 1 }],
+      },
+    });
+    postServerEvent("purchase", eventId, { user_data: userData, custom_data: { value: o.value, currency, content_ids: o.item_id ? [o.item_id] : undefined } });
   },
   // --- Ads -------------------------------------------------------------------
   // Ad slot events for GTM/GA4. Direct-sponsor impressions/clicks are ALSO
@@ -303,5 +382,79 @@ export const track = {
   },
   adClick(o: { placement: string; source: "direct" | "adsense"; campaignId?: string }) {
     dl({ event: "ad_click", ad_placement: o.placement, ad_source: o.source, campaign_id: o.campaignId });
+  },
+  // --- Identity ---------------------------------------------------------------
+  // GA4 user_id (Clerk id, pseudonymous) + user_properties, enabling
+  // owner-vs-consumer segments and per-owner reporting. Only pushed once
+  // analytics consent is granted (PDPA); GTM attaches these to every GA4 event
+  // via the "GTES - User" event-settings variable.
+  identify(userId: string, userRole: "user" | "owner" | "admin") {
+    if (!analyticsConsented()) return;
+    dl({ event: "user_ready", user_id: userId, user_role: userRole });
+  },
+  // Owner's business context — set when the dashboard resolves the owned
+  // business (no extra queries). Segments all subsequent events by business.
+  identifyOwner(o: { businessId: string; plan?: string; halalTier?: string }) {
+    if (!analyticsConsented()) return;
+    dl({ event: "owner_ready", owner_business_id: o.businessId, owner_plan: o.plan, owner_halal_tier: o.halalTier });
+  },
+  // --- Consumer journey gap-fills ----------------------------------------------
+  viewEvent(id: string, name: string, category?: string, isFree?: boolean) {
+    emit({ p_event_type: "event_view", p_listing_slug: id, p_category: category ?? null });
+    dl({ event: "view_event", item_id: id, item_name: name, event_category: category, is_free: isFree });
+  },
+  addToCalendar(id: string, name?: string) {
+    dl({ event: "add_to_calendar", item_id: id, item_name: name });
+  },
+  reviewSubmit(targetId: string, rating?: number, targetType: "business" | "event" = "business") {
+    emit({ p_event_type: "review_submit", p_listing_slug: targetId });
+    dl({ event: "review_submit", listing_id: targetId, rating, target_type: targetType });
+  },
+  follow(organizerId: string) {
+    emit({ p_event_type: "follow", p_listing_slug: organizerId });
+    dl({ event: "follow", organizer_id: organizerId });
+  },
+  toolUse(slug: string) {
+    emit({ p_event_type: "tool_use", p_category: slug });
+    dl({ event: "tool_use", tool_slug: slug });
+  },
+  // Scroll-depth milestones on blog posts (25/50/75/100). dataLayer-only — four
+  // extra DB writes per read would be noise in the first-party table.
+  blogRead(slug: string, percent: number) {
+    dl({ event: "blog_read", blog_slug: slug, percent });
+  },
+  // --- Owner events (segmentation: every event carries the business context) ---
+  ownerAddListing(o: { businessName: string; category?: string; area?: string; halalTier?: string; franchise?: boolean }) {
+    dl({
+      event: "owner_add_listing",
+      business_name: o.businessName,
+      listing_category: o.category,
+      listing_area: o.area,
+      halal_tier: o.halalTier,
+      franchise: o.franchise,
+      event_id: newEventId(),
+    });
+  },
+  ownerCreateEvent(o: { eventId: string; title: string; isFree?: boolean; price?: number; capacity?: number; category?: string }) {
+    dl({
+      event: "owner_create_event",
+      item_id: o.eventId,
+      event_title: o.title,
+      is_free: o.isFree,
+      price: o.price,
+      capacity: o.capacity,
+      event_category: o.category,
+      event_id: newEventId(),
+    });
+  },
+  ownerLeadWon(routeId: string, businessId?: string) {
+    dl({ event: "owner_lead_won", route_id: routeId, business_id: businessId, event_id: newEventId() });
+  },
+  // Long-tail dashboard actions funnel through one event; `action` is the
+  // GA4 dimension (cert_upload, review_reply, ad_request, listing_edit,
+  // offer_publish, photo_upload, lead_accept, lead_status, event_cancel,
+  // billing_portal, connect_onboard, …).
+  ownerAction(action: string, businessId?: string, extra: Record<string, unknown> = {}) {
+    dl({ event: "owner_action", action, business_id: businessId, ...extra });
   },
 };

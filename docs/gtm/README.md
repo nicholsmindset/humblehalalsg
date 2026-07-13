@@ -2,15 +2,15 @@
 
 `humblehalal-gtm-container.json` is a ready-to-import Google Tag Manager container that wires up the whole stack against the dataLayer the site already emits (see [../tracking-measurement-setup.md](../tracking-measurement-setup.md)).
 
-**What's inside:** 32 tags, 8 triggers, 25 variables.
+**What's inside (v2 — full-journey + owner segmentation + revenue):** 58 tags, 31 triggers, 56 variables.
 - **Consent | Default** (Consent Mode v2, defaults denied) + **Conversion Linker**
-- **GA4**: Config (page_view OFF) + 8 event tags (`page_view`, `sign_up`, `view_listing`, `generate_lead`, `contact`, `newsletter_signup`, `event_rsvp`, `purchase`)
-- **Meta**: Base + PageView, ViewContent, Lead, CompleteRegistration, Contact, Subscribe, Purchase
-- **TikTok**: Base + Pageview, ViewContent, SubmitForm, CompleteRegistration, Contact, Subscribe, CompletePayment
-- **LinkedIn**: Base + Conversion (Lead)
-- **Clarity**: Base
-- **Google Ads**: Remarketing + Conversion (Lead)
-- Every marketing tag has **per-tag consent** (`ad_storage`+`ad_user_data`, Ads also `ad_personalization`); Clarity requires `analytics_storage`.
+- **GA4**: Config (page_view OFF) + **31 event tags** — the original 8 (`page_view`, `sign_up`, `view_listing`, `generate_lead`, `contact`, `newsletter_signup`, `event_rsvp`, `purchase`) plus journey events (`search`, `search_result_click`, `filter_use`, `map_open`, `ai_query`, `ai_result_click`, `save_listing`, `share`, `claim_click`, `cert_view`, `begin_checkout`, `ad_impression`, `ad_click`, `view_event`, `add_to_calendar`, `review_submit`, `follow`, `tool_use`, `blog_read`) and **owner events** (`owner_add_listing`, `owner_create_event`, `owner_lead_won`, `owner_action`)
+- **`GTES - User`** (Google Tag Event Settings variable): attaches **`user_id`** (Clerk id, consent-gated by the site) + user properties **`user_role` / `owner_business_id` / `owner_plan`** to every GA4 event tag → segment anything by business owner
+- **Ecommerce**: `begin_checkout` + `purchase` read the dataLayer `ecommerce` object ("Send Ecommerce data" ON) → proper revenue reports; real order values also arrive server-side via the Stripe webhook → GA4 Measurement Protocol (lib/ga4-mp.ts)
+- **Meta**: Base + PageView, ViewContent, Lead, CompleteRegistration, Contact, Subscribe, **InitiateCheckout**, Purchase
+- **TikTok**: Base + Pageview, ViewContent, SubmitForm, CompleteRegistration, Contact, Subscribe, **InitiateCheckout**, CompletePayment
+- **LinkedIn**: Base + Conversion (Lead) · **Clarity**: Base · **Google Ads**: Remarketing + Conversion (Lead) + **Conversion (Purchase** with value/currency/order id**)**
+- Every marketing tag has **per-tag consent** (`ad_storage`+`ad_user_data`, Ads also `ad_personalization`); Clarity requires `analytics_storage`. Owner events are GA4-only (B2B).
 
 ---
 

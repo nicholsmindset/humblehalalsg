@@ -311,3 +311,50 @@ Then **GTM → Submit → Publish** (version notes). Re-run DebugView on product
 
 ### End-to-end verification
 `npm run dev` → GTM Preview against localhost → walk: home → listing → contact click → quote form → newsletter → sign up → event RSVP. Confirm each dataLayer event (§3) and each platform tag (§4) fire once, gated correctly by consent (§6/§7). Then publish GTM and re-verify on production with DebugView + each pixel helper.
+
+---
+
+# ▶ v2 Addendum — Full-Journey Analytics, Owner Segmentation & Revenue (implemented)
+
+> This addendum documents the v2 build-out (shipped in code + `docs/gtm/humblehalal-gtm-container.json` v2). The sections above remain the Phase-1 reference.
+
+## A. Owner-side tracking & per-business-owner segmentation
+
+**Identity (consent-gated — no-ops until analytics consent):**
+- `track.identify(clerkUserId, role)` fires from [components/app-context.tsx](../components/app-context.tsx) once the Clerk session + profile role resolve → dataLayer `user_ready` with `user_id` + `user_role`.
+- `track.identifyOwner({businessId, plan, halalTier})` fires from the owner dashboard when the owned business loads → `owner_ready` with `owner_business_id`/`owner_plan`.
+- In GTM, the **`GTES - User`** event-settings variable attaches `user_id` + user properties (`user_role`, `owner_business_id`, `owner_plan`) to **every** GA4 event.
+
+**Owner events (key events ✦):**
+| Event | Fired when | Key params |
+|---|---|---|
+| `owner_add_listing` ✦ | business submitted via Add-Listing wizard | business_name, listing_category, area, halal_tier |
+| `owner_create_event` ✦ | organiser submits an event (canonical server id) | item_id, event_title, is_free, price, capacity |
+| `owner_lead_won` ✦ | owner marks a routed lead "won" | route_id, business_id |
+| `owner_action` | dashboard long-tail (cert_upload, review_reply, ad_request, listing_edit, change_request, offer_publish/remove, photo_upload, lead_accept, lead_status, lead_prefs, event_cancel, billing_portal, connect_onboard) | action, business_id |
+
+**"How many events did each owner create?"** → GA4 Explore: event `owner_create_event`, dimension `owner_business_id` (user-scoped) or `user_id`, metric Event count.
+
+## B. Full-journey events now emitting (beyond Phase 1)
+
+`search` (+results_count; also travel `flight:SIN-XXX` searches), `search_result_click` (now unconditional on card clicks), `filter_use` (filter pills `cat:/area:/price:/halal:`, `sort:*`, `muis_certified`, `view:map`→also `map_open`, `load_more`, `pin_click`), `ai_query`/`ai_result_click` (concierge + travel Ask-AI), `save_listing` (businesses, events, hotels), `share` (business, event, blog via delegated ShareRow clicks), `claim_click`, `cert_view`, `view_event`, `add_to_calendar` (ICS), `review_submit` (business + event, with rating), `follow`, `tool_use` (all /tools/* via the `ToolView` island in `tool-shell.tsx`), `blog_read` (25/50/75/100% scroll via `BlogReadTracker`), `ad_impression`/`ad_click`, `begin_checkout` (unified with `checkout_type`: ticket|plan|ad|leads|donation|hotel + value + ecommerce items), `purchase` (client: hotel booking + demo ticket path; authoritative: webhook).
+
+## C. Revenue: real order values into GA4
+
+1. **Client `begin_checkout` values:** `npm run sync:prices` (scripts/sync-stripe-prices.mjs, Stripe CLI → REST fallback) writes `lib/stripe-prices.json`; `lib/pricing-map.ts` resolves plan/leads values (falls back to `lib/plans.ts` display prices). Ad checkout value comes from the server response (`amount`).
+2. **Authoritative `purchase` (server):** every checkout POST now carries `ga_client_id` (from the `_ga` cookie) + `hh_session_id` → Stripe session metadata → on `checkout.session.completed` the webhook sends a **GA4 Measurement Protocol** purchase (`lib/ga4-mp.ts`) with `transaction_id = session.id`, real `amount_total`, currency, `checkout_type`, landing in the same GA4 journey — plus a Meta CAPI / TikTok Events API purchase (`lib/server-track.ts`). Full refunds mirror as GA4 `refund`.
+3. **Env:** set `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` (GA4 Admin → Data Streams → Measurement Protocol API secrets).
+
+## D. GA4 console steps (one-time, ~15 min)
+
+1. **Custom dimensions** (Admin → Custom definitions): event-scoped — `listing_id`, `listing_category`, `listing_area`, `lead_type`, `contact_method`, `source`, `filter_key`, `tool_slug`, `checkout_type`, `business_id`, `action`, `ad_placement`, `ad_source`, `event_category`, `target_type`, `blog_slug`; user-scoped — `user_role`, `owner_business_id`, `owner_plan`.
+2. **Key events:** existing six + `owner_add_listing`, `owner_create_event`, `owner_lead_won`.
+3. **Default value on `newsletter_signup`** (email opt-in value): Admin → Key events → set default conversion value.
+4. **Audiences:** "Business owners" (`user_role = owner`), "Owners without a listing" (owner minus `owner_add_listing`), "Purchasers", "High-intent" (`contact_click` OR `begin_checkout`). Link GA4 ↔ Google Ads to share them.
+5. **Reporting identity:** Blended (uses `user_id` first).
+
+## E. Verification additions
+
+- **Owner flow (GTM Preview + DebugView):** sign in as an owner → `user_ready` (user_id, user_role=owner) → dashboard → `owner_ready` (business id/plan as user properties) → add listing → `owner_add_listing` → create event → `owner_create_event` → leads tab → `owner_lead_won`.
+- **Stripe value pipeline:** `npm run sync:prices` prints real amounts + drift vs lib/plans.ts; `stripe listen --forward-to localhost:3000/api/webhooks/stripe` + `stripe trigger checkout.session.completed` → verify the MP hit against `https://www.google-analytics.com/debug/mp/collect` (validation endpoint) and the purchase in DebugView (client_id from metadata).
+- **Ecommerce:** begin_checkout/purchase in DebugView show the `items` array + value/currency.

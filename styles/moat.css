@@ -65,9 +65,9 @@
 }
 .offers-block .offers-head {
   display: flex; align-items: center; gap: 8px;
-  font-weight: 800; font-size: .95rem; color: var(--gold-700);
+  font-weight: 800; font-size: .95rem; color: var(--gold-800);
 }
-.offers-block .offers-head svg { color: var(--gold-700); flex: none; }
+.offers-block .offers-head svg { color: var(--gold-800); flex: none; }
 .offers-block .offers-body { margin-top: 8px; font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
 
 /* ===================== PRAYER STRIP ===================== */
@@ -153,7 +153,7 @@
 .verif-seal.warn { background:var(--gold); color:#3a2c08; box-shadow:0 8px 20px rgba(214,168,79,.3); }
 .verif-card.pending .verif-seal.warn { background:#CFC7B2; color:#5C5440; box-shadow:none; }
 .verif-fresh { display:inline-flex; align-items:center; gap:4px; background:var(--emerald); color:#fff; font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:999px; }
-.verif-expiring { display:inline-flex; align-items:center; gap:4px; background:var(--gold-100); color:var(--gold-700); font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:999px; }
+.verif-expiring { display:inline-flex; align-items:center; gap:4px; background:var(--gold-100); color:var(--gold-800); font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:999px; }
 .verif-meta { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; }
 .verif-metaitem { font-size:.84rem; }
 .verif-metaitem .faint { font-size:.78rem; }

@@ -10,6 +10,7 @@
    AdSlot renders, so what the owner sees is what actually serves. */
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { track, checkoutMeta } from "@/lib/analytics";
 import { BLOCKED_AD_CATEGORIES } from "@/lib/ad-safety";
 import { Icon, ImagePh, WizardFooter, WizardSteps } from "../ui";
 
@@ -150,14 +151,16 @@ export function CampaignBuilder({
       const res = await fetch("/api/owner/ads/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId, placementKey, startsOn, months, title: title.trim(), body: body.trim(), targetUrl: targetUrl.trim(), imageUrl }),
+        body: JSON.stringify({ businessId, placementKey, startsOn, months, title: title.trim(), body: body.trim(), targetUrl: targetUrl.trim(), imageUrl, ...checkoutMeta() }),
       });
       const j = await res.json().catch(() => ({}));
       if (j?.ok && j.mode === "checkout" && j.url) {
+        track.checkoutStart(placementKey, `Ad: ${placementKey} × ${months}mo`, typeof j.amount === "number" ? j.amount / 100 : undefined, { checkoutType: "ad" });
         window.location.href = j.url as string; // → Stripe; webhook schedules on payment
         return;
       }
       if (j?.ok && j.mode === "request") {
+        track.ownerAction("ad_request", businessId, { ad_placement: placementKey, months });
         toast("Request received — we’ll confirm availability and invoice you by email.");
         onSubmitted();
         return;

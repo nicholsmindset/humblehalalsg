@@ -3,11 +3,15 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* The logged-in user's tickets (with the scannable qr_ref) for the My Tickets
-   view. Scoped to the caller's own orders (by user id or verified email). Returns
-   an empty list (not an error) for guests so the UI falls back to local tickets. */
+   view. Scoped to the caller's own orders (by user id or verified email).
+
+   AUTH CONTRACT (intentional): this GET returns 200 { ok:true, tickets:[] } for
+   guests — NOT 401 — so the dashboard tab renders and the UI falls back to
+   locally-stored tickets. This is a deliberate read-endpoint choice, not a
+   missing auth check; write endpoints (e.g. /api/tickets/checkin) DO 401. */
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ ok: true, tickets: [] });
+  if (!userId) return NextResponse.json({ ok: true, tickets: [] }); // guests: 200 empty by design (see header)
 
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: true, tickets: [] });
