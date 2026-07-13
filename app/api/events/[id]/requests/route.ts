@@ -4,6 +4,7 @@ import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import { joinApprovedEmail, joinDeclinedEmail } from "@/lib/emails/templates";
+import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Organiser view of join requests for an approval-gated event, plus approve /
    decline. A join request = a free pending order (status='pending',
@@ -19,6 +20,11 @@ async function authorise(eventRef: string): Promise<AuthOk | AuthErr> {
   if (!userId) return { ok: false, res: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
   if (!admin) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
+  // Allowlist the ref before it's interpolated into the PostgREST .or() filter —
+  // otherwise a crafted ref (e.g. "x,capacity.gte.0") broadens the OR (the shared
+  // guard its sibling event routes already use). 404 = indistinguishable from a
+  // missing event.
+  if (!isSafeEventRef(eventRef)) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: ev } = await admin.from("events").select("id, business_id, title, capacity, taken").or(`id.eq.${eventRef},slug.eq.${eventRef}`).maybeSingle();
   if (!ev) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();

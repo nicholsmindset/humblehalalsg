@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
   }
   // Paid LLM + LiteAPI calls — throttle per IP (unauthenticated public search).
-  const rl = await rateLimit(req, "ai-travel", 20, 60);
+  const rl = await rateLimit(req, "ai-travel", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   let query = "";

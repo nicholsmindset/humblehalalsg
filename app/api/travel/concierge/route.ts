@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "concierge_disabled" }, { status: 403 });
   }
   // Paid LLM + LiteAPI calls — throttle per IP (unauthenticated public chat).
-  const rl = await rateLimit(req, "travel-concierge", 20, 60);
+  const rl = await rateLimit(req, "travel-concierge", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
   if (!aiConfigured) return Response.json({ error: "ai_not_configured" }, { status: 503 });
 
