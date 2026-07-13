@@ -16,6 +16,7 @@ import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
+import { track } from "@/lib/analytics";
 import type { Collection, Lang, Prefs, Ticket, Tweaks, UserState } from "@/lib/types";
 
 const DEFAULT_COLLECTIONS: Collection[] = [
@@ -227,7 +228,13 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
         /* private mode / fetch failure — the user can still upgrade later */
       }
       const base = (clerkUser.primaryEmailAddress?.emailAddress || clerkUser.firstName || "You").split("@")[0] || "You";
-      if (active) setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
+      if (active) {
+        setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
+        // GA4 identity: user_id (pseudonymous Clerk id) + user_role, so every
+        // subsequent event can be segmented owner-vs-consumer. Consent-gated
+        // inside track.identify (no-op until analytics consent is granted).
+        track.identify(clerkUser.id, role);
+      }
     })();
     return () => {
       active = false;

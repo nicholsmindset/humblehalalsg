@@ -30,7 +30,7 @@
   font-size: .58rem;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: var(--muted, #9a8f79);
+  color: var(--ink-soft); /* was var(--muted, #9a8f79) — --muted is undefined; the tan fallback failed contrast on cream */
   margin-bottom: 4px;
 }
 .ad-slot.ad-adsense .adsbygoogle { display: block; width: 100%; }

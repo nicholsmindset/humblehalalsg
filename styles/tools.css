@@ -238,7 +238,7 @@
 .tools-feature-card.primary p, .tools-feature-card.primary .tools-feature-meta { color: rgba(255,255,255,.75); }
 .tools-feature-meta {
   margin-top: auto;
-  color: var(--gold-700);
+  color: var(--gold-800);
   font-size: .72rem;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -292,7 +292,7 @@
   display: grid; place-items: center;
 }
 .tool-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.tool-card-topline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gold-700); font-size: .7rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.tool-card-topline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; color: var(--gold-800); font-size: .7rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .tool-card-topline em { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: var(--cream-200); color: var(--ink-soft); font-style: normal; letter-spacing: 0; text-transform: none; font-size: .7rem; }
 .tool-card-name { font-family: var(--serif); font-weight: 700; font-size: 1.14rem; letter-spacing: -.01em; line-height: 1.15; }
 .tool-card-blurb { font-size: .9rem; color: var(--ink-soft); line-height: 1.45; }
@@ -409,7 +409,7 @@
 }
 .name-num {
   position: absolute; top: 8px; left: 10px;
-  font-size: .72rem; font-weight: 700; color: var(--gold-700);
+  font-size: .72rem; font-weight: 700; color: var(--gold-800);
 }
 .name-arabic { font-size: 1.7rem; color: var(--emerald); line-height: 1.5; margin-top: 6px; }
 .name-translit { font-family: var(--serif); font-weight: 600; font-size: 1.02rem; }
@@ -503,7 +503,7 @@
 .prayer-row .prayer-name { font-weight: 600; }
 .prayer-row .prayer-time { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
 .prayer-row.next { background: var(--gold-50); }
-.prayer-row.next .prayer-name, .prayer-row.next .prayer-time { color: var(--gold-700); font-weight: 700; }
+.prayer-row.next .prayer-name, .prayer-row.next .prayer-time { color: var(--gold-800); font-weight: 700; }
 .prayer-row.sun { color: var(--ink-faint); }
 .prayer-row.sun .prayer-name { font-weight: 500; color: var(--ink-faint); }
 .prayer-foot { padding: 12px 18px; font-size: .82rem; }
@@ -560,7 +560,7 @@
 }
 .hifz-row:hover { border-color: var(--emerald-300); }
 .hifz-row.on { background: var(--emerald-50); border-color: var(--emerald-300); }
-.hifz-num { flex: none; width: 28px; font-weight: 700; color: var(--gold-700); font-size: .82rem; }
+.hifz-num { flex: none; width: 28px; font-weight: 700; color: var(--gold-800); font-size: .82rem; }
 .hifz-name { flex: 1; font-weight: 600; font-size: .92rem; min-width: 0; }
 .hifz-check { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line-strong); }
 .hifz-check.on { background: var(--emerald); border-color: var(--emerald); position: relative; }
@@ -600,7 +600,7 @@
 /* Reader */
 .quran-reader { display: flex; flex-direction: column; gap: 12px; }
 .quran-ayah { padding: 18px 20px; }
-.quran-ayah-num { font-size: .78rem; font-weight: 700; color: var(--gold-700); margin-bottom: 8px; }
+.quran-ayah-num { font-size: .78rem; font-weight: 700; color: var(--gold-800); margin-bottom: 8px; }
 .quran-ayah-ar { font-family: var(--font-quran), "Amiri", "Scheherazade New", serif; font-size: 2rem; line-height: 1.95; color: var(--ink); text-align: right; }
 .quran-ayah-en { margin-top: 10px; color: var(--ink-soft); line-height: 1.6; }
 .quran-ayah:target { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-100); }
@@ -652,7 +652,7 @@
 .babyname-name { font-family: var(--serif); font-weight: 600; font-size: 1.15rem; }
 .babyname-gender { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: var(--r-pill); }
 .babyname-gender.boy { background: var(--emerald-50); color: var(--emerald); }
-.babyname-gender.girl { background: var(--gold-50); color: var(--gold-700); }
+.babyname-gender.girl { background: var(--gold-50); color: var(--gold-800); }
 .babyname-meaning { font-size: .9rem; line-height: 1.45; }
 
 /* ============================================================

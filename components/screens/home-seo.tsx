@@ -7,10 +7,10 @@ import Link from "next/link";
 
 export function HomeSeoContent() {
   return (
-    <section className="hh-wrap hh-section home-seo">
+    <section className="hh-wrap hh-section home-seo" style={{ textAlign: "center" }}>
       <h2 style={{ fontSize: "1.6rem", marginBottom: 6 }}>Halal food in Singapore — the full picture</h2>
-      <p className="muted" style={{ maxWidth: 680, marginBottom: 20 }}>How to find halal food near you, what the badges mean, and where to start by area, cuisine and prayer needs.</p>
-      <div className="home-seo-prose" style={{ maxWidth: 760, display: "grid", gap: 22 }}>
+      <p className="muted" style={{ maxWidth: 680, margin: "0 auto 20px" }}>How to find halal food near you, what the badges mean, and where to start by area, cuisine and prayer needs.</p>
+      <div className="home-seo-prose" style={{ maxWidth: 760, margin: "0 auto", display: "grid", gap: 22, textAlign: "left" }}>
         <div>
           <h3 style={{ fontSize: "1.18rem", marginBottom: 8 }}>Finding halal food near you</h3>
           <p className="muted">

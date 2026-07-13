@@ -287,18 +287,16 @@ function ChatConcierge({ onUnavailable }: { onUnavailable: () => void }) {
 
 export function ConciergeScreen() {
   const [fallback, setFallback] = useState(false);
-  // Probe whether the streaming chat backend is available (flag + AI key).
-  // 400 = "bad request" = route is LIVE (we sent an intentionally invalid body
-  // so no LLM call is made); 403/503/network = degrade to single-shot search.
+  // Probe whether the streaming chat backend is available (flag + AI key) via a
+  // GET health check that returns 200 { available } — no LLM call and, crucially,
+  // no 4xx on load. available:false (flag off / AI unconfigured) or a network
+  // error degrades to the single-shot keyword search.
   const [probed, setProbed] = useState(false);
   useEffect(() => {
     let alive = true;
-    fetch("/api/concierge/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: null }),
-    })
-      .then((r) => { if (alive) { setFallback(r.status === 403 || r.status === 503); setProbed(true); } })
+    fetch("/api/concierge/chat", { method: "GET" })
+      .then((r) => (r.ok ? r.json() : { available: false }))
+      .then((d) => { if (alive) { setFallback(!d?.available); setProbed(true); } })
       .catch(() => { if (alive) { setFallback(true); setProbed(true); } });
     return () => { alive = false; };
   }, []);

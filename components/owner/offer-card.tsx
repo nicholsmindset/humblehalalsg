@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { canUse } from "@/lib/plans";
+import { track } from "@/lib/analytics";
 import { Icon } from "../ui";
 
 type Offer = { id?: string; title: string; details: string | null; ends_at: string | null };
@@ -65,7 +66,7 @@ export function OwnerOfferCard({ plan, toast, onUpgrade }: {
         body: JSON.stringify({ title: title.trim(), details: details.trim(), endsAt: endsAt || undefined }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d?.ok) { setOffer(d.offer || { title, details, ends_at: endsAt || null }); toast("Offer is live on your listing"); }
+      if (d?.ok) { setOffer(d.offer || { title, details, ends_at: endsAt || null }); track.ownerAction("offer_publish"); toast("Offer is live on your listing"); }
       else toast(d?.error === "plan_required" ? "Offers need the Premium plan." : "Couldn't save — try again.");
     } catch { toast("Network error — try again."); }
     finally { setBusy(false); }
@@ -76,7 +77,7 @@ export function OwnerOfferCard({ plan, toast, onUpgrade }: {
     try {
       const r = await fetch("/api/owner/offer", { method: "DELETE" });
       const d = await r.json().catch(() => ({}));
-      if (d?.ok) { setOffer(null); setTitle(""); setDetails(""); setEndsAt(""); toast("Offer removed"); }
+      if (d?.ok) { setOffer(null); setTitle(""); setDetails(""); setEndsAt(""); track.ownerAction("offer_remove"); toast("Offer removed"); }
       else toast("Couldn't remove — try again.");
     } catch { toast("Network error — try again."); }
     finally { setBusy(false); }

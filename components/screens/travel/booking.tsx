@@ -6,6 +6,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon, Empty, Modal, RewardsNote, PromoCode } from "../../ui";
+import { track } from "@/lib/analytics";
 import { Crumbs } from "./shared";
 import { launchLiteApiPayment } from "@/lib/liteapi-payment-client";
 import type { Prebook, TripBooking } from "./types";
@@ -53,6 +54,17 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
           if (!on) return;
           if (d.ok) {
             sessionStorage.removeItem("hh_hotel_book_" + pid);
+            // Hotel purchase — fired before the confirmation redirect (GA4 uses
+            // beacon transport, survives the navigation). LiteAPI is the
+            // merchant of record; this records revenue, not a Stripe charge.
+            track.purchase({
+              transaction_id: String(d.bookingId || pid),
+              item_id: String(ctx.liteapiHotelId || hotelId || ""),
+              item_name: String(ctx.hotelName || hotelName || ""),
+              checkout_type: "hotel",
+              value: typeof ctx.retailTotal === "number" ? ctx.retailTotal : undefined,
+              currency: typeof ctx.currency === "string" ? ctx.currency : undefined,
+            });
             const p = new URLSearchParams({ ref: String(d.bookingId || ""), code: String(d.confirmationCode || ""), hotel: String(ctx.hotelName || hotelName || ""), city: String(ctx.city || city || "") });
             window.location.href = `/travel/booking/confirmation?${p.toString()}`;
           } else {
@@ -73,7 +85,9 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
         const d = await res.json();
         if (!on) return;
         if (!d.ok) { setStage("error"); setErr(d.error || d.reason || "Could not start booking."); return; }
-        setPb(d as Prebook);
+        const p = d as Prebook;
+        setPb(p);
+        track.checkoutStart(hotelId || offerId, hotelName || undefined, p.sellingPrice ?? p.price ?? undefined, { checkoutType: "hotel" });
         setStage("details");
       } catch { if (on) { setStage("error"); setErr("Could not start booking."); } }
     })();

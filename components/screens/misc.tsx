@@ -462,7 +462,7 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
           )}
           {tab==='tickets' && <MyTickets navigate={navigate} state={state} />}
           {tab==='requests' && <><HelpCallout feature="requests" /><MyRequests navigate={navigate} state={state} /></>}
-          {tab==='passport' && <><HelpCallout feature="passport" /><PassportScreen /></>}
+          {tab==='passport' && <><HelpCallout feature="passport" /><PassportScreen embedded /></>}
           {tab==='reviews' && (<>
             <HelpCallout feature="reviews-user" />
             {reviewsLoaded && myReviews.length===0

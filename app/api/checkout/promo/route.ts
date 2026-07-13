@@ -7,6 +7,7 @@ import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { analyticsSessionMeta } from "@/lib/server-track";
 
 /* One-time advertising purchase (Event Promotion, Newsletter Sponsorship, etc.).
    Humble Halal is the seller. Amount in cents passed from a server-trusted map. */
@@ -20,7 +21,8 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
-  const { product } = (await req.json().catch(() => ({}))) as { product?: string };
+  const rawBody = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const { product } = rawBody as { product?: string };
   const item = product ? AD_PRODUCTS[product] : undefined;
   if (!item) return NextResponse.json({ ok: false, reason: "unknown_product" }, { status: 404 });
 
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
     }
   } catch { /* attribution best-effort */ }
 
-  const meta = { kind: "ad", product: product!, ...(businessId ? { businessId } : {}) };
+  const meta = { kind: "ad", product: product!, ...(businessId ? { businessId } : {}), checkout_type: "ad", ...analyticsSessionMeta(rawBody) };
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: [
