@@ -89,7 +89,13 @@ export async function POST(req: Request) {
       await admin.from("profiles").update({ email, name }).eq("id", d.id);
     }
   } else if (evt.type === "user.deleted") {
-    if (d.id) await admin.from("profiles").delete().eq("id", d.id);
+    // Full right-to-erasure, not just the profile row: delete authored reviews +
+    // notifications, anonymise financial/booking records, then delete the profile
+    // (FK cascades follows/passport/rsvps). See lib/erasure.ts.
+    if (d.id) {
+      const { eraseUserData } = await import("@/lib/erasure");
+      await eraseUserData(admin, { clerkUserId: d.id });
+    }
   }
 
   return new Response("ok", { status: 200 });
