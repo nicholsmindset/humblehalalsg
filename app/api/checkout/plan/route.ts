@@ -81,8 +81,11 @@ export async function POST(req: Request) {
   let businessId: string;
   let ownerEmail = "";
   try {
-    const { data: biz, error } = await admin.from("businesses").select("id, name, stripe_customer_id").eq("owner_id", userId).maybeSingle();
+    // owner_id OR claimed_by (a claimed listing sets claimed_by) + limit(1), never
+    // .maybeSingle() — otherwise a multi-business owner 503s and can't subscribe.
+    const { data: bizRows, error } = await admin.from("businesses").select("id, name, stripe_customer_id").or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).limit(1);
     if (error) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
+    const biz = bizRows?.[0];
     if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
     businessId = biz.id as string;
     customer = (biz.stripe_customer_id as string) || undefined;

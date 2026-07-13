@@ -19,12 +19,15 @@ export const dynamic = "force-dynamic";
 async function ownerBusiness(userId: string) {
   const db = getSupabaseAdmin();
   if (!db) return { db: null, biz: null };
-  const { data: biz } = await db
+  // limit(1), never .maybeSingle() — a multi-business owner must not error here
+  // (that locked them out of offers entirely). Operates on their primary listing.
+  const { data: rows } = await db
     .from("businesses")
     .select("id, slug, plan")
     .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`)
-    .maybeSingle();
-  return { db, biz: biz as { id: string; slug: string; plan: string | null } | null };
+    .limit(1);
+  const biz = (rows?.[0] as { id: string; slug: string; plan: string | null } | undefined) ?? null;
+  return { db, biz };
 }
 
 export async function GET() {
@@ -58,6 +61,12 @@ export async function POST(req: Request) {
   const title = String(body.title || "").trim().slice(0, 80);
   if (title.length < 3) return NextResponse.json({ ok: false, error: "title_required" }, { status: 422 });
   const details = String(body.details || "").trim().slice(0, 500) || null;
+  // Light content gate (audit O8): offers publish to the public listing instantly
+  // with no review, so block off-platform links in the copy — the highest-value
+  // guard against a Premium owner pushing a scammy redirect through a promo.
+  if (/(https?:\/\/|www\.)/i.test(`${title} ${details || ""}`)) {
+    return NextResponse.json({ ok: false, error: "no_links" }, { status: 422 });
+  }
   const endsAt = /^\d{4}-\d{2}-\d{2}$/.test(String(body.endsAt || "")) ? body.endsAt : null;
 
   // Single active offer: retire the old one, insert the new.
