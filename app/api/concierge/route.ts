@@ -77,7 +77,7 @@ export async function POST(req: Request) {
   }
   // Paid LLM call — throttle per IP so the endpoint can't be scripted into a
   // token-burn / cost-DoS (it's unauthenticated by design for public search).
-  const rl = await rateLimit(req, "concierge", 20, 60);
+  const rl = await rateLimit(req, "concierge", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   let query = "";

@@ -66,7 +66,7 @@ export async function POST(req: Request) {
   if (!(await getServerFlags()).aiConcierge) {
     return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
   }
-  const rl = await rateLimit(req, "ai-flights", 20, 60);
+  const rl = await rateLimit(req, "ai-flights", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   let query = "";

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (!(await getServerFlags()).semanticSearch) {
     return NextResponse.json({ ok: false, reason: "semantic_search_disabled" }, { status: 403 });
   }
-  const rl = await rateLimit(req, "semantic-travel", 20, 60);
+  const rl = await rateLimit(req, "semantic-travel", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   let query = "";
