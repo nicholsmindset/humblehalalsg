@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Event cover-photo upload → Supabase Storage (public bucket "event-photos").
    Auth required. Returns the public URL stored in the event's display.img.
@@ -30,10 +31,12 @@ export async function POST(req: Request) {
   // Ensure the bucket exists (idempotent — ignore "already exists").
   try { await admin.storage.createBucket(BUCKET, { public: true }); } catch { /* exists */ }
 
-  const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-  const path = `${userId}/${randomUUID()}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: false });
+  const sniffed = sniffAllowed(bytes, ALLOWED);
+  if (!sniffed) return NextResponse.json({ ok: false, reason: "bad_type" }, { status: 415 });
+  const ext = extForType(sniffed);
+  const path = `${userId}/${randomUUID()}.${ext}`;
+  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: sniffed, upsert: false });
   if (error) return NextResponse.json({ ok: false, reason: "upload_failed", detail: error.message }, { status: 500 });
 
   const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(path);

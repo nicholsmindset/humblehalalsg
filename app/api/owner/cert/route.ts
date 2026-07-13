@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { resolveBusinessFlag } from "@/lib/feature-flags";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Halal Certificate Vault — owner endpoints.
 
@@ -115,11 +116,14 @@ export async function POST(req: Request) {
   }
 
   // Store the PATH (never a public URL). Private bucket → service-role only.
-  const path = `${businessId}/${crypto.randomUUID()}.${ext}`;
+  // Sniff the real bytes (don't trust file.type) — accept only PDF/JPG/PNG.
   const bytes = new Uint8Array(await file.arrayBuffer());
+  const sniffed = sniffAllowed(bytes, Object.keys(ALLOWED));
+  if (!sniffed) return NextResponse.json({ ok: false, error: "PDF, JPG or PNG only" }, { status: 415 });
+  const path = `${businessId}/${crypto.randomUUID()}.${extForType(sniffed)}`;
   const { error: upErr } = await db.storage
     .from("certs")
-    .upload(path, bytes, { contentType: file.type, upsert: false });
+    .upload(path, bytes, { contentType: sniffed, upsert: false });
   if (upErr) return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 502 });
 
   const { data: row, error: insErr } = await db
