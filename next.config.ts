@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import { seoRedirects, seoRewrites } from "./lib/redirects";
 
 // Security headers applied to every route (security audit H5). The CSP is kept
@@ -112,4 +113,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wrapping is a no-op until NEXT_PUBLIC_SENTRY_DSN is set. tunnelRoute
+// proxies error ingestion through our own domain (dodges ad-blockers + keeps CSP
+// connect-src 'self'). Source-map upload disabled (no CI token needed yet).
+export default withSentryConfig(nextConfig, {
+  tunnelRoute: "/monitoring",
+  silent: true,
+  disableLogger: true,
+  sourcemaps: { disable: true },
+});
