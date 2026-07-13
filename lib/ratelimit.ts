@@ -41,11 +41,18 @@ function memHit(key: string, limit: number, windowSec: number): boolean {
   return e.count <= limit;
 }
 
-async function redisHit(key: string, limit: number, windowSec: number, failClosed: boolean): Promise<boolean> {
+async function redisHit(key: string, limit: number, windowSec: number, failClosed: boolean, bucket: string): Promise<boolean> {
   try {
     const inc = await fetch(`${REST_URL}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
     const n = Number((await inc.json())?.result || 0);
     if (n === 1) await fetch(`${REST_URL}/expire/${encodeURIComponent(key)}/${windowSec}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
+    // Flood signal: fire ONCE per window per key when abuse is 5× the limit, so a
+    // sustained per-IP flood pages us (Sentry no-ops until a DSN is set).
+    if (n === limit * 5) {
+      import("@sentry/nextjs")
+        .then((S) => S.captureMessage(`ratelimit_flood:${bucket}`, { level: "warning", fingerprint: ["ratelimit_flood", bucket] }))
+        .catch(() => {});
+    }
     return n <= limit;
   } catch {
     // Default: fail OPEN so a limiter outage never blocks legitimate bookings.
@@ -62,7 +69,7 @@ export interface RateResult { ok: boolean; retryAfter: number }
  *  paid/LLM buckets so a limiter outage denies rather than allows. */
 export async function rateLimit(req: Request, bucket: string, limit: number, windowSec: number, opts?: { failClosed?: boolean }): Promise<RateResult> {
   const key = `rl:${bucket}:${clientIp(req)}`;
-  const ok = REST_URL && REST_TOKEN ? await redisHit(key, limit, windowSec, !!opts?.failClosed) : memHit(key, limit, windowSec);
+  const ok = REST_URL && REST_TOKEN ? await redisHit(key, limit, windowSec, !!opts?.failClosed, bucket) : memHit(key, limit, windowSec);
   return { ok, retryAfter: ok ? 0 : windowSec };
 }
 
