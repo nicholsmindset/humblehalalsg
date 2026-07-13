@@ -1,0 +1,34 @@
+name: Security probes
+
+# Weekly black-box checks that production still enforces the security invariants
+# our migrations set up (they can't be caught by unit tests). Skips gracefully
+# until the probe secrets are configured, so it's never red by default.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays 07:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  column-privileges:
+    name: businesses column privileges (0068)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Probe anon column access
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROBE_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROBE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "PROBE_SUPABASE_URL / PROBE_SUPABASE_ANON_KEY not set — skipping."
+            echo "Add them as repo secrets to enable the weekly 0068 regression probe."
+            exit 0
+          fi
+          node scripts/probe-column-privileges.mjs
