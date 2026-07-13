@@ -16,7 +16,9 @@ export async function POST() {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
 
-  const { data: biz } = await admin.from("businesses").select("id").or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
+  // limit(1), never .maybeSingle() — a multi-business owner must not error here.
+  const { data: bizRows } = await admin.from("businesses").select("id").or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).limit(1);
+  const biz = bizRows?.[0];
   if (!biz) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 404 });
 
   const { data: acct } = await admin

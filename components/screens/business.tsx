@@ -448,11 +448,20 @@ export function AddListingScreen() {
           )}
           {step === 1 && (
             <div className="stack g16">
-              <label className="franchise-switch">
+              <div className="franchise-switch">
                 <span className="flex g10 center"><span className="attn-ico"><Icon name="building" size={17} /></span>
                   <span><span style={{ fontWeight: 700, display: "block" }}>Multiple locations (franchise)</span><span className="faint" style={{ fontSize: ".8rem" }}>Manage every outlet under one profile</span></span></span>
-                <span className={`switch ${data.franchise ? "on" : ""}`} onClick={() => set("franchise", !data.franchise)} />
-              </label>
+                {/* Real focusable toggle with switch semantics (was a non-focusable
+                    span onClick — failed WCAG 2.1.1 / 4.1.2). */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={data.franchise}
+                  aria-label="Multiple locations (franchise)"
+                  className={`switch ${data.franchise ? "on" : ""}`}
+                  onClick={() => set("franchise", !data.franchise)}
+                />
+              </div>
 
               {!data.franchise ? (
                 <>
@@ -702,7 +711,14 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
   // Stripe isn't configured or there's no subscription yet.
   const manageBilling = async () => {
     try {
-      const res = await fetch("/api/portal", { method: "POST" });
+      // Scope the portal to the business currently in view (matters once an owner
+      // has more than one) — the route ownership-checks the id and falls back to
+      // the caller's first subscribed business if omitted.
+      const res = await fetch("/api/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(myBiz ? { businessId: String(myBiz.id) } : {}),
+      });
       const data = await res.json();
       if (data.ok && data.url) { track.ownerAction("billing_portal", myBiz ? String(myBiz.id) : undefined); window.location.href = data.url; return; }
       if (data.reason === "no_customer") { toast("No active subscription yet — choose a plan to get started"); return navigate("pricing"); }
@@ -1005,9 +1021,11 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                   <span className="eyebrow">Billing &amp; subscription</span>
                   <h3 style={{ fontSize: "1.3rem", marginTop: 6 }}>
                     You&rsquo;re on the {currentPlanLabel} plan
-                    {PLANS[currentPlan].monthly > 0 && <span className="faint" style={{ fontSize: ".95rem", fontWeight: 400 }}> · S${PLANS[currentPlan].monthly}/mo</span>}
                   </h3>
-                  <p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to update your card, download invoices, change plan or cancel.</p>
+                  {/* Don't assert "S$X/mo" here — a yearly or founding-rate owner
+                      isn't billed monthly (that showed the wrong figure). The exact
+                      amount + renewal date live in the Stripe portal below. */}
+                  <p className="faint" style={{ maxWidth: 460 }}>Open the secure Stripe portal to see your renewal date and amount, update your card, download invoices, change plan or cancel.</p>
                 </div>
                 <div className="flex g8 wrap"><button className="btn btn-gold" onClick={manageBilling}><Icon name="settings" size={16} /> Manage subscription</button><button className="btn btn-soft" onClick={() => navigate("pricing")}>View plans</button></div>
               </div>

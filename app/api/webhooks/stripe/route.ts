@@ -9,12 +9,32 @@ import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { reverseOrderTransferIfPaid, setPayoutStatus } from "@/lib/payout-reversal";
+import { notify } from "@/lib/notify";
 
 const addDaysISO = (base: Date, days: number) => {
   const d = new Date(base);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 };
+
+/** In-app bell for a business's owner, keyed off a lifecycle/money event. The
+ *  Stripe webhook already emails these events; this adds the bell so owners see
+ *  subscription/payout state without checking email. Resolves businessId → the
+ *  owner's Clerk sub (notifications.user_id). Best-effort: a notify failure must
+ *  never fail fulfillment or the webhook ack. dedupeKey is required by callers
+ *  because Stripe retries — the (user_id,type,dedupe_key) unique index (0033)
+ *  collapses duplicates. */
+async function notifyOwner(
+  supa: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  businessId: string,
+  n: { type: string; title: string; body?: string; link?: string; dedupeKey: string },
+): Promise<void> {
+  try {
+    const { data } = await supa.from("businesses").select("owner_id, claimed_by").eq("id", businessId).maybeSingle();
+    const userId = (data?.owner_id as string) || (data?.claimed_by as string) || "";
+    if (userId) await notify({ userId, ...n });
+  } catch { /* best-effort — never affects the webhook */ }
+}
 
 /** Donation refund reconciliation (audit streams-P2-7): decrement the PUBLIC
  *  "raised" figure by the NEWLY-refunded delta — correct for partial refunds,
@@ -99,6 +119,7 @@ export async function POST(req: Request) {
     const { error } = await supa.from("webhook_events").insert({ stripe_event_id: event.id });
     if (error) {
       if (error.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
+      console.error(`[stripe-webhook] idempotency store insert failed for ${event.id} (${event.type}):`, error.message);
       return NextResponse.json({ ok: false, error: "idempotency_store_unavailable" }, { status: 500 });
     }
   }
@@ -157,6 +178,16 @@ export async function POST(req: Request) {
             if (subscription) {
               await supa.from("subscriptions").upsert({ business_id: businessId, stripe_subscription_id: subscription, plan, status: "active" }, { onConflict: "stripe_subscription_id" });
             }
+            // In-app bell: plan is live (owners get an email too, but the bell is
+            // where they track account state). dedupe on the sub so a retry or the
+            // paired async_payment_succeeded can't double-notify.
+            await notifyOwner(supa, businessId, {
+              type: "plan_active",
+              title: `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is active`,
+              body: "Your listing upgrades are live. Manage billing anytime from your dashboard.",
+              link: "/owner?tab=billing",
+              dedupeKey: `plan_active:${subscription || businessId}`,
+            });
             // Welcome / plan-started email to the customer (best-effort). Prefer the
             // owner's profile (name) resolved via the business; fall back to the
             // email Stripe collected at checkout. Post-response via after().
@@ -252,6 +283,20 @@ export async function POST(req: Request) {
           }
 
           if (ord?.id) {
+            // In-app bell for the organiser that a ticket sold — post-response so
+            // a flash sale's many orders never delay the Stripe ack; dedupe on the
+            // order so a webhook retry can't double-notify.
+            if (m.businessId) {
+              after(async () => {
+                await notifyOwner(supa, m.businessId, {
+                  type: "ticket_sold",
+                  title: `You sold ${qty} ticket${qty === 1 ? "" : "s"}`,
+                  body: `${m.eventTitle || "Your event"} — S$${(net / 100).toFixed(2)} will be paid out after the event.`,
+                  link: "/owner?tab=events",
+                  dedupeKey: `ticket_sold:${ord.id}`,
+                });
+              });
+            }
             // Human-friendly qr_refs (lib/ticket-ref) — the emailed reference IS
             // the scannable/typable door code (the old order-id prefix matched
             // nothing at check-in).
@@ -347,6 +392,16 @@ export async function POST(req: Request) {
             const buyerEmail = s.customer_details?.email || null;
             // Post-response (after()): receipts + review nudges never hold the ack.
             if (updated) {
+              // In-app bell: payment landed, creative is queued for review.
+              if (m.businessId) {
+                await notifyOwner(supa, m.businessId, {
+                  type: "ad_submitted",
+                  title: "Ad payment received — in review",
+                  body: `"${updated.title}" is booked for ${updated.starts_on} → ${updated.ends_on}. It goes live once our team approves the creative.`,
+                  link: "/owner?tab=ads",
+                  dedupeKey: `ad_live:${campaignId}`,
+                });
+              }
               after(async () => {
                 if (buyerEmail) {
                   try {
@@ -454,18 +509,42 @@ export async function POST(req: Request) {
               featured: active && FEATURED_PLANS.has(plan || ""),
             }).eq("id", businessId);
           }
+          // In-app bell on terminal cancellation only (not every subscription.*
+          // churn event) so the owner knows their listing dropped to free.
+          if (event.type === "customer.subscription.deleted") {
+            await notifyOwner(supa, businessId, {
+              type: "plan_canceled",
+              title: "Your plan was canceled",
+              body: "Your listing has returned to the free tier. Re-subscribe anytime to restore your upgrades.",
+              link: "/owner?tab=billing",
+              dedupeKey: `plan_canceled:${sub.id}`,
+            });
+          }
         }
         break;
       }
       case "account.updated": {
         const acct = event.data.object as Stripe.Account;
         if (supa) {
+          // Read prior state first so we can detect the payouts_enabled flip and
+          // congratulate the owner exactly once (account.updated fires often).
+          const { data: prior } = await supa.from("stripe_accounts")
+            .select("business_id, payouts_enabled").eq("stripe_account_id", acct.id).maybeSingle();
           await supa.from("stripe_accounts").update({
             charges_enabled: acct.charges_enabled,
             payouts_enabled: acct.payouts_enabled,
             details_submitted: acct.details_submitted,
             updated_at: new Date().toISOString(),
           }).eq("stripe_account_id", acct.id);
+          if (acct.payouts_enabled && prior && !prior.payouts_enabled && prior.business_id) {
+            await notifyOwner(supa, prior.business_id as string, {
+              type: "payouts_enabled",
+              title: "Payouts enabled 🎉",
+              body: "Your Stripe account is ready — you can now sell tickets and get paid.",
+              link: "/owner?tab=payouts",
+              dedupeKey: `payouts_enabled:${acct.id}`,
+            });
+          }
         }
         break;
       }
@@ -630,6 +709,16 @@ export async function POST(req: Request) {
         const businessId = (inv as unknown as { subscription_details?: { metadata?: Record<string, string> } }).subscription_details?.metadata?.business_id
           || inv.metadata?.business_id || undefined;
         if (supa && businessId) {
+          // In-app bell (in addition to the retry email) — a failed renewal is
+          // the highest-value owner alert: silent churn if they never update the
+          // card. dedupe on the invoice so Smart-Retry re-fires don't spam.
+          await notifyOwner(supa, businessId, {
+            type: "payment_failed",
+            title: "Payment failed — update your card",
+            body: "We couldn't collect your latest plan payment. Update your card to keep your plan uninterrupted.",
+            link: "/owner?tab=billing",
+            dedupeKey: `pay_failed:${inv.id}`,
+          });
           after(async () => {
             try {
               const owner = await emailForBusinessOwner(supa, businessId);
@@ -685,14 +774,20 @@ export async function POST(req: Request) {
       default:
         break;
     }
-  } catch {
+  } catch (err) {
     // Fulfillment failed AFTER we claimed the idempotency key above. Release the
     // claim so Stripe's retry REPROCESSES this event instead of hitting the 23505
     // guard and being acked as a "duplicate" (which would silently drop a paid
     // order/ticket/donation). Fulfillment is upserts + atomic RPCs, so a clean
-    // reprocess on retry is safe.
+    // reprocess on retry is safe. Log it — a failed paid-event fulfillment was
+    // previously invisible (only surfaced as a stuck Stripe retry).
+    console.error(`[stripe-webhook] fulfillment failed for ${event.type} (${event.id}):`, err instanceof Error ? err.message : err);
     if (supa) {
-      try { await supa.from("webhook_events").delete().eq("stripe_event_id", event.id); } catch { /* best-effort */ }
+      try {
+        await supa.from("webhook_events").delete().eq("stripe_event_id", event.id);
+      } catch (delErr) {
+        console.error(`[stripe-webhook] could not release idempotency claim for ${event.id} — Stripe retry may be acked as duplicate:`, delErr instanceof Error ? delErr.message : delErr);
+      }
     }
     return NextResponse.json({ ok: false }, { status: 500 }); // Stripe will retry
   }

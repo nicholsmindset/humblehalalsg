@@ -23,6 +23,13 @@ function clientIp(req: Request): string {
 const REST_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+// Loud in prod if the durable limiter isn't configured: the in-memory fallback
+// is per-instance (near-useless in serverless), so paid/LLM endpoints would be
+// effectively unthrottled across the fleet (audit A2). Logged once at module load.
+if (process.env.NODE_ENV === "production" && !(REST_URL && REST_TOKEN)) {
+  console.warn("[ratelimit] UPSTASH_REDIS_REST_URL/TOKEN not set in production — rate limiting is per-instance only; provision Upstash to throttle paid/LLM endpoints across the fleet.");
+}
+
 // in-memory fallback: key -> { count, resetAt }
 const mem = new Map<string, { count: number; resetAt: number }>();
 function memHit(key: string, limit: number, windowSec: number): boolean {
@@ -34,24 +41,28 @@ function memHit(key: string, limit: number, windowSec: number): boolean {
   return e.count <= limit;
 }
 
-async function redisHit(key: string, limit: number, windowSec: number): Promise<boolean> {
+async function redisHit(key: string, limit: number, windowSec: number, failClosed: boolean): Promise<boolean> {
   try {
     const inc = await fetch(`${REST_URL}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
     const n = Number((await inc.json())?.result || 0);
     if (n === 1) await fetch(`${REST_URL}/expire/${encodeURIComponent(key)}/${windowSec}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
     return n <= limit;
   } catch {
-    return true; // fail open
+    // Default: fail OPEN so a limiter outage never blocks legitimate bookings.
+    // Sensitive buckets (paid LLM) pass failClosed → deny on outage so a Redis
+    // blip can't turn into unbounded LLM/Stripe cost.
+    return !failClosed;
   }
 }
 
 export interface RateResult { ok: boolean; retryAfter: number }
 
 /** Returns { ok:false, retryAfter } when the caller has exceeded `limit` hits in
- *  the rolling `windowSec` for the named bucket. */
-export async function rateLimit(req: Request, bucket: string, limit: number, windowSec: number): Promise<RateResult> {
+ *  the rolling `windowSec` for the named bucket. Pass { failClosed:true } for
+ *  paid/LLM buckets so a limiter outage denies rather than allows. */
+export async function rateLimit(req: Request, bucket: string, limit: number, windowSec: number, opts?: { failClosed?: boolean }): Promise<RateResult> {
   const key = `rl:${bucket}:${clientIp(req)}`;
-  const ok = REST_URL && REST_TOKEN ? await redisHit(key, limit, windowSec) : memHit(key, limit, windowSec);
+  const ok = REST_URL && REST_TOKEN ? await redisHit(key, limit, windowSec, !!opts?.failClosed) : memHit(key, limit, windowSec);
   return { ok, retryAfter: ok ? 0 : windowSec };
 }
 

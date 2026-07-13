@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
+import { notify } from "@/lib/notify";
 
 /* Admin sponsored-ad manager. GET → rate card + campaigns with real performance
    (impressions/clicks). POST → create a campaign (sales team books a sponsor).
@@ -142,5 +143,34 @@ export async function PATCH(req: Request) {
 
   const { error } = await sb.from("ad_campaigns").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+
+  // In-app bell for the advertiser on an approve/reject decision (owners get a
+  // reject-refund email, but nothing told them a campaign was APPROVED). dedupe
+  // on the decision so re-saving the same status doesn't re-notify.
+  if (patch.review_status === "approved" || patch.review_status === "rejected") {
+    try {
+      const { data: camp } = await sb.from("ad_campaigns").select("business_id, title").eq("id", id).maybeSingle();
+      const bizId = (camp?.business_id as string) || "";
+      if (bizId) {
+        const { data: biz } = await sb.from("businesses").select("owner_id, claimed_by").eq("id", bizId).maybeSingle();
+        const userId = (biz?.owner_id as string) || (biz?.claimed_by as string) || "";
+        if (userId) {
+          const approved = patch.review_status === "approved";
+          const cTitle = (camp?.title as string) || "Your campaign";
+          await notify({
+            userId,
+            type: approved ? "ad_approved" : "ad_rejected",
+            title: approved ? "Your ad campaign is approved 🎉" : "Your ad campaign needs changes",
+            body: approved
+              ? `"${cTitle}" passed review and will run on schedule.`
+              : `"${cTitle}" didn't pass creative review.${refunded ? " We've refunded your payment." : ""}`,
+            link: "/owner?tab=ads",
+            dedupeKey: `ad_decision:${id}:${patch.review_status}`,
+          });
+        }
+      }
+    } catch { /* notify best-effort */ }
+  }
+
   return NextResponse.json({ ok: true, ...(refunded ? { refunded: true } : {}) });
 }

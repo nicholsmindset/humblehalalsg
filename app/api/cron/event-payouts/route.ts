@@ -5,6 +5,7 @@ import { getStripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { payoutSentEmail } from "@/lib/emails/templates";
+import { notify } from "@/lib/notify";
 
 /* Pay event organisers 24h after their event. At purchase we took a SEPARATE
    charge on the platform (funds held by Humble Halal); here we transfer the
@@ -36,6 +37,25 @@ export async function GET(req: Request) {
     if (!o.connected_account_id || !o.net_cents || o.net_cents <= 0) {
       await db.from("orders").update({ payout_status: "skipped" }).eq("id", o.id);
       skipped++;
+      continue;
+    }
+    // Don't attempt a transfer to a destination that can't receive payouts yet —
+    // it just errors and retries forever with no owner-facing signal (audit O14).
+    // Leave payout_status='pending' so it flows automatically once they onboard,
+    // and nudge the owner once (dedupe per order).
+    const { data: acct } = await db
+      .from("stripe_accounts").select("payouts_enabled")
+      .eq("stripe_account_id", o.connected_account_id).maybeSingle();
+    if (acct && acct.payouts_enabled === false) {
+      skipped++;
+      if (failNotes.length < 5) failNotes.push(`#${o.id}: destination not payout-ready (onboarding incomplete)`);
+      try {
+        if (o.business_id) {
+          const { data: biz } = await db.from("businesses").select("owner_id, claimed_by").eq("id", o.business_id).maybeSingle();
+          const uid = (biz?.owner_id as string) || (biz?.claimed_by as string) || "";
+          if (uid) await notify({ userId: uid, type: "payout_blocked", title: "Finish payout setup to get paid", body: "You have ticket revenue waiting — complete your Stripe onboarding to receive it.", link: "/owner?tab=payouts", dedupeKey: `payout_blocked:${o.id}` });
+        }
+      } catch { /* nudge best-effort */ }
       continue;
     }
     try {

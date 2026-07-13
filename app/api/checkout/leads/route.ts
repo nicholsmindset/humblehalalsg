@@ -14,7 +14,11 @@ import { leadPlan, leadPriceId, FOUNDING_LEAD_MONTHLY, LEAD_PLANS } from "@/lib/
    subscription we can't attribute to a business (webhook would skip it and the
    buyer couldn't self-cancel). */
 
-const FOUNDING_LIMIT = 25; // first N leads subscribers per vertical get the founding rate
+const FOUNDING_LIMIT = 25; // first N Lead Inbox subscribers platform-wide get the founding rate
+// NOTE: the Lead Inbox subscription is a single per-business product — it has no
+// vertical dimension (verticals live on individual leads + lead_preferences, for
+// routing). So this cap is counted platform-wide, which is correct; earlier
+// "per vertical" comments were inaccurate.
 
 export async function POST(req: Request) {
   if (!(await getServerFlags()).paidLeads) {
@@ -69,7 +73,7 @@ export async function POST(req: Request) {
     if (hasLeadsSub) return NextResponse.json({ ok: false, error: "already_subscribed" }, { status: 409 });
   } catch { /* transient — proceed */ }
 
-  // Founding rate while under the per-vertical cap AND the price is configured.
+  // Founding rate while under the platform-wide founding cap AND the price is configured.
   let founding = false;
   if (process.env.STRIPE_PRICE_LEADS_FOUNDING_M) {
     const { count } = await admin

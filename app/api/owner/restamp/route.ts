@@ -18,7 +18,9 @@ export async function GET(req: Request) {
         .from("businesses")
         .update({ last_verified_at: new Date().toISOString() })
         .eq("id", business)
-        .eq("claimed_by", userId);
+        // owner_id OR claimed_by (RLS still scopes to the caller) — matching only
+        // claimed_by silently no-op'd the re-stamp for owner_id-only listings.
+        .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`);
       return NextResponse.redirect(`${base}/owner?restamped=1`);
     }
   } catch {

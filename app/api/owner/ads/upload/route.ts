@@ -44,7 +44,10 @@ export async function POST(req: Request) {
   const path = `selfserve/${businessId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
   const { error } = await sb.storage.from("ad-creatives").upload(path, bytes, { contentType: file.type });
-  if (error) return NextResponse.json({ ok: false, reason: "upload_failed", detail: error.message }, { status: 500 });
+  if (error) {
+    console.error("[owner/ads/upload] storage upload failed:", error.message);
+    return NextResponse.json({ ok: false, reason: "upload_failed" }, { status: 500 });
+  }
 
   const { data } = sb.storage.from("ad-creatives").getPublicUrl(path);
   return NextResponse.json({ ok: true, url: data.publicUrl });

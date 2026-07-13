@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Address autocomplete via OneMap (Singapore's official government map service).
    The public search endpoint returns results without a token; if OneMap ever
@@ -12,6 +13,8 @@ function titleCase(s: string): string {
 }
 
 export async function GET(req: Request) {
+  // Per-IP throttle so this stays a parity-limited proxy, not an open relay.
+  const rl = await rateLimit(req, "geocode", 60, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") || "").trim();
   if (q.length < 3) return NextResponse.json({ results: [] });

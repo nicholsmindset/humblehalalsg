@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
   const admin = getSupabaseAdmin();
-  if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" });
+  if (!admin) return NextResponse.json({ ok: false, reason: "db_not_configured" }, { status: 503 });
 
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
   if (profile?.role !== "admin") return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
@@ -40,10 +40,16 @@ export async function POST(req: Request) {
   // inserting the singleton, and surface any real failure as an honest error.
   const { data: updated, error } = await admin
     .from("platform_settings").update(patch).eq("id", 1).select("id");
-  if (error) return NextResponse.json({ ok: false, reason: "db_error", detail: error.message }, { status: 500 });
+  if (error) {
+    console.error("[settings] platform_settings update failed:", error.message);
+    return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+  }
   if (!updated || updated.length === 0) {
     const { error: insErr } = await admin.from("platform_settings").insert({ id: 1, ...patch });
-    if (insErr) return NextResponse.json({ ok: false, reason: "not_persisted", detail: insErr.message }, { status: 500 });
+    if (insErr) {
+      console.error("[settings] platform_settings self-heal insert failed:", insErr.message);
+      return NextResponse.json({ ok: false, reason: "not_persisted" }, { status: 500 });
+    }
   }
   bustFlagCache();
   return NextResponse.json({ ok: true });

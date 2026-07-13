@@ -40,7 +40,10 @@ export async function GET(req: Request) {
     .select("id, slug, name, area, cat_id, plan, phone, website, address, postal, description, price_level, opening_hours, socials, photos, attributes")
     .eq("id", id)
     .single();
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[owner/listing] load failed (business=${id}):`, error.message);
+    return NextResponse.json({ ok: false, error: "load_failed" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, business: data });
 }
 
@@ -66,7 +69,10 @@ export async function PATCH(req: Request) {
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, error: "no_fields" }, { status: 400 });
 
   const { error } = await db.from("businesses").update(patch).eq("id", id);
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[owner/listing] update failed (business=${id}):`, error.message);
+    return NextResponse.json({ ok: false, error: "update_failed" }, { status: 500 });
+  }
 
   revalidatePublic([`/business/${row.slug}`]);
   return NextResponse.json({ ok: true });

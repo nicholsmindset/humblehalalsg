@@ -111,7 +111,9 @@ function DonatePanel({ ev }: { ev: EventItem }) {
         window.location.href = j.url as string;
         return;
       }
-      toast(j?.ok ? "Jazākallāhu khayran — donation recorded." : "Donations aren’t open yet — please try again later.");
+      // No redirect URL means no charge was created (Stripe not live / simulated).
+      // Never tell a donor their sadaqah was "recorded" when nothing was taken.
+      toast("Donations aren’t open yet — please try again later.");
     } catch { toast("Something went wrong — please try again."); }
     setBusy(false);
   };
