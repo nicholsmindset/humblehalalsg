@@ -78,9 +78,11 @@ export async function POST(req: Request) {
       // Tie the review to the signed-in user (if any) so "My reviews" works AND
       // Halal Passport points can be awarded. Anonymous reviews stay allowed.
       const { userId } = await auth();
-      const { error } = await sb
+      const { data: inserted, error } = await sb
         .from("reviews")
-        .insert({ business_id: id, user_id: userId || null, rating, text, status: "pending" });
+        .insert({ business_id: id, user_id: userId || null, rating, text, status: "pending" })
+        .select("id")
+        .maybeSingle();
       if (!error) {
         // Notify the business owner of the new (pending) review (best-effort).
         try {
@@ -90,6 +92,23 @@ export async function POST(req: Request) {
             await sendEmail({ to: email, subject: t.subject, html: t.html, template: "review-received", businessId: id });
           }
         } catch { /* email best-effort — never affect the API response */ }
+        // In-app bell for the owner too — email alone was easy to miss, and the
+        // dashboard Reviews tab is where they moderate. dedupe on the review id.
+        try {
+          const { data: biz } = await sb.from("businesses").select("owner_id, claimed_by").eq("id", id).maybeSingle();
+          const ownerUserId = (biz?.owner_id as string) || (biz?.claimed_by as string) || "";
+          if (ownerUserId) {
+            const { notify } = await import("@/lib/notify");
+            await notify({
+              userId: ownerUserId,
+              type: "review_received",
+              title: "New review to moderate",
+              body: `A ${rating}★ review was submitted for your listing.`,
+              link: "/owner?tab=reviews",
+              dedupeKey: `review_recv:${inserted?.id ?? id}`,
+            });
+          }
+        } catch { /* bell best-effort */ }
         // Halal Passport points for a review are awarded when it is APPROVED by
         // moderation (app/api/admin/queue), NOT here — awarding on the pending
         // insert let spam/never-approved reviews farm points (review-hardening,

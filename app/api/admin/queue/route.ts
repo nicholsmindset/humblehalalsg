@@ -102,6 +102,21 @@ export async function POST(req: Request) {
         // hardening, PR #145). dedupeKey review:<id> makes re-approval a no-op.
         const { data: rev } = await admin.from("reviews").select("user_id, status").eq("id", id).maybeSingle();
         await admin.from("reviews").update({ status }).eq("id", id);
+        // Tell the reviewer their review went live (independent of the passport
+        // flag — that only governs points). dedupe on the review so re-approval
+        // is a no-op.
+        if (status === "published" && rev?.user_id && rev.status !== "published") {
+          try {
+            const { notify } = await import("@/lib/notify");
+            await notify({
+              userId: rev.user_id as string,
+              type: "review_published",
+              title: "Your review is live 🎉",
+              body: "Thanks for sharing — your review is now published on Humble Halal.",
+              dedupeKey: `review_pub:${id}`,
+            });
+          } catch { /* bell best-effort */ }
+        }
         if (status === "published" && rev?.user_id && rev.status !== "published" && (await getServerFlags()).passport) {
           try {
             const { award, qualifyReferralIfPending, loadStats, emitProgress } = await import("@/lib/passport-server");
