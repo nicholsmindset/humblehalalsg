@@ -45,6 +45,7 @@ whenever a migration is applied or added.
 | 0064_track_scheduled_ads | yes | yes (pasted + probe-verified 11 Jul) | track_ad_event gate = serving gate (active|scheduled + approved) |
 | 0065_ads_price_align_donation_refunds | yes | yes (pasted + probe-verified 11 Jul) | directory_inline $89→$49 + donations.refunded_cents |
 | 0066_lead_growth_loop | yes | **check — full SQL handed to user in chat 11 Jul** | lead_routes mode/delivery/expires_at + cascade index, businesses.contact_email, platform_settings lead capture columns, accept_lead_route v2 (free-taste never burns beta cap). Code degrades gracefully until pasted. |
+| 0068_businesses_column_privileges | pending | **check — probe with scripts/probe-column-privileges.mjs** | Revokes anon/authenticated SELECT on businesses, grants back safe columns only (hides stripe_customer_id/phone/contact_email/owner_id/claimed_by from the public anon key). ⚠️ NEW public columns must be added to the grant lists in 0068 or they'll be denied. Rollback: `grant select on public.businesses to anon, authenticated;`. Code is unaffected (server uses service_role). |
 
 ## Open items
 
@@ -55,4 +56,6 @@ whenever a migration is applied or added.
    integrity/review-hardening subset of #145 should be cherry-picked (program
    item A8) so prod code matches the integrity schema it already has.
 4. **Dual 0054**: frozen and documented; both applied. Do not renumber (renaming
-   applied migrations creates worse drift). Next free number: **0067**.
+   applied migrations creates worse drift). Next free number: **0069**.
+5. **PASTE `0068_businesses_column_privileges.sql`** (security P0) — then run
+   `scripts/probe-column-privileges.mjs` to confirm 42501 on the revoked columns.
