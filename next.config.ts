@@ -28,6 +28,33 @@ const supabaseImageHost = (() => {
   }
 })();
 
+// Staged CSP hardening (the enforced CSP above has no script-src). We ship a FULL
+// allowlist in Report-Only FIRST to collect real-traffic violations (AdSense/GTM/
+// Analytics/Clerk/Supabase/maps/Turnstile) before enforcing it (see the security
+// plan). Report-Only cannot break anything — the browser only posts reports to
+// /api/csp-report. Hosts derived where possible; 'unsafe-inline' script-src is
+// required by Next's inline RSC payload on static/ISR pages + the GTM bootstrap.
+const SUPABASE_HOST = supabaseImageHost || "vzlcplizpkmvjspmqwns.supabase.co";
+const cspReportOnly = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://adservice.google.com https://*.adtrafficquality.google https://clerk.humblehalal.com https://challenges.cloudflare.com https://va.vercel-scripts.com",
+  `connect-src 'self' https://${SUPABASE_HOST} wss://${SUPABASE_HOST} https://clerk.humblehalal.com https://clerk-telemetry.com https://www.googletagmanager.com https://www.google-analytics.com https://*.analytics.google.com https://*.google-analytics.com https://stats.g.doubleclick.net https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.adtrafficquality.google https://vitals.vercel-insights.com https://va.vercel-scripts.com https://challenges.cloudflare.com`,
+  `img-src 'self' data: blob: https://*.tile.openstreetmap.org https://images.unsplash.com https://static.cupid.travel https://${SUPABASE_HOST} https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.gstatic.com https://*.googleusercontent.com https://www.googletagmanager.com https://www.google-analytics.com`,
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://*.adtrafficquality.google https://td.doubleclick.net https://www.googletagmanager.com https://challenges.cloudflare.com https://clerk.humblehalal.com",
+  "worker-src 'self' blob:",
+  "media-src 'self' blob: https:",
+  "manifest-src 'self'",
+  "report-uri /api/csp-report",
+  "report-to csp",
+].join("; ");
+
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (a stray parent lockfile otherwise
   // makes Next infer the wrong root).
@@ -71,7 +98,17 @@ const nextConfig: NextConfig = {
     formats: ["image/webp"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          ...securityHeaders,
+          // Report-Only staging of the full allowlist (see SUPABASE_HOST block).
+          { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
+          { key: "Reporting-Endpoints", value: 'csp="/api/csp-report"' },
+        ],
+      },
+    ];
   },
 };
 
