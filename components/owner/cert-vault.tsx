@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { canUse } from "@/lib/plans";
+import { track } from "@/lib/analytics";
 import { useApp } from "../app-context";
 import { Icon } from "../ui";
 import type { OwnerBiz } from "./types";
@@ -100,6 +101,7 @@ export function CertVault({
         return;
       }
       toast(d.simulated ? "Certificate received (demo mode)" : "Certificate uploaded — pending review");
+      track.ownerAction("cert_upload", biz?.id, { scheme: scheme || undefined, issuer });
       setFile(null); setScheme(""); setCertNo(""); setIssuedOn(""); setExpiresOn("");
       if (live) load();
     } catch {

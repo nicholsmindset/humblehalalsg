@@ -21,11 +21,15 @@ type Passport = {
   recent: { delta: number; reason: string; at: string }[];
 };
 
-export function PassportScreen() {
+export function PassportScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const { navigate, toast } = useApp();
   const { isSignedIn, isLoaded } = useUser();
   const [data, setData] = useState<Passport | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // Standalone /passport uses <h1>; when rendered as a tab inside /dashboard
+  // (which already owns the page <h1>) demote to <h2> so the page keeps a single
+  // H1 and a valid heading order (axe).
+  const H = embedded ? "h2" : "h1";
 
   const load = useCallback(async () => {
     try {
@@ -51,7 +55,7 @@ export function PassportScreen() {
     return (
       <div className="screen-in hh-page"><div className="hh-wrap" style={{ maxWidth: 560, paddingTop: 40, textAlign: "center" }}>
         <div style={{ fontSize: 44 }}>🕌</div>
-        <h1 style={{ fontSize: "1.8rem", marginTop: 8 }}>Your Halal Passport</h1>
+        <H style={{ fontSize: "1.8rem", marginTop: 8 }}>Your Halal Passport</H>
         <p className="muted" style={{ marginTop: 8 }}>Sign in to earn points for reviews, visits and referrals — collect stamps, unlock badges, and climb the tiers.</p>
         <button className="btn btn-primary mt16" onClick={() => navigate("login")}>Sign in to start</button>
       </div></div>
@@ -70,7 +74,7 @@ export function PassportScreen() {
       <div className="hh-wrap" style={{ maxWidth: 720, paddingTop: 28, paddingBottom: 48 }}>
         <span className="eyebrow">Halal Passport</span>
         <div className="flex between center wrap g10" style={{ marginTop: 6 }}>
-          <h1 style={{ fontSize: "clamp(1.6rem,4vw,2.2rem)" }}>{data.tier.label}</h1>
+          <H style={{ fontSize: "clamp(1.6rem,4vw,2.2rem)" }}>{data.tier.label}</H>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--emerald,#0e7a5f)" }}>{s.totalPoints}</div>
             <div className="faint" style={{ fontSize: ".8rem" }}>points</div>

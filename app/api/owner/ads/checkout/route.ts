@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { analyticsSessionMeta } from "@/lib/server-track";
 import { sendEmail } from "@/lib/email";
 
 /* Owner self-serve campaign purchase — DRAFT-FIRST flow:
@@ -129,7 +130,7 @@ Business: ${String(biz.name || businessId)}<br>Campaign id: ${campaign.id}</p>`,
 
   // Metadata carries ONLY identifiers — the campaign row already holds the
   // creative + dates (draft-first avoids Stripe's 500-char metadata limits).
-  const meta = { kind: "ad_selfserve", campaignId: String(campaign.id), businessId };
+  const meta = { kind: "ad_selfserve", campaignId: String(campaign.id), businessId, checkout_type: "ad", ...analyticsSessionMeta(b) };
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: [
@@ -147,5 +148,7 @@ Business: ${String(biz.name || businessId)}<br>Campaign id: ${campaign.id}</p>`,
     success_url: `${SITE.url}/owner?tab=ads&purchase=done&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/owner?tab=ads`,
   });
-  return NextResponse.json({ ok: true, mode: "checkout", url: session.url, campaignId: campaign.id });
+  // `amount` (cents) lets the client attach the real order value to its
+  // begin_checkout analytics event — price is still server-authoritative.
+  return NextResponse.json({ ok: true, mode: "checkout", url: session.url, campaignId: campaign.id, amount: rateCents });
 }

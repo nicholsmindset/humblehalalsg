@@ -137,7 +137,10 @@ export function HomeScreen() {
         <SectionHead title="Popular areas in Singapore" action="Browse all areas" onAction={() => navigate("explore")} />
         <div className="area-grid">
           {popularAreas.map((a) => (
-            <button key={a.id} className="area-card card card-hover" onClick={() => navigate("explore", { area: a.name })}>
+            // Key by name, not id: two areas can share an id ("Geylang Serai" carries
+            // id "geylang" in the catalog, and the "Geylang" fallback also lowercases
+            // to "geylang"), which collided as React keys. Names are unique here.
+            <button key={a.name} className="area-card card card-hover" onClick={() => navigate("explore", { area: a.name })}>
               <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
               <div className="area-ov">
                 <span className="area-name">{a.name}</span>
@@ -178,8 +181,8 @@ export function HomeScreen() {
       {/* WHY HUMBLE HALAL — value pillars (white band) */}
       <div className="home-band-white">
         <section className="hh-wrap hh-section home-why">
-          <h2 style={{ fontSize: "1.6rem", marginBottom: 4 }}>Why Humble Halal</h2>
-          <p className="muted" style={{ maxWidth: 640, marginBottom: 20 }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
+          <h2 style={{ fontSize: "1.6rem", marginBottom: 4, textAlign: "center" }}>Why Humble Halal</h2>
+          <p className="muted" style={{ maxWidth: 640, margin: "0 auto 20px", textAlign: "center" }}>One trusted home for halal living and Muslim-first travel — built on facts and human verification, never AI guesswork.</p>
           <div className="flt-benefit-grid">
             {[
               ["search", "A directory you can trust", "Find MUIS-certified, Muslim-owned and Muslim-friendly places with clear badges — so you always know what's verified and what's self-declared."],
@@ -499,7 +502,11 @@ export function ExploreScreen() {
     prayer: !!params.prayer, family: !!params.family, delivery: !!params.delivery, open: !!params.open,
   });
 
-  const setF = <K extends keyof ExploreFilters>(k: K, v: ExploreFilters[K]) => setFilters((f) => ({ ...f, [k]: v }));
+  const setF = <K extends keyof ExploreFilters>(k: K, v: ExploreFilters[K]) => {
+    // Refinement analytics: only when a filter is applied (truthy), not cleared.
+    if (v) track.filterUse(`${String(k)}:${String(v)}`);
+    setFilters((f) => ({ ...f, [k]: v }));
+  };
   // After mount, "Open now" uses real SG-time computation (avoids SSR mismatch).
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -631,7 +638,7 @@ export function ExploreScreen() {
               </button>
               <div className="sortwrap">
                 <Icon name="sort" size={16} style={{ color: "var(--ink-soft)" }} />
-                <select className="sort-select" aria-label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <select className="sort-select" aria-label="Sort results" value={sort} onChange={(e) => { setSort(e.target.value); track.filterUse(`sort:${e.target.value}`); }}>
                   <option value="featured">Featured</option>
                   <option value="rating">Top rated</option>
                   <option value="nearest">Nearest</option>
@@ -642,7 +649,7 @@ export function ExploreScreen() {
             </div>
             <div className="viewtoggle">
               <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}><Icon name="list" size={16} /> List</button>
-              <button className={view === "map" ? "active" : ""} onClick={() => { setView("map"); }}><Icon name="map" size={16} /> Map</button>
+              <button className={view === "map" ? "active" : ""} onClick={() => { setView("map"); track.mapOpen(); }}><Icon name="map" size={16} /> Map</button>
             </div>
           </div>
         </div>
@@ -684,14 +691,14 @@ export function ExploreScreen() {
               <div className="grid-cards">
                 {results.slice(0, visible).map((l, i) => (
                   <Fragment key={l.id}>
-                    <ListingCard item={l} onOpen={() => { const term = q.trim(); if (term) track.searchResultClick(l.slug || l.id, l.catId, term); }} />
+                    <ListingCard item={l} onOpen={() => { const term = q.trim(); track.searchResultClick(l.slug || l.id, l.catId, term || undefined); }} />
                     {i === 5 && <SponsoredSlot placement="directory_inline" />}
                   </Fragment>
                 ))}
               </div>
               {results.length > visible && (
                 <div className="flex center" style={{ justifyContent: "center", marginTop: 22 }}>
-                  <button className="btn btn-outline" onClick={() => setVisible((v) => v + 12)}>
+                  <button className="btn btn-outline" onClick={() => { setVisible((v) => v + 12); track.filterUse("load_more"); }}>
                     Load more ({results.length - visible} more)
                   </button>
                 </div>
@@ -1011,12 +1018,16 @@ export function MapScreen() {
       return;
     }
     setActiveMosque(null); setActivePrayerRoom(null); setActiveId(id);
+    track.filterUse("pin_click");
   };
 
   const resultCount = chips.mosque ? mosqueList.length : chips.musollah ? prayerRoomList.length : list.length;
 
   return (
     <div className="map-split">
+      {/* Accessible page heading — the map UI is otherwise headingless (axe
+          page-has-heading-one / one-H1-per-page). Visually hidden. */}
+      <h1 className="sr-only">Halal places map — Singapore</h1>
       {/* LEFT — results list (Google-Maps / GMB style) */}
       <aside className="map-split-list">
         <div className="map-split-head">
@@ -1919,6 +1930,7 @@ export function DetailReviews({ item }: { item: Listing }) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
+      track.reviewSubmit(slug, payload.rating, "business");
       toast(data.pending ? "Review submitted for moderation" : "Thanks — your review is posted");
     } catch {
       toast("Saved — we’ll post it once you’re back online");

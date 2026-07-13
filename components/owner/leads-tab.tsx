@@ -7,6 +7,8 @@
    category/area preferences editor. All state comes from /api/owner/leads. */
 
 import { useCallback, useEffect, useState } from "react";
+import { track, checkoutMeta } from "@/lib/analytics";
+import { leadsCheckoutValue } from "@/lib/pricing-map";
 import { useApp } from "../app-context";
 import { Icon } from "../ui";
 
@@ -53,6 +55,7 @@ export function OwnerLeads({ toast, live }: { toast: (m: string) => void; live: 
       } else if (!res.ok || !d.ok) {
         toast("Couldn't accept — try again");
       } else {
+        track.ownerAction("lead_accept", undefined, { route_id: id });
         toast("Lead accepted — contact unlocked");
         await load();
       }
@@ -64,16 +67,22 @@ export function OwnerLeads({ toast, live }: { toast: (m: string) => void; live: 
     setBusy(id);
     try {
       const res = await fetch("/api/owner/leads/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ routeId: id, status }) });
-      if (!res.ok) toast("Couldn't update"); else { toast(status === "won" ? "Marked as won 🎉" : "Updated"); await load(); }
+      if (!res.ok) toast("Couldn't update");
+      else {
+        if (status === "won") track.ownerLeadWon(id);
+        else track.ownerAction("lead_status", undefined, { route_id: id, status });
+        toast(status === "won" ? "Marked as won 🎉" : "Updated");
+        await load();
+      }
     } catch { toast("Couldn't update"); }
     setBusy("");
   };
 
   const startCheckout = async () => {
     try {
-      const res = await fetch("/api/checkout/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "inbox15" }) });
+      const res = await fetch("/api/checkout/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "inbox15", ...checkoutMeta() }) });
       const d = await res.json();
-      if (d.url) { window.location.href = d.url; return; }
+      if (d.url) { track.checkoutStart("inbox15", "Lead Inbox subscription", leadsCheckoutValue(), { checkoutType: "leads" }); window.location.href = d.url; return; }
       toast(d.error === "paid_leads_disabled" ? "Lead subscriptions open soon — you're on the free beta" : "Couldn't start checkout");
     } catch { toast("Couldn't start checkout"); }
   };
@@ -213,7 +222,7 @@ function LeadPrefs({ toast, onSaved }: { toast: (m: string) => void; onSaved: ()
     setSaving(true);
     try {
       const res = await fetch("/api/owner/leads/preferences", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verticals, areas, active }) });
-      if (res.ok) { toast("Lead preferences saved"); onSaved(); } else toast("Couldn't save");
+      if (res.ok) { track.ownerAction("lead_prefs", undefined, { active }); toast("Lead preferences saved"); onSaved(); } else toast("Couldn't save");
     } catch { toast("Couldn't save"); }
     setSaving(false);
   };

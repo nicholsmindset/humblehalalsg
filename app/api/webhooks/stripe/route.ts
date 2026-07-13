@@ -8,6 +8,8 @@ import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { AD_PRODUCTS } from "@/lib/ad-products";
 import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
+import { sendGa4Purchase, sendGa4Refund } from "@/lib/ga4-mp";
+import { forwardServerEvent } from "@/lib/server-track";
 
 const addDaysISO = (base: Date, days: number) => {
   const d = new Date(base);
@@ -64,6 +66,38 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
+        // ── Authoritative purchase analytics (all checkout kinds) ────────────
+        // GA4 Measurement Protocol + Meta CAPI / TikTok Events API with the
+        // REAL amount charged. The buyer completes payment on Stripe's domain,
+        // so the browser tags never see this moment. ga_client_id/hh_session_id
+        // were captured at checkout start (lib/analytics checkoutMeta) and ride
+        // in session metadata, landing the server purchase in the same GA4
+        // journey. Best-effort + non-blocking: analytics must never fail
+        // fulfillment (helpers never throw; no await-gating on success).
+        {
+          const md = (s.metadata || {}) as Record<string, string>;
+          const value = (s.amount_total ?? 0) / 100;
+          const currency = (s.currency || "sgd").toUpperCase();
+          const checkoutType = md.checkout_type || md.kind || "unknown";
+          const itemName =
+            md.eventTitle || (md.plan ? `Plan: ${md.plan}` : "") || (md.lead_plan ? `Leads: ${md.lead_plan}` : "") || md.product || checkoutType;
+          const itemId = md.eventId || md.campaignId || md.plan || md.lead_plan || md.product || s.id;
+          void Promise.allSettled([
+            sendGa4Purchase({
+              clientId: md.ga_client_id || null,
+              fallbackId: md.hh_session_id || null,
+              transactionId: s.id,
+              value,
+              currency,
+              checkoutType,
+              items: [{ item_id: itemId, item_name: itemName, item_category: checkoutType, price: value, quantity: 1 }],
+            }),
+            forwardServerEvent("purchase", s.id, {
+              userData: { email: s.customer_details?.email || undefined },
+              customData: { value, currency, content_ids: [itemId], content_name: itemName, checkout_type: checkoutType },
+            }),
+          ]);
+        }
         // Lead-subscription checkout (kind=leads) — a SEPARATE product that must
         // NOT touch businesses.plan (that column is the listing plan). Handled
         // first so the plan block below never sees it.
@@ -381,6 +415,17 @@ export async function POST(req: Request) {
         // fee) does NOT void all tickets, flip the whole order to refunded, release
         // full event capacity, or reverse the full donation total. Partial refunds
         // are a no-op here (handle proportional reversal separately if ever needed).
+        // Mirror full refunds into GA4 so revenue reporting stays honest
+        // (transaction_id matches the original session-less purchase via the
+        // payment intent — best-effort, non-blocking).
+        if (charge.refunded) {
+          void sendGa4Refund({
+            fallbackId: null,
+            transactionId: pi || charge.id,
+            value: (charge.amount_refunded ?? 0) / 100,
+            currency: (charge.currency || "sgd").toUpperCase(),
+          });
+        }
         if (supa && pi && charge.refunded) {
           // Read first so we only reverse once (avoids double-decrementing the
           // event's taken counter if charge.refunded fires for the same order).

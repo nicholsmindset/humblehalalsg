@@ -18,6 +18,8 @@
     "geocode:listings": "node --env-file=.env.local scripts/geocode-listings.mjs",
     "audit:mobile": "node scripts/mobile-audit.mjs",
     "seo:counts": "node scripts/gen-seo-counts.mjs",
+    "sync:prices": "node scripts/sync-stripe-prices.mjs",
+    "monetize:check": "node --env-file-if-exists=.env.local scripts/monetization-readiness.mjs",
     "browser": "agent-browser",
     "browser:mcp": "agent-browser mcp --tools core,react",
     "browser:doctor": "agent-browser doctor",
@@ -62,5 +64,8 @@
     "tsx": "^4.22.4",
     "typescript": "^5",
     "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
   }
 }

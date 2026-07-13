@@ -6,6 +6,7 @@ import { rowToEvent } from "@/lib/events-source";
 import { SITE } from "@/lib/seo";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { analyticsSessionMeta } from "@/lib/server-track";
 import { isSafeEventRef } from "@/lib/event-ref";
 
 /* Zakat / sadaqah donation for a charity event. Creates a Stripe Checkout
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
   const rl = await rateLimit(req, "donate", 12, 3600);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
-  let body: { eventId?: string; amountCents?: number; name?: string; anonymous?: boolean };
+  let body: { eventId?: string; amountCents?: number; name?: string; anonymous?: boolean; ga_client_id?: string; hh_session_id?: string };
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
 
   const amountCents = Math.round(Number(body.amountCents) || 0);
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: true, simulated: true }); // graceful pre-launch
 
-  const meta: Record<string, string> = { kind: "donation", eventId: ev.id, amountCents: String(amountCents) };
+  const meta: Record<string, string> = { kind: "donation", eventId: ev.id, amountCents: String(amountCents), checkout_type: "donation", ...analyticsSessionMeta(body as Record<string, unknown>) };
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     submit_type: "donate",

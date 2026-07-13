@@ -507,10 +507,7 @@ export function SearchBar({
     <div className="searchbar-wrap" ref={wrapRef} style={{ position: "relative" }}>
       <form
         className="searchbar"
-        role={suggest ? "combobox" : undefined}
-        aria-expanded={suggest ? showList : undefined}
-        aria-haspopup={suggest ? "listbox" : undefined}
-        aria-owns={suggest && showList ? "search-listbox" : undefined}
+        role={suggest ? "search" : undefined}
         onSubmit={(e) => {
           e.preventDefault();
           if (showList && hi >= 0) {
@@ -521,6 +518,8 @@ export function SearchBar({
         }}
       >
         <Icon name="search" className="lead" />
+        {/* ARIA combobox semantics live on the interactive input, not the <form>
+            (role="combobox" on a form is invalid — axe aria-allowed-role). */}
         <input
           type="search"
           inputMode="search"
@@ -528,6 +527,9 @@ export function SearchBar({
           value={value}
           autoFocus={autoFocus}
           aria-label="Search"
+          role={suggest ? "combobox" : undefined}
+          aria-expanded={suggest ? showList : undefined}
+          aria-haspopup={suggest ? "listbox" : undefined}
           aria-autocomplete={suggest ? "list" : undefined}
           aria-controls={suggest && showList ? "search-listbox" : undefined}
           aria-activedescendant={showList && hi >= 0 ? `search-opt-${hi}` : undefined}

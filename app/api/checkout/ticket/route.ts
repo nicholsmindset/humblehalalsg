@@ -13,6 +13,7 @@ import { parseAttributionCookie } from "@/lib/attribution";
 import { sendEmail } from "@/lib/email";
 import { ticketConfirmationEmail } from "@/lib/emails/templates";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { analyticsSessionMeta } from "@/lib/server-track";
 
 /* Paid event-ticket checkout — SEPARATE CHARGES + delayed transfer model.
 
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
-  let body: { eventId?: string; tier?: string; qty?: number; name?: string; email?: string; promo?: string; sessionId?: string };
+  let body: { eventId?: string; tier?: string; qty?: number; name?: string; email?: string; promo?: string; sessionId?: string; ga_client_id?: string; hh_session_id?: string };
   try {
     body = await req.json();
   } catch {
@@ -196,6 +197,8 @@ export async function POST(req: Request) {
     sessionId: sessionId ?? "",
     connectedAccount: acct.stripe_account_id,
     buyer: body.name ?? "",
+    checkout_type: "ticket",
+    ...analyticsSessionMeta(body as Record<string, unknown>),
   };
 
   // Line items. The classic presentation (face × qty + booking fee) only works

@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { SITE } from "@/lib/seo";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { analyticsSessionMeta } from "@/lib/server-track";
 
 /* Listing-plan subscription checkout (Humble Halal is the seller — no Connect).
    Price IDs come from env so they can be swapped per environment. Links the
@@ -31,7 +32,9 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
 
-  const { plan, yearly, founding } = (await req.json().catch(() => ({}))) as { plan?: string; yearly?: boolean; founding?: boolean };
+  const rawBody = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const { plan, yearly, founding } = rawBody as { plan?: string; yearly?: boolean; founding?: boolean };
+  const aMeta = analyticsSessionMeta(rawBody);
   let price = plan ? PRICE_ENV[plan]?.[yearly ? "yearly" : "monthly"] : undefined;
   if (founding) {
     if (plan !== "verified" || !PRICE_FOUNDING_Y) {
@@ -77,8 +80,8 @@ export async function POST(req: Request) {
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],
     customer,
-    metadata: { plan: plan!, business_id: businessId },
-    subscription_data: { metadata: { plan: plan!, business_id: businessId } },
+    metadata: { plan: plan!, business_id: businessId, checkout_type: "plan", ...aMeta },
+    subscription_data: { metadata: { plan: plan!, business_id: businessId, checkout_type: "plan", ...aMeta } },
     success_url: `${SITE.url}/owner?billing=done&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${SITE.url}/pricing`,
   });

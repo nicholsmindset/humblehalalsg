@@ -7,6 +7,7 @@ import { useApp } from "../app-context";
 import { Icon, MobileHeader } from "../ui";
 import { Newsletter } from "../newsletter";
 import { CONTACT_EMAILS } from "@/lib/contact";
+import { track, checkoutMeta } from "@/lib/analytics";
 import { PRODUCT_PLACEMENT } from "@/lib/ad-products";
 
 /* Honest, defensible value props — not fabricated metrics. Current audience
@@ -52,10 +53,10 @@ export function AdvertiseScreen() {
       const r = await fetch("/api/checkout/promo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product: f.product }),
+        body: JSON.stringify({ product: f.product, ...checkoutMeta() }),
       });
       const d = await r.json().catch(() => ({}));
-      if (d?.ok && d.url) { window.location.assign(d.url); return; }
+      if (d?.ok && d.url) { track.checkoutStart(f.product, f.name, undefined, { checkoutType: "ad" }); window.location.assign(d.url); return; }
       toast(
         d?.reason === "paid_ads_disabled"
           ? "Advertising checkout is opening soon — email us for the media kit."

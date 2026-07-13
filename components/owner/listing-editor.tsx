@@ -14,6 +14,7 @@
 ============================================================= */
 
 import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { DAY_LABELS } from "@/lib/hours";
 import { galleryMax } from "@/lib/plans";
 import { ATTRIBUTE_OPTIONS } from "@/lib/attributes";
@@ -79,7 +80,7 @@ function RequestChange({ businessId, businessName, field, current, toast }: {
         }),
       });
       const j = await res.json().catch(() => ({ ok: false }));
-      if (res.ok && j?.ok) { toast("Request sent — our team will review it"); setOpen(false); setText(""); }
+      if (res.ok && j?.ok) { track.ownerAction("change_request", businessId, { field }); toast("Request sent — our team will review it"); setOpen(false); setText(""); }
       else toast("Couldn’t send the request — try again.");
     } catch {
       toast("Couldn’t send the request — try again.");
@@ -321,6 +322,7 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
       const res = await fetch("/api/owner/listing", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
       const json = await res.json().catch(() => ({ ok: false }));
       if (res.ok && json?.ok) {
+        track.ownerAction("listing_edit", String(id));
         toast("Listing updated");
         onSaved();
       } else {

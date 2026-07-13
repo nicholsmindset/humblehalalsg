@@ -11,6 +11,16 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/* Lightweight availability probe for the /ask client. Returns 200 with
+   { available } — no LLM call, no request body — so the page can pick streaming
+   chat vs single-shot fallback WITHOUT firing a 4xx on load (the old client
+   probe POSTed an invalid body to read a 400, which polluted the console/network
+   tab and error monitoring). `available` mirrors the POST gate below. */
+export async function GET() {
+  const { aiConcierge } = await getServerFlags();
+  return Response.json({ available: aiConcierge && aiConfigured });
+}
+
 export async function POST(req: Request) {
   if (!(await getServerFlags()).aiConcierge) {
     return Response.json({ error: "concierge_disabled" }, { status: 403 });

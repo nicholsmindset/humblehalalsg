@@ -9,6 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 import { Icon } from "../../ui";
+import { track } from "@/lib/analytics";
 import { ImageGallery, StickyTabs, RatingBadge, Stars, AiAnswer, Skeleton } from "../../ota";
 import { MapView } from "../../map/map-view";
 import {
@@ -37,6 +38,7 @@ function AskHotel({ hotelId }: { hotelId: string }) {
     if (text.length < 3) return;
     setLoading(true);
     setAnswer(null);
+    track.aiQuery(text);
     try {
       const r = await fetch(`/api/travel/ask?hotelId=${encodeURIComponent(hotelId)}&q=${encodeURIComponent(text)}`);
       const d = await r.json();
@@ -249,12 +251,19 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
   // Persisted per-device (the button used to be pure useState — "Saved" was a
   // lie the moment the page reloaded).
   const [saved, setSaved] = useState(false);
+  // Travel's view_listing — same funnel event as directory listings, tagged as
+  // a hotel via the category param.
+  useEffect(() => {
+    track.listingView(hotel.id, "hotel", { name: hotel.name, area: hotel.city ?? undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotel.id]);
   useEffect(() => {
     try { setSaved((JSON.parse(localStorage.getItem(SAVED_HOTELS_KEY) || "[]") as string[]).includes(hotel.id)); } catch { /* private mode */ }
   }, [hotel.id]);
   const toggleSaved = () => {
     setSaved((s) => {
       const next = !s;
+      if (next) track.leadAction("shortlist", hotel.id, "hotel");
       try {
         const cur = JSON.parse(localStorage.getItem(SAVED_HOTELS_KEY) || "[]") as string[];
         localStorage.setItem(SAVED_HOTELS_KEY, JSON.stringify(next ? [...new Set([...cur, hotel.id])] : cur.filter((id) => id !== hotel.id)));

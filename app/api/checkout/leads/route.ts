@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { SITE } from "@/lib/seo";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { leadPlan, leadPriceId, FOUNDING_LEAD_MONTHLY, LEAD_PLANS } from "@/lib/lead-plans";
+import { analyticsSessionMeta } from "@/lib/server-track";
 
 /* Lead-subscription checkout (Humble Halal is the seller — no Connect).
    Clones checkout/plan/route.ts: resolves the owner's business + Stripe
@@ -24,7 +25,8 @@ export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) return NextResponse.json({ ok: false, error: "stripe_not_configured" });
 
-  const { plan: planKeyRaw } = (await req.json().catch(() => ({}))) as { plan?: string };
+  const rawBody = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const { plan: planKeyRaw } = rawBody as { plan?: string };
   const plan = leadPlan(planKeyRaw || "inbox15") || LEAD_PLANS.inbox15;
 
   const { userId } = await auth();
@@ -65,7 +67,7 @@ export async function POST(req: Request) {
   const price = leadPriceId(plan.key, founding);
   if (!price) return NextResponse.json({ ok: false, error: "price_not_configured" }, { status: 409 });
 
-  const meta = { kind: "leads", lead_plan: plan.key, business_id: businessId, monthly_quota: String(plan.quota) };
+  const meta = { kind: "leads", lead_plan: plan.key, business_id: businessId, monthly_quota: String(plan.quota), checkout_type: "leads", ...analyticsSessionMeta(rawBody) };
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price, quantity: 1 }],

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { ToolCta } from "@/components/tool-cta";
+import { ToolView } from "@/components/tools/tool-view";
 
 export function ToolShell({
   title,
@@ -47,6 +48,7 @@ export function ToolShell({
         </section>
 
         <div className="hh-wrap hh-section">
+          <ToolView slug={slug} />
           <div className="tool-stage">{children}</div>
           {foot}
           <ToolCta slug={slug} />

@@ -1,130 +1,5703 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-06-18 00:00:00",
+  "exportTime": "2026-07-10 00:00:00",
   "containerVersion": {
     "path": "accounts/0/containers/0/versions/0",
     "accountId": "0",
     "containerId": "0",
     "containerVersionId": "0",
-    "name": "Humble Halal — full stack v1",
+    "name": "Humble Halal \u2014 full-journey v2 (owner segmentation + revenue)",
     "container": {
       "path": "accounts/0/containers/0",
       "accountId": "0",
       "containerId": "0",
       "name": "www.humblehalal.com",
       "publicId": "GTM-XXXXXXX",
-      "usageContext": ["WEB"],
+      "usageContext": [
+        "WEB"
+      ],
       "fingerprint": "0",
       "tagManagerUrl": "https://tagmanager.google.com/"
     },
     "builtInVariable": [
-      { "accountId": "0", "containerId": "0", "type": "PAGE_URL", "name": "Page URL" },
-      { "accountId": "0", "containerId": "0", "type": "PAGE_HOSTNAME", "name": "Page Hostname" },
-      { "accountId": "0", "containerId": "0", "type": "PAGE_PATH", "name": "Page Path" },
-      { "accountId": "0", "containerId": "0", "type": "REFERRER", "name": "Referrer" },
-      { "accountId": "0", "containerId": "0", "type": "EVENT", "name": "Event" }
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "type": "PAGE_URL",
+        "name": "Page URL"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "type": "PAGE_HOSTNAME",
+        "name": "Page Hostname"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "type": "PAGE_PATH",
+        "name": "Page Path"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "type": "REFERRER",
+        "name": "Referrer"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "type": "EVENT",
+        "name": "Event"
+      }
     ],
     "variable": [
-      { "accountId": "0", "containerId": "0", "variableId": "1", "name": "Const - GA4 ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "G-XXXXXXXXXX" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "2", "name": "Const - Meta Pixel ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "REPLACE_META_PIXEL_ID" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "3", "name": "Const - TikTok Pixel ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "REPLACE_TIKTOK_PIXEL_ID" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "4", "name": "Const - LinkedIn Partner ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "REPLACE_LINKEDIN_PARTNER_ID" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "5", "name": "Const - Ads Conversion ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "REPLACE_ADS_CONVERSION_ID" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "6", "name": "Const - Clarity ID", "type": "c", "parameter": [ { "type": "TEMPLATE", "key": "value", "value": "REPLACE_CLARITY_ID" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "10", "name": "DLV - method", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "method" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "11", "name": "DLV - user_role", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "user_role" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "12", "name": "DLV - lead_type", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "lead_type" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "13", "name": "DLV - listing_id", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "listing_id" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "14", "name": "DLV - listing_name", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "listing_name" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "15", "name": "DLV - listing_category", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "listing_category" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "16", "name": "DLV - listing_area", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "listing_area" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "17", "name": "DLV - contact_method", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "contact_method" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "18", "name": "DLV - source", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "source" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "19", "name": "DLV - value", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" }, { "type": "TEMPLATE", "key": "defaultValue", "value": "0" }, { "type": "TEMPLATE", "key": "name", "value": "value" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "20", "name": "DLV - currency", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" }, { "type": "TEMPLATE", "key": "defaultValue", "value": "SGD" }, { "type": "TEMPLATE", "key": "name", "value": "currency" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "21", "name": "DLV - transaction_id", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "transaction_id" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "22", "name": "DLV - item_id", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "item_id" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "23", "name": "DLV - item_name", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "item_name" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "24", "name": "DLV - quantity", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "true" }, { "type": "TEMPLATE", "key": "defaultValue", "value": "1" }, { "type": "TEMPLATE", "key": "name", "value": "quantity" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "25", "name": "DLV - event_id", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "event_id" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "26", "name": "DLV - page_path", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "page_path" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "27", "name": "DLV - page_title", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "page_title" } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "variableId": "28", "name": "DLV - page_location", "type": "v", "parameter": [ { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" }, { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" }, { "type": "TEMPLATE", "key": "name", "value": "page_location" } ], "fingerprint": "0" }
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "1",
+        "name": "Const - GA4 ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "G-XXXXXXXXXX"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "2",
+        "name": "Const - Meta Pixel ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "REPLACE_META_PIXEL_ID"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "3",
+        "name": "Const - TikTok Pixel ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "REPLACE_TIKTOK_PIXEL_ID"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "4",
+        "name": "Const - LinkedIn Partner ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "REPLACE_LINKEDIN_PARTNER_ID"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "5",
+        "name": "Const - Ads Conversion ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "REPLACE_ADS_CONVERSION_ID"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "6",
+        "name": "Const - Clarity ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "REPLACE_CLARITY_ID"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "7",
+        "name": "DLV - method",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "method"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "8",
+        "name": "DLV - user_role",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "user_role"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "9",
+        "name": "DLV - lead_type",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "lead_type"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "10",
+        "name": "DLV - listing_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "listing_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "11",
+        "name": "DLV - listing_name",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "listing_name"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "12",
+        "name": "DLV - listing_category",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "listing_category"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "13",
+        "name": "DLV - listing_area",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "listing_area"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "14",
+        "name": "DLV - listing_certified",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "listing_certified"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "15",
+        "name": "DLV - contact_method",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "contact_method"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "16",
+        "name": "DLV - source",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "source"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "17",
+        "name": "DLV - value",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "defaultValue",
+            "value": "0"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "value"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "18",
+        "name": "DLV - currency",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "defaultValue",
+            "value": "SGD"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "currency"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "19",
+        "name": "DLV - transaction_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "transaction_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "20",
+        "name": "DLV - item_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "item_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "21",
+        "name": "DLV - item_name",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "item_name"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "22",
+        "name": "DLV - quantity",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "defaultValue",
+            "value": "1"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "quantity"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "23",
+        "name": "DLV - event_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "event_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "24",
+        "name": "DLV - page_path",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "page_path"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "25",
+        "name": "DLV - page_title",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "page_title"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "26",
+        "name": "DLV - page_location",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "page_location"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "27",
+        "name": "DLV - search_term",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "search_term"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "28",
+        "name": "DLV - results_count",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "results_count"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "29",
+        "name": "DLV - filter_key",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "filter_key"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "30",
+        "name": "DLV - tool_slug",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tool_slug"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "31",
+        "name": "DLV - blog_slug",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "blog_slug"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "32",
+        "name": "DLV - percent",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "percent"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "33",
+        "name": "DLV - ad_placement",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ad_placement"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "34",
+        "name": "DLV - ad_source",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ad_source"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "35",
+        "name": "DLV - campaign_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "campaign_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "36",
+        "name": "DLV - checkout_type",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "checkout_type"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "37",
+        "name": "DLV - business_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "business_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "38",
+        "name": "DLV - business_name",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "business_name"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "39",
+        "name": "DLV - action",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "action"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "40",
+        "name": "DLV - rating",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "rating"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "41",
+        "name": "DLV - target_type",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "target_type"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "42",
+        "name": "DLV - organizer_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "organizer_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "43",
+        "name": "DLV - event_category",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "event_category"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "44",
+        "name": "DLV - event_title",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "event_title"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "45",
+        "name": "DLV - is_free",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "is_free"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "46",
+        "name": "DLV - price",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "price"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "47",
+        "name": "DLV - capacity",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "capacity"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "48",
+        "name": "DLV - halal_tier",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "halal_tier"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "49",
+        "name": "DLV - route_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "route_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "50",
+        "name": "DLV - user_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "user_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "51",
+        "name": "DLV - owner_business_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "owner_business_id"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "52",
+        "name": "DLV - owner_plan",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "owner_plan"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "53",
+        "name": "DLV - owner_halal_tier",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "owner_halal_tier"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "54",
+        "name": "DLV - franchise",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "franchise"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "55",
+        "name": "DLV - tier",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tier"
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "56",
+        "name": "GTES - User",
+        "type": "gtes",
+        "parameter": [
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "user_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - user_id}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "LIST",
+            "key": "userProperties",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "user_role"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{DLV - user_role}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "owner_business_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{DLV - owner_business_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "name",
+                    "value": "owner_plan"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "value",
+                    "value": "{{DLV - owner_plan}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      }
     ],
     "trigger": [
-      { "accountId": "0", "containerId": "0", "triggerId": "1", "name": "CE - page_view", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "page_view" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "2", "name": "CE - sign_up", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "sign_up" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "3", "name": "CE - view_listing", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "view_listing" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "4", "name": "CE - lead_submit", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "lead_submit" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "5", "name": "CE - contact_click", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "contact_click" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "6", "name": "CE - newsletter_signup", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "newsletter_signup" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "7", "name": "CE - event_rsvp", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "event_rsvp" } ] } ], "fingerprint": "0" },
-      { "accountId": "0", "containerId": "0", "triggerId": "8", "name": "CE - purchase", "type": "CUSTOM_EVENT", "customEventFilter": [ { "type": "EQUALS", "parameter": [ { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" }, { "type": "TEMPLATE", "key": "arg1", "value": "purchase" } ] } ], "fingerprint": "0" }
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "1",
+        "name": "CE - page_view",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "page_view"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "2",
+        "name": "CE - sign_up",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "sign_up"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "3",
+        "name": "CE - view_listing",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "view_listing"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "4",
+        "name": "CE - lead_submit",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "lead_submit"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "5",
+        "name": "CE - contact_click",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "contact_click"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "6",
+        "name": "CE - newsletter_signup",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "newsletter_signup"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "7",
+        "name": "CE - event_rsvp",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "event_rsvp"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "8",
+        "name": "CE - purchase",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "purchase"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "9",
+        "name": "CE - search",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "search"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "10",
+        "name": "CE - search_result_click",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "search_result_click"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "11",
+        "name": "CE - filter_use",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "filter_use"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "12",
+        "name": "CE - map_open",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "map_open"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "13",
+        "name": "CE - ai_query",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "ai_query"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "14",
+        "name": "CE - ai_result_click",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "ai_result_click"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "15",
+        "name": "CE - save_listing",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "save_listing"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "16",
+        "name": "CE - share",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "share"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "17",
+        "name": "CE - claim_click",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "claim_click"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "18",
+        "name": "CE - cert_view",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "cert_view"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "19",
+        "name": "CE - begin_checkout",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "begin_checkout"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "20",
+        "name": "CE - ad_impression",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "ad_impression"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "21",
+        "name": "CE - ad_click",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "ad_click"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "22",
+        "name": "CE - view_event",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "view_event"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "23",
+        "name": "CE - add_to_calendar",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "add_to_calendar"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "24",
+        "name": "CE - review_submit",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "review_submit"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "25",
+        "name": "CE - follow",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "follow"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "26",
+        "name": "CE - tool_use",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "tool_use"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "27",
+        "name": "CE - blog_read",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "blog_read"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "28",
+        "name": "CE - owner_add_listing",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "owner_add_listing"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "29",
+        "name": "CE - owner_create_event",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "owner_create_event"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "30",
+        "name": "CE - owner_lead_won",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "owner_lead_won"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "31",
+        "name": "CE - owner_action",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "owner_action"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      }
     ],
     "tag": [
-      { "accountId": "0", "containerId": "0", "tagId": "1", "name": "Consent | Default", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('consent','default',{\n    ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied',\n    analytics_storage:'denied', functionality_storage:'granted',\n    security_storage:'granted', wait_for_update:500\n  });\n  try {\n    var c = JSON.parse(localStorage.getItem('hh_consent_v1') || 'null');\n    if (c && typeof c === 'object') {\n      if (c.marketing) gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});\n      if (c.analytics) gtag('consent','update',{analytics_storage:'granted'});\n    }\n  } catch(e){}\n</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "firingTriggerId": ["2147479572"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "2", "name": "Conversion Linker", "type": "gclidw", "parameter": [ { "type": "BOOLEAN", "key": "enableCrossDomain", "value": "false" } ], "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "3", "name": "GA4 | Config", "type": "gaawc", "parameter": [ { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "{{Const - GA4 ID}}" }, { "type": "BOOLEAN", "key": "sendPageView", "value": "false" } ], "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "4", "name": "GA4 | Event - page_view", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "page_view" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "page_location" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - page_location}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "page_path" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - page_path}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "page_title" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - page_title}}" } ] } ] } ], "firingTriggerId": ["1"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "5", "name": "GA4 | Event - sign_up", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "sign_up" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "method" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - method}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "user_role" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - user_role}}" } ] } ] } ], "firingTriggerId": ["2"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "6", "name": "GA4 | Event - view_listing", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "view_listing" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_id}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_name" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_name}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_category" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_category}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_area" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_area}}" } ] } ] } ], "firingTriggerId": ["3"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "7", "name": "GA4 | Event - generate_lead", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "generate_lead" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "lead_type" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - lead_type}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_category" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_category}}" } ] } ] } ], "firingTriggerId": ["4"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "8", "name": "GA4 | Event - contact", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "contact" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "contact_method" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - contact_method}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_id}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "listing_category" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - listing_category}}" } ] } ] } ], "firingTriggerId": ["5"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "9", "name": "GA4 | Event - newsletter_signup", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "newsletter_signup" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "source" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - source}}" } ] } ] } ], "firingTriggerId": ["6"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "10", "name": "GA4 | Event - event_rsvp", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "event_rsvp" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "item_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - item_id}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "item_name" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - item_name}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "quantity" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - quantity}}" } ] } ] } ], "firingTriggerId": ["7"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "11", "name": "GA4 | Event - purchase", "type": "gaawe", "parameter": [ { "type": "TAG_REFERENCE", "key": "measurementId", "value": "GA4 | Config" }, { "type": "TEMPLATE", "key": "eventName", "value": "purchase" }, { "type": "LIST", "key": "eventParameters", "list": [ { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "transaction_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - transaction_id}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "value" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - value}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "currency" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - currency}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "item_id" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - item_id}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "item_name" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - item_name}}" } ] }, { "type": "MAP", "map": [ { "type": "TEMPLATE", "key": "name", "value": "quantity" }, { "type": "TEMPLATE", "key": "value", "value": "{{DLV - quantity}}" } ] } ] } ], "firingTriggerId": ["8"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "20", "name": "Meta | Base", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>\n!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '{{Const - Meta Pixel ID}}');\n</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "21", "name": "Meta | PageView", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','PageView');</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["1"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "22", "name": "Meta | ViewContent", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','ViewContent',{content_ids:['{{DLV - listing_id}}'],content_type:'product',content_name:'{{DLV - listing_name}}',content_category:'{{DLV - listing_category}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["3"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "23", "name": "Meta | Lead", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','Lead',{},{eventID:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["4"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "24", "name": "Meta | CompleteRegistration", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','CompleteRegistration',{},{eventID:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["2"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "25", "name": "Meta | Contact", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','Contact',{},{eventID:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["5"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "26", "name": "Meta | Subscribe", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','Subscribe',{},{eventID:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["6"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "27", "name": "Meta | Purchase", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>fbq('track','Purchase',{value:{{DLV - value}},currency:'{{DLV - currency}}'},{eventID:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "Meta | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["8"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "30", "name": "TikTok | Base", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>\n!function (w, d, t) {w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie','holdConsent','revokeConsent','grantConsent'],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var s=d.createElement('script');s.type='text/javascript',s.async=!0,s.src=r+'?sdkid='+e+'&lib='+t;var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(s,a)};\nttq.load('{{Const - TikTok Pixel ID}}');\n}(window, document, 'ttq');\n</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "31", "name": "TikTok | Pageview", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.page();</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["1"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "32", "name": "TikTok | ViewContent", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('ViewContent',{content_id:'{{DLV - listing_id}}',content_type:'product',content_name:'{{DLV - listing_name}}'},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["3"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "33", "name": "TikTok | SubmitForm", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('SubmitForm',{},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["4"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "34", "name": "TikTok | CompleteRegistration", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('CompleteRegistration',{},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["2"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "35", "name": "TikTok | Contact", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('Contact',{},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["5"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "36", "name": "TikTok | Subscribe", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('Subscribe',{},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["6"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "37", "name": "TikTok | CompletePayment", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script>ttq.track('CompletePayment',{value:{{DLV - value}},currency:'{{DLV - currency}}',content_id:'{{DLV - item_id}}'},{event_id:'{{DLV - event_id}}'});</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "TikTok | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["8"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "40", "name": "LinkedIn | Base", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script type=\"text/javascript\">\n_linkedin_partner_id = '{{Const - LinkedIn Partner ID}}';\nwindow._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];\nwindow._linkedin_data_partner_ids.push(_linkedin_partner_id);\n(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName('script')[0];var b=document.createElement('script');b.type='text/javascript';b.async=true;b.src='https://snap.licdn.com/li.lms-analytics/insight.min.js';s.parentNode.insertBefore(b,s);})(window.lintrk);\n</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "41", "name": "LinkedIn | Conversion - Lead", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<!-- Replace 0000000 with your LinkedIn conversion id (Campaign Manager > Conversions) -->\n<script>window.lintrk && window.lintrk('track', { conversion_id: 0000000 });</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" } ] } }, "setupTag": [ { "tagName": "LinkedIn | Base", "stopOnSetupFailure": true } ], "firingTriggerId": ["4"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "50", "name": "Clarity | Base", "type": "html", "parameter": [ { "type": "TEMPLATE", "key": "html", "value": "<script type=\"text/javascript\">\n(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,'clarity','script','{{Const - Clarity ID}}');\n</script>" }, { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "analytics_storage" } ] } }, "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "60", "name": "Ads | Remarketing", "type": "sp", "parameter": [ { "type": "TEMPLATE", "key": "conversionId", "value": "{{Const - Ads Conversion ID}}" }, { "type": "BOOLEAN", "key": "enableDynamicRemarketing", "value": "false" }, { "type": "BOOLEAN", "key": "rdp", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" }, { "type": "TEMPLATE", "value": "ad_personalization" } ] } }, "firingTriggerId": ["2147479553"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" },
-
-      { "accountId": "0", "containerId": "0", "tagId": "61", "name": "Ads | Conversion - Lead", "type": "awct", "parameter": [ { "type": "TEMPLATE", "key": "conversionId", "value": "REPLACE_ADS_CONVERSION_ID_NUMBER" }, { "type": "TEMPLATE", "key": "conversionLabel", "value": "REPLACE_LEAD_LABEL" }, { "type": "BOOLEAN", "key": "enableConversionLinker", "value": "true" }, { "type": "BOOLEAN", "key": "rdp", "value": "false" } ], "consentSettings": { "consentStatus": "needed", "consentType": { "type": "LIST", "list": [ { "type": "TEMPLATE", "value": "ad_storage" }, { "type": "TEMPLATE", "value": "ad_user_data" }, { "type": "TEMPLATE", "value": "ad_personalization" } ] } }, "firingTriggerId": ["4"], "tagFiringOption": "oncePerEvent", "fingerprint": "0" }
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "1",
+        "name": "Consent | Default",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('consent','default',{\n    ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied',\n    analytics_storage:'denied', functionality_storage:'granted',\n    security_storage:'granted', wait_for_update:500\n  });\n  try {\n    var c = JSON.parse(localStorage.getItem('hh_consent_v1') || 'null');\n    if (c && typeof c === 'object') {\n      if (c.marketing) gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});\n      if (c.analytics) gtag('consent','update',{analytics_storage:'granted'});\n    }\n  } catch(e){}\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479572"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "2",
+        "name": "Conversion Linker",
+        "type": "gclidw",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "enableCrossDomain",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "3",
+        "name": "GA4 | Config",
+        "type": "gaawc",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "sendPageView",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "4",
+        "name": "GA4 | Event - page_view",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "page_view"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "page_location"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - page_location}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "page_path"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - page_path}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "page_title"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - page_title}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "1"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "5",
+        "name": "GA4 | Event - sign_up",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "sign_up"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "method"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - method}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "user_role"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - user_role}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "2"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "6",
+        "name": "GA4 | Event - view_listing",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "view_listing"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_area"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_area}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_certified"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_certified}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "3"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "7",
+        "name": "GA4 | Event - generate_lead",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "generate_lead"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "lead_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - lead_type}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "value"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - value}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "currency"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - currency}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "4"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "8",
+        "name": "GA4 | Event - contact",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "contact"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "contact_method"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - contact_method}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "5"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "9",
+        "name": "GA4 | Event - newsletter_signup",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "newsletter_signup"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "source"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - source}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "6"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "10",
+        "name": "GA4 | Event - event_rsvp",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "event_rsvp"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "quantity"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - quantity}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "7"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "11",
+        "name": "GA4 | Event - purchase",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "purchase"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "transaction_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - transaction_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "value"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - value}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "currency"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - currency}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "quantity"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - quantity}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "checkout_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - checkout_type}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "sendEcommerceData",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "getEcommerceDataFrom",
+            "value": "dataLayer"
+          }
+        ],
+        "firingTriggerId": [
+          "8"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "12",
+        "name": "GA4 | Event - search",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "search"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "search_term"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - search_term}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "results_count"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - results_count}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "9"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "13",
+        "name": "GA4 | Event - search_result_click",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "search_result_click"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "search_term"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - search_term}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "10"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "14",
+        "name": "GA4 | Event - filter_use",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "filter_use"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "filter_key"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - filter_key}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "11"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "15",
+        "name": "GA4 | Event - map_open",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "map_open"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          }
+        ],
+        "firingTriggerId": [
+          "12"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "16",
+        "name": "GA4 | Event - ai_query",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "ai_query"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          }
+        ],
+        "firingTriggerId": [
+          "13"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "17",
+        "name": "GA4 | Event - ai_result_click",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "ai_result_click"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "14"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "18",
+        "name": "GA4 | Event - save_listing",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "save_listing"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "15"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "19",
+        "name": "GA4 | Event - share",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "share"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "16"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "20",
+        "name": "GA4 | Event - claim_click",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "claim_click"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "17"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "21",
+        "name": "GA4 | Event - cert_view",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "cert_view"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "18"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "22",
+        "name": "GA4 | Event - begin_checkout",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "begin_checkout"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "value"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - value}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "currency"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - currency}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "checkout_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - checkout_type}}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "sendEcommerceData",
+            "value": "true"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "getEcommerceDataFrom",
+            "value": "dataLayer"
+          }
+        ],
+        "firingTriggerId": [
+          "19"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "23",
+        "name": "GA4 | Event - ad_impression",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "ad_impression"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "ad_placement"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - ad_placement}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "ad_source"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - ad_source}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "campaign_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - campaign_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "20"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "24",
+        "name": "GA4 | Event - ad_click",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "ad_click"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "ad_placement"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - ad_placement}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "ad_source"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - ad_source}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "campaign_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - campaign_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "21"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "25",
+        "name": "GA4 | Event - view_event",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "view_event"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "event_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - event_category}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "is_free"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - is_free}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "22"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "26",
+        "name": "GA4 | Event - add_to_calendar",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "add_to_calendar"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_name}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "23"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "27",
+        "name": "GA4 | Event - review_submit",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "review_submit"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "rating"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - rating}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "target_type"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - target_type}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "24"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "28",
+        "name": "GA4 | Event - follow",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "follow"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "organizer_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - organizer_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "25"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "29",
+        "name": "GA4 | Event - tool_use",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "tool_use"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "tool_slug"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - tool_slug}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "26"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "30",
+        "name": "GA4 | Event - blog_read",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "blog_read"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "blog_slug"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - blog_slug}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "percent"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - percent}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "27"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "31",
+        "name": "GA4 | Event - owner_add_listing",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "owner_add_listing"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "business_name"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - business_name}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_category}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "listing_area"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - listing_area}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "halal_tier"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - halal_tier}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "28"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "32",
+        "name": "GA4 | Event - owner_create_event",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "owner_create_event"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "event_title"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - event_title}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "is_free"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - is_free}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "price"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - price}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "capacity"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - capacity}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "event_category"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - event_category}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "29"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "33",
+        "name": "GA4 | Event - owner_lead_won",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "owner_lead_won"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "route_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - route_id}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "business_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - business_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "30"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "34",
+        "name": "GA4 | Event - owner_action",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{Const - GA4 ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "owner_action"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "eventSettingsVariable",
+            "value": "GTES - User"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "action"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - action}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "business_id"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - business_id}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "31"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "35",
+        "name": "Meta | Base",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>\n!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '{{Const - Meta Pixel ID}}');\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "36",
+        "name": "Meta | PageView",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','PageView');</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "1"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "37",
+        "name": "Meta | ViewContent",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','ViewContent',{content_ids:['{{DLV - listing_id}}'],content_type:'product',content_name:'{{DLV - listing_name}}',content_category:'{{DLV - listing_category}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "3"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "38",
+        "name": "Meta | Lead",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','Lead',{},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "4"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "39",
+        "name": "Meta | CompleteRegistration",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','CompleteRegistration',{},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "40",
+        "name": "Meta | Contact",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','Contact',{},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "5"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "41",
+        "name": "Meta | Subscribe",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','Subscribe',{},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "6"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "42",
+        "name": "Meta | InitiateCheckout",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','InitiateCheckout',{value:{{DLV - value}},currency:'{{DLV - currency}}'},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "19"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "43",
+        "name": "Meta | Purchase",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>fbq('track','Purchase',{value:{{DLV - value}},currency:'{{DLV - currency}}'},{eventID:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "8"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "Meta | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "44",
+        "name": "TikTok | Base",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>\n!function (w, d, t) {w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie','holdConsent','revokeConsent','grantConsent'],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var s=d.createElement('script');s.type='text/javascript',s.async=!0,s.src=r+'?sdkid='+e+'&lib='+t;var a=d.getElementsByTagName('script')[0];a.parentNode.insertBefore(s,a)};\nttq.load('{{Const - TikTok Pixel ID}}');\n}(window, document, 'ttq');\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "45",
+        "name": "TikTok | Pageview",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.page();</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "1"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "46",
+        "name": "TikTok | ViewContent",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('ViewContent',{content_id:'{{DLV - listing_id}}',content_type:'product',content_name:'{{DLV - listing_name}}'},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "3"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "47",
+        "name": "TikTok | SubmitForm",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('SubmitForm',{},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "4"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "48",
+        "name": "TikTok | CompleteRegistration",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('CompleteRegistration',{},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "49",
+        "name": "TikTok | Contact",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('Contact',{},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "5"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "50",
+        "name": "TikTok | Subscribe",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('Subscribe',{},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "6"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "51",
+        "name": "TikTok | InitiateCheckout",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('InitiateCheckout',{value:{{DLV - value}},currency:'{{DLV - currency}}',content_id:'{{DLV - item_id}}'},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "19"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "52",
+        "name": "TikTok | CompletePayment",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>ttq.track('CompletePayment',{value:{{DLV - value}},currency:'{{DLV - currency}}',content_id:'{{DLV - item_id}}'},{event_id:'{{DLV - event_id}}'});</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "8"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "TikTok | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "53",
+        "name": "LinkedIn | Base",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script type=\"text/javascript\">\n_linkedin_partner_id = '{{Const - LinkedIn Partner ID}}';\nwindow._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];\nwindow._linkedin_data_partner_ids.push(_linkedin_partner_id);\n(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName('script')[0];var b=document.createElement('script');b.type='text/javascript';b.async=true;b.src='https://snap.licdn.com/li.lms-analytics/insight.min.js';s.parentNode.insertBefore(b,s);})(window.lintrk);\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "54",
+        "name": "LinkedIn | Conversion - Lead",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<!-- Replace 0000000 with your LinkedIn conversion id -->\n<script>window.lintrk && window.lintrk('track', { conversion_id: 0000000 });</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "4"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              }
+            ]
+          }
+        },
+        "setupTag": [
+          {
+            "tagName": "LinkedIn | Base",
+            "stopOnSetupFailure": true
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "55",
+        "name": "Clarity | Base",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script type=\"text/javascript\">\n(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,'clarity','script','{{Const - Clarity ID}}');\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "analytics_storage"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "56",
+        "name": "Ads | Remarketing",
+        "type": "sp",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "{{Const - Ads Conversion ID}}"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enableDynamicRemarketing",
+            "value": "false"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "rdp",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479553"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "57",
+        "name": "Ads | Conversion - Lead",
+        "type": "awct",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "REPLACE_ADS_CONVERSION_ID_NUMBER"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionLabel",
+            "value": "REPLACE_LEAD_LABEL"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enableConversionLinker",
+            "value": "true"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "rdp",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "4"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "58",
+        "name": "Ads | Conversion - Purchase",
+        "type": "awct",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "REPLACE_ADS_CONVERSION_ID_NUMBER"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionLabel",
+            "value": "REPLACE_PURCHASE_LABEL"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionValue",
+            "value": "{{DLV - value}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "currencyCode",
+            "value": "{{DLV - currency}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "orderId",
+            "value": "{{DLV - transaction_id}}"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "enableConversionLinker",
+            "value": "true"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "rdp",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "8"
+        ],
+        "tagFiringOption": "oncePerEvent",
+        "fingerprint": "0",
+        "consentSettings": {
+          "consentStatus": "needed",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      }
     ],
     "fingerprint": "0",
     "tagManagerUrl": "https://tagmanager.google.com/"

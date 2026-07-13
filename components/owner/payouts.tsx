@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 import { Icon } from "../ui";
 
 export function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; flags: { paidTickets: boolean } }) {
@@ -12,6 +13,7 @@ export function PayoutsPanel({ toast, flags }: { toast: (m: string) => void; fla
       const res = await fetch("/api/connect/onboard", { method: "POST" });
       const data = await res.json();
       if (data.url) {
+        track.ownerAction("connect_onboard");
         window.location.href = data.url;
         return;
       }

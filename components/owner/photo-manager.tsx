@@ -7,6 +7,7 @@
    Uploads go to /api/owner/photos (auth + ownership + business-photos bucket). */
 
 import { useRef, useState, type ChangeEvent } from "react";
+import { track } from "@/lib/analytics";
 import { PLANS, planKey, type PlanKey } from "@/lib/plans";
 import { Icon, ImagePh } from "../ui";
 import { ScreenLink } from "../screen-link";
@@ -58,6 +59,7 @@ export function PhotoManager({
           if (json?.ok && json.url) {
             next = [...next, { url: json.url as string }];
             onChange(next);
+            track.ownerAction("photo_upload", businessId);
           } else {
             const msg: Record<string, string> = {
               unauthenticated: "Please sign in to upload photos.",

@@ -10,6 +10,7 @@ import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
 import { screenToPath } from "@/lib/routes";
+import { track } from "@/lib/analytics";
 import { UserButton } from "@clerk/nextjs";
 import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
@@ -29,7 +30,7 @@ export function CertifiedToggle({ compact }: { compact?: boolean }) {
   return (
     <button
       className={`cert-toggle ${on ? "on" : ""} ${compact ? "compact" : ""}`}
-      onClick={toggleCertifiedOnly}
+      onClick={() => { if (!on) track.filterUse("muis_certified"); toggleCertifiedOnly(); }}
       aria-pressed={!!on}
       title="Show only MUIS-certified & verified places"
     >
