@@ -1,0 +1,20 @@
+title = "Humble Halal gitleaks config"
+
+# Extend the built-in ruleset (covers Stripe sk_/Supabase/Clerk/AWS/etc.).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known non-secrets and placeholders (NOT for real secrets)"
+# .env.example holds placeholders only (real .env* are gitignored).
+paths = [
+  '''\.env\.example$''',
+]
+# Publishable keys are PUBLIC by design (shipped to the browser) — not secrets.
+# Only pk_ (publishable) is allowlisted; sk_ (secret) keys are still flagged.
+regexes = [
+  '''pk_(test|live)_[A-Za-z0-9]+''',
+]
+# NOTE: the 591KB lite_api.postman_collection.json and any pending-migrations
+# SQL are deliberately NOT allowlisted — if the first scan flags a real key in
+# them, ROTATE the key, then add a dated path allowlist here.
