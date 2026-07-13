@@ -14,6 +14,10 @@ import { claimPopupSession, isLeadPopupMounted, popupSessionTaken } from "./lead
 const STORE_KEY = "hh_nl_popup"; // "dismissed" | "subscribed"
 const DWELL_MS = 25_000;
 const SCROLL_FRACTION = 0.5;
+// Don't let the scroll trigger fire on the very first flick: on a short page 50%
+// is reached in ~1 tick, so the popup could appear within a second of landing.
+// Arm the scroll trigger only after the visitor has actually dwelled a little.
+const SCROLL_ARM_MS = 6_000;
 
 // Don't interrupt high-intent / non-consumer flows.
 const SUPPRESS_PREFIXES = ["/advertise", "/subscribe", "/checkout", "/owner", "/admin", "/host-event"];
@@ -68,7 +72,9 @@ export function NewsletterPopup() {
       // exit-intent: cursor leaves through the top of the viewport
       if (e.clientY <= 0 && !e.relatedTarget) trigger();
     };
+    const armedAt = Date.now();
     const onScroll = () => {
+      if (Date.now() - armedAt < SCROLL_ARM_MS) return; // ignore the first-flick scroll
       const scrolled = window.scrollY + window.innerHeight;
       const full = document.documentElement.scrollHeight;
       if (full > 0 && scrolled / full >= SCROLL_FRACTION) trigger();

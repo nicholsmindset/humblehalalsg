@@ -1803,7 +1803,7 @@ export function VerificationCard({ item, navigate, toast }: {
           <div style={{ fontWeight: 700 }}>{heading}</div>
           <p className="muted" style={{ fontSize: ".88rem", marginTop: 4, lineHeight: 1.5 }}>
             {body}
-            <span className="link-inline" onClick={() => navigate("verify")}> How we verify →</span>
+            <button className="link-inline" onClick={() => navigate("verify")} style={{ font: "inherit" }}>How we verify →</button>
           </p>
           {item.statusChanged && <div className="verif-changed"><Icon name="warning" size={13} /> Halal status recently changed — verify before visiting</div>}
         </div>
@@ -1959,9 +1959,13 @@ export function DetailOverview({ item }: { item: Listing }) {
                 {p.caption && <figcaption className="faint" style={{ fontSize: ".78rem", marginTop: 4 }}>{p.caption}</figcaption>}
               </figure>
             ))
-          : ["signature dish", "interior", "counter", "dessert", "team", "exterior"].map((g, gi) => (
-              <ImagePh key={g} label={g} tone={gi % 2 ? "gold" : "cream"} src={HHData.gallery[gi]} ratio="1" />
-            ))}
+          : (
+            // Honest empty state instead of six stock tiles captioned "signature
+            // dish / interior / team" that read as this business's own photos.
+            <div className="faint" style={{ gridColumn: "1 / -1", textAlign: "center", padding: "28px 16px", border: "1px dashed var(--line-strong)", borderRadius: 12 }}>
+              No photos yet
+            </div>
+          )}
       </div>
     </div>
   );
@@ -2003,8 +2007,10 @@ export function DetailReviews({ item }: { item: Listing }) {
         setReviews(
           data.map((r) => ({
             id: r.id,
-            name: "Verified diner",
-            avatar: "✓",
+            // Public reviews are anonymised (no name) and we don't verify the
+            // reviewer dined here — labelling them "Verified diner ✓" overclaimed.
+            name: "Community member",
+            avatar: "★",
             rating: r.rating,
             date: rel(r.created_at),
             text: r.text,
@@ -2018,8 +2024,12 @@ export function DetailReviews({ item }: { item: Listing }) {
     return () => { alive = false; };
   }, [slug]);
 
-  const addedCount = reviews.filter((r) => r.id.startsWith("new-")).length;
-  const totalReviews = item.reviews + addedCount;
+  // The Reviews tab summarises reviews we can actually show (on-platform: loaded
+  // via /api/reviews + optimistic). The imported Google aggregate is rendered in
+  // the listing header (<Rating value={item.rating} count={item.reviews}/>) —
+  // reusing it here read "4.8 · 312 reviews" over an empty list on imported rows.
+  const shownCount = reviews.length;
+  const avgRating = shownCount ? reviews.reduce((s, r) => s + r.rating, 0) / shownCount : 0;
 
   // Rating distribution (5★ … 1★) computed from the loaded reviews, not hardcoded.
   const dist = useMemo(() => {
@@ -2062,10 +2072,18 @@ export function DetailReviews({ item }: { item: Listing }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; pending?: boolean };
+      if (!res.ok || !data.ok) {
+        // Server rejected it (rate-limit 429, validation 422, outage) — roll back
+        // the optimistic row instead of claiming success, and don't fire analytics.
+        setReviews((rs) => rs.filter((r) => r.id !== optimistic.id));
+        toast(res.status === 429 ? "You’re reviewing too quickly — please try again later." : "Couldn’t post your review. Please try again.");
+        return;
+      }
       track.reviewSubmit(slug, payload.rating, "business");
       toast(data.pending ? "Review submitted for moderation" : "Thanks — your review is posted");
     } catch {
+      // Network error only — keep the optimistic copy for an offline retry.
       toast("Saved — we’ll post it once you’re back online");
     } finally {
       setBusy(false);
@@ -2082,11 +2100,11 @@ export function DetailReviews({ item }: { item: Listing }) {
     <div className="detail-pane">
       <div className="review-summary">
         <div className="rs-big">
-          {totalReviews > 0 ? (
+          {shownCount > 0 ? (
             <>
-              <div className="rs-num">{item.rating.toFixed(1)}</div>
-              <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(item.rating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
-              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{totalReviews} reviews</div>
+              <div className="rs-num">{avgRating.toFixed(1)}</div>
+              <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(avgRating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
+              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{shownCount} review{shownCount === 1 ? "" : "s"}</div>
             </>
           ) : (
             <>
@@ -2095,11 +2113,13 @@ export function DetailReviews({ item }: { item: Listing }) {
             </>
           )}
         </div>
-        <div className="rs-bars">
-          {dist.map((p, i) => (
-            <div key={i} className="rs-bar"><span className="rs-lbl">{5 - i}</span><div className="rs-track"><div className="rs-fill" style={{ width: p + "%" }} /></div></div>
-          ))}
-        </div>
+        {shownCount > 0 && (
+          <div className="rs-bars">
+            {dist.map((p, i) => (
+              <div key={i} className="rs-bar"><span className="rs-lbl">{5 - i}</span><div className="rs-track"><div className="rs-fill" style={{ width: p + "%" }} /></div></div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex between center wrap g10 mt16">
@@ -2169,7 +2189,7 @@ export function DetailInfo({ item, navigate }: {
       <div className="info-row"><Icon name="phone" size={18} /><div><div style={{ fontWeight: 700 }}>Phone</div><span className="muted">{item.phone || "—"}</span></div></div>
       <div className="info-row"><Icon name="shield-check" size={18} /><div><div style={{ fontWeight: 700 }}>Halal status</div>
         <span className="muted">{item.badges.includes("muis") && !muisUnbacked(item) ? "MUIS certified — verify on HalalSG" : item.badges.includes("admin") ? "Admin verified by Humble Halal" : item.badges.includes("muis") ? "MUIS certificate not yet on file" : "Self-declared — not certified"}</span>
-        <div className="link-inline" style={{ marginTop: 4 }} onClick={() => navigate("verify")}>Learn how we verify →</div></div></div>
+        <button className="link-inline" style={{ marginTop: 4, font: "inherit" }} onClick={() => navigate("verify")}>Learn how we verify →</button></div></div>
     </div>
   );
 }

@@ -62,8 +62,21 @@ export function PassportScreen({ embedded = false }: { embedded?: boolean } = {}
     );
   }
 
-  if (!loaded || !data) {
+  if (!loaded) {
     return <div className="screen-in hh-page"><div className="hh-wrap" style={{ maxWidth: 640, paddingTop: 32 }}><div className="card" style={{ height: 160, opacity: 0.5 }} aria-busy="true" /></div></div>;
+  }
+  if (!data) {
+    // Loaded but no data — the passport backend is off/unavailable (e.g. the flag
+    // is on before Supabase is wired). Show an honest state + retry, not a
+    // skeleton that spins forever.
+    return (
+      <div className="screen-in hh-page"><div className="hh-wrap" style={{ maxWidth: 560, paddingTop: 40, textAlign: "center" }}>
+        <div style={{ fontSize: 44 }}>🕌</div>
+        <H style={{ fontSize: "1.6rem", marginTop: 8 }}>Your Halal Passport isn’t available right now</H>
+        <p className="muted" style={{ marginTop: 8 }}>Points and stamps are warming up. Please check back shortly.</p>
+        <button className="btn btn-soft mt16" onClick={() => { setLoaded(false); load(); }}>Try again</button>
+      </div></div>
+    );
   }
 
   const s = data.stats;
