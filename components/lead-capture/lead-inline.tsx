@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { LEAD_VERTICALS, LEAD_CONSENT_VERSION, LEAD_ROUTE_CAP } from "@/lib/lead-verticals";
 import { track } from "@/lib/analytics";
+import { Turnstile } from "@/components/turnstile";
 
 type SurfaceKey = "blog" | "hub" | "listing" | "popup";
 type Config = { enabled: boolean; surfaces: Partial<Record<SurfaceKey, boolean>> };
@@ -71,6 +72,7 @@ export function LeadInline({ vertical, surface, defaultOpen = false, onDone }: {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
+  const [tsToken, setTsToken] = useState("");
 
   const v = LEAD_VERTICALS.find((x) => x.id === vertical);
   if (!on || !v) return null;
@@ -98,6 +100,7 @@ export function LeadInline({ vertical, surface, defaultOpen = false, onDone }: {
           sourcePath: surface === "popup" ? `${sourcePath}#popup` : sourcePath,
           consent: true,
           consentVersion: LEAD_CONSENT_VERSION,
+          ...(tsToken ? { turnstileToken: tsToken } : {}),
         }),
       });
       const d = await res.json().catch(() => ({}));
@@ -152,6 +155,7 @@ export function LeadInline({ vertical, surface, defaultOpen = false, onDone }: {
           </span>
         </label>
         {err && <span className="field-error" style={{ fontSize: ".8rem" }}>{err}</span>}
+        <Turnstile onToken={setTsToken} />
         <div className="flex g8 center wrap">
           <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? "Sending…" : "Get my free quotes"}</button>
           <a className="link-inline" style={{ fontSize: ".8rem" }} href={`/quotes?category=${encodeURIComponent(v.label)}&source=${encodeURIComponent(sourcePath)}`}>

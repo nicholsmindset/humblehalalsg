@@ -10,6 +10,7 @@ import { HELP, type FaqCategory } from "@/lib/help-content";
 import type { Flags } from "@/lib/flags";
 import { CONTACT_EMAILS } from "@/lib/contact";
 import { track } from "@/lib/analytics";
+import { Turnstile } from "@/components/turnstile";
 
 function Crumb({ trail }: { trail: { label: string; href?: string }[] }) {
   return (
@@ -72,13 +73,14 @@ export function AboutScreen() {
 export function ContactScreen() {
   const [form, setForm] = useState({ name: "", email: "", subject: "General enquiry", message: "", website: "" });
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [tsToken, setTsToken] = useState("");
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) || form.message.trim().length < 5) { setState("error"); return; }
     setState("sending");
     try {
-      const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, ...(tsToken ? { turnstileToken: tsToken } : {}) }) });
       const d = await r.json();
       setState(d.ok ? "done" : "error");
       if (d.ok) track.leadSubmit("contact", {}, { email: form.email || undefined });
@@ -107,6 +109,7 @@ export function ContactScreen() {
                 <div className="field"><label htmlFor="contact-subject">Subject</label><select id="contact-subject" value={form.subject} onChange={(e) => set("subject", e.target.value)}><option>General enquiry</option><option>Help with a listing or booking</option><option>Business / advertising partnership</option><option>Managed marketing (Growth Partner)</option><option>Report incorrect information</option><option>Privacy &amp; data request</option><option>Press / media</option></select></div>
                 <div className="field"><label htmlFor="contact-message">Message *</label><textarea id="contact-message" required rows={5} value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="How can we help?" /></div>
                 {state === "error" && <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>Please enter your name, a valid email and a short message.</p>}
+                <Turnstile onToken={setTsToken} />
                 <button className="btn btn-primary btn-lg" type="submit" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send message"}</button>
               </form>
             )}
@@ -151,6 +154,7 @@ const GP_TIMELINES = ["ASAP", "This month", "Next 1–3 months", "Just exploring
 export function GrowthPartnerScreen() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [tsToken, setTsToken] = useState("");
   const [form, setForm] = useState({
     business: "",
     website: "",
@@ -192,7 +196,7 @@ export function GrowthPartnerScreen() {
       const r = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, subject: "Managed marketing (Growth Partner)", message }),
+        body: JSON.stringify({ name: form.name, email: form.email, subject: "Managed marketing (Growth Partner)", message, ...(tsToken ? { turnstileToken: tsToken } : {}) }),
       });
       const d = await r.json().catch(() => ({}));
       if (d?.ok) {
@@ -289,7 +293,7 @@ export function GrowthPartnerScreen() {
                   {step < 2 ? (
                     <button type="button" className="btn btn-primary" disabled={!canNext} onClick={() => setStep((s) => Math.min(2, s + 1))}>Continue <Icon name="arrow" size={16} /></button>
                   ) : (
-                    <button className="btn btn-primary" type="submit" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send intake"}</button>
+                    <><Turnstile onToken={setTsToken} /><button className="btn btn-primary" type="submit" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send intake"}</button></>
                   )}
                 </div>
               </>

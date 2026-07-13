@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { leadConfirmationEmail } from "@/lib/emails/templates";
 import { sendEmail } from "@/lib/email";
 import { beehiivSubscribe } from "@/lib/beehiiv";
@@ -40,6 +41,11 @@ export async function POST(req: Request) {
     body = (await req.json()) as LeadBody;
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
+  }
+
+  // Bot gate (Turnstile) — no-op until keys are set (dark rollout), fail-closed once on.
+  if (!(await verifyTurnstile((body as { turnstileToken?: unknown }).turnstileToken))) {
+    return NextResponse.json({ ok: false, error: "captcha" }, { status: 403 });
   }
 
   const name = String(body.name || "").trim();
