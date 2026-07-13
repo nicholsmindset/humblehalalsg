@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Sponsor creative upload → Supabase Storage `ad-creatives` (public) bucket.
    Admin-only. Mirrors app/api/upload/route.ts. Graceful: without keys (or a
@@ -31,10 +32,11 @@ export async function POST(req: Request) {
     const { getSupabaseAdmin } = await import("@/lib/supabase/server");
     const sb = getSupabaseAdmin();
     if (sb) {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const { error } = await sb.storage.from("ad-creatives").upload(path, bytes, { contentType: file.type });
+      const sniffed = sniffAllowed(bytes, ["image/jpeg", "image/png", "image/webp", "image/avif"]);
+      if (!sniffed) return NextResponse.json({ ok: false, error: "Images only" }, { status: 415 });
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extForType(sniffed)}`;
+      const { error } = await sb.storage.from("ad-creatives").upload(path, bytes, { contentType: sniffed });
       if (!error) {
         const { data } = sb.storage.from("ad-creatives").getPublicUrl(path);
         return NextResponse.json({ ok: true, simulated: false, url: data.publicUrl });

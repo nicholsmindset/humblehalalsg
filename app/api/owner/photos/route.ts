@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { galleryMax } from "@/lib/plans";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Business listing photo upload → Supabase Storage (public bucket
    "business-photos"). Replaces the two wrong paths that existed before:
@@ -52,10 +53,14 @@ export async function POST(req: Request) {
   // Ensure the bucket exists (idempotent — ignore "already exists").
   try { await admin.storage.createBucket(BUCKET, { public: true }); } catch { /* exists */ }
 
-  const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-  const path = `${businessId || `wizard/${userId}`}/${randomUUID()}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: false });
+  // Authoritative type check: sniff the real bytes, don't trust the declared
+  // file.type — store with the detected content-type + extension.
+  const sniffed = sniffAllowed(bytes, ALLOWED);
+  if (!sniffed) return NextResponse.json({ ok: false, reason: "bad_type" }, { status: 415 });
+  const ext = extForType(sniffed);
+  const path = `${businessId || `wizard/${userId}`}/${randomUUID()}.${ext}`;
+  const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: sniffed, upsert: false });
   if (error) {
     console.error("[owner/photos] storage upload failed:", error.message);
     return NextResponse.json({ ok: false, reason: "upload_failed" }, { status: 500 });

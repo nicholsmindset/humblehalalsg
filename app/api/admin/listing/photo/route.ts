@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Admin listing-photo upload → the same public "business-photos" bucket the
    owner upload uses (app/api/owner/photos), minus the ownership check and the
@@ -24,10 +25,12 @@ export async function POST(req: Request) {
 
   try { await db.storage.createBucket(BUCKET, { public: true }); } catch { /* exists */ }
 
-  const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-  const path = `admin/${crypto.randomUUID()}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const { error } = await db.storage.from(BUCKET).upload(path, bytes, { contentType: file.type, upsert: false });
+  const sniffed = sniffAllowed(bytes, ALLOWED);
+  if (!sniffed) return NextResponse.json({ ok: false, error: "bad_type" }, { status: 415 });
+  const ext = extForType(sniffed);
+  const path = `admin/${crypto.randomUUID()}.${ext}`;
+  const { error } = await db.storage.from(BUCKET).upload(path, bytes, { contentType: sniffed, upsert: false });
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 
   const { data: pub } = db.storage.from(BUCKET).getPublicUrl(path);

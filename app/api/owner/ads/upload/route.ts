@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { sniffAllowed, extForType } from "@/lib/file-sniff";
 
 /* Owner-facing sponsor creative upload → ad-creatives bucket under a
    selfserve/{businessId}/ prefix. Mirrors the admin route but requires the
@@ -40,10 +41,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
   }
 
-  const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-  const path = `selfserve/${businessId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const { error } = await sb.storage.from("ad-creatives").upload(path, bytes, { contentType: file.type });
+  const sniffed = sniffAllowed(bytes, ALLOWED);
+  if (!sniffed) return NextResponse.json({ ok: false, reason: "bad_type" }, { status: 415 });
+  const ext = extForType(sniffed);
+  const path = `selfserve/${businessId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await sb.storage.from("ad-creatives").upload(path, bytes, { contentType: sniffed });
   if (error) {
     console.error("[owner/ads/upload] storage upload failed:", error.message);
     return NextResponse.json({ ok: false, reason: "upload_failed" }, { status: 500 });
