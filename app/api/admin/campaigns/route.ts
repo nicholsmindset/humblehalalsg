@@ -5,6 +5,7 @@ import { getStripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { notify } from "@/lib/notify";
+import { logAudit } from "@/lib/audit";
 
 /* Admin sponsored-ad manager. GET → rate card + campaigns with real performance
    (impressions/clicks). POST → create a campaign (sales team books a sponsor).
@@ -172,5 +173,6 @@ export async function PATCH(req: Request) {
     } catch { /* notify best-effort */ }
   }
 
+  await logAudit(sb, { actor: gate.userId, action: "Update ad campaign", target: id, meta: { ...patch, ...(refunded ? { refunded: true } : {}) } });
   return NextResponse.json({ ok: true, ...(refunded ? { refunded: true } : {}) });
 }
