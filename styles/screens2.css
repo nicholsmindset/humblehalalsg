@@ -14,14 +14,14 @@
 .billing-toggle { display:inline-flex; background:var(--white); border:1px solid var(--line-strong); border-radius:var(--r-pill); padding:4px; margin-top:22px; gap:2px; }
 .billing-toggle button { border:none; background:none; padding:9px 18px; border-radius:var(--r-pill); font-weight:600; font-size:.88rem; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; gap:8px; }
 .billing-toggle button.on { background:var(--emerald); color:var(--cream); }
-.save-pill { background:var(--gold); color:#3a2c08; border-radius:999px; padding:1px 7px; font-size:.7rem; font-weight:700; }
+.save-pill { background:var(--gold); color:#2a1e04; border-radius:999px; padding:1px 7px; font-size:.7rem; font-weight:700; }
 .billing-toggle button.on .save-pill { background:var(--gold); }
 .pricing-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; align-items:stretch; }
 @media (max-width: 980px){ .pricing-grid { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 520px){ .pricing-grid { grid-template-columns: 1fr; } }
 .pricing-card { padding:32px 24px 24px; position:relative; display:flex; flex-direction:column; }
 .pricing-card.feat { border:2px solid var(--gold); box-shadow: var(--sh-lg); }
-.pop-badge { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:var(--gold); color:#3a2c08; font-size:.72rem; font-weight:800; padding:4px 12px; border-radius:999px; white-space:nowrap; box-shadow:0 4px 12px rgba(185,139,54,.22); }
+.pop-badge { position:absolute; top:10px; left:50%; transform:translateX(-50%); background:var(--gold); color:#2a1e04; font-size:.72rem; font-weight:800; padding:4px 12px; border-radius:999px; white-space:nowrap; box-shadow:0 4px 12px rgba(185,139,54,.22); }
 .price-row { display:flex; align-items:baseline; gap:6px; margin-top:10px; }
 .price-num { font-family:var(--serif); font-weight:700; font-size:2.4rem; line-height:1; }
 .price-per { color:var(--ink-faint); font-weight:600; font-size:.86rem; }

@@ -218,7 +218,7 @@ export function PricingScreen() {
           {tiers.map((t) => (
             <div key={t.id} className={`pricing-card card ${t.accent ? "feat" : ""}`}>
               {t.popular && <span className="pop-badge">Most popular</span>}
-              <span className="eyebrow" style={{ color: t.accent ? "var(--gold)" : "var(--gold-800)" }}>{t.tag}</span>
+              <span className="eyebrow" style={{ color: "var(--gold-800)" }}>{t.tag}</span>
               <h3 style={{ fontSize: "1.5rem", marginTop: 8 }}>{t.name}</h3>
               <div className="price-row"><span className="price-num">${t.price}</span><span className="price-per">{t.price === 0 ? "forever" : `/mo`}</span></div>
               {yearly && t.price > 0 && <div className="price-sub">${t.year}/year · billed annually</div>}
