@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       # Restore yesterday's snapshot (best-effort; first run has none).
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: sitemap-prev.txt
           key: sitemap-${{ github.run_id }}
