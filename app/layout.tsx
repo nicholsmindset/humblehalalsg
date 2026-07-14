@@ -42,6 +42,8 @@ import {
   websiteJsonLd,
 } from "@/components/seo/json-ld";
 
+const adsenseClient = (process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "").trim();
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
@@ -80,6 +82,10 @@ export const metadata: Metadata = {
   // Google Search Console ownership (meta-tag method; the HTML-file method is
   // also served from public/googledeada25508a8dbb9.html as a backup).
   verification: { google: "hpyENNOXNa-bCerM6QCS2IRau9olW41Sov-CGUKkqAE" },
+  // AdSense account-association meta (site verification). Emitted only when the
+  // publisher id is set — the AdsenseScript loader gates on the same env var, so
+  // the whole AdSense integration turns on together.
+  ...(adsenseClient.startsWith("ca-pub-") ? { other: { "google-adsense-account": adsenseClient } } : {}),
 };
 
 export const viewport: Viewport = {
