@@ -9,6 +9,7 @@ import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
 import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
+import { categoryDirectoryLabel } from "@/lib/category-presentation";
 import { screenToPath } from "@/lib/routes";
 import { track } from "@/lib/analytics";
 import { UserButton } from "@clerk/nextjs";
@@ -808,10 +809,12 @@ export function Footer() {
           <FooterSection title="Browse by category" cloud>
             <li><Link href="/halal">Halal directory</Link></li>
             {catPages.map((p) => {
-              const label = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
+              const rawLabel = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
               return (
                 <li key={p.slug}>
-                  <ScreenLink screen="seo" params={{ slug: p.slug }}>Halal {label}</ScreenLink>
+                  <ScreenLink screen="seo" params={{ slug: p.slug }}>
+                    {categoryDirectoryLabel(p.catId, rawLabel)}
+                  </ScreenLink>
                 </li>
               );
             })}

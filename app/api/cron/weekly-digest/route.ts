@@ -10,10 +10,10 @@ export async function GET(req: Request) {
   if (!authorizeCron(req)) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   try {
     const { getDirectory } = await import("@/lib/directory");
-    const { allPosts } = await import("@/lib/blog");
+    const { allBlogPosts } = await import("@/lib/cms-blog");
     const listings = await getDirectory();
     const newest = listings.slice(-6).reverse();
-    const guide = allPosts()[0];
+    const guide = (await allBlogPosts())[0];
     const items = newest
       .map((l) => `<li><strong>${l.name}</strong> — ${l.cuisine}, ${l.area}</li>`)
       .join("");

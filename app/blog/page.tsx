@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { allPosts, featuredPost } from "@/lib/blog";
+import { allBlogPosts, featuredBlogPost } from "@/lib/cms-blog";
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
@@ -11,18 +11,17 @@ import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { SponsoredSlot } from "@/components/sponsored-slot";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 
-const featured = featuredPost();
-
-export const metadata: Metadata = pageMeta({
-  title: "Halal Guides & Stories — Humble Halal Blog",
-  description:
-    "Guides to eating halal in Singapore — what halal means, how MUIS certification works, the best halal restaurants and buffets, and more from the Humble Halal team.",
-  path: "/blog",
-  image: featured.image,
-  // Title already carries the brand — without this, the root "%s | Humble
-  // Halal" template double-branded it past the ~60-char SERP limit.
-  absoluteTitle: true,
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const featured = await featuredBlogPost();
+  return pageMeta({
+    title: "Halal Guides & Stories — Humble Halal Blog",
+    description:
+      "Guides to eating halal in Singapore — what halal means, how MUIS certification works, the best halal restaurants and buffets, and more from the Humble Halal team.",
+    path: "/blog",
+    image: featured.image,
+    absoluteTitle: true,
+  });
+}
 
 function fmtDate(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
@@ -30,8 +29,9 @@ function fmtDate(iso: string) {
   return `${d} ${months[m - 1]} ${y}`;
 }
 
-export default function Page() {
-  const posts = allPosts();
+export default async function Page() {
+  const posts = await allBlogPosts();
+  const featured = posts[0];
   const rest = posts.filter((p) => p.slug !== featured.slug);
   const featuredCat = getCategory(featured.category);
 

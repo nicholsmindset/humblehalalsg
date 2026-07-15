@@ -3,7 +3,7 @@ import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { allBrands, STATUS_META } from "@/lib/halal-status";
-import { allPosts } from "@/lib/blog";
+import { allBlogPosts } from "@/lib/cms-blog";
 import { certSuffix } from "@/lib/halal-score";
 import { SITE } from "@/lib/seo";
 
@@ -14,7 +14,7 @@ export const dynamic = "force-static";
 export async function GET() {
   const u = SITE.url;
   // Real directory + events (never the mock seed).
-  const [listings, events] = await Promise.all([getDirectory(), getEvents()]);
+  const [listings, events, blogPosts] = await Promise.all([getDirectory(), getEvents(), allBlogPosts()]);
   const areaCount = (name: string) => listings.filter((l) => l.area === name).length;
   const featured = (listings.filter((l) => l.featured).length
     ? listings.filter((l) => l.featured)
@@ -82,7 +82,7 @@ ${allBrands()
   .join("\n")}
 
 ## Blog guides
-${allPosts()
+${blogPosts
   .map((p) => `- [${p.title}](${u}/blog/${p.slug}): ${p.dek}`)
   .join("\n")}
 

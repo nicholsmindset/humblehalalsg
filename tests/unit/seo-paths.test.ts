@@ -113,20 +113,25 @@ describe("flat-URL migration — 301 map", () => {
   });
 
   it("all redirects are permanent (301/308)", () => {
-    for (const r of seoRedirects()) expect(r.permanent).toBe(true);
+    for (const r of seoRedirects()) {
+      expect(r.permanent === true || r.statusCode === 301).toBe(true);
+    }
   });
 });
 
 describe("flat-URL migration — cuisine/category rewrite", () => {
   it("every top-level page's public URL matches the rewrite back to /halal/", () => {
-    const rule = seoRewrites().afterFiles[0];
-    const rx = new RegExp(
-      "^" + rule.source.replace(/:(\w+)\(([^)]*)\)/g, (_m, _n, pat) => `(${pat})`) + "$",
-    );
     for (const p of topLevelPages) {
       const pub = seoPagePath(p);
-      expect(rx.test(pub), `${pub} must match rewrite`).toBe(true);
-      expect(pub.replace(rx, "/halal/$1")).toBe(`/halal/${p.slug}`);
+      const rule = seoRewrites().afterFiles.find((candidate) => {
+        if (!candidate.source.includes(":")) return candidate.source === pub;
+        const rx = new RegExp(
+          "^" + candidate.source.replace(/:(\w+)\(([^)]*)\)/g, (_m, _n, pat) => `(${pat})`) + "$",
+        );
+        return rx.test(pub);
+      });
+      expect(rule, `${pub} must match a rewrite`).toBeTruthy();
+      expect(rule!.destination.replace(":slug", p.slug)).toBe(`/halal/${p.slug}`);
     }
   });
 

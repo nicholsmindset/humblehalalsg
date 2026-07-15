@@ -4,6 +4,7 @@ import { categories } from "@/lib/data";
 import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { categoryDirectoryLabel } from "@/lib/category-presentation";
 
 export const metadata: Metadata = pageMeta({
   title: "Halal Directory Singapore — Restaurants by Area",
@@ -63,7 +64,7 @@ export default function Page() {
           <div className="hub-grid">
             {catPages.map((p) => (
               <Link key={p.slug} href={seoPagePath(p)} className="hub-link">
-                <span>Halal {catLabel(p.catId)}</span>
+                <span>{categoryDirectoryLabel(p.catId, catLabel(p.catId))}</span>
                 <span className="hub-link-arr" aria-hidden="true">→</span>
               </Link>
             ))}

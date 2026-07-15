@@ -81,6 +81,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   beauty: {
+    h1: "Muslim-Friendly Beauty & Grooming in Singapore",
     intro:
       "Find halal-friendly beauty and grooming in Singapore — Muslimah salons, women-only spaces, barbers, spa and nail studios, and halal cosmetics. Browse Muslim-owned providers with prayer-friendly, private settings and halal-confidence scores you can trust.",
     lookFor: [
@@ -143,6 +144,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   services: {
+    h1: "Muslim-Owned Home Services in Singapore",
     intro:
       "Find Muslim-owned home services in Singapore — renovation and interior, aircon servicing, cleaning, movers, plumbing, electrical and handyman work. Get matched with trusted, halal-conscious providers, compare halal-confidence scores, and request free quotes.",
     lookFor: [
@@ -158,11 +160,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       "Muslim-owned does not guarantee licensing — verify credentials for regulated work.",
     ],
     faq: [
-      { q: "How do I get quotes from halal home-service providers?", a: "Use “Request a quote” to describe your job — we’ll match you with trusted Muslim-owned providers who send you quotes, free and with no obligation." },
+      { q: "How do I get quotes from Muslim-owned home-service providers?", a: "Use “Request a quote” to describe your job — we’ll match you with trusted Muslim-owned providers who send you quotes, free and with no obligation." },
       { q: "Are these providers licensed?", a: "Many are, but Muslim-owned doesn’t guarantee licensing. For regulated work (e.g. electrical), confirm the provider’s credentials." },
     ],
   },
   automotive: {
+    h1: "Muslim-Owned Automotive Services in Singapore",
     intro:
       "Find Muslim-owned automotive services in Singapore — workshops, servicing, detailing, car rental and dealers. Browse trusted, halal-conscious providers by area, compare halal-confidence scores and reviews, and request quotes for your next service.",
     lookFor: [
@@ -182,7 +185,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   weddings: {
-    h1: "Malay Wedding & Halal Wedding Vendors in Singapore",
+    h1: "Malay & Muslim Wedding Vendors in Singapore",
     intro:
       "Plan a Malay or halal wedding in Singapore — bridal and MUA, photography, kompang, hantaran and deco, florists, catering and planners. Discover Muslim-owned wedding vendors, compare halal-confidence scores and reviews, and request quotes for your big day.",
     lookFor: [
@@ -198,11 +201,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       "Ask about modesty preferences for MUA and photography.",
     ],
     faq: [
-      { q: "How do I find halal wedding vendors in Singapore?", a: "Browse the Weddings category or use “Request a quote” to reach Muslim-owned MUA, photographers, deco and catering vendors in one go." },
+      { q: "How do I find Muslim wedding vendors in Singapore?", a: "Browse the Weddings category or use “Request a quote” to reach Muslim-owned MUA, photographers, deco and halal catering vendors in one go." },
       { q: "Can vendors accommodate modesty preferences?", a: "Many do — ask about female MUA, private setups and modest photography when you request your quote." },
     ],
   },
   education: {
+    h1: "Islamic Education, Quran Classes & Tuition in Singapore",
     intro:
       "Find Islamic education and tuition in Singapore — Quran, tahfiz and tajweed classes, madrasah and Islamic studies, plus academic tuition and enrichment. Discover Muslim-owned centres and tutors, compare halal-confidence scores, and enquire directly.",
     lookFor: [
@@ -222,6 +226,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   professional: {
+    h1: "Muslim-Owned Professional Services in Singapore",
     intro:
       "Find Muslim-owned professional services in Singapore — accounting, legal and Syariah, insurance and takaful, Islamic financial planning, marketing, design and printing. Browse trusted, halal-conscious providers, compare halal-confidence scores, and request quotes.",
     lookFor: [
@@ -241,6 +246,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
     ],
   },
   travel: {
+    h1: "Umrah Agencies & Muslim-Friendly Travel in Singapore",
     intro:
       "Plan halal travel from Singapore — Umrah and Hajj agencies, Islamic tours and Muslim-friendly stays. Discover trusted, Muslim-owned travel providers, compare halal-confidence scores and reviews, and request quotes for your next pilgrimage or holiday.",
     lookFor: [

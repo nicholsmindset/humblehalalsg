@@ -3,7 +3,8 @@ import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { allPosts, getPost, relatedPosts, postWordCount } from "@/lib/blog";
+import { postWordCount } from "@/lib/blog";
+import { allBlogPosts, getBlogPost, relatedBlogPosts } from "@/lib/cms-blog";
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, blogPostingJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
@@ -23,8 +24,8 @@ import { LeadInline } from "@/components/lead-capture/lead-inline";
 import { LeadCapturePopup } from "@/components/lead-capture/lead-capture-popup";
 import { leadInlineIndex } from "@/lib/lead-placement";
 
-export function generateStaticParams() {
-  return allPosts().map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  return (await allBlogPosts()).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -33,7 +34,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const p = getPost(slug);
+  const p = await getBlogPost(slug);
   // Unknown slug → noindex (matches the category route); the page body 404s.
   if (!p) return pageMeta({ title: "Blog", path: `/blog/${slug}`, index: false });
   return pageMeta({
@@ -57,9 +58,9 @@ function fmtDate(iso: string) {
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const p = getPost(slug);
+  const p = await getBlogPost(slug);
   if (!p) notFound();
-  const related = relatedPosts(p, 3);
+  const related = await relatedBlogPosts(p, 3);
   const cat = getCategory(p.category);
   const n = p.sections.length;
   const midIndex = n >= 4 ? Math.floor(n / 2) - 1 : -1; // newsletter after this section

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { postsByCategory } from "@/lib/blog";
+import { blogPostsByCategory } from "@/lib/cms-blog";
 import { allCategories, getCategory } from "@/lib/blog-categories";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, blogCollectionJsonLd } from "@/components/seo/json-ld";
@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const cat = getCategory(slug);
   if (!cat) notFound();
-  const posts = postsByCategory(cat.slug);
+  const posts = await blogPostsByCategory(cat.slug);
 
   return (
     <>

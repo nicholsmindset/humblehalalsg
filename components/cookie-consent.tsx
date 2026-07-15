@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const KEY = "hh_consent_v1";
 
@@ -40,6 +41,7 @@ function applyConsentMode(analytics: boolean, marketing: boolean) {
    pixels stay blocked until the user opts in; analytics runs in cookieless
    modeled mode until analytics is granted. */
 export function CookieConsent() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [customize, setCustomize] = useState(false);
   const [analytics, setAnalytics] = useState(true);
@@ -59,7 +61,7 @@ export function CookieConsent() {
     setShow(false);
   };
 
-  if (!show) return null;
+  if (!show || pathname.startsWith("/keystatic")) return null;
   return (
     <div className="cookie-banner" role="dialog" aria-label="Cookie consent" aria-live="polite">
       <p className="cookie-text">

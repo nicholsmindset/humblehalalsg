@@ -8,6 +8,7 @@ import type { QA } from "./faq";
 import { categoryContent, cuisineContent, CATEGORY_PAGE_IDS } from "./category-content";
 import seoCounts from "./seo-counts.json";
 import { areaProfile } from "./area-content";
+import { CATEGORY_PRESENTATION } from "./category-presentation";
 
 /** Bump annually. Used in SEO titles only (keeps visible H1 evergreen). */
 export const SEO_YEAR = 2026;
@@ -208,11 +209,13 @@ function build(): SeoPage[] {
       const cat = categories.find((c) => c.id === catId);
       if (!cat) continue;
       if (countIn(a.name, catId) < 1) continue;
+      const presentation = CATEGORY_PRESENTATION[catId];
+      const pageLabel = presentation?.directoryLabel || `Halal ${cat.label}`;
       pages.push({
-        slug: `halal-${cat.id}-in-${a.id}`,
-        title: clip(`Halal ${cat.label} in ${a.name} (${SEO_YEAR})`),
-        h1: `Halal ${cat.label} in ${a.name}`,
-        intro: `The best halal ${cat.label.toLowerCase()} in ${a.name}, Singapore — MUIS-certified and Muslim-friendly options in one place, with reviews and directions.`,
+        slug: `${presentation?.slugBase || `halal-${cat.id}`}-in-${a.id}`,
+        title: clip(`${pageLabel} in ${a.name} (${SEO_YEAR})`),
+        h1: `${pageLabel} in ${a.name}`,
+        intro: `${pageLabel} in ${a.name}, Singapore — browse relevant Muslim-owned, Muslim-friendly or halal-certified options with trust labels, reviews and directions.`,
         areaId: a.id, catId: cat.id, areaName: a.name, kind: "area-cat",
       });
     }
@@ -259,10 +262,12 @@ function build(): SeoPage[] {
     if (!cat) continue;
     if (countCat(catId) < 1) continue;
     const cc = categoryContent(catId);
+    const presentation = CATEGORY_PRESENTATION[catId];
+    const pageLabel = presentation?.directoryLabel || `Halal ${cat.label}`;
     pages.push({
-      slug: `halal-${cat.id}-singapore`,
-      title: clip(`Halal ${cat.label} Singapore — Best (${SEO_YEAR})`),
-      h1: cc.h1 || `Halal ${cat.label} in Singapore`,
+      slug: presentation?.singaporeSlug || `halal-${cat.id}-singapore`,
+      title: clip(`${pageLabel} Singapore — Best (${SEO_YEAR})`),
+      h1: cc.h1 || `${pageLabel} in Singapore`,
       intro: cc.intro,
       catId: cat.id, areaName: "Singapore", kind: "cat",
     });

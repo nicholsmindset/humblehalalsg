@@ -8,7 +8,7 @@ import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPageIndexable, seoPagePath } from "@/lib/seo-pages";
 import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrands } from "@/lib/halal-status";
-import { allPosts } from "@/lib/blog";
+import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
@@ -159,7 +159,7 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
     }
 
     case "blog": {
-      const blogEntries: SitemapUrl[] = allPosts().map((p) => ({
+      const blogEntries: SitemapUrl[] = (await allBlogPosts()).map((p) => ({
         loc: `${base}/blog/${p.slug}`,
         lastmod: new Date(p.dateModified || p.datePublished).toISOString(),
         changefreq: "monthly",

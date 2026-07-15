@@ -27,6 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.clearInterval(id);
   }, []);
 
+  // Keystatic supplies its own full-screen application shell. Rendering the
+  // consumer header/footer around it squeezes the editor and exposes unrelated
+  // navigation inside the admin dashboard.
+  if (pathname.startsWith("/keystatic")) return <>{children}</>;
+
   const screen = pathToScreen(pathname);
   const isChromeless = CHROMELESS_SCREENS.includes(screen);
   const isMapFull = screen === "map";

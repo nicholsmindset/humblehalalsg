@@ -1,3 +1,5 @@
+import { CATEGORY_URL_MIGRATIONS } from "./category-presentation";
+
 /* Humble Halal — routing-layer redirect + rewrite map (flat-URL migration).
    Consumed by next.config.ts redirects()/rewrites() — the ONLY safe place for
    redirects in this app: page-level redirect()/notFound() stream soft 200s.
@@ -5,11 +7,14 @@
    pattern rules that migrate the whole /halal/* place + cuisine sets.
    Keep this file pure data + tiny builders (it is imported at build time). */
 
-interface Redirect {
+interface RedirectBase {
   source: string;
   destination: string;
-  permanent: boolean;
 }
+type Redirect = RedirectBase & (
+  | { permanent: boolean; statusCode?: never }
+  | { statusCode: 301 | 302 | 303 | 307 | 308; permanent?: never }
+);
 
 /* Legacy /halal slugs that shipped truncated or renamed. Destinations point
    DIRECTLY at the final flat URL — never chain a 301 through another 301. */
@@ -53,6 +58,19 @@ const CUISINE_ALIASES: Array<[from: string, to: string]> = [
 export function seoRedirects(): Redirect[] {
   return [
     ...LEGACY_HALAL_REDIRECTS,
+    // Non-food categories no longer use "halal" as a blanket business label.
+    // Both previously canonical and legacy-nested URLs go straight to the new
+    // wording so there are no redirect chains.
+    ...CATEGORY_URL_MIGRATIONS.flatMap(({ oldSlug, newSlug }) => [
+      { source: `/${oldSlug}`, destination: `/${newSlug}`, statusCode: 301 as const },
+      { source: `/halal/${oldSlug}`, destination: `/${newSlug}`, statusCode: 301 as const },
+      { source: `/halal/${newSlug}`, destination: `/${newSlug}`, statusCode: 301 as const },
+    ]),
+    ...CATEGORY_URL_MIGRATIONS.map(({ oldAreaBase, newAreaBase }) => ({
+      source: `/halal/${oldAreaBase}-in-:loc`,
+      destination: `/halal/${newAreaBase}-in-:loc`,
+      statusCode: 301 as const,
+    })),
     // Blueprint money-page keyword URL → the existing claim/submit funnel.
     { source: "/add-your-business", destination: "/add-listing", permanent: true },
     ...LOCATION_ALIASES.map(([from, to]) => ({
@@ -84,6 +102,10 @@ export function seoRewrites() {
   return {
     afterFiles: [
       { source: "/:slug(halal-[a-z0-9\\-]+-singapore)", destination: "/halal/:slug" },
+      ...CATEGORY_URL_MIGRATIONS.map(({ newSlug }) => ({
+        source: `/${newSlug}`,
+        destination: `/halal/${newSlug}`,
+      })),
     ],
   };
 }
