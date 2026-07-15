@@ -1,6 +1,8 @@
 import { collection, config, fields } from "@keystatic/core";
 
-const storage = process.env.NODE_ENV === "production"
+const storage =
+  process.env.NODE_ENV === "production" ||
+  process.env.NEXT_PUBLIC_KEYSTATIC_STORAGE_KIND === "github"
   ? ({ kind: "github", repo: "nicholsmindset/humblehalalsg" } as const)
   : ({ kind: "local" } as const);
 

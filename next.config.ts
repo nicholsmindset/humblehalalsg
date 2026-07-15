@@ -57,6 +57,7 @@ const cspReportOnly = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   // Pin the workspace root to this project (a stray parent lockfile otherwise
   // makes Next infer the wrong root).
   turbopack: {
