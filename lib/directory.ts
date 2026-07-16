@@ -10,6 +10,7 @@ import type { Listing, BadgeKey } from "./types";
 import type { WeekHours } from "./hours";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
+import { isBlockedFoodListing } from "./listing-safety";
 
 const catLabel = (id: string) => categories.find((c) => c.id === id)?.label || "Muslim-Owned";
 
@@ -126,7 +127,12 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
     const fromDb = !error && data && data.length > 0;
     // Hawker stalls live in their own /hawker vertical (like mosques / prayer
     // rooms) — keep them out of the general /explore directory feed.
-    const base: Listing[] = fromDb ? (data as Row[]).map(rowToListing).filter((l) => !l.hawkerCentreId) : ([] as Listing[]);
+    const base: Listing[] = fromDb
+      ? (data as Row[])
+          .filter((r) => !isBlockedFoodListing(r.slug))
+          .map(rowToListing)
+          .filter((l) => !l.hawkerCentreId)
+      : ([] as Listing[]);
     const ratings = await ratingsBySlug(sb);
     if (ratings.size) {
       for (const l of base) {
@@ -141,6 +147,7 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
 });
 
 export async function getListingBySlug(slug: string): Promise<Listing | undefined> {
+  if (isBlockedFoodListing(slug)) return undefined;
   const all = await getDirectory();
   const hit = all.find((l) => l.slug === slug) || all.find((l) => l.id === slug);
   if (hit) return hit;
@@ -151,6 +158,6 @@ export async function getListingBySlug(slug: string): Promise<Listing | undefine
     const sb = getSupabaseAdmin();
     if (!sb) return undefined;
     const { data } = await sb.from("businesses").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
-    return data ? rowToListing(data as Row) : undefined;
+    return data && !isBlockedFoodListing((data as Row).slug) ? rowToListing(data as Row) : undefined;
   } catch { return undefined; }
 }
