@@ -157,12 +157,14 @@ type EventArgs = {
   p_area?: string | null;
   p_device?: string | null;
   p_results_count?: number | null;
+  p_placement?: string | null;
 };
 
 // Params added by 0045 — stripped and retried if the DB predates the migration
 // (PGRST202 = no matching function), so the deploy-before-migration window
 // still records the legacy shape instead of dropping events.
 const V2_KEYS = ["p_area", "p_device", "p_results_count"] as const;
+const V3_KEYS = ["p_placement"] as const;
 
 function device(): string {
   try {
@@ -185,9 +187,16 @@ function emit(args: Partial<EventArgs> & { p_event_type: string }) {
   // fire-and-forget; swallow all errors so analytics never affects UX
   void sb.rpc("track_event", payload).then(({ error }) => {
     if (error?.code === "PGRST202") {
-      const legacy = { ...payload };
-      for (const k of V2_KEYS) delete legacy[k];
-      void sb.rpc("track_event", legacy).then(() => {});
+      // First retry the 0045 shape (placement was added in 0073), then the
+      // original eight-argument shape for older preview databases.
+      const v2 = { ...payload };
+      for (const k of V3_KEYS) delete v2[k];
+      void sb.rpc("track_event", v2).then(({ error: v2Error }) => {
+        if (v2Error?.code !== "PGRST202") return;
+        const legacy = { ...v2 };
+        for (const k of V2_KEYS) delete legacy[k];
+        void sb.rpc("track_event", legacy).then(() => {});
+      });
       return;
     }
     if (error && process.env.NODE_ENV === "development") {
@@ -209,8 +218,11 @@ export const track = {
       page_title: typeof document !== "undefined" ? document.title : undefined,
     });
   },
-  impression(slug: string, category?: string, area?: string) {
-    emit({ p_event_type: "impression", p_listing_slug: slug, p_category: category ?? null, p_area: area ?? null });
+  impression(slug: string, category?: string, area?: string, placement?: string) {
+    emit({ p_event_type: "impression", p_listing_slug: slug, p_category: category ?? null, p_area: area ?? null, p_placement: placement ?? null });
+  },
+  offerView(slug: string, category?: string) {
+    emit({ p_event_type: "offer_view", p_listing_slug: slug, p_category: category ?? null, p_placement: "listing_offer" });
   },
   listingView(slug: string, category?: string, meta?: ListingMeta) {
     emit({ p_event_type: "listing_view", p_listing_slug: slug, p_category: category ?? null, p_area: meta?.area ?? null });

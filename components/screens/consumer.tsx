@@ -381,6 +381,16 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
   const items = picked.length ? picked : dir.listings.filter((l) => !certifiedOnly || l.certified).slice(0, 6);
   const sort = tab === "newest" ? "newest" : tab === "top" ? "rating" : "featured";
   const tabs: [typeof tab, string][] = [["featured", "Featured"], ["newest", "Newest"], ["top", "Top rated"]];
+  const seenFeatured = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (tab !== "featured") return;
+    items.filter((item) => item.featured).forEach((item) => {
+      const slug = item.slug || item.id;
+      if (seenFeatured.current.has(slug)) return;
+      seenFeatured.current.add(slug);
+      track.impression(slug, item.catId, item.area, "homepage_featured");
+    });
+  }, [items, tab]);
   return (
     <>
       <div className="discover-head">
@@ -663,7 +673,10 @@ export function ExploreScreen() {
       const slug = l.slug || l.id;
       if (seenImpressions.current.has(slug)) return;
       seenImpressions.current.add(slug);
-      track.impression(slug, l.catId);
+      const placement = l.featured
+        ? filters.area ? "area_priority" : filters.cat ? "category_priority" : q ? "search_featured" : "directory_featured"
+        : q ? "search_results" : "directory";
+      track.impression(slug, l.catId, l.area, placement);
     });
   }, [results, visible]);
 
@@ -1905,16 +1918,16 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
 
 /** The business's live offer (owner-managed, Premium). Renders nothing while
  *  loading or when no active offer — the block never shows placeholder copy. */
-function OffersBlock({ businessId }: { businessId: string }) {
+function OffersBlock({ businessId, slug, category }: { businessId: string; slug: string; category?: string }) {
   const [offer, setOffer] = useState<{ title: string; details: string | null; ends_at: string | null } | null>(null);
   useEffect(() => {
     let alive = true;
     fetch(`/api/offers?business=${businessId}`)
       .then((r) => r.json())
-      .then((d) => { if (alive && d?.ok && d.offer) setOffer(d.offer); })
+      .then((d) => { if (alive && d?.ok && d.offer) { setOffer(d.offer); track.offerView(slug, category); } })
       .catch(() => { /* no offer — block stays hidden */ });
     return () => { alive = false; };
-  }, [businessId]);
+  }, [businessId, slug, category]);
   if (!offer) return null;
   const until = offer.ends_at
     ? new Date(`${offer.ends_at}T00:00:00+08:00`).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })
@@ -1934,7 +1947,7 @@ export function DetailOverview({ item }: { item: Listing }) {
       <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb}{item.area ? ` A neighbourhood favourite in ${item.area}, known for warm service${item.cuisine ? ` and consistent quality across ${item.cuisine.toLowerCase()}` : ""}.` : ""}</p>
       {/* Offers & promotions — Premium-only (offers_block). Shows the REAL
           offer the owner set (managed in their dashboard); nothing when none. */}
-      {canUse(item, "offers_block") && <OffersBlock businessId={item.id} />}
+      {canUse(item, "offers_block") && <OffersBlock businessId={item.id} slug={item.slug || item.id} category={item.catId} />}
       <PrayerSpaceCard item={item} />
       <div className="amenity-row">
         {item.tags.map((t) => {

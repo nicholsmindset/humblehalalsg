@@ -852,7 +852,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
               />
             )}
             {live && myBiz && <PlanBenefitsCard businessId={String(myBiz.id)} onUpgrade={() => navigate("pricing")} />}
-            <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
+            <OwnerInsights businessId={myBiz ? String(myBiz.id) : undefined} plan={currentPlan} onUpgrade={() => navigate("pricing")} />
             {/* Halal Passport for owners — the QR poster existed but had no
                 dashboard entry point, so owners couldn't find it (audit /
                 passport-clarity). A footfall/loyalty hook, not a trust signal. */}

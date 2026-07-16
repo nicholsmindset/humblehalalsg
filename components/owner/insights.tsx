@@ -7,27 +7,45 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { resolveRange, fmt } from "@/lib/analytics-dashboard";
+import { resolveRange, fmt, pct } from "@/lib/analytics-dashboard";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { canUse } from "@/lib/plans";
 import { Icon } from "../ui";
 
-type OwnerRow = {
-  listing_views: number; enquiries: number; whatsapp_clicks: number;
-  calls: number; directions: number; shortlists: number;
+type SummaryRow = {
+  impressions: number; listing_views: number; lead_actions: number;
+  enquiries: number; whatsapp_clicks: number; calls: number; website_clicks: number;
+  directions: number; shortlists: number; offer_views: number;
+  est_value_cents: number; last_event_at: string | null;
 };
-type DailyRow = { day: string; listing_views: number; lead_actions: number };
+type DailyRow = { day: string; impressions: number; listing_views: number; lead_actions: number; est_value_cents: number };
 type QueryRow = { query: string; searches: number };
+type PlacementRow = { placement: string; impressions: number };
 
-export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onUpgrade?: () => void }) {
+const PLACEMENT_LABELS: Record<string, string> = {
+  homepage_featured: "Homepage Featured rotation",
+  category_priority: "Top of category",
+  area_priority: "Top of area",
+  search_featured: "Featured search results",
+  directory_featured: "Featured directory",
+  search_results: "Organic search results",
+  directory: "Organic directory",
+  legacy_unattributed: "Legacy / unattributed",
+};
+
+const sgd = (cents: number) => new Intl.NumberFormat("en-SG", { style: "currency", currency: "SGD", maximumFractionDigits: 0 }).format((cents || 0) / 100);
+
+export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { businessId?: string; plan?: string; onUpgrade?: () => void }) {
   const supabase = useSupabaseBrowser();
   const { isLoaded, isSignedIn } = useUser();
   // Basic totals stay free; the trend + search-insights blocks are the Premium
   // "advanced analytics" differentiator (they were silently free-to-all).
   const advanced = canUse(plan, "analytics");
-  const [rows, setRows] = useState<OwnerRow[] | null>(null);
+  const [summary, setSummary] = useState<SummaryRow | null>(null);
   const [daily, setDaily] = useState<DailyRow[]>([]);
   const [queries, setQueries] = useState<QueryRow[]>([]);
+  const [placements, setPlacements] = useState<PlacementRow[]>([]);
+  const [range, setRange] = useState<"7d" | "30d" | "90d">("30d");
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState(false);
 
@@ -36,9 +54,9 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
     (async () => {
       if (!isLoaded) return;
       const sb = supabase;
-      if (!sb || !isSignedIn) {
+      if (!sb || !isSignedIn || !businessId) {
         if (alive) {
-          setRows(null);
+          setSummary(null);
           setDaily([]);
           setQueries([]);
           setLoadErr(false);
@@ -50,23 +68,25 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
         setLoading(true);
         setLoadErr(false);
       }
-      const { from, to } = resolveRange("30d");
-      // Trend + top-queries are additive (0045) — their failure never blocks the cards.
-      const [main, trend, q] = await Promise.all([
-        sb.rpc("owner_listing_analytics", { p_from: from, p_to: to }),
-        advanced ? sb.rpc("owner_listing_daily", { p_from: from, p_to: to }) : Promise.resolve({ data: [], error: null }),
-        advanced ? sb.rpc("owner_top_queries", { p_from: from, p_to: to, p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
+      const { from, to } = resolveRange(range);
+      const scoped = { p_business_id: businessId, p_from: from, p_to: to };
+      const [main, trend, q, placement] = await Promise.all([
+        sb.rpc("owner_roi_summary", scoped),
+        advanced ? sb.rpc("owner_roi_daily", scoped) : Promise.resolve({ data: [], error: null }),
+        advanced ? sb.rpc("owner_roi_queries", { ...scoped, p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
+        advanced ? sb.rpc("owner_roi_placements", scoped) : Promise.resolve({ data: [], error: null }),
       ]);
       if (alive) {
-        if (!main.error && Array.isArray(main.data)) setRows(main.data as OwnerRow[]);
+        if (!main.error && Array.isArray(main.data)) setSummary((main.data[0] as SummaryRow | undefined) ?? null);
         else if (main.error) setLoadErr(true); // was silently swallowed → looked like "no activity"
         if (!trend.error && Array.isArray(trend.data)) setDaily(trend.data as DailyRow[]);
         if (!q.error && Array.isArray(q.data)) setQueries(q.data as QueryRow[]);
+        if (!placement.error && Array.isArray(placement.data)) setPlacements(placement.data as PlacementRow[]);
         setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [supabase, isLoaded, isSignedIn, advanced]);
+  }, [supabase, isLoaded, isSignedIn, advanced, businessId, range]);
 
   if (loading) {
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;
@@ -83,21 +103,22 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
     );
   }
 
-  const total = (rows || []).reduce(
-    (a, r) => ({
-      views: a.views + (r.listing_views || 0),
-      enquiries: a.enquiries + (r.enquiries || 0),
-      whatsapp: a.whatsapp + (r.whatsapp_clicks || 0),
-      calls: a.calls + (r.calls || 0),
-      directions: a.directions + (r.directions || 0),
-      saves: a.saves + (r.shortlists || 0),
-    }),
-    { views: 0, enquiries: 0, whatsapp: 0, calls: 0, directions: 0, saves: 0 },
-  );
-  const anyActivity = rows && rows.length > 0 && Object.values(total).some((v) => v > 0);
+  const total = {
+    impressions: summary?.impressions || 0,
+    views: summary?.listing_views || 0,
+    leads: summary?.lead_actions || 0,
+    enquiries: summary?.enquiries || 0,
+    whatsapp: summary?.whatsapp_clicks || 0,
+    calls: summary?.calls || 0,
+    directions: summary?.directions || 0,
+    saves: summary?.shortlists || 0,
+    offerViews: summary?.offer_views || 0,
+    value: summary?.est_value_cents || 0,
+  };
+  const anyActivity = Object.values(total).some((v) => v > 0);
 
   // Empty-state (no backend / no owned listings / no events yet).
-  if (!anyActivity) {
+  if (!anyActivity && !advanced) {
     return (
       <div className="card mt20" style={{ padding: 28, textAlign: "center" }}>
         <div className="empty-ico" style={{ width: 48, height: 48, borderRadius: 14, background: "var(--emerald-50)", margin: "0 auto 12px" }}><Icon name="chart" size={24} /></div>
@@ -117,9 +138,15 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
   ];
   const trend = daily.map((d) => d.listing_views + d.lead_actions);
   const maxQ = Math.max(...queries.map((q) => q.searches), 1);
+  const maxPlacement = Math.max(...placements.map((p) => p.impressions), 1);
   return (
     <div className="mt20">
-      <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>Last 30 days · across your listings</p>
+      <div className="flex between center wrap g10" style={{ marginBottom: 10 }}>
+        <p className="faint" style={{ fontSize: ".82rem" }}>Source: first-party Humble Halal interactions · refreshed on load</p>
+        <div className="flex g6" role="group" aria-label="Analytics date range">
+          {(["7d", "30d", "90d"] as const).map((value) => <button key={value} className={`btn btn-sm ${range === value ? "btn-soft" : "btn-ghost"}`} onClick={() => setRange(value)}>{value === "7d" ? "7 days" : value === "30d" ? "30 days" : "90 days"}</button>)}
+        </div>
+      </div>
       <div className="admin-statgrid">
         {cards.map(([l, v, c]) => (
           <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
@@ -140,6 +167,26 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
           <Sparkline data={trend} />
         </div>
       )}
+      {advanced && (
+        <div className="card" style={{ padding: 18, marginTop: 14 }}>
+          <div className="flex between center wrap g8"><div><p style={{ fontWeight: 800 }}>Business impact</p><p className="faint" style={{ fontSize: ".78rem" }}>Visibility → profile interest → customer action</p></div><span className="pill-tag">Premium</span></div>
+          <div className="admin-statgrid" style={{ marginTop: 12 }}>
+            <div className="stat"><div className="v">{fmt(total.impressions)}</div><div className="l">Times shown</div></div>
+            <div className="stat"><div className="v">{pct(total.views, total.impressions)}%</div><div className="l">View rate</div></div>
+            <div className="stat"><div className="v">{fmt(total.leads)}</div><div className="l">Customer actions</div></div>
+            <div className="stat"><div className="v">{pct(total.leads, total.views)}%</div><div className="l">View → action</div></div>
+            <div className="stat"><div className="v">{sgd(total.value)}</div><div className="l">Est. lead value</div></div>
+            <div className="stat"><div className="v">{fmt(total.offerViews)}</div><div className="l">Offer views</div></div>
+          </div>
+          <p className="faint" style={{ fontSize: ".75rem", marginTop: 10 }}>Estimated lead value is a configurable proxy based on action type. It is not booked revenue or a guaranteed sale.</p>
+        </div>
+      )}
+      {advanced && placements.length > 0 && (
+        <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
+          <p style={{ fontWeight: 800, marginBottom: 10 }}>Where your visibility came from</p>
+          <div className="stack g8">{placements.map((p) => <div key={p.placement} className="flex center g10"><span style={{ fontSize: ".84rem", width: 180 }}>{PLACEMENT_LABELS[p.placement] || p.placement}</span><div style={{ flex: 1, height: 8, background: "var(--emerald-50)", borderRadius: 99 }}><div style={{ width: `${Math.round((100 * p.impressions) / maxPlacement)}%`, height: "100%", background: "var(--emerald)", borderRadius: 99 }} /></div><strong style={{ fontSize: ".8rem", width: 36, textAlign: "right" }}>{fmt(p.impressions)}</strong></div>)}</div>
+        </div>
+      )}
       {advanced && queries.length > 0 && (
         <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
           <p className="faint" style={{ fontSize: ".82rem", marginBottom: 10 }}>What people searched before finding you</p>
@@ -157,8 +204,7 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
         </div>
       )}
       <p className="faint" style={{ fontSize: ".78rem", marginTop: 12 }}>
-        Profile views are people opening your listing. Enquiries, WhatsApp taps, calls and directions are high-intent actions —
-        each one is a potential customer Humble Halal sent your way.
+        Profile views are people opening your listing. Customer actions include enquiries, WhatsApp, calls, website visits, directions and saves. Placement reporting begins when Phase 1 tracking is deployed; older impressions are labeled legacy/unattributed.
       </p>
     </div>
   );
