@@ -183,7 +183,9 @@ export const ingest = internalMutationGeneric({
     await ctx.db.insert("activities", {
       sourceEventId: event.eventId,
       kind: `source.${event.eventType}`,
-      summary: `${event.aggregateType.replace("_", " ")} ${event.eventType}d in Supabase`,
+      summary: event.eventType === "upsert"
+        ? `${event.aggregateType.replace("_", " ")} synced from Supabase`
+        : `${event.aggregateType.replace("_", " ")} deleted in Supabase`,
       aggregateType: event.aggregateType,
       aggregateSourceId: event.aggregateId,
       occurredAt: event.occurredAt,

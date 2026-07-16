@@ -278,7 +278,7 @@ function LiveCrm() {
           <div style={{ display: "grid", gap: 11, marginTop: 14 }}>
             {data.activities.map((activity) => (
               <div key={activity._id} style={{ borderBottom: "1px solid var(--cream-200)", paddingBottom: 10 }}>
-                <p style={{ fontSize: ".84rem" }}>{activity.summary}</p>
+                <p style={{ fontSize: ".84rem" }}>{activity.summary.replace(/ upsertd in Supabase$/, " synced from Supabase")}</p>
                 <p className="muted" style={{ fontSize: ".7rem", marginTop: 3 }}>{ago(activity.occurredAt)}</p>
               </div>
             ))}
