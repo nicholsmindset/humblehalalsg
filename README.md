@@ -4,6 +4,8 @@
 
 🌙 Live at **[www.humblehalal.com](https://www.humblehalal.com)**
 
+The admin CRM uses Convex as a live operational sidecar while Supabase remains the source of truth for businesses, leads, consent, routing, and billing. See [the CRM architecture runbook](docs/crm-architecture.md) for setup and rollout.
+
 Humble Halal helps Muslims in Singapore discover MUIS-certified kitchens, Muslim-owned cafés, shops and services — and plan Muslim-friendly travel (hotels, flights, Umrah) worldwide. It is a **discovery platform, not a certifier**: MUIS HalalSG remains the authority; we make the facts easy to find, with clear badges separating what's officially certified from what's self-declared.
 
 ---

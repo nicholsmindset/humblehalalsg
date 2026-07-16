@@ -19,6 +19,7 @@ import { AdminEnrichment } from "./admin-enrichment";
 import { AdminTiktok } from "./admin-tiktok";
 import { AdminLeads } from "./admin-leads";
 import { AdminBusinesses } from "./admin-businesses";
+import { AdminCrm } from "./admin-crm";
 import { FLAG_COPY } from "./admin-flag-copy";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
@@ -103,6 +104,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
     ["rollout", "Rollout plan", "megaphone"],
     ["approvals", "Listing approvals", "doc"],
     ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
+    ["crm", "CRM workspace", "users"],
     ["claims", "Ownership claims", "building"],
     ["businesses", "Businesses", "store"],
     ["suggestions", "Suggestions", "sparkles"],
@@ -156,6 +158,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
+          {section==='crm' && <AdminCrm />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => setSection('verification')} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
