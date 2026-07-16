@@ -38,6 +38,13 @@ create trigger sync_business_plan_entitlements
   before insert or update of plan, featured on public.businesses
   for each row execute function public.sync_business_plan_entitlements();
 
+-- Reconcile existing rows immediately; the trigger keeps every future write in
+-- sync. This is the moment current subscribers receive the exact visibility
+-- promised on the pricing page, even if an older webhook left a stale flag.
+update public.businesses
+set featured = plan in ('featured', 'premium')
+where featured is distinct from (plan in ('featured', 'premium'));
+
 -- Stripe/webhook lifecycle ledger. The webhook event id is unique, so webhook
 -- retries never create duplicate entitlement history.
 create table if not exists public.plan_entitlement_events (
