@@ -49,6 +49,11 @@ describe("plans — canUse gates", () => {
     expect(canUse("featured", "featured_placement")).toBe(true);
     expect(canUse("premium", "featured_placement")).toBe(true);
   });
+  it("priority support is Featured+", () => {
+    expect(canUse("verified", "priority_support")).toBe(false);
+    expect(canUse("featured", "priority_support")).toBe(true);
+    expect(canUse("premium", "priority_support")).toBe(true);
+  });
   it("premium-only features", () => {
     const premiumOnly: Feature[] = ["offers_block", "analytics"];
     for (const f of premiumOnly) {

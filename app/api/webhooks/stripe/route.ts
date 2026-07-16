@@ -178,6 +178,18 @@ export async function POST(req: Request) {
             if (subscription) {
               await supa.from("subscriptions").upsert({ business_id: businessId, stripe_subscription_id: subscription, plan, status: "active" }, { onConflict: "stripe_subscription_id" });
             }
+            // Durable proof of the paid promise. This ledger lets support/admins
+            // reconcile Stripe against the plan and automatic placement state.
+            // Best-effort during a rolling migration: fulfillment must remain
+            // successful even if the new audit table is not visible yet.
+            await supa.from("plan_entitlement_events").upsert({
+              stripe_event_id: event.id,
+              stripe_subscription_id: subscription || null,
+              business_id: businessId,
+              plan,
+              subscription_status: "active",
+              source: "stripe",
+            }, { onConflict: "stripe_event_id", ignoreDuplicates: true });
             // In-app bell: plan is live (owners get an email too, but the bell is
             // where they track account state). dedupe on the sub so a retry or the
             // paired async_payment_succeeded can't double-notify.
@@ -509,6 +521,14 @@ export async function POST(req: Request) {
               featured: active && FEATURED_PLANS.has(plan || ""),
             }).eq("id", businessId);
           }
+          await supa.from("plan_entitlement_events").upsert({
+            stripe_event_id: event.id,
+            stripe_subscription_id: sub.id,
+            business_id: businessId,
+            plan: active && plan ? plan : "free",
+            subscription_status: sub.status,
+            source: "stripe",
+          }, { onConflict: "stripe_event_id", ignoreDuplicates: true });
           // In-app bell on terminal cancellation only (not every subscription.*
           // churn event) so the owner knows their listing dropped to free.
           if (event.type === "customer.subscription.deleted") {

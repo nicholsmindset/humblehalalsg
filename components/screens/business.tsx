@@ -24,6 +24,7 @@ import { PayoutsPanel } from "../owner/payouts";
 import { CertVault } from "../owner/cert-vault";
 import { OwnerAds } from "../owner/ads-tab";
 import { OwnerInsights } from "../owner/insights";
+import { PlanBenefitsCard } from "../owner/plan-benefits";
 import { GrowthServicesCard } from "../owner/growth-services";
 import { OwnerOfferCard } from "../owner/offer-card";
 import { PendingSubmissions, type PendingSubmission } from "../owner/pending-submissions";
@@ -850,6 +851,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                 onAddListing={() => navigate("add-listing")}
               />
             )}
+            {live && myBiz && <PlanBenefitsCard businessId={String(myBiz.id)} onUpgrade={() => navigate("pricing")} />}
             <OwnerInsights plan={currentPlan} onUpgrade={() => navigate("pricing")} />
             {/* Halal Passport for owners — the QR poster existed but had no
                 dashboard entry point, so owners couldn't find it (audit /

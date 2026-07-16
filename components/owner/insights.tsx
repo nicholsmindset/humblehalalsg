@@ -54,8 +54,8 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
       // Trend + top-queries are additive (0045) — their failure never blocks the cards.
       const [main, trend, q] = await Promise.all([
         sb.rpc("owner_listing_analytics", { p_from: from, p_to: to }),
-        sb.rpc("owner_listing_daily", { p_from: from, p_to: to }),
-        sb.rpc("owner_top_queries", { p_from: from, p_to: to, p_limit: 6 }),
+        advanced ? sb.rpc("owner_listing_daily", { p_from: from, p_to: to }) : Promise.resolve({ data: [], error: null }),
+        advanced ? sb.rpc("owner_top_queries", { p_from: from, p_to: to, p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
       ]);
       if (alive) {
         if (!main.error && Array.isArray(main.data)) setRows(main.data as OwnerRow[]);
@@ -66,7 +66,7 @@ export function OwnerInsights({ plan = "free", onUpgrade }: { plan?: string; onU
       }
     })();
     return () => { alive = false; };
-  }, [supabase, isLoaded, isSignedIn]);
+  }, [supabase, isLoaded, isSignedIn, advanced]);
 
   if (loading) {
     return <div className="card mt20" style={{ padding: 28, height: 120, opacity: 0.5 }} aria-busy="true" />;

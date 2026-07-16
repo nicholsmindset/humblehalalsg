@@ -17,6 +17,7 @@ export type Feature =
   | "featured_placement"
   | "homepage_rotation"
   | "priority_rank"
+  | "priority_support"
   | "offers_block"
   | "analytics";
 
@@ -53,6 +54,7 @@ const FEATURED_FEATURES: Feature[] = [
   "featured_placement",
   "homepage_rotation",
   "priority_rank",
+  "priority_support",
 ];
 // No unbuilt promises here: "multiple locations" and "ad credits" were listed
 // before they existed and are withdrawn until they ship (packages must deliver
@@ -106,10 +108,10 @@ export const PLANS: Record<PlanKey, Plan> = {
     features: FEATURED_FEATURES,
     bullets: [
       "Everything in Verified",
-      "Featured placement",
-      "Top of category & area",
-      "Homepage rotation",
-      "Priority support",
+      "Featured placement (automatic while subscribed)",
+      "Top of category & area (automatic)",
+      "Fair daily homepage rotation",
+      "Priority support from your dashboard",
     ],
   },
   premium: {
@@ -124,7 +126,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     bullets: [
       "Everything in Featured",
       "Offers & promotions on your listing",
-      "Advanced analytics & search insights",
+      "Advanced analytics & search insights (Premium only)",
       "Up to 30 photos",
     ],
   },
