@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { MapView, type MapPoint } from "@/components/map/map-view";
 import { SG_CENTER } from "@/lib/data";
 import type { HawkerCentre } from "@/lib/hawker";
@@ -8,6 +9,7 @@ import type { HawkerCentre } from "@/lib/hawker";
    centres are dropped by MapView. Used full-size on /hawker and scoped to one
    centre on /hawker/[centre]. */
 export function HawkerMap({ centres, height = "clamp(320px, 56vh, 460px)", zoom = 12 }: { centres: HawkerCentre[]; height?: string; zoom?: number }) {
+  const router = useRouter();
   const points: MapPoint[] = centres
     .filter((c) => c.lat != null && c.lng != null)
     .map((c) => ({
@@ -23,7 +25,13 @@ export function HawkerMap({ centres, height = "clamp(320px, 56vh, 460px)", zoom 
 
   return (
     <div className="map-canvas" style={{ height, borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid var(--line)" }}>
-      <MapView center={center} zoom={single ? 15 : zoom} points={points} fit={!single} />
+      <MapView
+        center={center}
+        zoom={single ? 15 : zoom}
+        points={points}
+        fit={!single}
+        onView={(id) => router.push(`/hawker/${encodeURIComponent(id)}`)}
+      />
     </div>
   );
 }
