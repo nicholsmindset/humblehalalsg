@@ -23,6 +23,7 @@ import { LEAD_VERTICALS, LEAD_CONSENT_VERSION, LEAD_ROUTE_CAP, verticalForCatId 
 import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 import { areaProfile, nearbyAreaIds } from "@/lib/area-content";
 import { categoryContent } from "@/lib/category-content";
+import { categoryPageTerminology } from "@/lib/category-presentation";
 import { HALALSG_BASE } from "@/lib/muis";
 import { screenToPath } from "@/lib/routes";
 import { Faq } from "../faq";
@@ -1042,7 +1043,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
   const areaName = page.areaName || "Singapore";
   const cat = page.catId ? HHData.categories.find((c) => c.id === page.catId) : null;
   const isCategoryPage = !!page.catId && !page.areaId;
-  const isFood = !page.catId || page.catId === "restaurants" || page.catId === "cafes";
+  const isFood = !page.catId || ["restaurants", "cafes", "groceries"].includes(page.catId);
   const content = categoryContent(page.catId);
   // No whole-directory fallback: a page with zero real matches renders its
   // honest "No places yet — suggest one" state instead of unrelated listings.
@@ -1050,6 +1051,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
   const related = relatedSeoPages(page, 6);
   const noun = cat ? cat.label.toLowerCase() : "places";
   const placeLabel = page.areaId ? `in ${areaName}` : "in Singapore";
+  const terminology = categoryPageTerminology(page.catId, noun);
 
   // Hand-written area profile (area-content.ts) powers the v2 area template:
   // unique local intro (already on page.intro), MRT + landmark blocks, and
@@ -1091,7 +1093,11 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
           <p className="muted" style={{ maxWidth: 640, marginTop: 10, fontSize: "1.05rem" }}>{page.intro}</p>
           <div className="pillbar" style={{ marginTop: 16 }}>
             {cat && <button className="chip" onClick={() => navigate("explore", { cat: page.catId })}>All {cat.label}</button>}
-            <button className="chip" onClick={() => navigate("explore", { halal: "certified" })}>MUIS Certified</button>
+            {isFood ? (
+              <button className="chip" onClick={() => navigate("explore", { halal: "muis" })}>MUIS Certified</button>
+            ) : (
+              <button className="chip" onClick={() => navigate("explore", { halal: "certified" })}>Admin Verified</button>
+            )}
             <button className="chip" onClick={() => navigate("explore", { family: "true" })}>Family friendly</button>
             <button className="chip" onClick={() => navigate("explore", { prayer: "true" })}>Prayer space</button>
             <button className="chip" onClick={() => navigate("map")}>Map view</button>
@@ -1101,11 +1107,11 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
 
       <div className="hh-wrap seo-body">
         <div>
-          <div className="flex between center" style={{ marginBottom: 16 }}><h2 style={{ fontSize: "1.4rem" }}>Top halal {noun} {placeLabel}</h2><a className="link" {...link("map")}>View on map <Icon name="map" size={15} /></a></div>
+          <div className="flex between center" style={{ marginBottom: 16 }}><h2 style={{ fontSize: "1.4rem" }}>Top {terminology.resultNoun} {placeLabel}</h2><a className="link" {...link("map")}>View on map <Icon name="map" size={15} /></a></div>
           {results.length ? (
             <div className="grid-cards">{results.map((l) => <ListingCard key={l.id} item={l} />)}</div>
           ) : (
-            <Empty icon="search" title="No places yet" body={`We're still adding halal spots for ${page.h1.toLowerCase()}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
+            <Empty icon="search" title="No places yet" body={`We're still adding ${terminology.resultNoun} ${placeLabel}.`} action="Suggest a place" onAction={() => navigate("suggest")} />
           )}
 
           {/* Lead-gen banner for high-ticket verticals (weddings, umrah, services…). */}
@@ -1113,7 +1119,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
             <div className="card mt16" style={{ padding: "18px 20px", display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ minWidth: 220, flex: 1 }}>
                 <strong style={{ fontSize: "1.02rem" }}>Planning something? Get up to {LEAD_ROUTE_CAP} free quotes</strong>
-                <p className="muted" style={{ marginTop: 4, fontSize: ".88rem" }}>Tell us what you need once — trusted halal {noun} send you quotes. Free, no obligation.</p>
+                <p className="muted" style={{ marginTop: 4, fontSize: ".88rem" }}>Tell us what you need once — trusted {terminology.resultNoun} send you quotes. Free, no obligation.</p>
               </div>
               <button
                 className="btn btn-gold"
@@ -1168,14 +1174,14 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
 
           {/* collapsible SEO content (crawlable in the DOM) */}
           <div className="seo-prose mt24">
-            <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>{isCategoryPage ? `Choosing halal ${noun} in Singapore` : `Halal ${noun} ${placeLabel}`}</h2>
+            <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>Choosing {terminology.singularNoun} {placeLabel}</h2>
             <div className="faq-list">
               <details className="faq-item" name="seo-content" open>
-                <summary>What to look for{cat ? ` in a halal ${cat.label.toLowerCase().replace(/s$/, "")}` : ""}<span className="faq-chevron" aria-hidden="true" /></summary>
+                <summary>What to look for when choosing {terminology.singularNoun}<span className="faq-chevron" aria-hidden="true" /></summary>
                 <ul className="seo-bullets">{content.lookFor.map((b) => <li key={b}><Icon name="check" size={15} /> <span>{b}</span></li>)}</ul>
               </details>
               <details className="faq-item" name="seo-content">
-                <summary>Halal considerations<span className="faq-chevron" aria-hidden="true" /></summary>
+                <summary>{terminology.considerationsLabel}<span className="faq-chevron" aria-hidden="true" /></summary>
                 <ul className="seo-bullets">{content.considerations.map((b) => <li key={b}><Icon name="info" size={15} /> <span>{b}</span></li>)}</ul>
               </details>
               {isCategoryPage && areaLinks.length > 0 && (
@@ -1191,7 +1197,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
             <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Weekly halal guide</span>
             <h2 style={{ fontSize: "1.2rem", marginTop: 8 }}>New halal finds, every week</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              Be first to hear about new {noun} {placeLabel} — Muslim-owned openings, verified spots and community
+              Be first to hear about new {terminology.resultNoun} {placeLabel} — Muslim-owned openings, verified spots and community
               favourites — in our free weekly newsletter.
             </p>
             <div style={{ marginTop: 14 }}>
@@ -1199,7 +1205,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
             </div>
           </section>
 
-          <Faq items={faqItems} title={`${cat ? "Halal " + cat.label : "Halal in " + areaName} — your questions, answered`} eyebrow="Good to know" />
+          <Faq items={faqItems} title={`${page.h1} — your questions, answered`} eyebrow="Good to know" />
         </div>
 
         <aside className="seo-side">

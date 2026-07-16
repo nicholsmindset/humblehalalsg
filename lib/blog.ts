@@ -1409,9 +1409,9 @@ const rawPosts: RawPost[] = [
     title: "Muslim-Owned Beauty, Fashion & Services to Support",
     dek: "Beyond food — Muslim-owned beauty salons, modest fashion, home services, home-based businesses and more across Singapore.",
     answer:
-      "Singapore has a thriving community of Muslim-owned businesses beyond food — halal-friendly beauty salons, modest fashion labels, home services, automotive, tuition and events. For non-food businesses, MUIS certification does not apply, so the trust signal is Muslim ownership and how the service is run. Browse them by category on Humble Halal and look for the Muslim-Owned label.",
+      "Singapore has a thriving community of Muslim-owned businesses beyond food — Muslim-friendly beauty salons, modest fashion labels, home services, automotive, tuition and events. For non-food businesses, MUIS certification does not apply, so the trust signal is Muslim ownership and how the service is run. Browse them by category on Humble Halal and look for the Muslim-Owned label.",
     datePublished: "2026-05-26",
-    dateModified: "2026-07-06",
+    dateModified: "2026-07-16",
     author: AUTHOR,
     readMins: 7,
     tags: ["Muslim-owned", "Community", "Guides", "Services"],

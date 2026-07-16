@@ -2,7 +2,7 @@
 
 /* Subtle inline lead capture (leads growth loop, PR-B).
    Renders as a COLLAPSED one-line teaser ("Planning a wedding? Get free quotes
-   from halal wedding vendors →") that expands to a 3-field form on click —
+   from Muslim wedding vendors →") that expands to a 3-field form on click —
    deliberately low-key so it never competes with the newsletter capture the
    owner actively promotes. Self-gates via GET /api/leads/config (client-side,
    because blog posts are SSG and guide pages revalidate daily — admin toggles
@@ -56,7 +56,7 @@ export function useLegacySurfaceVisible(surface: SurfaceKey): boolean {
 }
 
 const TEASER: Record<string, string> = {
-  weddings: "Planning a wedding? Get free quotes from halal wedding vendors",
+  weddings: "Planning a wedding? Get free quotes from Malay & Muslim wedding vendors",
   catering: "Feeding a crowd? Get free quotes from halal caterers",
   umrah: "Planning Umrah? Get free quotes from trusted travel agents",
   photography: "Need a photographer? Get free quotes from Muslim-owned studios",

@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { allSeoPages } from "../../lib/seo-pages";
 import { categories } from "../../lib/data";
-import { CATEGORY_PRESENTATION, categoryDirectoryLabel } from "../../lib/category-presentation";
+import {
+  CATEGORY_PRESENTATION,
+  categoryDirectoryLabel,
+  categoryPageTerminology,
+} from "../../lib/category-presentation";
 
 /* Audit #6 — the footer / `/halal` hub render category links as
    a category-aware label → the page slug, deriving the LABEL from the category
@@ -36,5 +40,29 @@ describe("category SEO links — label ↔ slug integrity", () => {
   it("slugs are unique (no collision routes a label to another page)", () => {
     const slugs = catPages.map((p) => p.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it("never generates a halal-prefixed H1 for a non-food business category", () => {
+    const nonFood = new Set([
+      "beauty", "health", "fashion", "services", "automotive", "weddings",
+      "education", "professional", "travel",
+    ]);
+    for (const page of allSeoPages().filter((p) => p.catId && nonFood.has(p.catId))) {
+      expect(page.h1, page.slug).not.toMatch(/\bhalal\s+(beauty|health|fashion|home|automotive|wedding|education|professional|travel)\b/i);
+    }
+  });
+
+  it("uses precise result-page language for every non-food category", () => {
+    expect(categoryPageTerminology("education").resultNoun).toBe("Islamic education providers");
+    expect(categoryPageTerminology("automotive").resultNoun).toBe("Muslim-owned automotive service providers");
+    expect(categoryPageTerminology("fashion").resultNoun).toBe("modest fashion shops & designers");
+    expect(categoryPageTerminology("services").resultNoun).toBe("Muslim-owned home service providers");
+    expect(categoryPageTerminology("professional").resultNoun).toBe("Muslim-owned professional service providers");
+  });
+
+  it("keeps halal terminology for food categories", () => {
+    expect(categoryPageTerminology("restaurants").resultNoun).toBe("halal restaurants");
+    expect(categoryPageTerminology("cafes").resultNoun).toBe("halal cafés");
+    expect(categoryPageTerminology("groceries").resultNoun).toBe("halal grocers");
   });
 });

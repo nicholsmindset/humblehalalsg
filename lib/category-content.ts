@@ -6,7 +6,7 @@
 import type { QA } from "./faq";
 
 export interface CategoryContent {
-  /** Optional H1 override; else "Halal {label} in Singapore". */
+  /** Optional H1 override; else the canonical category presentation label. */
   h1?: string;
   /** Singapore-wide intro paragraph (keyword-rich, ~60–80 words). */
   intro: string;
@@ -83,12 +83,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   beauty: {
     h1: "Muslim-Friendly Beauty & Grooming in Singapore",
     intro:
-      "Find halal-friendly beauty and grooming in Singapore — Muslimah salons, women-only spaces, barbers, spa and nail studios, and halal cosmetics. Browse Muslim-owned providers with prayer-friendly, private settings and halal-confidence scores you can trust.",
+      "Find Muslim-friendly beauty and grooming in Singapore — Muslimah salons, women-only spaces, barbers, spa and nail studios, and halal cosmetics. Browse Muslim-owned providers with prayer-friendly, private settings, clear trust labels and community reviews.",
     lookFor: [
       "Women-only or private rooms for Muslimah services",
       "Muslim-Owned and Admin Verified labels",
       "Halal / alcohol-free and wudhu-friendly products",
-      "Halal-confidence score on each listing",
+      "Clear ownership and verification details",
       "Reviews from the community",
     ],
     considerations: [
@@ -104,13 +104,13 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   health: {
     h1: "Muslim-Friendly Health, Cupping (Bekam) & Clinics in Singapore",
     intro:
-      "Find Muslim-friendly health and wellness in Singapore — clinics, dental, pharmacies, cupping (bekam), confinement care and women-friendly fitness. Discover Muslim-owned and trusted providers with prayer-friendly, modesty-aware care and halal-confidence scores.",
+      "Find Muslim-friendly health and wellness in Singapore — clinics, dental, pharmacies, cupping (bekam), confinement care and women-friendly fitness. Discover Muslim-owned and trusted providers offering prayer-friendly, modesty-aware care, with clear verification details and reviews.",
     lookFor: [
       "Women-friendly or female practitioners where needed",
       "Muslim-Owned and Admin Verified providers",
       "Halal medication and alcohol-free options at pharmacies",
       "Cupping (bekam) and Islamic wellness practitioners",
-      "Halal-confidence score on each listing",
+      "Clear ownership, credentials and verification details",
     ],
     considerations: [
       "Ask pharmacies about halal-formulated or gelatin-free medication where it matters to you.",
@@ -125,12 +125,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   fashion: {
     h1: "Modest Fashion, Abaya & Baju Kurung in Singapore",
     intro:
-      "Shop modest fashion in Singapore — abayas, hijabs (tudung), jubah, baju kurung, tailoring, songkok and modest footwear from Muslim-owned and homegrown labels. Browse halal-conscious boutiques by area, with halal-confidence scores and community reviews.",
+      "Shop modest fashion in Singapore — abayas, hijabs (tudung), jubah, baju kurung, tailoring, songkok and modest footwear from Muslim-owned and homegrown labels. Browse boutiques by area, with clear ownership details and community reviews.",
     lookFor: [
       "Muslim-Owned modest fashion and hijab labels",
       "Tailoring and alteration services",
       "Bridal, abaya and occasion wear specialists",
-      "Halal-confidence score and reviews",
+      "Ownership details and community reviews",
       "In-store or online (with local pickup) options",
     ],
     considerations: [
@@ -146,11 +146,11 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   services: {
     h1: "Muslim-Owned Home Services in Singapore",
     intro:
-      "Find Muslim-owned home services in Singapore — renovation and interior, aircon servicing, cleaning, movers, plumbing, electrical and handyman work. Get matched with trusted, halal-conscious providers, compare halal-confidence scores, and request free quotes.",
+      "Find Muslim-owned home services in Singapore — renovation and interior, aircon servicing, cleaning, movers, plumbing, electrical and handyman work. Compare verified business details and customer reviews, then request free quotes from suitable providers.",
     lookFor: [
       "Muslim-Owned and Admin Verified providers",
       "Transparent quotes and clear scope",
-      "Halal-confidence score and customer reviews",
+      "Verified business details and customer reviews",
       "Coverage in your area",
       "The option to request a quote in minutes",
     ],
@@ -167,11 +167,11 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   automotive: {
     h1: "Muslim-Owned Automotive Services in Singapore",
     intro:
-      "Find Muslim-owned automotive services in Singapore — workshops, servicing, detailing, car rental and dealers. Browse trusted, halal-conscious providers by area, compare halal-confidence scores and reviews, and request quotes for your next service.",
+      "Find Muslim-owned automotive services in Singapore — workshops, servicing, detailing, car rental and dealers. Browse trusted providers by area, compare business verification details and reviews, and request quotes for your next service.",
     lookFor: [
       "Muslim-Owned workshops and detailers",
       "Transparent servicing quotes",
-      "Halal-confidence score and reviews",
+      "Business verification details and reviews",
       "Convenient locations and rental options",
       "The option to request a quote",
     ],
@@ -187,12 +187,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   weddings: {
     h1: "Malay & Muslim Wedding Vendors in Singapore",
     intro:
-      "Plan a Malay or halal wedding in Singapore — bridal and MUA, photography, kompang, hantaran and deco, florists, catering and planners. Discover Muslim-owned wedding vendors, compare halal-confidence scores and reviews, and request quotes for your big day.",
+      "Plan a Malay or Muslim wedding in Singapore — bridal and MUA, photography, kompang, hantaran and deco, florists, halal catering and planners. Discover Muslim-owned wedding vendors, compare portfolios and reviews, and request quotes for your big day.",
     lookFor: [
       "Muslim-Owned bridal, MUA and deco specialists",
       "Photography and videography packages",
       "Kompang, hantaran and event styling",
-      "Halal-confidence score and portfolios",
+      "Portfolios, ownership details and reviews",
       "The option to request quotes from several vendors",
     ],
     considerations: [
@@ -208,12 +208,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   education: {
     h1: "Islamic Education, Quran Classes & Tuition in Singapore",
     intro:
-      "Find Islamic education and tuition in Singapore — Quran, tahfiz and tajweed classes, madrasah and Islamic studies, plus academic tuition and enrichment. Discover Muslim-owned centres and tutors, compare halal-confidence scores, and enquire directly.",
+      "Find Islamic education and tuition in Singapore — Quran, tahfiz and tajweed classes, madrasah and Islamic studies, plus academic tuition and enrichment. Discover Muslim-owned centres and tutors, compare qualifications, class formats and reviews, and enquire directly.",
     lookFor: [
       "Quran, tahfiz and tajweed programmes",
       "Qualified asatizah and experienced tutors",
       "Muslim-Owned centres and home tutors",
-      "Halal-confidence score and reviews",
+      "Teacher qualifications, verification details and reviews",
       "Class formats (in-centre, online, 1-to-1)",
     ],
     considerations: [
@@ -228,12 +228,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   professional: {
     h1: "Muslim-Owned Professional Services in Singapore",
     intro:
-      "Find Muslim-owned professional services in Singapore — accounting, legal and Syariah, insurance and takaful, Islamic financial planning, marketing, design and printing. Browse trusted, halal-conscious providers, compare halal-confidence scores, and request quotes.",
+      "Find Muslim-owned professional services in Singapore — accounting, legal and Syariah, insurance and takaful, Islamic financial planning, marketing, design and printing. Browse trusted providers, compare credentials and reviews, and request quotes.",
     lookFor: [
       "Muslim-Owned and Admin Verified firms",
       "Takaful and Islamic finance specialists",
       "Clear scope and transparent fees",
-      "Halal-confidence score and reviews",
+      "Credentials, verification details and reviews",
       "The option to request a quote",
     ],
     considerations: [
@@ -248,12 +248,12 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   travel: {
     h1: "Umrah Agencies & Muslim-Friendly Travel in Singapore",
     intro:
-      "Plan halal travel from Singapore — Umrah and Hajj agencies, Islamic tours and Muslim-friendly stays. Discover trusted, Muslim-owned travel providers, compare halal-confidence scores and reviews, and request quotes for your next pilgrimage or holiday.",
+      "Plan Umrah or Muslim-friendly travel from Singapore — Umrah and Hajj agencies, Islamic tours and Muslim-friendly stays. Discover trusted, Muslim-owned travel providers, compare licensing, package details and reviews, and request quotes for your next pilgrimage or holiday.",
     lookFor: [
       "Licensed Umrah and Hajj agencies",
       "Muslim-Owned and Admin Verified providers",
       "Clear package inclusions and itineraries",
-      "Halal-confidence score and reviews",
+      "Licensing, verification details and reviews",
       "The option to request quotes",
     ],
     considerations: [
@@ -262,7 +262,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       "Read recent traveller reviews before paying deposits.",
     ],
     faq: [
-      { q: "How do I choose an Umrah agency in Singapore?", a: "Compare licensed, Muslim-owned agencies by halal-confidence score and reviews, then request quotes to compare packages, hotels and itineraries." },
+      { q: "How do I choose an Umrah agency in Singapore?", a: "Compare licensed, Muslim-owned agencies by verification details and reviews, then request quotes to compare packages, hotels and itineraries." },
     ],
   },
 };
