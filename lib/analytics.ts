@@ -224,6 +224,14 @@ export const track = {
   offerView(slug: string, category?: string) {
     emit({ p_event_type: "offer_view", p_listing_slug: slug, p_category: category ?? null, p_placement: "listing_offer" });
   },
+  couponView(slug: string, couponId: string) {
+    emit({ p_event_type: "coupon_view", p_listing_slug: slug, p_placement: "listing_coupon" });
+    dl({ event: "view_promotion", listing_id: slug, promotion_id: couponId });
+  },
+  couponClaim(slug: string, couponId: string) {
+    emit({ p_event_type: "coupon_claim", p_listing_slug: slug, p_placement: "listing_coupon" });
+    dl({ event: "claim_coupon", listing_id: slug, promotion_id: couponId });
+  },
   listingView(slug: string, category?: string, meta?: ListingMeta) {
     emit({ p_event_type: "listing_view", p_listing_slug: slug, p_category: category ?? null, p_area: meta?.area ?? null });
     dl({

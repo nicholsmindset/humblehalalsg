@@ -19,6 +19,8 @@ import { AdminEnrichment } from "./admin-enrichment";
 import { AdminTiktok } from "./admin-tiktok";
 import { AdminLeads } from "./admin-leads";
 import { AdminBusinesses } from "./admin-businesses";
+import { AdminCoupons } from "./admin-coupons";
+import { AdminMedia } from "./admin-media";
 import { AdminCrm } from "./admin-crm";
 import { PendingListingEditButton } from "../owner/pending-submissions";
 import { FLAG_COPY } from "./admin-flag-copy";
@@ -108,6 +110,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
       id: "directory", label: "Directory & trust", icon: "store", items: [
         ["approvals", "Listing approvals", "doc"],
         ["businesses", "Businesses", "store"],
+        ["media", "Media quality", "camera"],
         ["claims", "Ownership claims", "building"],
         ["suggestions", "Suggestions", "sparkles"],
         ["verification", "Halal verification", "shield-check"],
@@ -126,6 +129,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
     },
     {
       id: "growth", label: "Growth & revenue", icon: "trend", items: [
+        ["coupons", "Coupons & offers", "ticket"],
         ["revenue", "Revenue (P&L)", "trend"],
         ["featured", "Featured & ads", "trophy"],
         ["monetization", "Monetization", "settings"],
@@ -213,6 +217,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='crm' && <AdminCrm onNavigate={selectSection} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => selectSection('verification')} />}
+          {section==='media' && <AdminMedia toast={toast} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
           {section==='events' && <AdminEvents toast={toast} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
@@ -225,6 +230,7 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='users' && <AdminUsers toast={toast} />}
           {section==='catalog' && <AdminCatalog toast={toast} />}
           {section==='featured' && <AdminFeatured toast={toast} />}
+          {section==='coupons' && <AdminCoupons toast={toast} />}
           {section==='monetization' && <AdminMonetization />}
           {section==='payments' && <AdminPayments />}
           {section==='travel-rev' && <AdminTravelRevenue />}

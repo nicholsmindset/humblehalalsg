@@ -34,6 +34,7 @@ export function PhotoManager({
   toast: (m: string) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const atCap = photos.length >= max;
@@ -43,6 +44,7 @@ export function PhotoManager({
     const files = Array.from(e.target.files || []);
     e.target.value = ""; // allow re-selecting the same file later
     if (!files.length) return;
+    if (businessId && !rightsConfirmed) { toast("Confirm you own or have permission to use these photos."); return; }
     setUploading(true);
     try {
       // Accumulate locally — the `photos` closure goes stale after the first
@@ -54,6 +56,7 @@ export function PhotoManager({
           const fd = new FormData();
           fd.set("file", file);
           if (businessId) fd.set("businessId", businessId);
+          if (businessId) fd.set("rightsConfirmed", "true");
           const res = await fetch("/api/owner/photos", { method: "POST", body: fd });
           const json = await res.json().catch(() => ({ ok: false }));
           if (json?.ok && json.url) {
@@ -66,6 +69,9 @@ export function PhotoManager({
               not_configured: "Photo uploads aren’t available yet.",
               too_large: `${file.name} is too large (max 5MB).`,
               bad_type: `${file.name} isn’t a supported image.`,
+              too_small: `${file.name} is too small. Use at least 800×600px.`,
+              duplicate: `${file.name} is already in this listing.`,
+              rights_required: "Confirm you have permission to publish these photos.",
               forbidden: "You don’t have access to this listing.",
             };
             toast(msg[json?.reason] || `Couldn’t upload ${file.name}.`);
@@ -147,8 +153,12 @@ export function PhotoManager({
         )}
       </div>
       <p className="faint" style={{ fontSize: ".78rem", marginTop: 8 }}>
-        {photos.length} of {max} photos · the cover photo appears on your public page and in search results.
+        {photos.length} of {max} photos · use landscape images at least 1200×900px when possible. The first photo appears as the cover.
       </p>
+      {businessId && <label className="flex g8 center" style={{ marginTop: 8, fontSize: ".8rem" }}>
+        <input type="checkbox" checked={rightsConfirmed} onChange={(e) => setRightsConfirmed(e.target.checked)} />
+        I own these photos or have permission to publish them on this listing.
+      </label>}
       {atCap && nextPlan && (
         <div className="notice" style={{ marginTop: 8 }}>
           <Icon name="camera" size={16} />

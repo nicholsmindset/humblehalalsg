@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { sanitizeAttributes } from "@/lib/attributes";
 import { sanitizePhotos } from "@/lib/photos";
 import { slugify } from "@/lib/slug";
+import { syncMediaProjection } from "@/lib/media-governance";
 
 /* Admin listing management — the takedown/correction surface the moderation
    queues lacked (they only act on staging rows and reports; nothing could
@@ -107,6 +108,7 @@ export async function PATCH(req: Request) {
 
   const { error } = await db.from("businesses").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (Array.isArray(patch.photos)) await syncMediaProjection(db, { businessId: id, photos: patch.photos as { url: string; caption?: string }[], actor: gate.userId, source: "admin_upload", rightsConfirmed: true });
 
   await logAudit(db, {
     actor: gate.userId,
@@ -151,6 +153,7 @@ export async function PUT(req: Request) {
     ({ data: created, error } = await db.from("businesses").insert(insert).select(LIST_COLS).single());
   }
   if (error || !created) return NextResponse.json({ ok: false, error: error?.message || "create_failed" }, { status: 500 });
+  if (Array.isArray(insert.photos)) await syncMediaProjection(db, { businessId: (created as { id: string }).id, photos: insert.photos as { url: string; caption?: string }[], actor: gate.userId, source: "admin_upload", rightsConfirmed: true });
 
   await logAudit(db, {
     actor: gate.userId,

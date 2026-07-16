@@ -216,6 +216,7 @@ export function ImagePh({
   src,
   sizes = "(max-width: 768px) 100vw, 400px",
   priority,
+  fallback,
 }: {
   label?: string;
   tone?: string;
@@ -226,6 +227,8 @@ export function ImagePh({
   src?: string;
   sizes?: string;
   priority?: boolean;
+  /** Honest, business-specific empty state shown when src is absent or broken. */
+  fallback?: ReactNode;
 }) {
   // `loaded` controls the fade-in; `failed` falls back to the striped placeholder.
   const [loaded, setLoaded] = useState(false);
@@ -237,7 +240,7 @@ export function ImagePh({
       data-tone={tone || "cream"}
       style={{ aspectRatio: ratio || undefined, ...style }}
     >
-      {(!showImg || !loaded) && (
+      {!showImg && fallback ? fallback : (!showImg || !loaded) && (
         <span className="imgph-ico" aria-hidden="true">
           <Icon name={icon} />
         </span>
@@ -257,6 +260,33 @@ export function ImagePh({
         />
       )}
     </div>
+  );
+}
+
+/** Branded, code-native listing artwork. It is deliberately not a photograph:
+ * customers can immediately tell that the business has not supplied media. */
+export function BusinessMediaFallback({
+  name,
+  category,
+  area,
+  compact = false,
+}: {
+  name: string;
+  category?: string;
+  area?: string;
+  compact?: boolean;
+}) {
+  const initial = name.trim().charAt(0).toUpperCase() || "H";
+  return (
+    <span className={`business-media-fallback ${compact ? "is-compact" : ""}`} aria-label={`${name} has not added business photos yet`}>
+      <span className="bmf-orbit" aria-hidden="true" />
+      <span className="bmf-mark" aria-hidden="true">{initial}</span>
+      <span className="bmf-copy">
+        <strong>{name}</strong>
+        {!compact && <small>{joinParts([category, area], " · ") || "Humble Halal listing"}</small>}
+        {!compact && <em>Business photos coming soon</em>}
+      </span>
+    </span>
   );
 }
 
@@ -321,7 +351,7 @@ export function ListingCard({
     return (
       <div className="card card-hover" style={{ display: "flex", borderRadius: "var(--r-md)" }}>
         {cardLink}
-        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: 108, flex: "none" }} />
+        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: 108, flex: "none" }} fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} compact />} />
         <div className="lc-body" style={{ flex: 1, padding: "12px 14px" }}>
           <div className="flex between center">
             <span className="lc-name" style={{ fontSize: "1rem" }}>
@@ -348,7 +378,7 @@ export function ListingCard({
     <div className={`card card-hover listing ${variant === "featured" ? "listing-feat" : ""}`}>
       {cardLink}
       <div className="lc-media" style={{ position: "relative" }}>
-        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: "100%", height: "100%" }} icon="utensils" />
+        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: "100%", height: "100%" }} icon="utensils" fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} />} />
         <button
           className="save-fab"
           aria-pressed={saved}

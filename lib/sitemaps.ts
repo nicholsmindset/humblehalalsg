@@ -65,6 +65,7 @@ const PUBLIC_STATIC = [
   "/travel/umrah",
   "/blog",
   "/events",
+  "/deals",
   "/ramadan",
   "/ramadan-bazaar-singapore",
   "/iftar-buka-puasa-singapore",

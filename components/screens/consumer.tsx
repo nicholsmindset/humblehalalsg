@@ -24,7 +24,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
+import { Badge, BusinessMediaFallback, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -38,6 +38,8 @@ import { Newsletter } from "../newsletter";
 import { HomeCommunityVideos } from "../home-community-videos";
 import { verticalForCatId } from "@/lib/lead-verticals";
 import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
+import { CouponCard } from "@/components/coupon-card";
+import type { PublicCoupon } from "@/lib/coupons";
 
 const areaAsset = (file: string) => `/area-images/${file}.svg`;
 const HOME_AREA_IMAGES: Record<string, string> = {
@@ -1268,15 +1270,15 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
   }, [slug, catId]);
   const logLead = (type: LeadAction) => { if (item) track.leadAction(type, slug, item.catId); };
 
-  // Gallery — the owner's real photos when they've uploaded any (cover first,
-  // capped at the plan's gallery limit); decorative stock ONLY as a fallback
-  // for listings with no photos, so unclaimed pages don't render bare.
+  // Gallery — only media actually attached to this business. Never pad an empty
+  // gallery with shared stock imagery: that falsely implies the photos depict
+  // the venue and is a material trust failure for a directory.
   const hasRealPhotos = !!item?.photos?.length;
   const gallery: { url: string; caption?: string }[] = !item
     ? []
     : hasRealPhotos
       ? item.photos!.slice(0, galleryMax(item))
-      : ([item.image, ...HHData.gallery].filter(Boolean) as string[]).slice(0, galleryMax(item)).map((url) => ({ url }));
+      : [];
   const galleryImgs = gallery.map((g) => g.url);
 
   // Verified+ unlocks the rich contact buttons (WhatsApp & directions). Free
@@ -1342,22 +1344,16 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
         </div>
       ) : (
         <div className="detail-cover">
-          <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" />
-          {(!hasRealPhotos || gallery.length > 1) && (
+          <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ position: "absolute", inset: 0 }} icon="camera" priority sizes="100vw" fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} />} />
+          {gallery.length > 1 && (
             <div className="detail-gallery">
-              {hasRealPhotos
-                ? gallery.slice(1, 4).map((g, gi) => (
-                    <button key={g.url} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 2}`}>
-                      <ImagePh label={g.caption || `photo ${gi + 2}`} tone="cream" src={g.url} style={{ width: 64, height: 48, borderRadius: 8 }} />
-                    </button>
-                  ))
-                : ["interior", "dish detail", "storefront"].map((g, gi) => (
-                    <button key={g} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={`View ${g} photo`}>
-                      <ImagePh label={g} tone="cream" src={HHData.gallery[gi]} style={{ width: 64, height: 48, borderRadius: 8 }} />
-                    </button>
-                  ))}
+              {gallery.slice(1, 4).map((g, gi) => (
+                <button key={g.url} className="gallery-thumb" onClick={() => setLb(gi + 1)} aria-label={g.caption ? `View photo: ${g.caption}` : `View photo ${gi + 2}`}>
+                  <ImagePh label={g.caption || `photo ${gi + 2}`} tone="cream" src={g.url} style={{ width: 64, height: 48, borderRadius: 8 }} />
+                </button>
+              ))}
               <button className="gallery-more" onClick={() => setLb(0)} aria-label={`View all ${galleryImgs.length} photos`}>
-                {hasRealPhotos ? `${galleryImgs.length} photos` : `+${Math.max(1, galleryImgs.length - 3)}`}
+                {galleryImgs.length} photos
               </button>
             </div>
           )}
@@ -1920,23 +1916,31 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
  *  loading or when no active offer — the block never shows placeholder copy. */
 function OffersBlock({ businessId, slug, category }: { businessId: string; slug: string; category?: string }) {
   const [offer, setOffer] = useState<{ title: string; details: string | null; ends_at: string | null } | null>(null);
+  const [coupons, setCoupons] = useState<PublicCoupon[]>([]);
   useEffect(() => {
     let alive = true;
     fetch(`/api/offers?business=${businessId}`)
       .then((r) => r.json())
       .then((d) => { if (alive && d?.ok && d.offer) { setOffer(d.offer); track.offerView(slug, category); } })
       .catch(() => { /* no offer — block stays hidden */ });
+    fetch(`/api/coupons?business=${businessId}&limit=3`)
+      .then((r) => r.json())
+      .then((d) => { if (alive && d?.ok && Array.isArray(d.coupons)) setCoupons(d.coupons); })
+      .catch(() => { /* coupons are additive; legacy offer still works */ });
     return () => { alive = false; };
   }, [businessId, slug, category]);
-  if (!offer) return null;
-  const until = offer.ends_at
+  if (!offer && coupons.length === 0) return null;
+  const until = offer?.ends_at
     ? new Date(`${offer.ends_at}T00:00:00+08:00`).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })
     : null;
   return (
-    <div className="offers-block">
-      <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offers &amp; promotions</span></div>
-      <p className="offers-body"><b>{offer.title}</b>{offer.details ? ` — ${offer.details}` : ""}{until ? ` (valid until ${until})` : ""}</p>
-      <p className="offers-body" style={{ fontSize: ".8rem", opacity: 0.8 }}>Mention Humble Halal or show this listing to staff to redeem.</p>
+    <div className="stack g10">
+      {coupons.map((coupon) => <CouponCard key={coupon.id} coupon={coupon} compact />)}
+      {offer && <div className="offers-block">
+        <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offer</span></div>
+        <p className="offers-body"><b>{offer.title}</b>{offer.details ? ` — ${offer.details}` : ""}{until ? ` (valid until ${until})` : ""}</p>
+        <p className="offers-body" style={{ fontSize: ".8rem", opacity: 0.8 }}>Mention Humble Halal or show this listing to staff to redeem.</p>
+      </div>}
     </div>
   );
 }

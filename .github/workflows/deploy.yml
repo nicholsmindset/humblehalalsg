@@ -12,6 +12,8 @@ name: Deploy to Vercel (production)
 #            (vercel.com → onnifyworks → Account Settings → Tokens → Create)
 # The org/project IDs below are public identifiers (they appear in every Vercel
 # deployment URL), not secrets — hardcoded so you only need the one token.
+# Keep these aligned with .vercel/project.json; stale IDs build against the
+# wrong environment and can silently miss production-only configuration.
 
 on:
   push:
@@ -26,8 +28,8 @@ permissions:
   contents: read
 
 env:
-  VERCEL_ORG_ID: team_lc0Uxbmt0CUJ5w9GIyEIT7zh
-  VERCEL_PROJECT_ID: prj_ODTTJiLTHPfgtvhSv9XmZRrQGEI0
+  VERCEL_ORG_ID: team_LM7eKqFaMCaLkEM9EXxQh0Mr
+  VERCEL_PROJECT_ID: prj_YYD34CCS5WgyjP5m2mTg2xOqCeNp
 
 jobs:
   deploy:
@@ -53,7 +55,7 @@ jobs:
         if: steps.gate.outputs.ok == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install Vercel CLI

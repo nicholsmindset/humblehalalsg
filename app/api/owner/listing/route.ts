@@ -5,6 +5,7 @@ import { revalidatePublic } from "@/lib/revalidate";
 import { galleryMax } from "@/lib/plans";
 import { sanitizeAttributes } from "@/lib/attributes";
 import { sanitizePhotos } from "@/lib/photos";
+import { syncMediaProjection } from "@/lib/media-governance";
 
 /* Owner self-service listing editor. GET returns the editable fields for a
    business the caller owns; PATCH updates a whitelist of fields. Ownership is
@@ -73,6 +74,7 @@ export async function PATCH(req: Request) {
     console.error(`[owner/listing] update failed (business=${id}):`, error.message);
     return NextResponse.json({ ok: false, error: "update_failed" }, { status: 500 });
   }
+  if (Array.isArray(patch.photos)) await syncMediaProjection(db, { businessId: id, photos: patch.photos as { url: string; caption?: string }[], actor: userId, source: "owner_upload", rightsConfirmed: true });
 
   revalidatePublic([`/business/${row.slug}`]);
   return NextResponse.json({ ok: true });

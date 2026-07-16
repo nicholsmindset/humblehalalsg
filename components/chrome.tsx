@@ -417,6 +417,7 @@ export function TopNav() {
     ...(flags?.aiConcierge ? [{ id: "ask", label: "Ask AI" }] : []),
     { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
+    { id: "deals", label: "Deals" },
     { id: "tools", label: "Tools" },
     { id: "pricing", label: t("nav.pricing") },
   ];
@@ -513,6 +514,7 @@ export function MobileBar() {
     ...(flags?.aiConcierge ? ([["ask", "Ask AI", "sparkles"]] as [string, string, string][]) : []),
     ["travel", "Travel", "globe"],
     ["events", t("nav.events"), "calendar"],
+    ["deals", "Deals & coupons", "ticket"],
     ["tools", "Tools", "grid"],
     ["blog", "Blog", "doc"],
     ["for-business", t("nav.forBusiness"), "store"],
@@ -710,6 +712,7 @@ export function Footer() {
       "Discover",
       [
         ["Explore", "explore"],
+        ["Deals & coupons", "deals"],
         ["Events", "events"],
         ["Map view", "map"],
         ["Halal travel & hotels", "travel"],

@@ -534,3 +534,34 @@ export function reviewReplyEmail(o: { name?: string | null; businessName: string
     { label: "See the reply", url: `${U}/explore` },
   );
 }
+
+/* ── Business coupons ──────────────────────────────────────────────── */
+export function couponClaimedEmail(o: { name?: string | null; title: string; business: string; code: string; token: string }): Out {
+  return wrap(
+    `Your ${o.business} coupon is ready`,
+    "Your coupon is ready to use",
+    greet(o.name) +
+      p(`You've claimed <strong>${esc(o.title)}</strong> from <strong>${esc(o.business)}</strong>.`) +
+      p(`Show staff this short code when you visit:<br><strong style="font-size:24px;letter-spacing:4px;color:#0b5d3b">${esc(o.code)}</strong>`) +
+      p(`The business will confirm redemption in its Humble Halal dashboard. Terms and validity are shown with the coupon.`),
+    { label: "Open my coupons", url: `${U}/deals?mine=1#${esc(o.token)}` },
+  );
+}
+
+export function couponApprovedEmail(o: { name?: string | null; business: string; title: string }): Out {
+  return wrap(
+    `Your coupon for ${o.business} is live`,
+    "Your coupon is now live",
+    greet(o.name) + p(`<strong>${esc(o.title)}</strong> has been approved and customers can now claim it from your listing and the Humble Halal Deals page.`),
+    { label: "View coupon performance", url: `${U}/owner?tab=promotions` },
+  );
+}
+
+export function couponRedeemedEmail(o: { name?: string | null; title: string; business: string; points?: number }): Out {
+  return wrap(
+    `Coupon redeemed at ${o.business}`,
+    "Redemption confirmed",
+    greet(o.name) + p(`Your <strong>${esc(o.title)}</strong> coupon was redeemed at <strong>${esc(o.business)}</strong>.${o.points ? ` You also earned <strong>${o.points} Halal Passport points</strong>.` : ""}`),
+    { label: "Explore more deals", url: `${U}/deals` },
+  );
+}

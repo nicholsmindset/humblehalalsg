@@ -148,7 +148,7 @@ function BusinessFeaturesPanel({ businessId, toast }: { businessId: string; toas
 }
 
 /* ── Photos editor — cover (first) + gallery, upload or add by URL ─────────── */
-function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: (next: Photo[]) => void; toast: (msg: string) => void }) {
+function PhotosEditor({ photos, onChange, toast, businessId }: { photos: Photo[]; onChange: (next: Photo[]) => void; toast: (msg: string) => void; businessId?: string }) {
   const [url, setUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -166,13 +166,14 @@ function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: 
     try {
       const fd = new FormData();
       fd.set("file", file);
+      if (businessId) fd.set("businessId", businessId);
       const r = await fetch("/api/admin/listing/photo", { method: "POST", body: fd });
       const d = (await r.json().catch(() => ({}))) as { ok?: boolean; url?: string; error?: string };
       if (d.ok && d.url) {
         onChange([...photos, { url: d.url }]);
         toast("Photo uploaded — remember to Save changes.");
       } else {
-        toast(d.error === "too_large" ? "Image too large (max 5MB)." : d.error === "bad_type" ? "Use a JPG, PNG or WebP image." : "Upload failed — try again.");
+        toast(d.error === "too_large" ? "Image too large (max 5MB)." : d.error === "too_small" ? "Image is too small — use at least 800×600px." : d.error === "bad_type" ? "Use a JPG, PNG or WebP image." : "Upload failed — try again.");
       }
     } catch { toast("Upload failed — try again."); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
@@ -181,7 +182,7 @@ function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: 
   return (
     <div className="stack g12">
       {photos.length === 0 ? (
-        <p className="faint" style={{ fontSize: ".86rem" }}>No photos yet — the public page shows a stock placeholder. Add a main image below.</p>
+        <p className="faint" style={{ fontSize: ".86rem" }}>No photos yet — the public page shows branded business artwork, never a misleading stock photo. Add an authorised main image below.</p>
       ) : (
         <div className="flex g10 wrap">
           {photos.map((p, i) => (
@@ -226,7 +227,7 @@ function PhotosEditor({ photos, onChange, toast }: { photos: Photo[]; onChange: 
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }} aria-label="Add photo by URL" />
         <button type="button" className="btn btn-soft btn-sm" onClick={addUrl}>Add URL</button>
       </div>
-      <p className="faint" style={{ fontSize: ".78rem" }}>The first photo is the main image shown in the directory and on the listing page. JPG/PNG/WebP up to 5MB.</p>
+      <p className="faint" style={{ fontSize: ".78rem" }}>The first photo is the main image. Use an authorised business image at least 800×600px; JPG/PNG/WebP up to 5MB.</p>
     </div>
   );
 }
@@ -453,7 +454,7 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, onDeleted, 
       {/* ── Photos ── */}
       <div className="card" style={{ padding: 20 }}>
         <h3 style={{ fontSize: "1.02rem", marginBottom: 12 }}>Photos</h3>
-        <PhotosEditor photos={photos} onChange={setPhotos} toast={toast} />
+        <PhotosEditor photos={photos} onChange={setPhotos} toast={toast} businessId={biz?.id} />
       </div>
 
       {!creating && biz && (

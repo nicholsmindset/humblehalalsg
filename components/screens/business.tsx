@@ -31,6 +31,7 @@ import { PendingSubmissions, type PendingSubmission } from "../owner/pending-sub
 import { ActivationChecklist } from "../owner/activation-checklist";
 import { ReviewRequestCard } from "../owner/review-request-card";
 import { OwnerLeads } from "../owner/leads-tab";
+import { OwnerCouponsTab } from "../owner/coupons-tab";
 import type { OwnerBiz, OwnerEvent } from "../owner/types";
 
 // MUIS certifies food & beverage — so only these categories get the
@@ -624,7 +625,7 @@ export function AddListingScreen() {
 /* =============================================================
    OWNER DASHBOARD
 ============================================================= */
-const DASH_TABS = ["overview", "listings", "cert", "events", "payouts", "reviews", "ads", "leads", "billing"] as const;
+const DASH_TABS = ["overview", "listings", "promotions", "cert", "events", "payouts", "reviews", "ads", "leads", "billing"] as const;
 const isDashTab = (v: unknown): v is (typeof DASH_TABS)[number] => DASH_TABS.includes(v as (typeof DASH_TABS)[number]);
 
 export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRoutingEnabled?: boolean }) {
@@ -745,7 +746,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
     } catch { toast("Couldn’t cancel — try again"); }
   };
 
-  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
+  const tabs: [string, string, string][] = [["overview", "Overview", "chart"], ["listings", "My listings", "store"], ["promotions", "Promotions", "ticket"], ["cert", "Halal certificate", "shield-check"], ["events", "My events", "calendar"], ["payouts", "Payouts", "dollar"], ["reviews", "Reviews", "star"], ["ads", "Sponsored ads", "trophy"], ...(leadRoutingEnabled ? [["leads", "Leads", "briefcase"] as [string, string, string]] : []), ["billing", "Billing", "settings"]];
   const listingCount = live ? (biz?.length ?? 0) : demoListings.length;
   const eventCount = live ? (ownerEvents?.length ?? 0) : 0;
   const verifiedCount = live ? (biz || []).filter((b) => b.halal_tier === "muis" || b.halal_tier === "admin").length : 1;
@@ -1000,6 +1001,8 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
             <button className="btn btn-outline btn-block mt14" onClick={() => navigate("host-event")}><Icon name="plus" size={18} /> Host another event</button>
           </div>
         )}
+
+        {tab === "promotions" && <OwnerCouponsTab toast={toast} initialRedeem={String(params.redeem || "")} />}
 
         {tab === "cert" && <><HelpCallout feature="cert-vault" /><CertVault toast={toast} navigate={navigate} live={live} certVaultEnabled={flags.certVault} biz={myBiz} /></>}
 
