@@ -25,10 +25,10 @@ async function authorise(eventRef: string): Promise<AuthOk | AuthErr> {
   // guard its sibling event routes already use). 404 = indistinguishable from a
   // missing event.
   if (!isSafeEventRef(eventRef)) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
-  const { data: ev } = await admin.from("events").select("id, business_id, title, capacity, taken").or(`id.eq.${eventRef},slug.eq.${eventRef}`).maybeSingle();
+  const { data: ev } = await admin.from("events").select("id, business_id, submitted_by, title, capacity, taken").or(`id.eq.${eventRef},slug.eq.${eventRef}`).maybeSingle();
   if (!ev) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  let allowed = profile?.role === "admin";
+  let allowed = profile?.role === "admin" || ev.submitted_by === userId;
   if (!allowed && ev.business_id) {
     const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id as string).or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
     allowed = !!biz;

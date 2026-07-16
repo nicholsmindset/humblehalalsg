@@ -61,6 +61,15 @@ export default config({
               label: "Paragraphs",
             }),
             bullets: fields.array(fields.text({ label: "Bullet", ...required }), { label: "Checklist / bullets" }),
+            links: fields.array(
+              fields.object({
+                label: fields.text({ label: "Link label", ...required }),
+                href: fields.url({ label: "URL", ...required }),
+              }),
+              { label: "Useful links", itemLabel: (props) => props.fields.label.value || "Link" },
+            ),
+            socialUrl: fields.url({ label: "TikTok video URL (optional)" }),
+            socialLabel: fields.text({ label: "Social video caption" }),
             image: fields.text({ label: "Section image URL or /public path" }),
             imageAlt: fields.text({ label: "Section image alt text" }),
             caption: fields.text({ label: "Section image caption" }),

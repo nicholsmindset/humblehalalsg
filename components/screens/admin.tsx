@@ -93,37 +93,65 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
   const { navigate, toast, state } = useApp();
   const [section, setSection] = useState<string>("overview");
   const [navOpen, setNavOpen] = useState(false);
-  const pick = (id: string) => {
-    setSection(id);
-    setNavOpen(false);
-  };
-
-  const nav: [string, string, string][] = [
-    ["overview", "Overview", "chart"],
-    ["revenue", "Revenue (P&L)", "trend"],
-    ["rollout", "Rollout plan", "megaphone"],
-    ["approvals", "Listing approvals", "doc"],
-    ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as [string, string, string]] : []),
-    ["crm", "CRM workspace", "users"],
-    ["claims", "Ownership claims", "building"],
-    ["businesses", "Businesses", "store"],
-    ["suggestions", "Suggestions", "sparkles"],
-    ["events", "Event approvals", "calendar"],
-    ["verification", "Halal verification", "shield-check"],
-    ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as [string, string, string]] : []),
-    ...(listingEnrichmentEnabled ? [["enrichment", "Listing enrichment", "sparkles"] as [string, string, string]] : []),
-    ...(tiktokUgcEnabled ? [["tiktok", "TikTok videos", "play"] as [string, string, string]] : []),
-    ["hotels", "Hotel verification", "bed"],
-    ["reviews", "Review moderation", "star"],
-    ["reports", "Reports & corrections", "flag"],
-    ["users", "Users & owners", "user"],
-    ["catalog", "Categories & areas", "tag"],
-    ["featured", "Featured & ads", "trophy"],
-    ["monetization", "Monetization", "settings"],
-    ["payments", "Payments", "dollar"],
-    ["travel-rev", "Travel revenue", "plane"],
-    ["audit", "Audit log", "list"],
+  const [openNavGroup, setOpenNavGroup] = useState<string | null>("command");
+  type NavItem = [string, string, string];
+  const navGroups: { id: string; label: string; icon: string; items: NavItem[] }[] = [
+    {
+      id: "command", label: "Command center", icon: "chart", items: [
+        ["overview", "Overview", "chart"],
+        ["crm", "CRM workspace", "users"],
+        ...(leadRoutingEnabled ? [["leads", "Lead pipeline", "briefcase"] as NavItem] : []),
+      ],
+    },
+    {
+      id: "directory", label: "Directory & trust", icon: "store", items: [
+        ["approvals", "Listing approvals", "doc"],
+        ["businesses", "Businesses", "store"],
+        ["claims", "Ownership claims", "building"],
+        ["suggestions", "Suggestions", "sparkles"],
+        ["verification", "Halal verification", "shield-check"],
+        ...(halalVerdictsEnabled ? [["verdicts", "Halal verdicts", "shield-check"] as NavItem] : []),
+        ...(listingEnrichmentEnabled ? [["enrichment", "Listing enrichment", "sparkles"] as NavItem] : []),
+        ["reviews", "Review moderation", "star"],
+        ["reports", "Reports & corrections", "flag"],
+        ["catalog", "Categories & areas", "tag"],
+      ],
+    },
+    {
+      id: "events", label: "Events & community", icon: "calendar", items: [
+        ["events", "Event approvals", "calendar"],
+        ...(tiktokUgcEnabled ? [["tiktok", "TikTok videos", "play"] as NavItem] : []),
+      ],
+    },
+    {
+      id: "growth", label: "Growth & revenue", icon: "trend", items: [
+        ["revenue", "Revenue (P&L)", "trend"],
+        ["featured", "Featured & ads", "trophy"],
+        ["monetization", "Monetization", "settings"],
+        ["payments", "Payments", "dollar"],
+        ["rollout", "Rollout plan", "megaphone"],
+      ],
+    },
+    {
+      id: "travel", label: "Travel", icon: "plane", items: [
+        ["hotels", "Hotel verification", "bed"],
+        ["travel-rev", "Travel revenue", "plane"],
+      ],
+    },
+    {
+      id: "system", label: "People & system", icon: "settings", items: [
+        ["users", "Users & owners", "user"],
+        ["audit", "Audit log", "list"],
+      ],
+    },
   ];
+  const nav = navGroups.flatMap((group) => group.items);
+  const selectSection = (id: string, closeNav = false) => {
+    setSection(id);
+    const group = navGroups.find((candidate) => candidate.items.some(([itemId]) => itemId === id));
+    if (group) setOpenNavGroup(group.id);
+    if (closeNav) setNavOpen(false);
+  };
 
   return (
     <div className="admin">
@@ -134,9 +162,32 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           <button className="admin-side-close" onClick={()=>setNavOpen(false)} aria-label="Close menu"><Icon name="x" size={20}/></button>
         </div>
         <nav className="admin-nav">
-          {nav.map(([id,label,icon])=>(
-            <button key={id} className={section===id?'on':''} onClick={()=>pick(id)}><Icon name={icon} size={18}/> {label}</button>
-          ))}
+          {navGroups.map((group) => {
+            const expanded = openNavGroup === group.id;
+            const hasActive = group.items.some(([id]) => id === section);
+            return (
+              <div className={`admin-nav-group ${hasActive ? "has-active" : ""}`} key={group.id}>
+                <button
+                  type="button"
+                  className="admin-nav-group-toggle"
+                  aria-expanded={expanded}
+                  aria-controls={`admin-nav-${group.id}`}
+                  onClick={() => setOpenNavGroup((current) => current === group.id ? null : group.id)}
+                >
+                  <Icon name={group.icon} size={18} />
+                  <span>{group.label}</span>
+                  <Icon name="chevdown" size={15} className="admin-nav-caret" />
+                </button>
+                {expanded && (
+                  <div className="admin-nav-group-items" id={`admin-nav-${group.id}`}>
+                    {group.items.map(([id,label,icon])=>(
+                      <button key={id} className={section===id?'on':''} onClick={()=>selectSection(id, true)}><Icon name={icon} size={16}/> {label}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
         <button className="btn btn-ghost btn-sm" style={{margin:16}} onClick={()=>navigate('home')}><Icon name="logout" size={16}/> Exit admin</button>
       </aside>
@@ -153,16 +204,16 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
         </div>
 
         <div className="admin-body">
-          {section==='overview' && <AdminOverview setSection={setSection} />}
+          {section==='overview' && <AdminOverview setSection={selectSection} />}
           {section==='revenue' && <AdminRevenue />}
           {section==='rollout' && <AdminRollout />}
           {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
           {section==='crm' && <AdminCrm />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
-          {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => setSection('verification')} />}
+          {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => selectSection('verification')} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
-          {section==='events' && <AdminEvents toast={toast} navigate={navigate} />}
+          {section==='events' && <AdminEvents toast={toast} />}
           {section==='verification' && <><AdminCertQueue toast={toast} /><AdminVerification toast={toast} /></>}
           {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
           {section==='enrichment' && listingEnrichmentEnabled && <AdminEnrichment toast={toast} />}
@@ -727,8 +778,8 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
   );
 }
 
-interface EventQueueRow { id: string; title: string; cat: string; dateLabel: string; free: boolean; priceFrom: number; organiser: string; img: string; tone: string; submitted: string }
-export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+interface EventQueueRow { id: string; slug: string; title: string; cat: string; dateLabel: string; free: boolean; priceFrom: number; organiser: string; img: string; tone: string; submitted: string }
+export function AdminEvents({ toast }: { toast: (msg: string) => void }) {
   const [rows, setRows] = useState<EventQueueRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
@@ -739,6 +790,7 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
         const d = (e.display && typeof e.display === "object" ? e.display : {}) as Record<string, unknown>;
         return {
           id: e.id,
+          slug: String(e.slug ?? e.id),
           title: String(e.title ?? "Event"),
           cat: String(d.cat ?? "Community"),
           dateLabel: String(d.dateLabel ?? e.date_iso ?? "—"),
@@ -777,7 +829,7 @@ export function AdminEvents({ toast, navigate }: { toast: (msg: string) => void;
                 <td className="muted">{r.organiser}</td>
                 <td className="muted">{r.submitted}</td>
                 <td><div className="flex g6">
-                  <button className="btn btn-soft btn-sm" onClick={()=>navigate('event-detail',{id:r.id})}><Icon name="eye" size={15}/></button>
+                  <a className="btn btn-soft btn-sm" href={`/events/${encodeURIComponent(r.slug)}/manage`} aria-label={`Review ${r.title}`}><Icon name="eye" size={15}/></a>
                   <button className="btn btn-primary btn-sm" onClick={()=>act(r.id,'approve')}>Approve</button>
                   <button className="btn btn-ghost btn-sm" onClick={()=>act(r.id,'reject')}>Reject</button>
                 </div></td>

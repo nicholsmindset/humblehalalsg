@@ -10,10 +10,10 @@ async function authorize(eventId: string) {
   if (!userId) return { error: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
   if (!admin) return { error: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
-  const { data: ev } = await admin.from("events").select("id, business_id, title").eq("id", eventId).maybeSingle();
+  const { data: ev } = await admin.from("events").select("id, business_id, submitted_by, title").eq("id", eventId).maybeSingle();
   if (!ev) return { error: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  let ok = profile?.role === "admin";
+  let ok = profile?.role === "admin" || ev.submitted_by === userId;
   if (!ok && ev.business_id) {
     const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id)
       .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();

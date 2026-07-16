@@ -156,9 +156,13 @@ export async function POST(req: Request) {
         // On approval, notify the organiser (business owner) their event is live.
         if (status === "published") {
           try {
-            const { data: ev } = await admin.from("events").select("business_id, title, slug, display").eq("id", id).maybeSingle();
+            const { data: ev } = await admin.from("events").select("business_id, submitted_by, title, slug, display").eq("id", id).maybeSingle();
             if (ev) {
-              const { email, name } = await emailForBusinessOwner(admin, ev.business_id as string | null);
+              const owner = await emailForBusinessOwner(admin, ev.business_id as string | null);
+              const recipient = owner.email
+                ? owner
+                : await emailForUser(admin, (ev.submitted_by as string | null) || null);
+              const { email, name } = recipient;
               if (email) {
                 const { subject, html } = eventApprovedEmail({ name, eventTitle: String(ev.title || "your event"), slug: (ev.slug as string | null) || undefined });
                 await sendEmail({ to: email, subject, html, template: "event-approved", businessId: (ev.business_id as string | null) || undefined });

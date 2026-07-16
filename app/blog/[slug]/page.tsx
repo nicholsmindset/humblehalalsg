@@ -23,6 +23,7 @@ import { isUnoptimizedImageSrc } from "@/lib/img";
 import { LeadInline } from "@/components/lead-capture/lead-inline";
 import { LeadCapturePopup } from "@/components/lead-capture/lead-capture-popup";
 import { leadInlineIndex } from "@/lib/lead-placement";
+import { BlogSocialEmbed } from "@/components/blog/social-embed";
 
 export async function generateStaticParams() {
   return (await allBlogPosts()).map((p) => ({ slug: p.slug }));
@@ -157,6 +158,16 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                       {s.bullets.map((b) => (<li key={b}>{b}</li>))}
                     </ul>
                   )}
+                  {s.links && s.links.length > 0 && (
+                    <div className="article-place-links" aria-label={`${s.h2} links`}>
+                      {s.links.map((link) => (
+                        <a key={link.href} href={link.href} target={link.href.startsWith("http") ? "_blank" : undefined} rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}>
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {s.socialUrl && <BlogSocialEmbed url={s.socialUrl} label={s.socialLabel || s.h2} />}
                 </section>
 
                 {s.image && <ArticleFigure src={s.image} alt={s.imageAlt || s.h2} caption={s.caption} />}

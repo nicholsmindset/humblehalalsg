@@ -36,14 +36,14 @@ export async function authoriseEventManager(ref: string): Promise<EventAuthOk | 
   const { data: ev } = isSafeEventRef(ref)
     ? await admin
         .from("events")
-        .select("id, title, slug, status, capacity, is_free, date_iso, business_id, display")
+        .select("id, title, slug, status, capacity, is_free, date_iso, business_id, submitted_by, display")
         .or(`id.eq.${ref},slug.eq.${ref}`)
         .maybeSingle()
     : { data: null };
   if (!ev) return { ok: false, res: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
 
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  let allowed = profile?.role === "admin";
+  let allowed = profile?.role === "admin" || ev.submitted_by === userId;
   if (!allowed && ev.business_id) {
     const { data: biz } = await admin
       .from("businesses")

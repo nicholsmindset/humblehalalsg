@@ -8,6 +8,11 @@ export interface BlogSection {
   h2: string;
   body?: string[];
   bullets?: string[];
+  /** Curated first-party and directory links shown as compact action chips. */
+  links?: { label: string; href: string }[];
+  /** Optional consent-gated TikTok video for a place or story section. */
+  socialUrl?: string;
+  socialLabel?: string;
   /** Optional in-body editorial figure (breaks wider than the reading column). */
   image?: string;
   imageAlt?: string;
@@ -851,61 +856,223 @@ const rawPosts: RawPost[] = [
   {
     slug: "best-halal-breakfast-singapore",
     title: "Best Halal Breakfast Spots in Singapore",
-    dek: "From nasi lemak and roti prata to halal brunch — where to start your day across Singapore.",
+    dek: "Ten verified halal and Muslim-owned breakfast and brunch spots, with current addresses, opening times and what to order.",
     answer:
-      "The best halal breakfast in Singapore runs from traditional nasi lemak, roti prata and mee rebus to modern café brunch. Most halal breakfast spots are Muslim-owned or MUIS-certified — check the halal-confidence score and open hours on Humble Halal to find one open near you.",
+      "For an early halal breakfast, start with All Things Delicious, Penny University, Small Batch or The Tree Café at 100AM. Weekend brunch standouts include The Secret Garden, Pancake & Waffle Place and Good Bites. Every place below was checked against a current first-party website or live venue source in July 2026; halal claims and outlet details are stated separately so you can choose with confidence.",
     datePublished: "2026-06-02",
-    dateModified: "2026-07-06",
+    dateModified: "2026-07-16",
     author: AUTHOR,
-    readMins: 7,
-    tags: ["Breakfast", "Food guides"],
+    readMins: 13,
+    tags: ["Breakfast", "Brunch", "Food guides", "Best of"],
     sections: [
-      { h2: "A breakfast city, from kopitiam to café",
-        body: ["Singapore wakes up hungry, and breakfast here is a spectrum. At one end sit heritage hawker plates — nasi lemak, lontong, roti prata and a strong kopi — served from before dawn. At the other, all-day cafés plate up big breakfasts and brunch well past noon. For halal diners the good news is that both ends are well covered, whether you want a five-dollar heartland plate or a leisurely weekend brunch.",
-               "The trick is knowing which spots are MUIS-certified, which are Muslim-owned, and which simply declare “no pork, no lard” — and finding one that is actually open when you are. That is where a quick check on Humble Halal saves you a wasted trip."] },
-      { h2: "Types of halal breakfast to try",
-        body: ["Heritage Singapore breakfast leans savoury and satisfying, but there is far more than nasi lemak. Each dish carries its own halal considerations, and those usually sit with the meat and the cooking fat rather than the rice or noodles themselves."],
-        bullets: ["Kaya toast, soft-boiled eggs & kopi — the classic kopitiam set",
-                  "Nasi lemak — coconut rice with sambal, fried chicken or fish",
-                  "Roti prata & thosai — griddle and dosa breakfasts, often Indian-Muslim",
-                  "Mee rebus, mee soto & lontong — hearty Malay noodle and rice-cake plates",
-                  "Nasi padang for early risers — rice with an array of dishes",
-                  "Café big breakfasts & brunch — eggs, halal beef bacon, pancakes"] },
-      { h2: "What actually makes a breakfast halal",
-        body: ["Most breakfast staples are naturally meat-light, so the halal question usually comes down to a few details. The luncheon meat in a breakfast set should be chicken or beef, never pork; sausages and “bacon” should be halal beef or chicken versions. Cooking fat matters too — lard and pork-based shortening are the things to rule out, and a certified kitchen has already done that for you.",
-               "At mixed hawker centres, the other thing to watch is shared equipment. A drinks or toast stall beside a non-halal cooked-food stall is common, so it helps to know whether the specific stall is certified or Muslim-owned rather than assuming the whole centre is."],
-        bullets: ["Luncheon meat, sausage and “bacon” — chicken or beef, never pork",
-                  "Cooking fat — no lard or pork shortening on the griddle",
-                  "Kaya & spreads — generally fine; margarine or butter, not lard",
-                  "Shared toasters, woks and grills at mixed stalls"] },
-      { h2: "Halal breakfast by area",
-        body: ["Breakfast options cluster around the heartlands and a few well-known enclaves. Because early-morning stalls come and go, treat these as starting points and filter by certification and opening hours before you set off."],
-        bullets: ["Kampong Glam & Arab Street — cafés, Middle Eastern and Malay breakfasts",
-                  "Geylang Serai & the east (Tampines, Bedok) — Malay heartland classics",
-                  "Central heartlands & the north — kopitiam sets and prata near the MRT",
-                  "Town & Orchard — halal-certified hotel breakfasts and mall cafés"] },
-      { h2: "Hawker self-declared vs certified café",
-        body: ["A lot of the best heartland breakfast is cooked by Muslim-owned stalls that are not formally MUIS-certified — the plate is halal in practice, but the verification is self-declared rather than official. Certified cafés and chains, by contrast, carry a MUIS certificate you can check. Neither is “wrong”; they simply sit at different points on the halal-confidence score.",
-               "On Humble Halal, every listing shows that score out of 100 — MUIS-certified sits highest, then admin-verified or Muslim-owned, then self-declared “no pork, no lard”. Reading the score lets you decide how much assurance you want for a given meal, and reminds you that certified, Muslim-owned and “halal-friendly” are three different things."] },
-      { h2: "Find one open now on Humble Halal",
-        body: ["Breakfast is the one meal where opening hours make or break the plan — a spot that looks perfect is no use if it opens at eleven. Use the “Open now” filter together with your neighbourhood to see what is actually serving, then sort by halal-confidence score or rating to pick the best of what is open.",
-               "If you are checking a specific brand or chain, the “Is it halal?” checker tells you what we know about its certification, and you can always confirm the exact outlet on the MUIS HalalSG register before you go."],
-        bullets: ["Filter by “Open now” for early-morning and suhoor-friendly spots",
-                  "Search your area or use the map to find breakfast nearby",
-                  "Sort by halal-confidence score or rating",
-                  "Confirm the specific outlet on MUIS HalalSG"] },
+      {
+        h2: "How we chose these 10 breakfast spots",
+        body: [
+          "A useful breakfast list has to do more than repeat popular café names. We checked that each venue is operating, matched the address to a current outlet source, confirmed that it genuinely serves breakfast or brunch, and separated MUIS certification from Muslim-owned or halal-friendly claims. Opening hours and menus can still change, so use the links below and check again before a special trip.",
+          "The ranking balances food, breakfast relevance, trust signals, location and variety. It includes early openers, weekend-only brunches and a few late-morning choices for readers who use “breakfast” and “brunch” interchangeably.",
+        ],
+        bullets: [
+          "MUIS-certified means the specific operation says it holds official Singapore halal certification",
+          "Muslim-owned is an ownership and trust signal, not the same as MUIS certification",
+          "Halal-friendly is the venue’s own description and should be treated as self-declared",
+        ],
+      },
+      {
+        h2: "1. All Things Delicious — Arab Street",
+        body: [
+          "All Things Delicious is the strongest all-rounder on this list: it opens early, serves brunch all day and operates from a characterful Kampong Gelam shophouse. The bakery-café states that all its facilities and products are MUIS halal-certified, so it pairs a high-confidence halal signal with a genuinely breakfast-led menu.",
+          "Go for shakshouka, brioche French toast, pastries or one of the substantial all-day brunch plates. It is especially convenient for a breakfast before exploring Sultan Mosque, Haji Lane and the rest of Kampong Gelam.",
+        ],
+        bullets: [
+          "34 Arab Street, #01-01, Singapore 199733",
+          "+65 6291 4252",
+          "Daily, 8am–10pm; the venue says it closes on the last Monday of each month",
+          "Halal status: MUIS halal-certified, according to the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/all-things-delicious" },
+          { label: "Official website", href: "https://restaurant.allthingsdelicious.sg/" },
+          { label: "Instagram", href: "https://www.instagram.com/allthingsdelicioussg/" },
+          { label: "TikTok", href: "https://www.tiktok.com/@allthingsdelicioussg" },
+        ],
+        socialUrl: "https://www.tiktok.com/@allthingsdelicioussg/video/7528376445261958407",
+        socialLabel: "All Things Delicious on Arab Street",
+      },
+      {
+        h2: "2. Penny University — Jalan Klapa",
+        body: [
+          "Penny University has moved on from the old East Coast address found in many older roundups. Its current flagship is at Jalan Klapa, where the specialty coffeehouse serves brunch from 8am to 4pm alongside a serious coffee programme.",
+          "The menu covers Turkish eggs, several eggs Benedict variations, a Builder’s Breakfast, French toast, Moroccan baked eggs and chicken and waffles. This is the pick for diners who care as much about the coffee as the plate.",
+        ],
+        bullets: [
+          "17 Jalan Klapa, Singapore 199329",
+          "Second outlet: Wisma Geylang Serai, 1 Engku Aman Turn, #01-06, Singapore 408528",
+          "Brunch is served from 8am–4pm; confirm each outlet’s closing time before visiting",
+          "Halal status: presented as a halal specialty coffee and brunch café by the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/penny-university-jalan-klapa" },
+          { label: "Official website", href: "https://www.pennyuniversitysg.com/" },
+          { label: "Brunch menu", href: "https://www.pennyuniversitysg.com/menu?menu=brunch" },
+        ],
+        socialUrl: "https://www.tiktok.com/@pennyuniversitysg/video/7453106439209454866",
+        socialLabel: "Penny University brunch",
+      },
+      {
+        h2: "3. Small Batch — Singapore Botanic Gardens",
+        body: [
+          "Small Batch earns its place for setting as much as food. It sits beside Jacob Ballas Children’s Garden and opens at 8am, making it an easy pairing with a morning walk or a family visit to the gardens.",
+          "The Build Your Own Board lets you assemble eggs, proteins, vegetables and something sweet instead of committing to a fixed big breakfast. The Black Hole Group describes Small Batch as halal-friendly; that is a self-declared status rather than a MUIS certification claim.",
+        ],
+        bullets: [
+          "1H Cluny Road, #01-K1, Jacob Ballas Children’s Garden, Singapore 259604",
+          "ask@batch.sg",
+          "Tuesday–Friday, 8am–5pm; Saturday–Sunday, 8am–6pm; closed Monday except public holidays",
+          "Halal status: halal-friendly, according to the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/small-batch-botanic-gardens" },
+          { label: "Official website", href: "https://www.batch.sg/" },
+        ],
+      },
+      {
+        h2: "4. The Secret Garden by Zeekri — Baghdad Street",
+        body: [
+          "The Secret Garden is the refined weekend choice: a floral French-inspired brasserie with a dedicated Saturday and Sunday brunch menu. The Garden Breakfast, French omelette, smoked salmon eggs Benedict, Croque Madame and buckwheat French Fold make this one of the more distinctive halal brunch menus in Kampong Gelam.",
+          "The restaurant identifies itself as a Muslim-owned establishment certified by the Singapore Malay Chamber of Commerce and Industry. That is not the same scheme as MUIS halal certification, so we label it Muslim-owned rather than MUIS-certified.",
+        ],
+        bullets: [
+          "19 Baghdad Street, #01-19, Singapore 199658",
+          "+65 6980 3330; reservations +65 9189 5663; info@tsgbyzeekri.com",
+          "Pastry and coffee daily from 9am; weekend brunch Saturday–Sunday, 9am–12.30pm",
+          "Halal status: Muslim-owned; SMCCI Muslim-Owned Establishment listing stated by the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/the-secret-garden-by-zeekri" },
+          { label: "Official website", href: "https://www.tsgbyzeekri.com/" },
+          { label: "Brunch menu", href: "https://www.tsgbyzeekri.com/menu" },
+          { label: "Social links", href: "https://linktr.ee/tsgbyzeekri" },
+        ],
+      },
+      {
+        h2: "5. Pancake & Waffle Place — Kandahar Street",
+        body: [
+          "Pancake & Waffle Place is built for a proper weekend breakfast rather than a token brunch section. Its Saturday and Sunday breakfast menu lets you choose pancakes or waffles with sambal baked beans, Florentine eggs, beef sausage and beef bacon, country fried chicken, Turkish eggs or kaya and soft-boiled eggs.",
+          "The restaurant states that it is 100% Muslim-owned and serves halal food. It is also close enough to Sultan Mosque to work naturally into a Kampong Gelam morning.",
+        ],
+        bullets: [
+          "56 Kandahar Street, Singapore 198904",
+          "+65 6518 9368; WhatsApp +65 8453 0523",
+          "Weekend breakfast Saturday–Sunday, 9am–12pm; venue open noon–10pm weekdays and 9am–10pm weekends",
+          "Halal status: 100% Muslim-owned, according to the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/pancake-and-waffle-place" },
+          { label: "Official website", href: "https://www.pancakeandwaffleplace.com.sg/" },
+        ],
+      },
+      {
+        h2: "6. Good Bites — Bishan Sports Hall",
+        body: [
+          "Good Bites is the heartland option with unusually long hours. On weekends it opens at 9am and serves brunch plates such as a full breakfast-style waffle, chicken and waffles, pasta, burgers and desserts; it then stays open into the early morning for the supper crowd.",
+          "The venue is commonly presented as halal-certified, but certification is outlet-specific and changes over time. Check the displayed certificate or HalalSG listing if you require current MUIS confirmation.",
+        ],
+        bullets: [
+          "5 Bishan Street 14, #03-01, Bishan Sports Hall, Singapore 579783",
+          "+65 6970 0233; hello@goodbites.com.sg",
+          "Monday–Friday, 11am–5am; Saturday–Sunday and public holidays, 9am–5am; last order is earlier",
+          "Halal status: venue is presented as halal-certified; verify the current outlet record before visiting",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/good-bites-bishan" },
+          { label: "Official website", href: "https://www.goodbites.com.sg/" },
+          { label: "Instagram", href: "https://www.instagram.com/goodbitessg/" },
+        ],
+      },
+      {
+        h2: "7. The Tree Café — 100AM Mall",
+        body: [
+          "For this guide, choose The Tree Café at 100AM rather than the better-known Century Square branch: 100AM is the outlet with a dedicated 8am to 10am breakfast menu. It is a practical CBD option for local breakfast dishes before work, while the wider menu continues into the day.",
+          "The brand says its outlets are halal-certified except 100AM, which is pending certification. That makes this specific breakfast outlet a lower-confidence choice until the certification is complete, and the distinction matters.",
+        ],
+        bullets: [
+          "100 Tras Street, #01-01, 100AM Mall, Singapore 079027",
+          "+65 8027 1776; thetreecafesg@gmail.com",
+          "Breakfast menu, 8am–10am; main opening hours listed as 11am–9.30pm",
+          "Halal status: 100AM pending certification, according to the brand; other listed outlets are stated as certified",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/the-tree-cafe-100am" },
+          { label: "Official website", href: "https://www.thetreecafesg.com/" },
+          { label: "Instagram", href: "https://www.instagram.com/thetreecafesg/" },
+          { label: "TikTok", href: "https://www.tiktok.com/@thetreecafesg" },
+        ],
+      },
+      {
+        h2: "8. Wooly’s Bagels — Arab Street",
+        body: [
+          "Wooly’s is a strong late-breakfast choice when you want something portable and filling. The Muslim-owned bagel shop is known for oversized combinations such as the GTFBagel with chicken ham, scrambled egg, hash brown and truffle mayonnaise, plus an otah bagel with egg and coconut chilli mayonnaise.",
+          "It opens at 10.30am, so this is brunch rather than an early start. The Arab Street location also makes it an easy alternative when the traditional breakfast window has already passed.",
+        ],
+        bullets: [
+          "27 Arab Street, Singapore 199726",
+          "Daily, 10.30am–8.30pm",
+          "Halal status: Muslim-owned",
+          "Best for: filled bagels, takeaway brunch and Kampong Gelam café hopping",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/woolys-bagels-arab-street" },
+          { label: "Instagram", href: "https://www.instagram.com/woolysbagels/" },
+        ],
+      },
+      {
+        h2: "9. Fika Swedish Café & Bistro — Beach Road",
+        body: [
+          "Fika brings something different to the list: Muslim-owned Swedish food in a cosy two-storey shophouse. Swedish pancakes, waffles, pastries and coffee make sense for a late breakfast, while the meatballs and savoury Scandinavian plates suit a more substantial brunch.",
+          "The café opens at 11am, so do not choose it for an early morning meal. Fika’s official site states that it is owned and operated by Muslims.",
+        ],
+        bullets: [
+          "257 Beach Road, Singapore 199539",
+          "+65 6396 9096; info@fikacafe.com",
+          "Sunday–Thursday, 11am–9pm; Friday–Saturday, 11am–10pm",
+          "Halal status: Muslim-owned, according to the business",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/fika-swedish-cafe-beach-road" },
+          { label: "Official website", href: "https://www.fikacafe.com/" },
+          { label: "Instagram", href: "https://www.instagram.com/fikacafesg/" },
+        ],
+      },
+      {
+        h2: "10. The Malayan Council — Bussorah Street",
+        body: [
+          "The Malayan Council is the indulgent late-brunch entry. It is better known for Malay-Western comfort food, large sharing plates and cakes than for an early breakfast service, but the Bussorah branch works for groups that want their first meal closer to lunchtime.",
+          "The restaurant describes itself as halal dining, and the current Bussorah outlet opens at 11am. Choose this for a substantial group meal, not coffee at sunrise.",
+        ],
+        bullets: [
+          "71 Bussorah Street, Singapore 199484",
+          "Daily, 11am–11pm",
+          "Halal status: presented as halal dining by the business",
+          "Best for: generous fusion plates, group brunch and cakes",
+        ],
+        links: [
+          { label: "View directory listing", href: "/business/the-malayan-council-bussorah" },
+          { label: "Official website", href: "https://themalayancouncil.sg/" },
+          { label: "Instagram", href: "https://www.instagram.com/themalayancouncil.sg/" },
+        ],
+      },
     ],
     faq: [
-      { q: "What is a typical halal breakfast in Singapore?", a: "Nasi lemak, roti prata, mee rebus, lontong and kaya toast with kopi are popular halal breakfasts, alongside modern café brunch and big breakfasts. Many spots are Muslim-owned or MUIS-certified, so check the halal-confidence score before you go." },
-      { q: "How do I find halal breakfast open near me?", a: "Use the “Open now” filter and area search on Humble Halal, then sort by halal-confidence score or rating. Breakfast spots open early and close by mid-morning, so opening hours matter more than for any other meal." },
-      { q: "Is hawker breakfast halal?", a: "It depends on the stall, not the hawker centre. Many breakfast stalls are Muslim-owned or MUIS-certified, but others self-declare “no pork, no lard” or share equipment with non-halal stalls. Check the specific stall’s status rather than assuming." },
-      { q: "What can make a breakfast non-halal?", a: "Pork luncheon meat, pork sausage or “bacon”, and lard or pork shortening on the griddle are the usual issues. At mixed stalls, shared toasters, woks and grills can be a concern too. A MUIS-certified kitchen has verified all of this." },
-      { q: "What time do halal breakfast spots open?", a: "Heartland stalls often open before dawn and are busiest between 7am and 10am, while cafés lean later with all-day brunch. Use the “Open now” filter on Humble Halal to see what is actually serving at your hour, including suhoor-friendly early spots." },
-      { q: "Where is the best halal breakfast in Singapore?", a: "There is no single answer — the best halal breakfast is the certified or Muslim-owned spot that is open, near you and suits your craving. Browse by area on Humble Halal, sort by halal-confidence score, and confirm the outlet on MUIS HalalSG." },
+      { q: "What is the best early halal breakfast café in Singapore?", a: "All Things Delicious opens at 8am daily, Penny University serves brunch from 8am, and Small Batch opens at 8am from Tuesday to Sunday. The Tree Café at 100AM advertises an 8am–10am breakfast menu, but says that outlet’s halal certification is pending." },
+      { q: "Which halal breakfast places are open on weekends?", a: "All Things Delicious, Penny University, Small Batch, The Secret Garden, Pancake & Waffle Place and Good Bites all serve breakfast or brunch on weekends. Check same-day hours before travelling because public-holiday and private-event schedules can change." },
+      { q: "Which breakfast spots are MUIS halal-certified?", a: "All Things Delicious explicitly states that its facilities and products are MUIS halal-certified. Other entries may be Muslim-owned, self-described as halal or halal-friendly, or pending outlet certification. Always confirm the exact outlet on the official HalalSG register when current MUIS certification is important to you." },
+      { q: "Is Muslim-owned the same as MUIS halal-certified?", a: "No. Muslim-owned identifies the ownership of a business; MUIS certification is an official audit and certificate for a specific operation or outlet. Both are useful signals, but they should not be presented as interchangeable." },
+      { q: "Where can I get halal pancakes or waffles for breakfast?", a: "Pancake & Waffle Place serves a dedicated breakfast menu from 9am to noon on Saturdays and Sundays. Good Bites also serves weekend brunch and chicken and waffles, while Fika offers Swedish pancakes and waffles from 11am." },
+      { q: "How current are the addresses and hours in this guide?", a: "The venue details were checked against current first-party websites or live venue sources on 16 July 2026. Restaurants can still change hours, menus and certification, so follow the official link and verify again before a special journey." },
     ],
     related: ["best-halal-restaurants-singapore-2026", "best-halal-cafes-singapore"],
     dropcap: true,
-    pullQuote: "“The best halal breakfast is the certified one that’s actually open when you are.”",
+    pullQuote: "“A useful breakfast guide tells you not only what to order, but which outlet, what time and what its halal claim actually means.”",
     pullQuoteBy: "The Humble Halal Team",
   },
   {

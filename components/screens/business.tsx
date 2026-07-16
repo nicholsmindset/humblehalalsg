@@ -679,12 +679,15 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
       const sb = supabase;
       if (!sb) return; // mock mode
       if (!user) { if (alive) { setBiz([]); setOwnerEvents([]); setPending([]); } return; }
-      const list = await loadBiz();
+      await loadBiz();
       if (!alive) return;
-      if (list.length) {
-        const { data: ed } = await sb.from("events").select("id, slug, title, status, taken, capacity, is_free, date_iso, display").in("business_id", list.map((b) => b.id)).order("date_iso", { ascending: false });
-        if (alive) setOwnerEvents((ed as OwnerEvent[]) || []);
-      } else if (alive) setOwnerEvents([]);
+      try {
+        const eventRes = await fetch("/api/owner/events");
+        const eventJson = await eventRes.json().catch(() => ({}));
+        if (alive) setOwnerEvents(eventJson?.ok && Array.isArray(eventJson.events) ? eventJson.events as OwnerEvent[] : []);
+      } catch {
+        if (alive) setOwnerEvents([]);
+      }
       // In-flight submissions (pending listings + claims) → "In review" cards.
       try {
         const res = await fetch("/api/owner/submissions");

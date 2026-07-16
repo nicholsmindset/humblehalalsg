@@ -32,7 +32,12 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ ok: false, reason: "title_required" }, { status: 422 });
 
   // Link to the host's business (for organiser payouts on paid events).
-  const { data: biz } = await admin.from("businesses").select("id, name").eq("owner_id", userId).maybeSingle();
+  const { data: biz } = await admin
+    .from("businesses")
+    .select("id, name")
+    .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`)
+    .limit(1)
+    .maybeSingle();
 
   const free = b.free !== false;
   const priceFrom = free ? 0 : Math.max(0, Number(b.price) || 0);

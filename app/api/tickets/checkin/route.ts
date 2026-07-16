@@ -61,8 +61,9 @@ export async function POST(req: Request) {
   const isAdmin = profile?.role === "admin";
   let authorised = isAdmin;
   if (!authorised && t.event_id) {
-    const { data: ev } = await admin.from("events").select("business_id").eq("id", t.event_id).maybeSingle();
-    if (ev?.business_id) {
+    const { data: ev } = await admin.from("events").select("business_id, submitted_by").eq("id", t.event_id).maybeSingle();
+    if (ev?.submitted_by === userId) authorised = true;
+    if (!authorised && ev?.business_id) {
       const { data: biz } = await admin
         .from("businesses").select("id").eq("id", ev.business_id)
         .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
