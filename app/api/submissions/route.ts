@@ -26,7 +26,12 @@ function sanitizeRaw(body: Record<string, unknown>): Record<string, unknown> {
   for (const [k, v] of Object.entries(body)) {
     if (n >= 40) break;
     if (k === "website") continue; // honeypot — drop
-    if (typeof v === "string") { out[k] = v.slice(0, 2000); n++; }
+    if (k === "photos" && Array.isArray(v)) {
+      out.photos = v.map((item) => typeof item === "string" ? item : (item && typeof item === "object" ? (item as { url?: unknown }).url : ""))
+        .filter((url): url is string => typeof url === "string" && /^https?:\/\//.test(url)).slice(0, 6).map((url) => ({ url }));
+      n++;
+    }
+    else if (typeof v === "string") { out[k] = v.slice(0, 2000); n++; }
     else if (typeof v === "number" || typeof v === "boolean") { out[k] = v; n++; }
     // objects/arrays/null are intentionally skipped
   }

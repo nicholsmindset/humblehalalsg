@@ -20,6 +20,7 @@ import { AdminTiktok } from "./admin-tiktok";
 import { AdminLeads } from "./admin-leads";
 import { AdminBusinesses } from "./admin-businesses";
 import { AdminCrm } from "./admin-crm";
+import { PendingListingEditButton } from "../owner/pending-submissions";
 import { FLAG_COPY } from "./admin-flag-copy";
 
 /* ── Live moderation-queue wiring ───────────────────────────────────────────
@@ -207,9 +208,9 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='overview' && <AdminOverview setSection={selectSection} />}
           {section==='revenue' && <AdminRevenue />}
           {section==='rollout' && <AdminRollout />}
-          {section==='approvals' && <AdminApprovals toast={toast} navigate={navigate} />}
+          {section==='approvals' && <AdminApprovals toast={toast} />}
           {section==='leads' && leadRoutingEnabled && <AdminLeads toast={toast} />}
-          {section==='crm' && <AdminCrm />}
+          {section==='crm' && <AdminCrm onNavigate={selectSection} />}
           {section==='claims' && <AdminClaims toast={toast} navigate={navigate} />}
           {section==='businesses' && <AdminBusinesses toast={toast} gotoVerification={() => selectSection('verification')} />}
           {section==='suggestions' && <AdminSuggestions toast={toast} />}
@@ -729,7 +730,7 @@ export function AdminOverview({ setSection }: { setSection: (s: string) => void 
 }
 
 interface ApprovalRow { id: string; name: string; cat: string; area: string; badges: BadgeKey[]; tone?: string; image?: string; status: string; submitted: string }
-export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => void; navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+export function AdminApprovals({ toast }: { toast: (msg: string) => void }) {
   const [rows, setRows] = useState<ApprovalRow[]>([]);
   const [live, setLive] = useState(false);
   useEffect(() => {
@@ -738,7 +739,10 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
       setLive(true);
       setRows(items.map((s) => {
         const raw = (s.raw && typeof s.raw === "object" ? s.raw : {}) as Record<string, unknown>;
-        return { id: s.id, name: String(s.name ?? "—"), cat: String(s.category_suggested ?? raw.cat ?? "—"), area: String(raw.area ?? "—"), badges: ["pending"], tone: "gold", status: "new", submitted: timeAgo(s.created_at) } as ApprovalRow;
+        const photos = Array.isArray(raw.photos) ? raw.photos : [];
+        const first = photos[0];
+        const image = typeof first === "string" ? first : (first && typeof first === "object" && typeof (first as { url?: unknown }).url === "string" ? String((first as { url: string }).url) : undefined);
+        return { id: s.id, name: String(s.name ?? "—"), cat: String(s.category_suggested ?? raw.cat ?? "—"), area: String(raw.town ?? raw.area ?? "—"), badges: ["pending"], tone: "gold", image, status: "new", submitted: timeAgo(s.created_at) } as ApprovalRow;
       }));
     });
   }, []);
@@ -764,7 +768,7 @@ export function AdminApprovals({ toast, navigate }: { toast: (msg: string) => vo
                 <td><Badge type={r.badges[0]}/></td>
                 <td className="muted">{r.submitted}</td>
                 <td><div className="flex g6">
-                  <button className="btn btn-soft btn-sm" onClick={()=>navigate('detail',{id:r.id})}><Icon name="eye" size={15}/></button>
+                  <PendingListingEditButton id={r.id} label="Edit" onSaved={(name) => setRows((items) => items.map((item) => item.id === r.id ? { ...item, name: name || item.name } : item))} />
                   <button className="btn btn-primary btn-sm" onClick={()=>act(r.id,'approve')}>Approve</button>
                   <button className="btn btn-ghost btn-sm" onClick={()=>act(r.id,'reject')}>Reject</button>
                 </div></td>

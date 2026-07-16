@@ -16,24 +16,25 @@ async function authorize(eventId: string) {
   if (!userId) return { error: NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 401 }) };
   const admin = getSupabaseAdmin();
   if (!admin) return { error: NextResponse.json({ ok: false, reason: "not_configured" }, { status: 503 }) };
-  const { data: ev } = await admin.from("events").select("id, business_id, submitted_by, status, display, slug").eq("id", eventId).maybeSingle();
+  const { data: ev } = await admin.from("events").select("id, business_id, submitted_by, status, display, slug, is_free").eq("id", eventId).maybeSingle();
   if (!ev) return { error: NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 }) };
   const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-  let ok = profile?.role === "admin" || ev.submitted_by === userId;
+  const isAdmin = profile?.role === "admin";
+  let ok = isAdmin || ev.submitted_by === userId;
   if (!ok && ev.business_id) {
     const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id)
       .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
     ok = !!biz;
   }
   if (!ok) return { error: NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 }) };
-  return { admin, ev, userId };
+  return { admin, ev, userId, isAdmin };
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const a = await authorize(id);
   if (a.error) return a.error;
-  const { admin, ev } = a;
+  const { admin, ev, isAdmin } = a;
 
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
@@ -41,16 +42,52 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const patch: Record<string, unknown> = {};
   if (typeof b.title === "string" && b.title.trim()) patch.title = b.title.trim();
   if (typeof b.capacity === "number") patch.capacity = Math.max(0, b.capacity);
-  if (b.status === "draft" || b.status === "published" || b.status === "cancelled") patch.status = b.status;
+  if (typeof b.date_iso === "string" || b.date_iso === null) patch.date_iso = b.date_iso ? String(b.date_iso).slice(0, 40) : null;
+  // Pricing mode can be changed while a submission is pending/draft. Once live,
+  // changing free ↔ paid would invalidate existing orders and ticket tiers.
+  if (typeof b.is_free === "boolean" && ["pending", "draft"].includes(String(ev.status))) patch.is_free = b.is_free;
+  // Moderation state is admin-owned. Previously an organiser could PATCH
+  // status="published" and bypass the review queue entirely.
+  if (isAdmin && (b.status === "draft" || b.status === "published" || b.status === "cancelled")) patch.status = b.status;
   // Merge display patch (venue, dateLabel, blurb, Islamic fields, etc.) without clobbering.
   if (b.display && typeof b.display === "object") {
     const cur = (ev.display && typeof ev.display === "object" ? ev.display : {}) as Record<string, unknown>;
-    patch.display = { ...cur, ...(b.display as Record<string, unknown>) };
+    const incoming = b.display as Record<string, unknown>;
+    const allowed = ["catId", "cat", "blurb", "venue", "area", "dateLabel", "timeLabel", "endTime", "organiser", "img", "prayerNearby", "halalCatering", "prayerSlotNote", "genderArrangement", "seatingNote", "refundPolicy", "donationEnabled", "requiresApproval", "feeMode"];
+    const displayPatch: Record<string, unknown> = {};
+    for (const key of allowed) {
+      if (!(key in incoming)) continue;
+      const value = incoming[key];
+      if (typeof value === "boolean") displayPatch[key] = value;
+      else if (value === null) displayPatch[key] = null;
+      else if (typeof value === "string") displayPatch[key] = value.slice(0, key === "blurb" ? 4000 : 500);
+    }
+    if ("priceFrom" in incoming && Number.isFinite(Number(incoming.priceFrom))) displayPatch.priceFrom = Math.max(0, Number(incoming.priceFrom));
+    patch.display = { ...cur, ...displayPatch };
   }
   if (!Object.keys(patch).length) return NextResponse.json({ ok: false, reason: "nothing_to_update" }, { status: 422 });
 
   const { error } = await admin.from("events").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
+  // Pending paid-event tiers are safe to replace because no orders have been
+  // issued yet. Once published, prices/quantities remain immutable here.
+  if (["pending", "draft"].includes(String(ev.status)) && Array.isArray(b.tiers)) {
+    const tiers = b.tiers.slice(0, 8).map((item) => {
+      const tier = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      return {
+        event_id: id,
+        name: String(tier.name || "Ticket").trim().slice(0, 80) || "Ticket",
+        price_cents: Math.max(0, Math.round(Number(tier.price) * 100) || 0),
+        qty: Math.max(0, Math.round(Number(tier.qty) || Number(b.capacity) || 0)),
+        sold: 0,
+      };
+    }).filter((tier) => tier.name);
+    const { error: deleteError } = await admin.from("ticket_tiers").delete().eq("event_id", id).eq("sold", 0);
+    if (!deleteError && tiers.length) {
+      const { error: tierError } = await admin.from("ticket_tiers").insert(tiers);
+      if (tierError) return NextResponse.json({ ok: false, reason: "tier_update_failed" }, { status: 500 });
+    }
+  }
   // Include the detail page — without it, edits/cancellations served stale
   // ISR HTML until the hourly revalidate (previously: until the next deploy).
   revalidatePublic(["/events", ...(ev.slug ? [`/events/${ev.slug}`] : [`/events/${id}`])]);

@@ -11,7 +11,7 @@ import { isSafeEventRef } from "@/lib/event-ref";
 type AuthOk = {
   ok: true;
   admin: NonNullable<ReturnType<typeof getSupabaseAdmin>>;
-  ev: { id: string; title: string; slug: string; status: string; capacity: number; is_free: boolean; date_iso: string | null; requiresApproval: boolean };
+  ev: { id: string; title: string; slug: string; status: string; capacity: number; is_free: boolean; date_iso: string | null; requiresApproval: boolean; display: Record<string, unknown> };
 };
 type AuthErr = { ok: false; res: NextResponse };
 
@@ -34,7 +34,7 @@ async function authorise(ref: string): Promise<AuthOk | AuthErr> {
   const d = (ev.display && typeof ev.display === "object" ? ev.display : {}) as Record<string, unknown>;
   return {
     ok: true, admin,
-    ev: { id: ev.id as string, title: (ev.title as string) || "Event", slug: (ev.slug as string) || (ev.id as string), status: (ev.status as string) || "", capacity: Number(ev.capacity) || 0, is_free: !!ev.is_free, date_iso: (ev.date_iso as string) ?? null, requiresApproval: d.requiresApproval === true },
+    ev: { id: ev.id as string, title: (ev.title as string) || "Event", slug: (ev.slug as string) || (ev.id as string), status: (ev.status as string) || "", capacity: Number(ev.capacity) || 0, is_free: !!ev.is_free, date_iso: (ev.date_iso as string) ?? null, requiresApproval: d.requiresApproval === true, display: d },
   };
 }
 
@@ -49,6 +49,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .select("id, qty, amount_cents, fee_cents, net_cents, status, payout_status, payout_due, created_at")
     .eq("event_id", ev.id).limit(10000);
   const { data: tix } = await admin.from("tickets").select("tier, status").eq("event_id", ev.id).limit(10000);
+  const { data: tierOptions } = await admin.from("ticket_tiers").select("id, name, price_cents, qty, sold").eq("event_id", ev.id).order("price_cents");
 
   const ords = orders || [];
   const confirmed = ords.filter((o) => o.status === "confirmed");
@@ -97,7 +98,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   return NextResponse.json({
     ok: true,
-    event: { id: ev.id, title: ev.title, slug: ev.slug, status: ev.status, capacity, is_free: ev.is_free, date_iso: ev.date_iso, requiresApproval: ev.requiresApproval },
+    event: { id: ev.id, title: ev.title, slug: ev.slug, status: ev.status, capacity, is_free: ev.is_free, date_iso: ev.date_iso, requiresApproval: ev.requiresApproval, display: ev.display, ticketTiers: tierOptions || [] },
     tickets: { issued, checkedIn, noShows: valid, valid, refunded, cancelled },
     attendance: { booked, capacity, pctCapacity },
     sales: { grossCents, feeCents, netCents, refundedCents, payout: { status: payoutStatus, dueDate } },

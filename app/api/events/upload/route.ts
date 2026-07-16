@@ -28,6 +28,19 @@ export async function POST(req: Request) {
   if (!ALLOWED.includes(file.type)) return NextResponse.json({ ok: false, reason: "bad_type" }, { status: 422 });
   if (file.size > MAX_BYTES) return NextResponse.json({ ok: false, reason: "too_large" }, { status: 422 });
 
+  const eventId = String(form.get("eventId") || "").trim();
+  if (eventId) {
+    const { data: ev } = await admin.from("events").select("id, business_id, submitted_by").eq("id", eventId).maybeSingle();
+    if (!ev) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
+    const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    let allowed = profile?.role === "admin" || ev.submitted_by === userId;
+    if (!allowed && ev.business_id) {
+      const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id).or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
+      allowed = !!biz;
+    }
+    if (!allowed) return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
+  }
+
   // Ensure the bucket exists (idempotent — ignore "already exists").
   try { await admin.storage.createBucket(BUCKET, { public: true }); } catch { /* exists */ }
 
@@ -35,7 +48,7 @@ export async function POST(req: Request) {
   const sniffed = sniffAllowed(bytes, ALLOWED);
   if (!sniffed) return NextResponse.json({ ok: false, reason: "bad_type" }, { status: 415 });
   const ext = extForType(sniffed);
-  const path = `${userId}/${randomUUID()}.${ext}`;
+  const path = `${eventId || userId}/${randomUUID()}.${ext}`;
   const { error } = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: sniffed, upsert: false });
   if (error) return NextResponse.json({ ok: false, reason: "upload_failed", detail: error.message }, { status: 500 });
 

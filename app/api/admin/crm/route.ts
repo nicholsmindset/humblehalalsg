@@ -17,11 +17,21 @@ export async function GET() {
   if (access.response) return access.response;
   const db = getSupabaseAdmin()!;
 
-  const [pending, failed, delivered, latest] = await Promise.all([
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
+  const [pending, failed, delivered, latest, listings, claims, events, reports, campaigns, hotelBookings, flightBookings, emails, recentEmails] = await Promise.all([
     db.from("crm_outbox").select("id", { count: "exact", head: true }).is("processed_at", null),
     db.from("crm_outbox").select("id", { count: "exact", head: true }).is("processed_at", null).not("last_error", "is", null),
     db.from("crm_outbox").select("id", { count: "exact", head: true }).not("processed_at", "is", null),
     db.from("crm_outbox").select("processed_at").not("processed_at", "is", null).order("processed_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("staging_businesses").select("id", { count: "exact", head: true }).in("review_status", ["new", "reviewing"]),
+    db.from("claims").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    db.from("events").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    db.from("reports").select("id", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
+    db.from("ad_campaigns").select("id", { count: "exact", head: true }).or("review_status.eq.pending,status.in.(draft,scheduled)"),
+    db.from("hotel_bookings").select("id", { count: "exact", head: true }).gte("created_at", since30),
+    db.from("flight_bookings").select("id", { count: "exact", head: true }).gte("created_at", since30),
+    db.from("email_log").select("id", { count: "exact", head: true }).gte("sent_at", since30),
+    db.from("email_log").select("id, template, sent_at").order("sent_at", { ascending: false }).limit(8),
   ]);
 
   const missingTable = [pending.error, failed.error, delivered.error, latest.error].some(Boolean);
@@ -34,6 +44,20 @@ export async function GET() {
       failed: failed.count ?? 0,
       delivered: delivered.count ?? 0,
       lastDeliveredAt: latest.data?.processed_at ?? null,
+    },
+    operations: {
+      queue: {
+        total: (listings.count ?? 0) + (claims.count ?? 0) + (events.count ?? 0) + (reports.count ?? 0),
+        listings: listings.count ?? 0, claims: claims.count ?? 0, events: events.count ?? 0, reports: reports.count ?? 0,
+      },
+      sponsorships: { attention: campaigns.count ?? 0 },
+      travel: { hotelBookings30d: hotelBookings.count ?? 0, flightBookings30d: flightBookings.count ?? 0 },
+      communications: {
+        resendConfigured: !!process.env.RESEND_API_KEY,
+        replyTo: process.env.EMAIL_REPLY_TO || "hello@humblehalal.com",
+        sent30d: emails.count ?? 0,
+        recent: (recentEmails.data || []).map((item) => ({ id: item.id, template: item.template || "transactional", sentAt: item.sent_at })),
+      },
     },
   });
 }

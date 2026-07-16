@@ -5,17 +5,17 @@
    dashboard "Manage". Auth is enforced by the APIs (organiser/admin), not this
    screen. Charts (Recharts) are dynamically imported so they never ship to the
    public bundle. */
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import dynamic from "next/dynamic";
 import { useApp } from "../app-context";
-import { Empty, Icon, MobileHeader } from "../ui";
+import { Empty, Icon, ImagePh, MobileHeader } from "../ui";
 
 const ChartSkeleton = () => <div className="muted" style={{ display: "grid", placeItems: "center", height: "100%" }}>Loading chart…</div>;
 const BookingsChart = dynamic(() => import("./event-manage-charts").then((m) => m.BookingsChart), { ssr: false, loading: ChartSkeleton });
 const TierChart = dynamic(() => import("./event-manage-charts").then((m) => m.TierChart), { ssr: false, loading: ChartSkeleton });
 
 type Stats = {
-  event: { id: string; title: string; slug: string; status: string; capacity: number; is_free: boolean; date_iso: string | null; requiresApproval: boolean };
+  event: { id: string; title: string; slug: string; status: string; capacity: number; is_free: boolean; date_iso: string | null; requiresApproval: boolean; display: Record<string, unknown>; ticketTiers: Array<{ id: string; name: string; price_cents: number; qty: number; sold: number }> };
   tickets: { issued: number; checkedIn: number; noShows: number; valid: number; refunded: number; cancelled: number };
   attendance: { booked: number; capacity: number; pctCapacity: number };
   sales: { grossCents: number; feeCents: number; netCents: number; refundedCents: number; payout: { status: string; dueDate: string | null } };
@@ -452,17 +452,47 @@ function RequestsTab({ s, slug }: { s: Stats; slug: string }) {
 }
 
 function SettingsTab({ eventId, s, toast, navigate, onSaved }: { eventId: string; s: Stats; toast: Toast; navigate: Nav; onSaved: () => void }) {
-  const [title, setTitle] = useState(s.event.title);
-  const [cap, setCap] = useState(String(s.event.capacity || ""));
+  const d = s.event.display || {};
+  const [form, setForm] = useState({
+    title: s.event.title, capacity: String(s.event.capacity || ""), date_iso: s.event.date_iso || "", is_free: s.event.is_free,
+    cat: String(d.cat || "Community"), blurb: String(d.blurb || ""), venue: String(d.venue || ""), area: String(d.area || ""),
+    dateLabel: String(d.dateLabel || ""), timeLabel: String(d.timeLabel || ""), endTime: String(d.endTime || ""),
+    priceFrom: String(Number(d.priceFrom) || ""), img: String(d.img || ""), prayerNearby: d.prayerNearby === true,
+    halalCatering: d.halalCatering === true, prayerSlotNote: String(d.prayerSlotNote || ""),
+    genderArrangement: String(d.genderArrangement || "mixed"), seatingNote: String(d.seatingNote || ""),
+    refundPolicy: String(d.refundPolicy || ""), requiresApproval: d.requiresApproval === true,
+  });
   const [busy, setBusy] = useState(false);
+  const [ticketTiers, setTicketTiers] = useState(() => s.event.ticketTiers.length ? s.event.ticketTiers.map((tier) => ({ name: tier.name, price: String(tier.price_cents / 100), qty: String(tier.qty || "") })) : [{ name: "Standard", price: String(Number(d.priceFrom) || ""), qty: String(s.event.capacity || "") }]);
+  const [uploading, setUploading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const photoInput = useRef<HTMLInputElement | null>(null);
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((current) => ({ ...current, [key]: value }));
+
+  const uploadCover = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]; event.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const data = new FormData(); data.set("file", file); data.set("eventId", eventId);
+      const res = await fetch("/api/events/upload", { method: "POST", body: data });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.url) set("img", json.url as string);
+      else toast?.(json?.reason === "too_large" ? "Image is too large (max 5MB)" : "Couldn’t upload that image");
+    } catch { toast?.("Couldn’t upload that image"); }
+    finally { setUploading(false); }
+  };
 
   const save = async () => {
-    const body: Record<string, unknown> = {};
-    if (title.trim() && title.trim() !== s.event.title) body.title = title.trim();
-    const capNum = Math.max(0, Number(cap) || 0);
-    if (capNum !== s.event.capacity) body.capacity = capNum;
-    if (!Object.keys(body).length) { toast?.("No changes to save"); return; }
+    if (!form.title.trim()) { toast?.("Event title is required"); return; }
+    const body = {
+      title: form.title.trim(), capacity: Math.max(0, Number(form.capacity) || 0), date_iso: form.date_iso || null, is_free: form.is_free,
+      display: { cat: form.cat, blurb: form.blurb, venue: form.venue, area: form.area, dateLabel: form.dateLabel, timeLabel: form.timeLabel,
+        endTime: form.endTime, priceFrom: form.is_free ? 0 : Math.max(0, Number(form.priceFrom) || 0), img: form.img,
+        prayerNearby: form.prayerNearby, halalCatering: form.halalCatering, prayerSlotNote: form.prayerSlotNote,
+        genderArrangement: form.genderArrangement, seatingNote: form.seatingNote, refundPolicy: form.refundPolicy, requiresApproval: form.requiresApproval },
+      tiers: form.is_free ? [] : ticketTiers.map((tier) => ({ name: tier.name, price: Math.max(0, Number(tier.price) || 0), qty: Math.max(0, Number(tier.qty) || 0) })),
+    };
     setBusy(true);
     try {
       const r = await fetch(`/api/events/${eventId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -484,9 +514,36 @@ function SettingsTab({ eventId, s, toast, navigate, onSaved }: { eventId: string
   };
 
   return (
-    <div className="stack g16" style={{ maxWidth: 480 }}>
-      <div className="field"><label>Event title</label><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-      <div className="field"><label>Capacity (0 = unlimited)</label><input className="input" type="number" min={0} value={cap} onChange={(e) => setCap(e.target.value)} /></div>
+    <div className="stack g16" style={{ maxWidth: 720 }}>
+      {s.event.status === "pending" && <div className="notice notice-warn"><Icon name="info" size={17} /><span>This event is still under review. Your updates are saved to the pending submission for the admin to review.</span></div>}
+      <div className="card" style={{ padding: 18 }}><h3>Event details</h3><div className="grid-2 g12" style={{ marginTop: 14 }}>
+        <div className="field" style={{ gridColumn: "1 / -1" }}><label>Event title</label><input className="input" value={form.title} onChange={(e) => set("title", e.target.value)} /></div>
+        <div className="field"><label>Category</label><input className="input" value={form.cat} onChange={(e) => set("cat", e.target.value)} /></div>
+        <div className="field"><label>Capacity (0 = unlimited)</label><input className="input" type="number" min={0} value={form.capacity} onChange={(e) => set("capacity", e.target.value)} /></div>
+        <div className="field" style={{ gridColumn: "1 / -1" }}><label>Description</label><textarea className="input" rows={5} value={form.blurb} onChange={(e) => set("blurb", e.target.value)} /></div>
+      </div></div>
+      <div className="card" style={{ padding: 18 }}><h3>Date &amp; location</h3><div className="grid-2 g12" style={{ marginTop: 14 }}>
+        <div className="field"><label>Date</label><input className="input" type="date" value={form.date_iso.slice(0, 10)} onChange={(e) => set("date_iso", e.target.value)} /></div>
+        <div className="field"><label>Date label</label><input className="input" placeholder="Sat, 20 July" value={form.dateLabel} onChange={(e) => set("dateLabel", e.target.value)} /></div>
+        <div className="field"><label>Start time</label><input className="input" placeholder="e.g. 7:00 PM" value={form.timeLabel} onChange={(e) => set("timeLabel", e.target.value)} /></div>
+        <div className="field"><label>End time</label><input className="input" placeholder="e.g. 9:30 PM" value={form.endTime} onChange={(e) => set("endTime", e.target.value)} /></div>
+        <div className="field"><label>Venue</label><input className="input" value={form.venue} onChange={(e) => set("venue", e.target.value)} /></div>
+        <div className="field"><label>Area</label><input className="input" value={form.area} onChange={(e) => set("area", e.target.value)} /></div>
+      </div></div>
+      <div className="card" style={{ padding: 18 }}><div className="flex between center"><h3>Cover image</h3><div><input ref={photoInput} hidden type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={uploadCover} /><button className="btn btn-outline btn-sm" disabled={uploading} onClick={() => photoInput.current?.click()}><Icon name="camera" size={15} /> {uploading ? "Uploading…" : form.img ? "Replace image" : "Add image"}</button></div></div>{form.img ? <div style={{ marginTop: 12, position: "relative" }}><ImagePh src={form.img} label="Event cover preview" style={{ width: "100%", maxHeight: 300, objectFit: "cover", borderRadius: 12 }} /><button className="btn btn-ghost btn-sm" style={{ position: "absolute", top: 8, right: 8, background: "#fff" }} onClick={() => set("img", "")}><Icon name="x" size={14} /> Remove</button></div> : <p className="muted" style={{ marginTop: 8 }}>JPG, PNG, WebP or AVIF, up to 5MB.</p>}</div>
+      <div className="card" style={{ padding: 18 }}><h3>Tickets &amp; attendance</h3><div className="grid-2 g12" style={{ marginTop: 14 }}>
+        <label className="check-row"><input type="checkbox" checked={form.is_free} disabled={!['pending','draft'].includes(s.event.status)} onChange={(e) => set("is_free", e.target.checked)} /><span><strong>Free event</strong><small>{!['pending','draft'].includes(s.event.status) ? "Pricing mode is locked after publication." : "Turn off to set a starting ticket price."}</small></span></label>
+        {!form.is_free && <div className="field"><label>Starting price (SGD)</label><input className="input" type="number" min={0} step="0.01" value={form.priceFrom} onChange={(e) => set("priceFrom", e.target.value)} /></div>}
+        <label className="check-row"><input type="checkbox" checked={form.requiresApproval} onChange={(e) => set("requiresApproval", e.target.checked)} /><span><strong>Approve registrations</strong><small>Review requests before issuing tickets.</small></span></label>
+      </div>{!form.is_free && ['pending','draft'].includes(s.event.status) && <div style={{ marginTop: 16 }}><div className="flex between center"><strong>Ticket tiers</strong><button className="btn btn-ghost btn-sm" onClick={() => setTicketTiers((items) => [...items, { name: `Tier ${items.length + 1}`, price: "", qty: form.capacity }])}><Icon name="plus" size={14} /> Add tier</button></div><div className="stack g8" style={{ marginTop: 8 }}>{ticketTiers.map((tier, index) => <div className="grid-3 g8" key={index}><input className="input" aria-label={`Tier ${index + 1} name`} value={tier.name} onChange={(e) => setTicketTiers((items) => items.map((item, i) => i === index ? { ...item, name: e.target.value } : item))} /><input className="input" type="number" min={0} step="0.01" aria-label={`Tier ${index + 1} price`} placeholder="Price SGD" value={tier.price} onChange={(e) => setTicketTiers((items) => items.map((item, i) => i === index ? { ...item, price: e.target.value } : item))} /><div className="flex g4"><input className="input" type="number" min={0} aria-label={`Tier ${index + 1} quantity`} placeholder="Quantity" value={tier.qty} onChange={(e) => setTicketTiers((items) => items.map((item, i) => i === index ? { ...item, qty: e.target.value } : item))} /><button className="btn btn-ghost btn-sm" disabled={ticketTiers.length === 1} onClick={() => setTicketTiers((items) => items.filter((_, i) => i !== index))}><Icon name="x" size={14} /></button></div></div>)}</div></div>}</div>
+      <div className="card" style={{ padding: 18 }}><h3>Muslim-friendly arrangements</h3><div className="grid-2 g12" style={{ marginTop: 14 }}>
+        <label className="check-row"><input type="checkbox" checked={form.prayerNearby} onChange={(e) => set("prayerNearby", e.target.checked)} /><span><strong>Prayer space nearby</strong></span></label>
+        <label className="check-row"><input type="checkbox" checked={form.halalCatering} onChange={(e) => set("halalCatering", e.target.checked)} /><span><strong>Halal catering</strong></span></label>
+        <div className="field"><label>Gender arrangement</label><select className="input" value={form.genderArrangement} onChange={(e) => set("genderArrangement", e.target.value)}><option value="mixed">Mixed</option><option value="segregated">Segregated</option><option value="sisters">Sisters only</option><option value="brothers">Brothers only</option></select></div>
+        <div className="field"><label>Prayer note</label><input className="input" value={form.prayerSlotNote} onChange={(e) => set("prayerSlotNote", e.target.value)} /></div>
+        <div className="field"><label>Seating note</label><input className="input" value={form.seatingNote} onChange={(e) => set("seatingNote", e.target.value)} /></div>
+        <div className="field"><label>Refund policy</label><input className="input" value={form.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)} /></div>
+      </div></div>
       <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save changes"}</button>
       <hr className="divider" />
       {s.event.status !== "cancelled" ? (
