@@ -41,21 +41,21 @@ import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 import { CouponCard } from "@/components/coupon-card";
 import type { PublicCoupon } from "@/lib/coupons";
 
-const areaAsset = (file: string) => `/area-images/${file}.svg`;
+const unsplashPhoto = (id: string) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=82`;
+
 const HOME_AREA_IMAGES: Record<string, string> = {
-  "kampong-glam": areaAsset("kampong-glam"),
-  tampines: areaAsset("tampines"),
-  "arab-street": areaAsset("arab-street"),
-  "race-course-road": areaAsset("race-course-road"),
-  geylang: areaAsset("geylang"),
-  "geylang-serai": areaAsset("geylang"),
-  islandwide: areaAsset("islandwide"),
-  "tanjong-pagar": areaAsset("tanjong-pagar"),
-  bugis: areaAsset("bugis"),
-  "little-india": areaAsset("little-india"),
-  bedok: areaAsset("tampines"),
-  jurong: areaAsset("islandwide"),
-  "paya-lebar": areaAsset("geylang"),
+  // Real, location-matched Singapore photography. The source pages are kept
+  // beside the IDs in docs/image-sources.md so every image remains auditable.
+  islandwide: unsplashPhoto("photo-1489462301595-b0d577c664c5"),
+  "kampong-glam": unsplashPhoto("photo-1746211724431-0c8ae575c3bb"),
+  "kampong-gelam": unsplashPhoto("photo-1539402343922-550ff6b957e9"),
+  "arab-street": unsplashPhoto("photo-1555947970-15e7a8a0bb73"),
+  tampines: unsplashPhoto("photo-1623545820176-ac55908f1853"),
+  "race-course-road": unsplashPhoto("photo-1701824580640-c5df7a6108fb"),
+  "little-india": unsplashPhoto("photo-1701824580640-c5df7a6108fb"),
+  geylang: unsplashPhoto("photo-1741502545029-20477d48b371"),
+  "geylang-serai": unsplashPhoto("photo-1741502545029-20477d48b371"),
 };
 const HOME_AREA_SEEDS = [
   { id: "kampong-glam", name: "Kampong Glam", tone: "cream" },
@@ -73,7 +73,7 @@ const areaKey = (value: string) =>
   value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 const homeAreaImage = (id: string | undefined, name: string, existing?: string) =>
-  HOME_AREA_IMAGES[areaKey(id || name)] || HOME_AREA_IMAGES[areaKey(name)] || existing || HOME_AREA_IMAGES.islandwide;
+  HOME_AREA_IMAGES[areaKey(name)] || HOME_AREA_IMAGES[areaKey(id || name)] || existing || HOME_AREA_IMAGES.islandwide;
 
 /* =============================================================
    HOME
