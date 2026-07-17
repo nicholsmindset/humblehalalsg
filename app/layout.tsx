@@ -17,6 +17,7 @@ import "../styles/moat.css";
 import "../styles/events.css";
 import "../styles/travel.css";
 import "../styles/tools.css";
+import "../styles/hawker.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
 import "../styles/blog.css";

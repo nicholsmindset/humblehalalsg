@@ -75,15 +75,65 @@ export async function getStallsForCentre(centreId: string): Promise<Listing[]> {
 
 /** Count of published stalls per centre id (for the finder list). One query. */
 export async function getStallCounts(): Promise<Record<string, number>> {
+  const agg = await getStallAggregates();
+  const out: Record<string, number> = {};
+  for (const [id, a] of Object.entries(agg)) out[id] = a.count;
+  return out;
+}
+
+export interface StallAggregate { count: number; muis: number; muslimOwned: number }
+
+/** Per-centre stall aggregates (count + MUIS-certified + Muslim-owned) in one
+ * query — powers the finder's centre-level filters honestly ("has certified
+ * stalls", not "centre is certified"). */
+export const getStallAggregates = cache(async (): Promise<Record<string, StallAggregate>> => {
   if (!supabaseConfigured) return {};
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return {};
-    const { data } = await sb.from("businesses").select("hawker_centre_id").eq("status", "published").not("hawker_centre_id", "is", null).limit(5000);
-    const out: Record<string, number> = {};
-    for (const r of (data as Row[]) || []) { const id = str(r.hawker_centre_id); if (id) out[id] = (out[id] || 0) + 1; }
+    const { data } = await sb
+      .from("businesses")
+      .select("hawker_centre_id,halal_tier,attributes")
+      .eq("status", "published")
+      .not("hawker_centre_id", "is", null)
+      .limit(5000);
+    const out: Record<string, StallAggregate> = {};
+    for (const r of (data as Row[]) || []) {
+      const id = str(r.hawker_centre_id);
+      if (!id) continue;
+      const a = (out[id] ||= { count: 0, muis: 0, muslimOwned: 0 });
+      a.count++;
+      if (str(r.halal_tier) === "muis") a.muis++;
+      const attrs = Array.isArray(r.attributes) ? (r.attributes as unknown[]).map(String) : [];
+      if (attrs.includes("muslim-owned")) a.muslimOwned++;
+    }
     return out;
   } catch { return {}; }
+});
+
+/** Popular stalls for the finder carousel: published stalls ranked by trust
+ * tier (MUIS first) then photo presence — real signals only. */
+export async function getPopularStalls(limit = 12): Promise<{ stall: Listing; centreName: string }[]> {
+  if (!supabaseConfigured) return [];
+  try {
+    const sb = getSupabaseAdmin();
+    if (!sb) return [];
+    const [{ data }, centres] = await Promise.all([
+      sb.from("businesses").select("*").eq("status", "published").not("hawker_centre_id", "is", null).limit(500),
+      getHawkerCentres(),
+    ]);
+    const nameOf = new Map(centres.map((c) => [c.id, c.name]));
+    const tierRank = (t?: string) => (t === "muis" ? 0 : t === "admin" ? 1 : 2);
+    const rows = ((data as Row[]) || [])
+      .map((r) => ({ row: r, stall: rowToListing(r) }))
+      .sort((a, b) => {
+        const t = tierRank(str(a.row.halal_tier)) - tierRank(str(b.row.halal_tier));
+        if (t !== 0) return t;
+        return (b.stall.photos?.length ? 1 : 0) - (a.stall.photos?.length ? 1 : 0);
+      })
+      .slice(0, limit);
+    return rows.map(({ row, stall }) => ({ stall, centreName: nameOf.get(str(row.hawker_centre_id)) || "" }));
+  } catch { return []; }
 }
 
 // Region grouping for the /hawker finder (mirrors PRAYER_CATEGORIES).

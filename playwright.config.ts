@@ -40,5 +40,7 @@ export default defineConfig({
         url: "http://localhost:3000",
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,
+        // Exercise flag-gated surfaces in e2e without changing prod defaults.
+        env: { ...process.env, HAWKER_FINDER_ENABLED: "1" },
       },
 });
