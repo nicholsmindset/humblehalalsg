@@ -788,3 +788,16 @@ a.hcx-alt-card:hover { border-color:var(--emerald-300); transform:translateY(-1p
 
 /* hub: per-category status counts line */
 .hcx-group-meta { font-size:.8rem; font-weight:600; color:var(--ink-faint); margin-left:8px; }
+
+/* ── statx-* — dashboard KPI cards (owner + event manager) ────────────────── */
+.statx { display:flex; gap:12px; align-items:flex-start; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:16px; min-width:0; }
+.statx-icon { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; background:var(--emerald-50); color:var(--emerald); flex:none; }
+.statx-body { min-width:0; }
+.statx-value { font-size:1.45rem; font-weight:800; line-height:1.15; color:var(--ink); }
+.statx-label { font-size:.82rem; font-weight:600; color:var(--ink-soft); margin-top:2px; }
+.statx-delta { display:inline-flex; align-items:center; gap:4px; font-size:.74rem; font-weight:700; margin-top:6px; }
+.statx-delta.up { color:var(--emerald); }
+.statx-delta.down { color:var(--danger); }
+.statx-hint { font-size:.74rem; color:var(--ink-faint); margin-top:6px; }
+.statx-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
+.statx-grid > * { min-width:0; }
