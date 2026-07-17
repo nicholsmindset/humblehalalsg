@@ -199,8 +199,11 @@ export const PIC: Record<string, string> = {
   nasipadang: "1565557623262-b51c2513a641", malayrice: "1604908176997-125f25cc6f3d", biryani: "1563379091339-03b21ab4a4f8",
   spread: "1504674900247-0877df9cc836", curry: "1631292784640-2b24be784d5d", meepok: "1569718212165-3a8278d5f624",
   coffee: "1554118811-1e0d58224f24", latte: "1517248135467-4c7edcad34c4", cafe: "1559339352-11d035aa65de",
-  grocery: "1601050690597-df0568f70950", butcher: "1604503468506-a8da13d82791", salon: "1560066984-138dadb4c035",
-  beauty: "1487412947147-5cebf100ffc2", boutique: "1441986300917-64674bd600d8", fashion: "1490481651871-ab68de25d43d",
+  // "butcher" (raw-meat joint) and "beauty" (glamour model) were banned as
+  // off-brand for a halal-trust directory — the keys now alias safe images so
+  // every existing reference stays valid (see tests/unit/no-banned-images.test.ts).
+  grocery: "1601050690597-df0568f70950", butcher: "1601050690597-df0568f70950", salon: "1560066984-138dadb4c035",
+  beauty: "1560066984-138dadb4c035", boutique: "1441986300917-64674bd600d8", fashion: "1490481651871-ab68de25d43d",
   tech: "1621905251918-48416bd8575a", interior: "1414235077428-338989a2e8c0", sgstreet: "1565967511849-76a60a516170",
   shophouse: "1555921015-5532091f6026",
 };
@@ -339,9 +342,10 @@ listings.forEach((l, i) => {
 });
 // gallery + collage + area imagery
 // Shared fallback gallery appended to every business detail page — keep it to
-// food/venue-appropriate imagery only. "beauty" (glamour model) and "butcher"
-// (raw-meat joint) were removed: they render on unrelated halal listings and
-// read as off-brand / haram-adjacent on a halal-trust directory.
+// food/venue-appropriate imagery only. The former "beauty" (glamour model) and
+// "butcher" (raw-meat joint) photo IDs are now fully banned: the PIC keys alias
+// safe images, and tests/unit/no-banned-images.test.ts fails the build if the
+// banned IDs reappear anywhere in the repo.
 const galleryKeys = ["interior", "spread", "curry", "latte"];
 export const gallery = galleryKeys.map((k) => IMG(PIC[k]));
 export const collage = [IMG(PIC.nasipadang), IMG(PIC.cafe), IMG(PIC.sgstreet)];
