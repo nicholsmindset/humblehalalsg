@@ -3,11 +3,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STATUS_META } from "@/lib/halal-status";
 import { allBrandsMerged, getBrandMerged, relatedBrandsMerged } from "@/lib/cms-brands";
-import { halalSgSearchUrl, HALALSG_BASE } from "@/lib/muis";
+import { buildBrandFaq, watchForItems } from "@/lib/halal-status-content";
+import { HALALSG_BASE } from "@/lib/muis";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, articleJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 import { getApprovedVerdict, approvedVerdictSlugs } from "@/lib/verdicts-data";
 import { VerdictView } from "@/components/verdict/verdict-view";
+import { StatusCard } from "@/components/halal-check/status-card";
+import { BrandMonogram, MethodPanel } from "@/components/halal-check/method-panel";
+import { CheckAnotherSearch } from "@/components/halal-check/check-search";
+import { SimilarChecks } from "@/components/halal-check/similar-checks";
+import { StatusExplainer } from "@/components/halal-check/status-explainer";
+import { BrandFaqList } from "@/components/halal-check/brand-faq";
+import { WatchFor, Alternatives } from "@/components/halal-check/content-sections";
+import { Newsletter } from "@/components/newsletter";
 
 // Approved AI-drafted verdicts (when HALAL_VERDICTS_ENABLED) render on demand;
 // ISR keeps newly-approved pages fresh within the hour without a redeploy.
@@ -46,13 +55,18 @@ export async function generateMetadata({
   });
 }
 
-function brandFaq(brandName: string, answer: string) {
+/** Popular-search chips: resolved server-side so no dead links ever ship. */
+function popularChips(slugs: Set<string>): { label: string; href: string }[] {
+  const brandChips = [
+    { label: "BreadTalk", slug: "breadtalk" },
+    { label: "Swee Heng", slug: "swee-heng" },
+    { label: "Chocolate Origin", slug: "chocolate-origin" },
+    { label: "Paris Baguette", slug: "paris-baguette" },
+  ].filter((c) => slugs.has(c.slug)).map((c) => ({ label: c.label, href: `/is-halal/${c.slug}` }));
   return [
-    { q: `Is ${brandName} MUIS halal-certified in Singapore?`, a: answer },
-    {
-      q: `How can I check if ${brandName} is halal?`,
-      a: `Search for ${brandName} on the official MUIS HalalSG register at halal.muis.gov.sg, or look for a valid MUIS halal certificate displayed at the outlet. A “no pork, no lard” sign is self-declared and is not the same as MUIS halal certification.`,
-    },
+    ...brandChips,
+    { label: "Gelatin", href: "/tools/ingredient-checker?q=gelatine" },
+    { label: "E471", href: "/tools/ingredient-checker?q=E471" },
   ];
 }
 
@@ -88,9 +102,19 @@ export default async function Page({ params }: { params: Promise<{ brand: string
   const b = await getBrandMerged(brand);
   if (!b) notFound();
   const m = STATUS_META[b.status];
-  const related = await relatedBrandsMerged(b, 8);
-  const faq = brandFaq(b.brand, b.answer);
+  const related = await relatedBrandsMerged(b, 6);
+  const fullFaq = buildBrandFaq(b);
   const title = `Is ${b.brand} Halal in Singapore?`;
+
+  const all = await allBrandsMerged();
+  const searchBrands = all.map((x) => ({
+    slug: x.slug,
+    brand: x.brand,
+    tone: STATUS_META[x.status].tone,
+    verdict: STATUS_META[x.status].verdict,
+    aliases: x.aliases,
+  }));
+  const chips = popularChips(new Set(all.map((x) => x.slug)));
 
   return (
     <>
@@ -106,7 +130,7 @@ export default async function Page({ params }: { params: Promise<{ brand: string
             { name: "Is it halal?", path: "/is-halal" },
             { name: b.brand, path: `/is-halal/${b.slug}` },
           ]),
-          faqJsonLd(faq),
+          faqJsonLd(fullFaq),
         ]}
       />
       <div className="screen-in hh-page">
@@ -117,31 +141,25 @@ export default async function Page({ params }: { params: Promise<{ brand: string
               <Link className="link-inline" href="/is-halal">Is it halal?</Link><span>›</span>
               <span style={{ color: "var(--ink)" }}>{b.brand}</span>
             </nav>
-            <h1 style={{ fontSize: "clamp(1.7rem,4vw,2.5rem)", maxWidth: 720 }}>{title}</h1>
-
-            {/* Answer-first block — the AI-Overview / featured-snippet unit */}
-            <div className={`hs-verdict hs-${m.tone}`} style={{ marginTop: 16 }}>
-              <div className="hs-verdict-head">
-                <span className={`hs-pill hs-${m.tone}`}>{m.verdict}</span>
-                <span className="hs-verdict-label">{m.label}</span>
-              </div>
-              <p className="hs-verdict-answer">{b.answer}</p>
-              <div className="hs-verdict-meta">
-                <span>Category: {b.category}</span>
-                <span>·</span>
-                <span>Last checked: {b.lastChecked}</span>
-                <span>·</span>
-                <span>Source: {b.source}</span>
-              </div>
-              <a className="btn btn-primary btn-sm" href={halalSgSearchUrl(b.brand)} target="_blank" rel="noopener noreferrer" style={{ marginTop: 12 }}>
-                Verify on MUIS HalalSG →
-              </a>
-            </div>
+            <span className="eyebrow">Halal status checker</span>
+            <h1 style={{ fontSize: "clamp(1.7rem,4vw,2.5rem)", maxWidth: 720, marginTop: 8 }}>{title}</h1>
+            <p className="muted" style={{ marginTop: 8, maxWidth: 640 }}>
+              Clear, source-backed guidance to help you make an informed choice.
+            </p>
           </div>
         </section>
 
-        <div className="hh-wrap hh-section" style={{ maxWidth: 760 }}>
-          <div className="notice notice-warn">
+        <div className="hh-wrap hh-section">
+          {/* Status area: verdict card + side panel */}
+          <div className="hcx-grid">
+            <StatusCard b={b} />
+            <aside className="hcx-side">
+              <BrandMonogram brand={b.brand} category={b.category} tone={m.tone} />
+              <MethodPanel status={b.status} lastChecked={b.lastChecked} />
+            </aside>
+          </div>
+
+          <div className="notice notice-warn" style={{ marginTop: 22 }}>
             <span>
               <strong>Important:</strong> Halal certification can change. This is a guide based on publicly available
               information as of {b.lastChecked} — always confirm the current status on the official{" "}
@@ -150,35 +168,26 @@ export default async function Page({ params }: { params: Promise<{ brand: string
             </span>
           </div>
 
-          <h2 style={{ fontSize: "1.3rem", margin: "26px 0 12px" }}>Frequently asked questions</h2>
-          <div className="faq-list">
-            {faq.map((f) => (
-              <details key={f.q} className="faq-item">
-                <summary>{f.q}<span className="faq-chevron" aria-hidden="true" /></summary>
-                <p className="muted" style={{ padding: "0 2px 4px", lineHeight: 1.6 }}>{f.a}</p>
-              </details>
-            ))}
+          <div style={{ marginTop: 26, display: "grid", gap: 26 }}>
+            <WatchFor items={watchForItems(b)} />
+            {b.alternatives?.length ? <Alternatives items={b.alternatives} /> : null}
           </div>
 
-          {related.length > 0 && (
-            <>
-              <h2 style={{ fontSize: "1.3rem", margin: "30px 0 12px" }}>Check another brand</h2>
-              <div className="hub-grid">
-                {related.map((r) => {
-                  const rm = STATUS_META[r.status];
-                  return (
-                    <Link key={r.slug} href={`/is-halal/${r.slug}`} className="hs-row">
-                      <span className="hs-row-name">Is {r.brand} halal?</span>
-                      <span className={`hs-pill hs-${rm.tone}`}>{rm.verdict}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-              <p style={{ marginTop: 16 }}>
-                <Link className="link-inline" href="/is-halal">See all brands in the halal checker →</Link>
-              </p>
-            </>
-          )}
+          <CheckAnotherSearch brands={searchBrands} chips={chips} />
+
+          <div className="hcx-cols">
+            <BrandFaqList items={fullFaq} />
+            <SimilarChecks items={related} category={b.category} />
+          </div>
+
+          <StatusExplainer status={b.status} explainer={b.explainer} />
+
+          <section className="newsletter-card" style={{ marginTop: 26 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>Halal status changes — we track them</h2>
+            <p className="muted" style={{ marginBottom: 12 }}>New certifications, lapses and halal finds, delivered to your inbox.</p>
+            <Newsletter source="is-halal-brand" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>

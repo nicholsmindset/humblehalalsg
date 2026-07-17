@@ -878,7 +878,20 @@ export function ClaimScreen() {
 ============================================================= */
 export function ReportScreen() {
   const { navigate, params, toast } = useApp();
-  const [reason, setReason] = useState("");
+  const reasons = [
+    ['halal','Wrong halal status','The certification or halal info is incorrect'],
+    ['closed','Permanently closed','This place is no longer operating'],
+    ['hours','Wrong opening hours','Hours shown are inaccurate'],
+    ['address','Wrong address','Location or address is incorrect'],
+    ['owner','No longer Muslim-owned','Ownership has changed'],
+    ['menu','Misleading menu','Menu or photos are misleading'],
+    ['other','Something else','A different issue'],
+  ];
+  // Deep links can pre-select a reason (/report?reason=halal) and carry a
+  // subject with no directory row (?name=Starbucks — e.g. is-halal brands).
+  const presetReason = reasons.some(([v]) => v === String(params.reason)) ? String(params.reason) : "";
+  const subjectName = String(params.name || params.brand || "").slice(0, 80);
+  const [reason, setReason] = useState(presetReason);
   const [details, setDetails] = useState("");
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
@@ -891,26 +904,23 @@ export function ReportScreen() {
     if (emailErr) return;
     setBusy(true);
     try {
-      await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: item?.id || "", reason, details, email: email.trim() || undefined }) });
+      const body = {
+        businessId: item?.id || "",
+        reason,
+        details: !item && subjectName ? `Brand: ${subjectName}\n${details}` : details,
+        email: email.trim() || undefined,
+      };
+      await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     } catch { /* graceful */ }
     setBusy(false);
     navigate("success", { type: "report" });
   };
-  const reasons = [
-    ['halal','Wrong halal status','The certification or halal info is incorrect'],
-    ['closed','Permanently closed','This place is no longer operating'],
-    ['hours','Wrong opening hours','Hours shown are inaccurate'],
-    ['address','Wrong address','Location or address is incorrect'],
-    ['owner','No longer Muslim-owned','Ownership has changed'],
-    ['menu','Misleading menu','Menu or photos are misleading'],
-    ['other','Something else','A different issue'],
-  ];
   return (
     <div className="screen-in hh-page">
       <MobileHeader title="Report an issue" onBack={()=>navigate(item?'detail':'home', item?{id:item.id}:{})} />
       <div className="form-page">
         <div className="form-head"><span className="eyebrow">Help us stay accurate</span><h1 style={{fontSize:'1.8rem', marginTop:8}}>Report incorrect info</h1>
-          {item && <p className="muted" style={{marginTop:6}}>For <strong>{item.name}</strong></p>}</div>
+          {(item || subjectName) && <p className="muted" style={{marginTop:6}}>For <strong>{item?.name || subjectName}</strong></p>}</div>
         <div className="card form-card">
           <label id="report-q" style={{fontWeight:600, fontSize:'.88rem'}}>What’s wrong?</label>
           <div className="stack g8 mt12" role="radiogroup" aria-labelledby="report-q">

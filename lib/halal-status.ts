@@ -13,6 +13,13 @@
 
 export type HalalStatus = "certified" | "partial" | "no-pork" | "not-certified" | "unknown";
 
+export interface BrandFaqItem { q: string; a: string }
+export interface BrandAlternative {
+  label: string; // "Old Chang Kee (certified since 2005)"
+  slug?: string; // links to /is-halal/<slug> when it's a sibling brand page
+  note?: string; // optional one-liner shown under the label
+}
+
 export interface BrandHalal {
   slug: string;
   brand: string;
@@ -23,6 +30,14 @@ export interface BrandHalal {
   source: string;
   lastChecked: string; // human-readable, e.g. "June 2026"
   aliases?: string[];
+  /* Curated depth (all optional — pages degrade to per-status defaults from
+     lib/halal-status-content.ts when absent, so CMS-added brands never render thin). */
+  certifiedSince?: string; // "1992" — certified/partial only; extra details-table row
+  whyStatus?: string[]; // 2–3 bullets: why this verdict
+  watchFor?: string[]; // 2–4 items: what to check before ordering
+  alternatives?: BrandAlternative[]; // 2–4 halal-certified siblings
+  faqs?: BrandFaqItem[]; // curated FAQs (merged with per-status defaults)
+  explainer?: string; // per-brand override lead for the status explainer
 }
 
 export const STATUS_META: Record<HalalStatus, { label: string; verdict: string; tone: string }> = {
