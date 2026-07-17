@@ -816,3 +816,29 @@ a.hcx-alt-card:hover { border-color:var(--emerald-300); transform:translateY(-1p
 .dash-quick { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 10px; background:var(--cream); border:1px solid var(--line); border-radius:var(--r-md); font:inherit; font-size:.84rem; font-weight:700; color:var(--ink); cursor:pointer; text-align:center; transition:border-color .14s, transform .14s; min-height:44px; }
 .dash-quick:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
 .dash-quick svg { color:var(--emerald); }
+
+/* ── Halal Passport (pp-*) — member dashboard ─────────────────────────────── */
+.pp-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,420px); gap:24px; align-items:start; margin-top:10px; }
+@media (max-width:860px){ .pp-hero { grid-template-columns:1fr; } }
+.pp-hero > * { min-width:0; }
+.pp-card { background:linear-gradient(135deg, var(--emerald-700), var(--emerald)); color:#fff; border-radius:var(--r-lg); padding:22px; box-shadow:var(--sh-lg); display:flex; flex-direction:column; gap:26px; }
+.pp-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.pp-card-name { display:block; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; opacity:.85; }
+.pp-card-tier { display:block; font-family:var(--serif); font-size:1.7rem; font-weight:700; letter-spacing:.04em; margin-top:2px; }
+.pp-card-bottom { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
+.pp-card-points { display:block; font-size:1.9rem; font-weight:800; line-height:1; }
+.pp-card-lbl { display:block; font-size:.72rem; font-weight:600; opacity:.85; margin-top:2px; }
+.pp-card-id { display:block; font-size:.7rem; font-weight:600; opacity:.7; margin-top:8px; letter-spacing:.06em; }
+.pp-tiers { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; }
+.pp-tiers > * { min-width:0; }
+.pp-tier { display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 6px; border-radius:var(--r-md); border:1px solid var(--line); font-size:.82rem; text-align:center; color:var(--ink-faint); }
+.pp-tier strong { color:inherit; font-size:.84rem; }
+.pp-tier .faint { font-size:.72rem; }
+.pp-tier.reached { color:var(--ink); border-color:var(--emerald-300); }
+.pp-tier.current { background:var(--emerald-50); border-color:var(--emerald); color:var(--emerald); }
+.pp-tier-ico { display:inline-flex; }
+.pp-how-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; }
+.pp-how-grid > * { min-width:0; }
+.pp-how-grid p { font-size:.84rem; color:var(--ink-soft); margin:4px 0 0; line-height:1.55; }
+.pp-how-grid strong { display:block; margin-top:8px; }
+.pp-step { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--emerald); color:#fff; font-size:.82rem; font-weight:800; }
