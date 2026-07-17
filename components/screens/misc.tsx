@@ -461,9 +461,11 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
             </button>
           ))}
         </div>
-        <div className="dash-tabs">
-          {tabs.map(([id,label,icon])=>(<button key={id} className={tab===id?'on':''} onClick={()=>setTab(id)}><Icon name={icon} size={17}/> {label}</button>))}
+        <div className="dash-layout">
+        <div className="dash-tabs" role="tablist" aria-label="Dashboard sections">
+          {tabs.map(([id,label,icon])=>(<button key={id} role="tab" aria-selected={tab===id} className={tab===id?'on':''} onClick={()=>setTab(id)}><Icon name={icon} size={17}/> {label}</button>))}
         </div>
+        <div className="dash-main">
         <div className="dash-pane">
           {['saved','wishlist','recent'].includes(tab) && (
             cur.length===0
@@ -561,6 +563,8 @@ export function UserDashboardScreen({ passportEnabled = false }: { passportEnabl
             <div><div style={{fontWeight:700}}>Know a great halal spot we’re missing?</div><p className="faint" style={{fontSize:'.86rem'}}>Help the community discover it.</p></div>
             <button className="btn btn-outline" onClick={()=>navigate('suggest')}><Icon name="plus" size={17}/> Suggest a business</button>
           </div>
+        </div>
+        </div>
         </div>
       </div>
     </div>
