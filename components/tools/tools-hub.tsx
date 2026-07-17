@@ -4,8 +4,25 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui";
 import { CATEGORY_ORDER, toolHref, type Tool, type ToolCategory } from "@/lib/tools";
+import { PrayerWidget } from "./prayer-widget";
+import { QuranContinue } from "./quran-continue";
 
 const FEATURED = ["prayer-times", "quran", "qibla", "zakat"];
+
+/* "Build your daily rhythm" collections — slugs validated against the live
+   registry at render time so an unknown slug can never ship a dead link. */
+const RHYTHM: { title: string; sub: string; slugs: string[] }[] = [
+  { title: "Daily worship", sub: "Strengthen your connection every day.", slugs: ["prayer-times", "duas", "tasbih"] },
+  { title: "Track your practice", sub: "Stay consistent, stay mindful.", slugs: ["salah-tracker", "ramadan", "khatam"] },
+  { title: "Plan with confidence", sub: "Plan ahead with clarity.", slugs: ["zakat", "date-converter", "islamic-calendar"] },
+];
+
+/* Intent cards — set the category filter (real behavior, no new routes). */
+const INTENTS: { label: string; sub: string; icon: string; category: ToolCategory }[] = [
+  { label: "I want to worship", sub: "Tools for your daily prayers and duas.", icon: "crescent", category: "Worship" },
+  { label: "I want to calculate", sub: "Zakat and important dates, planned.", icon: "chart", category: "Calculators" },
+  { label: "I want to learn", sub: "Knowledge, guides and answers.", icon: "doc", category: "Knowledge" },
+];
 
 const CATEGORY_COPY: Record<ToolCategory, string> = {
   Worship: "Pray, read, remember, and orient your day around salah.",
@@ -82,28 +99,15 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
             </div>
           </div>
 
-          <aside className="tools-hero-panel" aria-label="Recommended Islamic tools">
-            <div className="tools-panel-head">
-              <span className="tool-card-ico"><Icon name="sparkles" size={20} /></span>
-              <div>
-                <strong>Start here</strong>
-                <p>Most-used tools for daily routines.</p>
-              </div>
-            </div>
-            <div className="tools-feature-list">
-              {featured.map((t) => (
-                <Link key={t.slug} href={toolHref(t)} className="tools-feature-row">
-                  <span><Icon name={t.icon} size={16} /></span>
-                  <strong>{t.title}</strong>
-                  <Icon name="arrow" size={15} />
-                </Link>
-              ))}
-            </div>
-          </aside>
+          <div className="tools-hero-side">
+            <PrayerWidget />
+            <QuranContinue />
+          </div>
         </div>
       </section>
 
       <section className="hh-wrap tools-command" aria-label="Find an Islamic tool">
+        <h2 className="tools-command-title">What do you need today?</h2>
         <div className="tools-search">
           <Icon name="search" size={19} />
           <input
@@ -118,12 +122,12 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
             </button>
           )}
         </div>
-        <div className="tools-category-pills" aria-label="Tool categories">
-          <button type="button" className={category === "All" ? "on" : ""} onClick={() => setCategory("All")}>
+        <div className="tools-category-pills" role="tablist" aria-label="Tool categories">
+          <button type="button" role="tab" aria-selected={category === "All"} className={category === "All" ? "on" : ""} onClick={() => setCategory("All")}>
             All <span>{live.length}</span>
           </button>
           {CATEGORY_ORDER.map((cat) => (
-            <button key={cat} type="button" className={category === cat ? "on" : ""} onClick={() => setCategory(cat)}>
+            <button key={cat} type="button" role="tab" aria-selected={category === cat} className={category === cat ? "on" : ""} onClick={() => setCategory(cat)}>
               {cat} <span>{live.filter((t) => t.category === cat).length}</span>
             </button>
           ))}
@@ -155,6 +159,45 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
               <span className="tools-card-cta">Open tool <Icon name="arrow" size={15} /></span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="hh-wrap tools-rhythm" aria-label="Build your daily rhythm">
+        <div className="tools-section-head compact">
+          <div>
+            <span className="eyebrow">Daily rhythm</span>
+            <h2>Build your daily rhythm</h2>
+          </div>
+        </div>
+        <div className="tools-rhythm-grid">
+          {RHYTHM.map((col) => {
+            const items = col.slugs
+              .map((s) => live.find((t) => t.slug === s))
+              .filter((t): t is Tool => !!t);
+            if (!items.length) return null;
+            return (
+              <div key={col.title} className="tools-rhythm-col">
+                <h3>{col.title}</h3>
+                <p>{col.sub}</p>
+                <div className="tools-feature-list">
+                  {items.map((t) => (
+                    <Link key={t.slug} href={toolHref(t)} className="tools-feature-row">
+                      <span><Icon name={t.icon} size={16} /></span>
+                      <strong>{t.title}</strong>
+                      <Icon name="arrow" size={15} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <div className="tools-rhythm-col tools-privacy-col">
+            <span className="tool-card-ico"><Icon name="shield-check" size={22} /></span>
+            <h3>Your data stays on this device</h3>
+            <p>
+              {localCount} of these tools store everything in this browser only. Private by default. Always.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -201,6 +244,38 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
             Tools marked “On-device” keep your data in this browser only. Nothing is uploaded unless a tool clearly says it uses an online lookup.
           </p>
         </div>
+
+        <div className="tools-section-head compact" style={{ marginTop: 34 }}>
+          <div>
+            <span className="eyebrow">Quick start</span>
+            <h2>Not sure where to begin?</h2>
+          </div>
+        </div>
+        <div className="tools-intent-grid">
+          {INTENTS.map((it) => (
+            <button
+              key={it.category}
+              type="button"
+              className="tools-intent-card"
+              onClick={() => {
+                setQuery("");
+                setCategory(it.category);
+                document.querySelector(".tools-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              <span className="tool-card-ico"><Icon name={it.icon} size={20} /></span>
+              <span>
+                <strong>{it.label}</strong>
+                <em>{it.sub}</em>
+              </span>
+              <Icon name="arrow" size={16} />
+            </button>
+          ))}
+        </div>
+        <p className="tools-suggest-line">
+          <Icon name="edit" size={14} /> Missing something useful?{" "}
+          <Link className="link-inline" href="/suggest">Suggest an Islamic tool →</Link>
+        </p>
       </section>
     </div>
   );
