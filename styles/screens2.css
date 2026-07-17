@@ -802,14 +802,27 @@ a.hcx-alt-card:hover { border-color:var(--emerald-300); transform:translateY(-1p
 .statx-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
 .statx-grid > * { min-width:0; }
 
-/* ── Owner dashboard layout: sidebar >=1000px, tab strip below ────────────── */
+/* ── Owner/user dashboard layout: sidebar >=1000px, tab strip below ─────────
+   App-frame scrolling: the site chrome (nav 64px + prayer strip 42px) is
+   sticky, the sidebar pins directly beneath it, and ONLY the main pane
+   scrolls once the page hero has scrolled away — previously the whole page
+   scrolled and the sidebar/header drifted out of reach. */
 .dash-layout { min-width:0; }
 .dash-main { min-width:0; }
 @media (min-width:1000px) {
   .dash-layout { display:grid; grid-template-columns:220px minmax(0,1fr); gap:22px; align-items:start; }
-  .dash-layout > .dash-tabs { position:sticky; top:76px; display:flex; flex-direction:column; align-items:stretch; overflow:visible; border-bottom:0; padding:8px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); }
-  .dash-layout > .dash-tabs button { justify-content:flex-start; border-radius:10px; width:100%; }
+  .dash-layout > .dash-tabs,
+  .dash-layout > .dash-main {
+    position:sticky;
+    top:calc(var(--nav-h) + 54px);            /* nav 64 + strip 42 + 12 gap */
+    max-height:calc(100vh - var(--nav-h) - 66px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .dash-layout > .dash-tabs { display:flex; flex-direction:column; align-items:stretch; border-bottom:0; padding:8px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); scrollbar-width:thin; }
+  .dash-layout > .dash-tabs button { justify-content:flex-start; border-radius:10px; width:100%; flex:none; }
   .dash-layout > .dash-tabs button.on { background:var(--emerald-50); color:var(--emerald); }
+  .dash-layout > .dash-main { padding:2px 8px 24px 2px; scrollbar-width:thin; }
 }
 .dash-quick-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
 .dash-quick-grid > * { min-width:0; }
