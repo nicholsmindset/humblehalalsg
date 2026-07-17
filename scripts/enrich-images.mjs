@@ -88,12 +88,13 @@ async function main() {
   const { data: rows, error } = await sb.from("businesses")
     .select("id,slug,name,photos").eq("source", "spreadsheet").limit(2000);
   if (error) { console.error("✗", error.message); process.exit(1); }
+  // exact-host check (not substring — "images.unsplash.com.evil.tld" must not match)
+  const isUnsplashUrl = (u) => { try { return new URL(u).hostname === "images.unsplash.com"; } catch { return false; } };
   const todo = (rows || []).filter((r) => {
     if (progress[r.slug]) return false;
     const photos = Array.isArray(r.photos) ? r.photos : [];
     if (!photos.length) return true;
-    const u = photos[0]?.url;
-    return typeof u === "string" && u.includes("images.unsplash.com");
+    return isUnsplashUrl(photos[0]?.url);
   }).slice(0, LIMIT === Infinity ? undefined : LIMIT);
 
   console.log(`→ ${todo.length} businesses to enrich (rate-limited)${DRY ? " [DRY — no writes]" : ""}…`);

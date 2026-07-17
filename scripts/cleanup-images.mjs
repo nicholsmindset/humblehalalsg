@@ -95,7 +95,8 @@ async function fetchAll(sb, table, columns, filter) {
   }
 }
 
-const isUnsplash = (u) => typeof u === "string" && u.includes("images.unsplash.com");
+// exact-host check (not substring — "images.unsplash.com.evil.tld" must not match)
+const isUnsplash = (u) => { try { return new URL(u).hostname === "images.unsplash.com"; } catch { return false; } };
 
 /** Reject the governed rows for URLs removed from a business's projection. */
 async function rejectGoverned(sb, businessId, urls, reason) {
@@ -248,28 +249,39 @@ async function syncGovernance() {
 }
 
 /* ---- revalidate ---- */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,79}$/; // matches slugify() output; rejects anything URL-shaped
+
 async function revalidate() {
-  const SITE_URL = (env.SITE_URL || "").replace(/\/$/, "");
   const SECRET = env.CRON_SECRET;
-  const slugs = [...touched];
+  // The touched file is local state, but validate anyway: only well-formed
+  // slugs may reach a request URL (defense against a hand-edited file).
+  const slugs = [...touched].filter((s) => SLUG_RE.test(String(s)));
+  const dropped = touched.size - slugs.length;
+  if (dropped) console.log(`  · ignored ${dropped} malformed entr${dropped === 1 ? "y" : "ies"} in reports/.cleanup-touched.json`);
   if (!slugs.length) { console.log("nothing to revalidate — reports/.cleanup-touched.json is empty."); return; }
   const paths = [...slugs.map((s) => `/business/${s}`), "/", "/halal", "/explore"];
   const chunks = [];
   for (let i = 0; i < paths.length; i += 100) chunks.push(paths.slice(i, i + 100)); // route caps at 100/call
 
   if (!APPLY) {
+    // env values are deliberately NOT echoed — placeholders only.
     console.log(`→ revalidate [DRY RUN] — ${paths.length} paths in ${chunks.length} call(s):`);
     for (const c of chunks) {
-      console.log(`  curl -H "Authorization: Bearer $CRON_SECRET" "${SITE_URL || "https://<site>"}/api/admin/revalidate?${c.map((p) => `path=${encodeURIComponent(p)}`).join("&")}"`);
+      console.log(`  curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/admin/revalidate?${c.map((p) => `path=${encodeURIComponent(p)}`).join("&")}"`);
     }
     return;
   }
-  if (!SITE_URL || !SECRET) { console.error("✗ revalidate --apply needs SITE_URL + CRON_SECRET env"); process.exit(1); }
+  let site;
+  try { site = new URL(env.SITE_URL); } catch { site = null; }
+  if (!site || site.protocol !== "https:" || !SECRET) {
+    console.error("✗ revalidate --apply needs CRON_SECRET and an https:// SITE_URL");
+    process.exit(1);
+  }
   let ok = 0, fail = 0;
   for (const c of chunks) {
-    const res = await fetch(`${SITE_URL}/api/admin/revalidate?${c.map((p) => `path=${encodeURIComponent(p)}`).join("&")}`, {
-      headers: { Authorization: `Bearer ${SECRET}` },
-    });
+    const url = new URL("/api/admin/revalidate", site.origin);
+    for (const p of c) url.searchParams.append("path", p);
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${SECRET}` } });
     if (res.ok) ok += c.length; else { fail += c.length; console.log(`  FAIL   batch of ${c.length} — HTTP ${res.status}`); }
   }
   logAction({ revalidated: ok, failed: fail });
