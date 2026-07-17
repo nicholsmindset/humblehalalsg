@@ -697,3 +697,45 @@
 }
 .inh-disclaimer strong { color: var(--ink); }
 @media (max-width: 480px) { .inh-inputs { grid-template-columns: 1fr; } }
+
+/* ── Tools hub revamp: prayer widget, continue card, rhythm, intents ──────── */
+.tools-hero-side { display:grid; gap:14px; align-content:start; min-width:0; }
+.tools-prayer-widget .tools-panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.tools-ring-count { font-size:.86rem; font-weight:800; color:var(--ink); line-height:1.1; }
+.tools-ring-sub { font-size:.6rem; font-weight:600; color:var(--ink-faint); }
+.tools-next-line { font-size:.9rem; margin:10px 0 12px; color:var(--ink-soft); }
+.tools-times-row { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
+.tools-time { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 2px; border-radius:10px; border:1px solid var(--line); font-size:.7rem; color:var(--ink-soft); min-width:0; }
+.tools-time strong { font-size:.78rem; color:var(--ink); }
+.tools-time.on { background:var(--emerald-50); border-color:var(--emerald-300); }
+.tools-time.on span { color:var(--emerald); font-weight:700; }
+
+.tools-continue-card { display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:14px; transition:border-color .14s, transform .14s; min-width:0; }
+.tools-continue-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
+.tools-continue-body { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
+.tools-continue-body em { font-style:normal; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gold-800); }
+.tools-continue-body strong { font-size:.92rem; }
+.tools-continue-body span { font-size:.8rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tools-continue-cta { flex:none; font-size:.78rem; font-weight:700; color:var(--emerald); display:inline-flex; align-items:center; gap:4px; }
+
+.tools-command-title { font-size:1.25rem; margin:0 0 14px; }
+
+.tools-rhythm { margin-top:34px; }
+.tools-rhythm-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; }
+.tools-rhythm-grid > * { min-width:0; }
+.tools-rhythm-col { background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); padding:18px; }
+.tools-rhythm-col h3 { font-size:1rem; margin:0 0 2px; }
+.tools-rhythm-col > p { font-size:.8rem; color:var(--ink-soft); margin:0 0 12px; }
+.tools-privacy-col { background:var(--emerald-50); text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.tools-privacy-col p { margin:0; }
+
+.tools-intent-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px; }
+.tools-intent-grid > * { min-width:0; }
+.tools-intent-card { display:flex; align-items:center; gap:12px; text-align:left; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:16px; cursor:pointer; transition:border-color .14s, transform .14s; min-height:44px; font:inherit; }
+.tools-intent-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
+.tools-intent-card > span:nth-child(2) { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.tools-intent-card strong { font-size:.92rem; }
+.tools-intent-card em { font-style:normal; font-size:.78rem; color:var(--ink-soft); }
+.tools-suggest-line { display:flex; align-items:center; justify-content:center; gap:6px; font-size:.86rem; color:var(--ink-soft); margin-top:22px; flex-wrap:wrap; }
+/* WCAG 2.5.8: inline link needs a >=24px hit target */
+.tools-suggest-line .link-inline { display:inline-flex; align-items:center; min-height:24px; padding:2px 0; }

@@ -22,6 +22,13 @@ export function IngredientChecker() {
   const [filter, setFilter] = useState<AdditiveStatus | "all">("all");
   const [open, setOpen] = useState<string>("");
 
+  // Deep-link support (?q=E471 from the is-halal "check another" search) —
+  // read client-side on mount so the page itself stays fully static.
+  useEffect(() => {
+    const q0 = new URLSearchParams(window.location.search).get("q");
+    if (q0) setQ(q0);
+  }, []);
+
   const results = useMemo(() => {
     const base = q.trim() ? searchAdditives(q) : ADDITIVES;
     return filter === "all" ? base : base.filter((a) => a.status === filter);

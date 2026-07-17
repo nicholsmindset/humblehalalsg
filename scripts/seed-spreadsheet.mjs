@@ -90,31 +90,10 @@ function mapArea(i) {
 const postalFrom = (addr = "", g = "") =>
   (String(g).match(/\b(\d{6})\b/) || String(addr).match(/\b(\d{6})\b/) || [])[1] || null;
 
-/* ---- images: confirmed-loading Unsplash IDs (mirror lib/data.ts PIC/CAT_PIC) ---- */
-const IMG = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=70`;
-const PIC = {
-  nasipadang: "1565557623262-b51c2513a641", malayrice: "1604908176997-125f25cc6f3d", biryani: "1563379091339-03b21ab4a4f8",
-  spread: "1504674900247-0877df9cc836", curry: "1631292784640-2b24be784d5d", meepok: "1569718212165-3a8278d5f624",
-  coffee: "1554118811-1e0d58224f24", latte: "1517248135467-4c7edcad34c4", cafe: "1559339352-11d035aa65de",
-  grocery: "1601050690597-df0568f70950", butcher: "1604503468506-a8da13d82791", salon: "1560066984-138dadb4c035",
-  beauty: "1487412947147-5cebf100ffc2", boutique: "1441986300917-64674bd600d8", fashion: "1490481651871-ab68de25d43d",
-  tech: "1621905251918-48416bd8575a", interior: "1414235077428-338989a2e8c0", shophouse: "1555921015-5532091f6026",
-};
-const CAT_PIC = {
-  restaurants: ["nasipadang", "biryani", "malayrice", "spread", "curry", "meepok"],
-  cafes: ["cafe", "latte", "coffee"],
-  groceries: ["grocery", "butcher"],
-  beauty: ["salon", "beauty"],
-  health: ["interior", "beauty"],
-  fashion: ["boutique", "fashion"],
-  services: ["tech", "interior"],
-};
-const catCount = {};
-function catImage(cat) {
-  const pool = CAT_PIC[cat] || CAT_PIC.restaurants;
-  const i = (catCount[cat] = (catCount[cat] || 0) + 1) - 1;
-  return IMG(PIC[pool[i % pool.length]]);
-}
+/* ---- images: seeded rows carry NO stock photos. An empty photos array renders
+   the branded BusinessMediaFallback; the only path to a cover photo is a real one
+   via scripts/enrich-images.mjs or an owner/admin upload ("never a misleading
+   stock photo" — see components/screens/admin-businesses.tsx). ---- */
 
 /* ---- geocode (OSM Nominatim, cached, 1.1s/req) ---- */
 const cache = existsSync(GEOCACHE) ? JSON.parse(readFileSync(GEOCACHE, "utf8")) : {};
@@ -183,7 +162,8 @@ async function main() {
       featured: false,
       lat: coords?.lat ?? null,
       lng: coords?.lng ?? null,
-      photos: [{ url: catImage(cat), caption: name }],
+      // no `photos` key: inserts get the column default '[]' (branded fallback);
+      // upserts leave any enriched/uploaded photos on existing rows untouched.
     });
   }
 

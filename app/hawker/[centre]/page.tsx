@@ -5,6 +5,7 @@ import { getServerFlags } from "@/lib/feature-flags";
 import { getHawkerCentre, getStallsForCentre } from "@/lib/hawker";
 import { pageMeta } from "@/lib/seo";
 import { mapsSearchUrl } from "@/lib/geo";
+import { Newsletter } from "@/components/newsletter";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { HawkerMap } from "@/components/hawker-map";
 import { HalalConfidenceBadge } from "@/components/halal-confidence-badge";
@@ -94,6 +95,21 @@ export default async function Page({ params }: { params: Promise<{ centre: strin
               ))}
             </div>
           )}
+
+          <section className="hk-verify" style={{ marginTop: 30 }}>
+            <h2 style={{ fontSize: "1.15rem", margin: 0 }}>How Humble Halal verifies hawker listings</h2>
+            <div className="hk-verify-grid">
+              <div className="hk-verify-step"><strong>1. Official sources</strong><p>We cross-check with MUIS HalalSG, NEA and operator information.</p></div>
+              <div className="hk-verify-step"><strong>2. Community checks</strong><p>Our community helps confirm halal status and update operations.</p></div>
+              <div className="hk-verify-step"><strong>3. Regular updates</strong><p>We review listings regularly to keep information accurate.</p></div>
+            </div>
+          </section>
+
+          <section className="newsletter-card" style={{ marginTop: 24 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.2rem", margin: "6px 0 10px" }}>New halal stalls and hawker finds, weekly.</h2>
+            <Newsletter source="hawker-centre" cta="Subscribe" />
+          </section>
 
           <p className="faint" style={{ fontSize: ".84rem", marginTop: 20 }}>
             A discovery platform, not a certifier. Always verify certification on{" "}

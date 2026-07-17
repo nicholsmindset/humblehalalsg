@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetailScreen } from "@/components/screens/consumer";
 import { getDirectory, getListingBySlug } from "@/lib/directory";
+import { getHawkerCentre } from "@/lib/hawker";
 import { pageMeta } from "@/lib/seo";
 import { joinParts } from "@/lib/format";
 import { muisUnbacked } from "@/lib/halal-score";
@@ -67,6 +68,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const { slug } = await params;
   const l = await getListingBySlug(slug);
   if (!l) notFound(); // unknown slug → clean 404 (used to render the first listing)
+  // Hawker stalls get a "back to centre" context line — resolve the centre name
+  // server-side (null-safe: centre may be unpublished/missing).
+  const centre = l.hawkerCentreId ? await getHawkerCentre(l.hawkerCentreId) : null;
   return (
     <>
       {l && (
@@ -84,7 +88,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
       {/* Pass the server-resolved listing so hawker stalls (excluded from the
           client directory context) render their real, claimable page instead
           of a dead-end "not found". */}
-      <DetailScreen initial={l} />
+      <DetailScreen initial={l} hawkerCentre={centre ? { id: centre.id, name: centre.name } : undefined} />
     </>
   );
 }

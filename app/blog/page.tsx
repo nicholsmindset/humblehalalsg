@@ -58,6 +58,7 @@ export default async function Page() {
             <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link><span>›</span><span style={{ color: "var(--ink)" }}>Blog</span>
             </nav>
+            <span className="eyebrow">The Humble Halal blog</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Halal guides &amp; stories</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               Practical guides to eating halal in Singapore — what halal means, how MUIS certification works, and where to find the best halal food.

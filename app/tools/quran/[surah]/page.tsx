@@ -5,6 +5,7 @@ import { pageMeta } from "@/lib/seo";
 import { SURAHS } from "@/lib/tools/surahs";
 import { getSurah, QURAN_ATTRIBUTION } from "@/lib/tools/quran";
 import { QuranAudio } from "@/components/tools/quran-audio";
+import { QuranLastRead } from "@/components/tools/quran-last-read";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 // Prerender a handful of popular surahs; the rest render on-demand and cache (ISR).
@@ -47,6 +48,7 @@ export default async function Page({ params }: { params: Promise<{ surah: string
           ]),
         ]}
       />
+      <QuranLastRead surah={n!} surahName={meta.name} />
       <div className="screen-in hh-page">
         <section className="seo-hero hh-pattern">
           <div className="hh-wrap">
@@ -77,7 +79,7 @@ export default async function Page({ params }: { params: Promise<{ surah: string
           {surah ? (
             <div className="quran-reader tool-stage">
               {surah.ayahs.map((a) => (
-                <article key={a.n} id={`ayah-${a.n}`} className="quran-ayah card">
+                <article key={a.n} id={`ayah-${a.n}`} data-ayah={a.n} className="quran-ayah card">
                   <div className="quran-ayah-num">{n}:{a.n}</div>
                   <p className="quran-ayah-ar" lang="ar" dir="rtl">{a.arabic}</p>
                   <p className="quran-ayah-en">{a.english}</p>

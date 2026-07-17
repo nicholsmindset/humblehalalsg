@@ -100,6 +100,9 @@ const CHECKS: RouteCheck[] = [
   { name: "login", path: "/login" },
   { name: "pricing", path: "/pricing" },
   { name: "is-halal brand", path: "/is-halal/paris-baguette" },
+  { name: "hawker finder", path: "/hawker" },
+  { name: "seo landing", path: "/halal-food-singapore" },
+  { name: "passport (signed out)", path: "/passport" },
 ];
 
 for (const check of CHECKS) {

@@ -5,6 +5,7 @@ import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
 import { certSuffix } from "@/lib/halal-score";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd, itemListJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 /* Freshness hub for "new halal restaurants singapore" (400/mo, KD 5).
    Surfaces the most recently added listings (businesses.created_at) —
@@ -64,6 +65,7 @@ export default async function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>New openings</span>
             </nav>
+            <span className="eyebrow">Newly halal</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>New Halal Restaurants in Singapore ({SEO_YEAR})</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               <strong>The latest halal restaurants and Muslim-owned openings in Singapore</strong>, freshly verified and added
@@ -111,6 +113,12 @@ export default async function Page() {
               </details>
             ))}
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 30 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>New halal finds, weekly.</h2>
+            <Newsletter source="new-restaurants" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>

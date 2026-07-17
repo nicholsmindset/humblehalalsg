@@ -33,6 +33,7 @@ import { ReviewRequestCard } from "../owner/review-request-card";
 import { OwnerLeads } from "../owner/leads-tab";
 import { OwnerCouponsTab } from "../owner/coupons-tab";
 import type { OwnerBiz, OwnerEvent } from "../owner/types";
+import { ProfileStrengthCard } from "../owner/profile-strength";
 
 // MUIS certifies food & beverage — so only these categories get the
 // "MUIS Certified" path. Everything else uses Muslim-Owned / Muslim-Friendly.
@@ -669,7 +670,7 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
   const loadBiz = useCallback(async () => {
     const sb = supabase;
     if (!sb || !user) return [] as OwnerBiz[];
-    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at, status").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`);
+    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at, status, photos, description, opening_hours, website, phone, whatsapp, socials").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`);
     const list = (bd as OwnerBiz[]) || [];
     setBiz(list);
     return list;
@@ -776,13 +777,31 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
         <div className="hh-wrap">
           <div className="flex between center wrap g12">
             <div><span className="eyebrow" style={{ color: "var(--gold)" }}>Business dashboard</span>
-              <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{live ? (myBiz?.name || (biz === null ? "Loading…" : "Your business")) : "Warung Bumbu Rempah"}</h1>
+              <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{(() => {
+                const h = new Date().getHours();
+                const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+                const name = live ? (myBiz?.name || (biz === null ? "…" : "Your business")) : "Warung Bumbu Rempah";
+                return `${greet}, ${name}`;
+              })()}</h1>
               <div className="flex g8 center" style={{ marginTop: 8 }}>{live ? (myBiz ? <>{myBiz.halal_tier === "muis" && <Badge type="muis" />}{myBiz.halal_tier === "admin" && <Badge type="admin" />}</> : null) : <><Badge type="muis" /><Badge type="owned" /></>}</div></div>
             <div className="flex g10 center wrap" style={{ alignItems: "center" }}>
               <div className="flex g8 center" style={{ flexWrap: "wrap" }}>
                 <span className="plan-chip"><Icon name="crescent" size={13} /> {currentPlanLabel} plan</span>
                 {canUpgrade && <button className="btn btn-soft btn-sm" onClick={() => navigate("pricing")}><Icon name="arrow" size={15} /> Upgrade</button>}
               </div>
+              {live && myBiz?.slug && (
+                <>
+                  <a className="btn btn-outline btn-sm" href={`/business/${myBiz.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: "#fff", borderColor: "rgba(255,255,255,.4)" }}><Icon name="external" size={14} /> View public listing</a>
+                  <button className="btn btn-outline btn-sm" style={{ color: "#fff", borderColor: "rgba(255,255,255,.4)" }} onClick={async () => {
+                    const url = `${window.location.origin}/business/${myBiz.slug}`;
+                    try {
+                      if (navigator.share) await navigator.share({ title: myBiz.name, url });
+                      else { await navigator.clipboard.writeText(url); toast("Profile link copied"); }
+                    } catch { /* user dismissed share sheet */ }
+                  }}><Icon name="share" size={14} /> Share profile</button>
+                  <button className="btn btn-soft btn-sm" onClick={() => setTab("listings")}><Icon name="edit" size={14} /> Edit listing</button>
+                </>
+              )}
               <button className="btn btn-gold" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
             </div>
           </div>
@@ -802,9 +821,11 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
             </div>
           ))}
         </div>
-        <div className="dash-tabs">
-          {tabs.map(([id, label, icon]) => (<button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}><Icon name={icon} size={17} /> {label}</button>))}
+        <div className="dash-layout">
+        <div className="dash-tabs" role="tablist" aria-label="Dashboard sections">
+          {tabs.map(([id, label, icon]) => (<button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}><Icon name={icon} size={17} /> {label}</button>))}
         </div>
+        <div className="dash-main">
 
         {tab === "overview" && (
           <div className="dash-pane">
@@ -852,8 +873,52 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                 onAddListing={() => navigate("add-listing")}
               />
             )}
+            {live && myBiz && (
+              <ProfileStrengthCard
+                onGoTab={setTab}
+                input={{
+                  photosCount: Array.isArray(myBiz.photos) ? myBiz.photos.length : 0,
+                  descriptionLength: (myBiz.description || "").length,
+                  hasHours: Array.isArray(myBiz.opening_hours) && myBiz.opening_hours.length > 0,
+                  hasContact: !!(myBiz.phone || myBiz.whatsapp || (myBiz.socials && Object.keys(myBiz.socials).length)),
+                  hasWebsite: !!(myBiz.website || (myBiz.socials && (myBiz.socials.instagram || myBiz.socials.facebook))),
+                  verified: myBiz.halal_tier === "muis" || myBiz.halal_tier === "admin",
+                }}
+              />
+            )}
             {live && myBiz && <PlanBenefitsCard businessId={String(myBiz.id)} onUpgrade={() => navigate("pricing")} />}
             <OwnerInsights businessId={myBiz ? String(myBiz.id) : undefined} plan={currentPlan} onUpgrade={() => navigate("pricing")} />
+            {/* Quick actions — every target is an existing, working surface. */}
+            <div className="card mt20" style={{ padding: 18 }}>
+              <h3 style={{ fontSize: "1rem", marginBottom: 12 }}>Quick actions</h3>
+              <div className="dash-quick-grid">
+                <button className="dash-quick" onClick={() => setTab("listings")}><Icon name="camera" size={18} /> Add photos</button>
+                <button className="dash-quick" onClick={() => setTab("promotions")}><Icon name="megaphone" size={18} /> Create promotion</button>
+                <button className="dash-quick" onClick={() => setTab("events")}><Icon name="calendar" size={18} /> Post an event</button>
+                {live && myBiz?.slug ? (
+                  <a className="dash-quick" href={`/business/${myBiz.slug}/poster`} target="_blank" rel="noopener noreferrer"><Icon name="doc" size={18} /> Get QR poster</a>
+                ) : (
+                  <button className="dash-quick" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
+                )}
+              </div>
+            </div>
+            {/* Upcoming & active events strip (real ownerEvents data). */}
+            {live && (ownerEvents?.length ?? 0) > 0 && (
+              <div className="card mt20" style={{ padding: 18 }}>
+                <div className="flex between center wrap g10" style={{ marginBottom: 10 }}>
+                  <h3 style={{ fontSize: "1rem", margin: 0 }}>Upcoming and active</h3>
+                  <button className="link-inline" style={{ font: "inherit", fontSize: ".84rem" }} onClick={() => setTab("events")}>Manage events →</button>
+                </div>
+                <div className="stack g8">
+                  {(ownerEvents || []).slice(0, 3).map((e) => (
+                    <div key={e.id} className="flex between center g10" style={{ fontSize: ".88rem" }}>
+                      <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{e.title}</span>
+                      <span className={`hs-pill ${e.status === "cancelled" ? "hs-no" : "hs-yes"}`}>{e.status === "cancelled" ? "Cancelled" : e.status === "published" ? "Live" : e.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Halal Passport for owners — the QR poster existed but had no
                 dashboard entry point, so owners couldn't find it (audit /
                 passport-clarity). A footfall/loyalty hook, not a trust signal. */}
@@ -1066,6 +1131,8 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
             </div>
           </div>
         )}
+        </div>
+        </div>
       </div>
     </div>
   );

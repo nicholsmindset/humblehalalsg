@@ -5,6 +5,7 @@ import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
 import { certSuffix } from "@/lib/halal-score";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd, itemListJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 /* Editorial ranking for "best halal restaurants singapore" (1k/mo, KD 10).
    Ranks the REAL directory by community rating (falling back to MUIS-certified
@@ -58,6 +59,7 @@ export default async function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Best halal restaurants</span>
             </nav>
+            <span className="eyebrow">Editor's picks</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Best Halal Restaurants in Singapore ({SEO_YEAR})</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               <strong>The best halal restaurants in Singapore, ranked by real community reviews and halal-confidence</strong> —
@@ -108,6 +110,12 @@ export default async function Page() {
               </details>
             ))}
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 30 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>New halal finds, weekly.</h2>
+            <Newsletter source="best-restaurants" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>

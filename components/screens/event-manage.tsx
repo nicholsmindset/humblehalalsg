@@ -9,6 +9,8 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState, type Chan
 import dynamic from "next/dynamic";
 import { useApp } from "../app-context";
 import { Empty, Icon, ImagePh, MobileHeader } from "../ui";
+import { StatCard } from "@/components/stat-card";
+import { ProgressRing } from "@/components/progress-ring";
 
 const ChartSkeleton = () => <div className="muted" style={{ display: "grid", placeItems: "center", height: "100%" }}>Loading chart…</div>;
 const BookingsChart = dynamic(() => import("./event-manage-charts").then((m) => m.BookingsChart), { ssr: false, loading: ChartSkeleton });
@@ -84,7 +86,19 @@ export function EventManageScreen({ slug }: { slug: string }) {
           <span className={`pill-tag ${st[1]}`}>{st[0]}</span>
           {s.event.date_iso && <span className="evt-meta"><Icon name="calendar" size={13} /> {s.event.date_iso}</span>}
         </div>
-        <h1 style={{ fontFamily: "var(--serif)", fontSize: "1.55rem", margin: "2px 0 14px" }}>{s.event.title}</h1>
+        <div className="flex between center wrap g10" style={{ margin: "2px 0 14px" }}>
+          <h1 style={{ fontFamily: "var(--serif)", fontSize: "1.55rem", margin: 0, minWidth: 0 }}>{s.event.title}</h1>
+          <div className="flex g8 wrap">
+            <a className="btn btn-outline btn-sm" href={`/events/${s.event.slug}`} target="_blank" rel="noopener noreferrer"><Icon name="eye" size={14} /> Preview event</a>
+            <button className="btn btn-gold btn-sm" onClick={() => setTab("settings")}><Icon name="edit" size={14} /> Edit event</button>
+          </div>
+        </div>
+        {s.event.status === "cancelled" && (
+          <div className="notice notice-warn" style={{ marginBottom: 14 }}>
+            <Icon name="warning" size={18} />
+            <span><strong>This event has been cancelled.</strong> It is no longer visible to the public. Paid tickets are refunded automatically.</span>
+          </div>
+        )}
 
         <div className="dash-tabs" role="tablist" style={{ position: "static", top: "auto", marginBottom: 18 }}>
           {tabs.map(([id, label, icon]) => (
@@ -107,31 +121,46 @@ export function EventManageScreen({ slug }: { slug: string }) {
 }
 
 function OverviewTab({ s, go }: { s: Stats; go: (t: string) => void }) {
-  const cards: [string, string][] = [
-    ["Booked", String(s.attendance.booked)],
-    ["Checked in", String(s.tickets.checkedIn)],
-    ["Awaiting", String(s.tickets.noShows)],
-    ["Capacity", s.attendance.capacity ? `${s.attendance.pctCapacity}%` : "∞"],
+  const [chartRange, setChartRange] = useState<"7d" | "30d" | "all">("all");
+  const cards: [string, string, string][] = [
+    ["Booked", String(s.attendance.booked), "ticket"],
+    ["Checked in", String(s.tickets.checkedIn), "check"],
+    ["Awaiting", String(s.tickets.noShows), "clock"],
+    ["Capacity", s.attendance.capacity ? `${s.attendance.pctCapacity}%` : "∞", "chart"],
   ];
   if (!s.event.is_free) {
-    cards.push(["Gross sales", moneyExact(s.sales.grossCents)]);
-    cards.push(["Your net", moneyExact(s.sales.netCents)]);
+    cards.push(["Gross sales", moneyExact(s.sales.grossCents), "dollar"]);
+    cards.push(["Your net", moneyExact(s.sales.netCents), "dollar"]);
   }
   const pct = s.attendance.booked ? Math.round((s.tickets.checkedIn / s.attendance.booked) * 100) : 0;
   return (
     <div className="stack g20">
-      <div className="admin-statgrid">
-        {cards.map(([l, v]) => (<div key={l} className="stat"><div className="v">{v}</div><div className="l">{l}</div></div>))}
+      <div className="statx-grid">
+        {cards.map(([l, v, icon]) => (<StatCard key={l} label={l} value={v} icon={icon} />))}
       </div>
 
-      <div className="card" style={{ padding: 16 }}>
-        <div className="flex between center" style={{ marginBottom: 8 }}>
-          <strong>Check-in progress</strong>
-          <span className="muted">{s.tickets.checkedIn} / {s.attendance.booked} arrived</span>
+      <div className="flex g12 wrap">
+        <div className="card f1" style={{ padding: 16, minWidth: 240 }}>
+          <div className="flex between center" style={{ marginBottom: 8 }}>
+            <strong>Check-in progress</strong>
+            <span className="muted">{s.tickets.checkedIn} / {s.attendance.booked} arrived</span>
+          </div>
+          <div style={{ height: 10, borderRadius: 999, background: "var(--cream-200, #efe7d6)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: "var(--emerald)", borderRadius: 999, transition: "width .3s" }} />
+          </div>
         </div>
-        <div style={{ height: 10, borderRadius: 999, background: "var(--cream-200, #efe7d6)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${pct}%`, background: "var(--emerald)", borderRadius: 999, transition: "width .3s" }} />
-        </div>
+        {s.attendance.capacity > 0 && (
+          <div className="card" style={{ padding: 16, display: "flex", gap: 14, alignItems: "center" }}>
+            <ProgressRing value={s.attendance.booked / s.attendance.capacity} size={92} stroke={12} label="Event capacity">
+              <strong style={{ fontSize: "1rem" }}>{s.attendance.booked}</strong>
+              <span className="faint" style={{ fontSize: ".64rem" }}>of {s.attendance.capacity}</span>
+            </ProgressRing>
+            <div>
+              <strong style={{ display: "block" }}>Event capacity</strong>
+              <span className="muted" style={{ fontSize: ".84rem" }}>{Math.max(0, s.attendance.capacity - s.attendance.booked)} remaining · {Math.max(0, 100 - s.attendance.pctCapacity)}% available</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex g12 wrap">
@@ -154,10 +183,51 @@ function OverviewTab({ s, go }: { s: Stats; go: (t: string) => void }) {
         )}
       </div>
 
-      {s.series.length > 1 && (
+      {s.series.length > 1 && (() => {
+        const sliced = chartRange === "all" ? s.series : s.series.slice(-(chartRange === "7d" ? 7 : 30));
+        return (
+          <div className="card" style={{ padding: 16 }}>
+            <div className="flex between center wrap g8" style={{ marginBottom: 10 }}>
+              <strong>Bookings over time</strong>
+              <div className="flex g6" role="group" aria-label="Chart range">
+                {(["7d", "30d", "all"] as const).map((r) => (
+                  <button key={r} className={`btn btn-sm ${chartRange === r ? "btn-soft" : "btn-ghost"}`} onClick={() => setChartRange(r)}>{r === "all" ? "All" : r === "7d" ? "7 days" : "30 days"}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ height: 220 }}><BookingsChart series={sliced.length > 1 ? sliced : s.series} /></div>
+          </div>
+        );
+      })()}
+      {s.event.ticketTiers.length > 0 && (
         <div className="card" style={{ padding: 16 }}>
-          <strong style={{ display: "block", marginBottom: 10 }}>Bookings over time</strong>
-          <div style={{ height: 220 }}><BookingsChart series={s.series} /></div>
+          <strong style={{ display: "block", marginBottom: 10 }}>Ticket performance</strong>
+          <div className="tbl-scroll">
+            <table className="tbl">
+              <thead><tr><th>Ticket tier</th><th>Price</th><th>Booked</th><th>Remaining</th><th>% sold</th>{!s.event.is_free && <th>Ticket sales</th>}</tr></thead>
+              <tbody>
+                {s.event.ticketTiers.map((t) => {
+                  const remaining = t.qty ? Math.max(0, t.qty - t.sold) : null;
+                  const pctSold = t.qty ? Math.round((100 * t.sold) / t.qty) : null;
+                  return (
+                    <tr key={t.id}>
+                      <td>{t.name}</td>
+                      <td>{t.price_cents ? moneyExact(t.price_cents) : "Free"}</td>
+                      <td>{t.sold}</td>
+                      <td>{remaining ?? "∞"}</td>
+                      <td>{pctSold != null ? `${pctSold}%` : "—"}</td>
+                      {!s.event.is_free && <td>{moneyExact(t.sold * t.price_cents)}</td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {!s.event.is_free && (
+            <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>
+              Ticket sales are before refunds{s.sales.refundedCents ? ` (${moneyExact(s.sales.refundedCents)} refunded so far)` : ""}; fees are shown in the payout card.
+            </p>
+          )}
         </div>
       )}
       {s.tiers.length > 0 && (
@@ -166,6 +236,14 @@ function OverviewTab({ s, go }: { s: Stats; go: (t: string) => void }) {
           <div style={{ height: 220 }}><TierChart tiers={s.tiers} /></div>
         </div>
       )}
+      <div className="card" style={{ padding: 16 }}>
+        <strong style={{ display: "block", marginBottom: 10 }}>Quick actions</strong>
+        <div className="dash-quick-grid">
+          <a className="dash-quick" href={`/events/${s.event.slug}/checkin`}><Icon name="camera" size={18} /> Open door scanner</a>
+          <a className="dash-quick" href={`/api/events/${s.event.id}/attendees?format=csv`}><Icon name="doc" size={18} /> Export attendees CSV</a>
+          <a className="dash-quick" href={`/events/${s.event.slug}`} target="_blank" rel="noopener noreferrer"><Icon name="external" size={18} /> View public page</a>
+        </div>
+      </div>
     </div>
   );
 }

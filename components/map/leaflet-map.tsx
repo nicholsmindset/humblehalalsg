@@ -20,6 +20,7 @@ export interface MapPoint {
   badge?: string;    // halal trust label, e.g. "MUIS-certified"
   distance?: string; // pre-formatted, e.g. "1.2 km away"
   open?: boolean;    // true "Open now" / false "Closed" / undefined hidden
+  order?: number;    // 1-based list index — numbered pin (hawker finder list↔map)
 }
 
 function pinIcon(point: MapPoint) {
@@ -51,11 +52,13 @@ function pinIcon(point: MapPoint) {
   }
   if (point.kind === "hawker") {
     // Round warm badge — hawker centre (distinct from mosque gold / prayer emerald).
+    // With `order`, the pin shows its list number so map and list read together.
+    const n = Number.isFinite(point.order) ? Math.round(point.order as number) : null;
     return L.divIcon({
       className: "hh-pin-wrap",
-      html: `<span class="hh-hawker-pin ${point.active ? "on" : ""}" title="${point.name}"></span>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
+      html: `<span class="hh-hawker-pin ${point.active ? "on" : ""} ${n != null ? "num" : ""}" title="${point.name}">${n != null ? n : ""}</span>`,
+      iconSize: n != null ? [26, 26] : [24, 24],
+      iconAnchor: n != null ? [13, 13] : [12, 12],
     });
   }
   const cls = point.active ? "hh-pin hh-pin-active" : "hh-pin";

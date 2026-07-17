@@ -1220,7 +1220,7 @@ export function MapScreen() {
 /* =============================================================
    BUSINESS DETAIL
 ============================================================= */
-export function DetailScreen({ initial }: { initial?: Listing } = {}) {
+export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; hawkerCentre?: { id: string; name: string } } = {}) {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
   // Admin surface toggle for the pre-existing "Request a quote" CTA (legacy
@@ -1381,13 +1381,20 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
           <div className="flex between" style={{ gap: 16, alignItems: "flex-start" }}>
             <div>
               <div className="flex g8 center wrap" style={{ marginBottom: 8 }}>
-                <span className="tag">{item.cat}</span>
+                <span className="tag">{item.hawkerCentreId ? "Hawker Stall" : item.cat}</span>
                 <span className="faint">·</span>
                 <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.cuisine}</span>
                 <span className="faint">·</span>
                 <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.price}</span>
               </div>
               <h1 style={{ fontSize: "2rem" }}>{item.name}</h1>
+              {hawkerCentre && (
+                <p className="detail-addr" style={{ marginTop: 4 }}>
+                  <Icon name="store" size={14} />
+                  <a href={`/hawker/${hawkerCentre.id}`} className="link-inline">{hawkerCentre.name}</a>
+                  {item.stallNo && <span>· #{String(item.stallNo).replace(/^#/, "")}</span>}
+                </p>
+              )}
               {/* Business first (mock-up): the address sits with the name. */}
               {item.address && (
                 <p className="detail-addr">
@@ -2107,10 +2114,35 @@ export function DetailReviews({ item }: { item: Listing }) {
     }
   };
 
+  // Helpful votes are anonymous (like reviews) — dedupe per browser via
+  // localStorage so a reload can't re-vote, and persist through the API so the
+  // count survives beyond this session. Seeded/optimistic reviews have
+  // non-uuid ids and stay local-only.
+  const HELPED_KEY = "hh.review-helped";
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(HELPED_KEY) || "{}") as Record<string, boolean>;
+      if (Object.keys(stored).length) setHelped((h) => ({ ...stored, ...h }));
+    } catch { /* corrupt/absent store — start fresh */ }
+  }, []);
+
   const markHelpful = (id: string) => {
     if (helped[id]) return;
-    setHelped((h) => ({ ...h, [id]: true }));
+    setHelped((h) => {
+      const next = { ...h, [id]: true };
+      try { localStorage.setItem(HELPED_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+      return next;
+    });
     setReviews((rs) => rs.map((r) => (r.id === id ? { ...r, helpful: r.helpful + 1 } : r)));
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      // Fire-and-forget: the optimistic count is already shown, and re-votes are
+      // blocked locally — a lost request just means the server tally lags one.
+      fetch("/api/reviews/helpful", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId: id }),
+      }).catch(() => { /* offline — local state already reflects the vote */ });
+    }
   };
 
   return (

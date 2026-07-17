@@ -1,0 +1,73 @@
+/* ── Hawker finder (hk-*) — /hawker + centre/stall surfaces ─────────────────
+   Split map+list finder, region cards, popular-stall carousel, verify steps.
+   All grids/flex rows set min-width:0 on children (overflow guard). */
+
+.hk-finder { min-width:0; }
+.hk-searchrow { display:flex; gap:10px; flex-wrap:wrap; }
+.hk-search { flex:1; min-width:220px; display:flex; align-items:center; gap:10px; background:var(--white); border:1px solid var(--line-strong); border-radius:var(--r-md); padding:4px 6px 4px 14px; }
+.hk-search input { flex:1; min-width:0; border:0; outline:none; background:transparent; font-size:1rem; min-height:44px; }
+.hk-locate { min-height:44px; flex:none; }
+
+.hk-filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+.hk-region-sel { width:auto; min-height:44px; padding:8px 12px; }
+.hk-filters .chip { min-height:32px; }
+
+.hk-split { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:16px; margin-top:16px; align-items:stretch; }
+@media (max-width:900px){ .hk-split { grid-template-columns:1fr; } .hk-map { height:320px; } }
+.hk-split > * { min-width:0; }
+.hk-map { min-height:420px; border-radius:var(--r-lg); overflow:hidden; }
+.hk-map .map-canvas, .hk-map > div { height:100% !important; }
+
+.hk-list { display:grid; gap:10px; align-content:start; max-height:560px; overflow-y:auto; padding-right:2px; }
+.hk-list-head { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.hk-centre-card { display:flex; gap:12px; align-items:center; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:12px 14px; transition:border-color .14s, transform .14s; min-width:0; }
+.hk-centre-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
+.hk-centre-num { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--gold); color:#fff; font-size:.74rem; font-weight:800; flex:none; }
+.hk-centre-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.hk-centre-body strong { font-size:.94rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hk-centre-meta { font-size:.78rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hk-centre-side { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none; }
+.hk-centre-side em { font-style:normal; font-size:.78rem; font-weight:700; color:var(--ink); }
+.hk-view { font-size:.78rem; font-weight:700; color:var(--gold-700); white-space:nowrap; }
+
+.hk-monogram { display:inline-flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg, var(--emerald-50), var(--emerald-100)); color:var(--emerald); font-family:var(--serif); font-size:1.3rem; font-weight:700; flex:none; }
+.hk-mono-sm { width:38px; height:38px; font-size:1.05rem; border-radius:10px; }
+
+.hk-region-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+.hk-region-grid > * { min-width:0; }
+.hk-region-card { display:flex; flex-direction:column; align-items:flex-start; gap:6px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); padding:18px; transition:border-color .14s, transform .14s; }
+.hk-region-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
+.hk-region-card strong { font-size:1rem; }
+.hk-region-suggest { background:var(--cream); }
+
+.hk-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:min(78vw, 280px); gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; -webkit-overflow-scrolling:touch; }
+.hk-carousel > * { min-width:0; scroll-snap-align:start; }
+.hk-stall-card { display:flex; flex-direction:column; background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; transition:border-color .14s, transform .14s; }
+.hk-stall-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
+.hk-stall-photo { position:relative; }
+.hk-stall-muis { position:absolute; top:10px; left:10px; z-index:2; background:var(--emerald); color:#fff; font-size:.64rem; font-weight:800; letter-spacing:.06em; padding:4px 8px; border-radius:6px; }
+.hk-stall-body { display:flex; flex-direction:column; gap:3px; padding:12px 14px; min-width:0; }
+.hk-stall-body strong { font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hk-stall-body .faint { font-size:.8rem; }
+.hk-stall-meta { font-size:.78rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hk-stall-foot { display:flex; align-items:center; gap:5px; font-size:.76rem; font-weight:700; color:var(--emerald); margin-top:6px; border-top:1px solid var(--line); padding-top:8px; }
+
+.hk-verify { background:var(--cream); border:1px solid var(--line); border-radius:var(--r-lg); padding:22px; }
+.hk-verify-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-top:16px; }
+.hk-verify-grid > * { min-width:0; }
+.hk-verify-step { display:flex; flex-direction:column; gap:6px; }
+.hk-verify-step p { font-size:.84rem; color:var(--ink-soft); margin:0; line-height:1.55; }
+
+/* numbered hawker map pin */
+.hh-hawker-pin.num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; font-size:.72rem; font-weight:800; color:#fff; }
+.hh-hawker-pin.num::after { display:none; }
+
+/* Trust-at-a-glance grid (stall detail) */
+.hk-trust-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
+.hk-trust-grid > * { min-width:0; }
+.hk-trust-tile { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:14px 10px; }
+.hk-trust-tile .tool-card-ico { width:38px; height:38px; }
+.hk-trust-tile strong { font-size:.82rem; }
+.hk-trust-tile span { font-size:.74rem; font-weight:700; display:inline-flex; align-items:center; gap:4px; }
+.hk-trust-tile .ok { color:var(--emerald); }
+.hk-trust-tile .na { color:var(--ink-faint); }

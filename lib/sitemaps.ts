@@ -7,7 +7,7 @@ import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPageIndexable, seoPagePath } from "@/lib/seo-pages";
 import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
-import { allBrands } from "@/lib/halal-status";
+import { allBrandsMerged } from "@/lib/cms-brands";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
@@ -134,7 +134,7 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
     }
 
     case "brands":
-      return allBrands().map((b) => ({
+      return (await allBrandsMerged()).map((b) => ({
         loc: `${base}/is-halal/${b.slug}`,
         lastmod: now,
         changefreq: "monthly",

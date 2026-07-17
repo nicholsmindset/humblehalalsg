@@ -5,6 +5,7 @@ import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { categoryDirectoryLabel } from "@/lib/category-presentation";
+import { Newsletter } from "@/components/newsletter";
 
 export const metadata: Metadata = pageMeta({
   title: "Halal Directory Singapore — Restaurants by Area",
@@ -49,6 +50,7 @@ export default function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Halal directory</span>
             </div>
+            <span className="eyebrow">Halal directory</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>
               Singapore’s halal &amp; Muslim-owned business directory
             </h1>
@@ -99,6 +101,12 @@ export default function Page() {
               </Link>
             ))}
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 30 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>New halal finds, weekly.</h2>
+            <Newsletter source="halal-hub" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>

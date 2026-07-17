@@ -3,6 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { allSeoPages, seoPagePath, SEO_YEAR } from "@/lib/seo-pages";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 /* Geo hub for the biggest keyword in the dataset: "halal food near me"
    (14k/mo, KD 8). Server-rendered content for crawlers + a prominent
@@ -46,6 +47,7 @@ export default function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Halal food near me</span>
             </nav>
+            <span className="eyebrow">Halal guide</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Halal Food Near Me</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               <strong>Find halal food near you in Singapore in seconds</strong> — open the live map to see MUIS-certified
@@ -90,6 +92,12 @@ export default function Page() {
               </details>
             ))}
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 30 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>New halal finds, weekly.</h2>
+            <Newsletter source="food-near-me" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>
