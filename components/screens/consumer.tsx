@@ -1220,7 +1220,7 @@ export function MapScreen() {
 /* =============================================================
    BUSINESS DETAIL
 ============================================================= */
-export function DetailScreen({ initial }: { initial?: Listing } = {}) {
+export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; hawkerCentre?: { id: string; name: string } } = {}) {
   const { navigate, params, state, toggleSave, toast } = useApp();
   const dir = useDirectory();
   // Admin surface toggle for the pre-existing "Request a quote" CTA (legacy
@@ -1381,13 +1381,20 @@ export function DetailScreen({ initial }: { initial?: Listing } = {}) {
           <div className="flex between" style={{ gap: 16, alignItems: "flex-start" }}>
             <div>
               <div className="flex g8 center wrap" style={{ marginBottom: 8 }}>
-                <span className="tag">{item.cat}</span>
+                <span className="tag">{item.hawkerCentreId ? "Hawker Stall" : item.cat}</span>
                 <span className="faint">·</span>
                 <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.cuisine}</span>
                 <span className="faint">·</span>
                 <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.price}</span>
               </div>
               <h1 style={{ fontSize: "2rem" }}>{item.name}</h1>
+              {hawkerCentre && (
+                <p className="detail-addr" style={{ marginTop: 4 }}>
+                  <Icon name="store" size={14} />
+                  <a href={`/hawker/${hawkerCentre.id}`} className="link-inline">{hawkerCentre.name}</a>
+                  {item.stallNo && <span>· #{String(item.stallNo).replace(/^#/, "")}</span>}
+                </p>
+              )}
               {/* Business first (mock-up): the address sits with the name. */}
               {item.address && (
                 <p className="detail-addr">
