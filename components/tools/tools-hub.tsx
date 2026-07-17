@@ -14,14 +14,14 @@ const FEATURED = ["prayer-times", "quran", "qibla", "zakat"];
 const RHYTHM: { title: string; sub: string; slugs: string[] }[] = [
   { title: "Daily worship", sub: "Strengthen your connection every day.", slugs: ["prayer-times", "duas", "tasbih"] },
   { title: "Track your practice", sub: "Stay consistent, stay mindful.", slugs: ["salah-tracker", "ramadan", "khatam"] },
-  { title: "Plan with confidence", sub: "Plan ahead with clarity.", slugs: ["zakat", "date-converter", "islamic-calendar"] },
+  { title: "Plan with confidence", sub: "Stay ahead of zakat and key dates.", slugs: ["zakat", "date-converter", "islamic-calendar"] },
 ];
 
 /* Intent cards — set the category filter (real behavior, no new routes). */
 const INTENTS: { label: string; sub: string; icon: string; category: ToolCategory }[] = [
-  { label: "I want to worship", sub: "Tools for your daily prayers and duas.", icon: "crescent", category: "Worship" },
-  { label: "I want to calculate", sub: "Zakat and important dates, planned.", icon: "chart", category: "Calculators" },
-  { label: "I want to learn", sub: "Knowledge, guides and answers.", icon: "doc", category: "Knowledge" },
+  { label: "I want to worship", sub: "Prayer times, Quran, duas and dhikr.", icon: "crescent", category: "Worship" },
+  { label: "I want to calculate", sub: "Zakat, faraid and key Islamic dates.", icon: "chart", category: "Calculators" },
+  { label: "I want to learn", sub: "Meanings, hadith and halal checks.", icon: "doc", category: "Knowledge" },
 ];
 
 const CATEGORY_COPY: Record<ToolCategory, string> = {

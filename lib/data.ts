@@ -436,8 +436,8 @@ listings.forEach((l) => {
 export const prayerTimes: PrayerTimes = {
   date: "Today", hijri: "28 Dhul-Qi’dah 1447",
   times: [
-    { name: "Subuh", time: "5:42" }, { name: "Syuruk", time: "7:05" }, { name: "Zohor", time: "1:08" },
-    { name: "Asar", time: "4:32" }, { name: "Maghrib", time: "7:11" }, { name: "Isyak", time: "8:25" },
+    { name: "Subuh", time: "5:42 am" }, { name: "Syuruk", time: "7:05 am" }, { name: "Zohor", time: "1:08 pm" },
+    { name: "Asar", time: "4:32 pm" }, { name: "Maghrib", time: "7:11 pm" }, { name: "Isyak", time: "8:25 pm" },
   ],
   nextIndex: 3, // Asar is next
 };

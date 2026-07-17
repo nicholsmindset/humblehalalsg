@@ -51,8 +51,10 @@ type PrayerRow = { name: string; time: string; mins?: number };
 // SG ordering: Subuh/Syuruk are AM, the rest PM).
 function rowMins(t: PrayerRow, i: number): number {
   if (typeof t.mins === "number") return t.mins;
-  const [h, m] = t.time.split(":").map(Number);
-  return ((h % 12) + (i >= 2 ? 12 : 0)) * 60 + (m || 0);
+  const [hS, mS] = t.time.split(":");
+  const h = parseInt(hS, 10) || 0;       // parseInt tolerates a trailing " am"/" pm"
+  const m = parseInt(mS, 10) || 0;
+  return ((h % 12) + (i >= 2 ? 12 : 0)) * 60 + m;
 }
 function sgNowMins(): number {
   try {
