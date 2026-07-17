@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { allBrands, getBrand, relatedBrands, STATUS_META } from "@/lib/halal-status";
+import { STATUS_META } from "@/lib/halal-status";
+import { allBrandsMerged, getBrandMerged, relatedBrandsMerged } from "@/lib/cms-brands";
 import { halalSgSearchUrl, HALALSG_BASE } from "@/lib/muis";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, articleJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
@@ -13,7 +14,7 @@ import { VerdictView } from "@/components/verdict/verdict-view";
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  const fileSlugs = allBrands().map((b) => b.slug);
+  const fileSlugs = (await allBrandsMerged()).map((b) => b.slug);
   const dbSlugs = await approvedVerdictSlugs(); // [] when flag off / no DB
   return [...new Set([...fileSlugs, ...dbSlugs])].map((brand) => ({ brand }));
 }
@@ -35,7 +36,7 @@ export async function generateMetadata({
       absoluteTitle: true,
     });
   }
-  const b = getBrand(brand);
+  const b = await getBrandMerged(brand);
   if (!b) return pageMeta({ title: "Is it halal?", path: `/is-halal/${brand}` });
   return pageMeta({
     title: `Is ${b.brand} Halal in Singapore? (2026)`,
@@ -84,10 +85,10 @@ export default async function Page({ params }: { params: Promise<{ brand: string
     );
   }
 
-  const b = getBrand(brand);
+  const b = await getBrandMerged(brand);
   if (!b) notFound();
   const m = STATUS_META[b.status];
-  const related = relatedBrands(b, 8);
+  const related = await relatedBrandsMerged(b, 8);
   const faq = brandFaq(b.brand, b.answer);
   const title = `Is ${b.brand} Halal in Singapore?`;
 

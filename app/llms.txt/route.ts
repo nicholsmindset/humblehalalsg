@@ -2,7 +2,8 @@ import { areas } from "@/lib/data";
 import { getDirectory } from "@/lib/directory";
 import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
-import { allBrands, STATUS_META } from "@/lib/halal-status";
+import { STATUS_META } from "@/lib/halal-status";
+import { allBrandsMerged } from "@/lib/cms-brands";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { certSuffix } from "@/lib/halal-score";
 import { SITE } from "@/lib/seo";
@@ -14,7 +15,7 @@ export const dynamic = "force-static";
 export async function GET() {
   const u = SITE.url;
   // Real directory + events (never the mock seed).
-  const [listings, events, blogPosts] = await Promise.all([getDirectory(), getEvents(), allBlogPosts()]);
+  const [listings, events, blogPosts, brandList] = await Promise.all([getDirectory(), getEvents(), allBlogPosts(), allBrandsMerged()]);
   const areaCount = (name: string) => listings.filter((l) => l.area === name).length;
   const featured = (listings.filter((l) => l.featured).length
     ? listings.filter((l) => l.featured)
@@ -77,7 +78,7 @@ ${events
   .join("\n")}
 
 ## Halal status of popular brands (verify on MUIS HalalSG)
-${allBrands()
+${brandList
   .map((b) => `- Is ${b.brand} halal? ${STATUS_META[b.status].verdict} — ${STATUS_META[b.status].label}. [details](${u}/is-halal/${b.slug})`)
   .join("\n")}
 

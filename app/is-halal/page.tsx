@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { allBrands, STATUS_META } from "@/lib/halal-status";
+import { STATUS_META } from "@/lib/halal-status";
+import { allBrandsMerged } from "@/lib/cms-brands";
 import { HALALSG_BASE } from "@/lib/muis";
 import { SITE } from "@/lib/seo";
 import { pageMeta } from "@/lib/seo";
@@ -28,8 +29,8 @@ const HUB_FAQ = [
   },
 ];
 
-export default function Page() {
-  const brands = allBrands();
+export default async function Page() {
+  const brands = await allBrandsMerged();
   // group by category for a scannable directory
   const byCat = new Map<string, typeof brands>();
   for (const b of brands) {
@@ -73,7 +74,7 @@ export default function Page() {
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Is it halal? Singapore brand checker</h1>
             <p className="hs-answer" style={{ maxWidth: 680, marginTop: 12 }}>
               Quick, sourced answers on whether popular food brands are <strong>MUIS halal-certified</strong> in Singapore.
-              Most well-known chains are <strong>not</strong> MUIS-certified — and “no pork, no lard” is not the same as
+              Certification is per-premises and can change — and “no pork, no lard” is not the same as
               halal certification. Always confirm on the official{" "}
               <a className="link-inline" href={HALALSG_BASE} target="_blank" rel="noopener noreferrer">MUIS HalalSG register</a>.
             </p>

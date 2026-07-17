@@ -90,5 +90,39 @@ export default config({
         leadVertical: fields.text({ label: "Lead vertical ID (optional)" }),
       },
     }),
+    // "Is <brand> halal?" checker entries. A CMS entry with the same slug as a
+    // built-in brand (lib/halal-status.ts) OVERRIDES it, so the admin can
+    // correct a status without a code change (see lib/cms-brands.ts).
+    brands: collection({
+      label: "Is-it-halal brands",
+      slugField: "brand",
+      path: "content/brands/*",
+      format: { data: "json" },
+      schema: {
+        brand: fields.slug({ name: { label: "Brand name", ...required } }),
+        category: fields.text({ label: "Category (e.g. Fast food, Bakery)", ...required }),
+        status: fields.select({
+          label: "Halal status",
+          defaultValue: "unknown",
+          options: [
+            { label: "MUIS halal-certified", value: "certified" },
+            { label: "Some outlets/items certified", value: "partial" },
+            { label: "No pork — but not MUIS-certified", value: "no-pork" },
+            { label: "Not MUIS halal-certified", value: "not-certified" },
+            { label: "Status unconfirmed", value: "unknown" },
+          ],
+        }),
+        answer: fields.text({ label: "Direct answer (40–60 words)", multiline: true, ...required }),
+        source: fields.text({
+          label: "Source",
+          defaultValue: "MUIS HalalSG register + publicly available information",
+        }),
+        lastChecked: fields.text({ label: "Last checked (e.g. July 2026)", ...required }),
+        aliases: fields.array(fields.text({ label: "Alias slug", ...required }), {
+          label: "Alias slugs (alternate URLs)",
+          itemLabel: (props) => props.value || "alias",
+        }),
+      },
+    }),
   },
 });
