@@ -1099,7 +1099,8 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
       <section className="seo-hero hh-pattern">
         <div className="hh-wrap">
           <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}><a className="link-inline" {...link("home")}>Home</a><Icon name="chevron" size={13} /><a className="link-inline" {...link("explore")}>Explore</a><Icon name="chevron" size={13} /><span style={{ color: "var(--ink)" }}>{page.h1}</span></nav>
-          <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 680 }}>{page.h1}</h1>
+          <span className="eyebrow">{page.areaId ? "Halal guide" : cat ? `Halal ${cat.label.toLowerCase()}` : "Halal guide"}</span>
+          <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 680, marginTop: 8 }}>{page.h1}</h1>
           <p className="muted" style={{ maxWidth: 640, marginTop: 10, fontSize: "1.05rem" }}>{page.intro}</p>
           <div className="pillbar" style={{ marginTop: 16 }}>
             {cat && <button className="chip" onClick={() => navigate("explore", { cat: page.catId })}>All {cat.label}</button>}

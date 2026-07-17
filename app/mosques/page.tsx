@@ -58,6 +58,7 @@ export default function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Mosques</span>
             </div>
+            <span className="eyebrow">Mosque finder</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Mosques in Singapore</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               {mosques.length} mosques (masjid) across Singapore, grouped by region. Find one near you, get directions,

@@ -101,6 +101,7 @@ const CHECKS: RouteCheck[] = [
   { name: "pricing", path: "/pricing" },
   { name: "is-halal brand", path: "/is-halal/paris-baguette" },
   { name: "hawker finder", path: "/hawker" },
+  { name: "seo landing", path: "/halal-food-singapore" },
 ];
 
 for (const check of CHECKS) {

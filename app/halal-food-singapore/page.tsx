@@ -3,6 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { allSeoPages, seoPagePath, SEO_YEAR } from "@/lib/seo-pages";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { Newsletter } from "@/components/newsletter";
 
 /* Pillar guide for the head term "halal food singapore" (2.7k/mo). Sits ABOVE
    the location/cuisine factory pages and funnels internal links into them.
@@ -47,6 +48,7 @@ export default function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Halal food Singapore</span>
             </nav>
+            <span className="eyebrow">Halal guide</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Halal Food in Singapore — The Complete Guide</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               <strong>Singapore has one of the world&apos;s best halal food scenes</strong> — thousands of MUIS-certified
@@ -107,6 +109,12 @@ export default function Page() {
               </details>
             ))}
           </div>
+
+          <section className="newsletter-card" style={{ marginTop: 30 }}>
+            <span className="eyebrow">The weekly halal guide</span>
+            <h2 style={{ fontSize: "1.25rem", margin: "6px 0 10px" }}>New halal finds, weekly.</h2>
+            <Newsletter source="food-singapore" cta="Subscribe" />
+          </section>
         </div>
       </div>
     </>
