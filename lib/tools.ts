@@ -12,6 +12,10 @@ export interface Tool {
   blurb: string; // one-line description
   icon: string; // Icon name from components/ui.tsx
   category: ToolCategory;
+  /** Extra search synonyms (local names, abbreviations, plurals) so the hub
+      search matches how people actually type — e.g. "faraid", "misbaha",
+      "e-number". Not shown in the UI. */
+  keywords?: string[];
   /** Local-only, no sign-up — surfaced as a reassurance chip on cards. */
   privateLocal?: boolean;
   /** Cross-link to an existing surface (e.g. the verified directory) instead of
@@ -33,6 +37,7 @@ export const TOOLS: Tool[] = [
     blurb: "Read all 114 surahs in Arabic, English & audio.",
     icon: "doc",
     category: "Worship",
+    keywords: ["koran", "quran", "surah", "surat", "ayah", "ayat", "mushaf", "recitation"],
     live: true,
   },
   {
@@ -50,6 +55,7 @@ export const TOOLS: Tool[] = [
     blurb: "Daily salah times for your location.",
     icon: "clock",
     category: "Worship",
+    keywords: ["solat", "sholat", "azan", "adhan", "waktu solat", "subuh", "zohor", "asar", "maghrib", "isyak", "namaz"],
     privateLocal: true,
     live: true,
   },
@@ -59,6 +65,7 @@ export const TOOLS: Tool[] = [
     blurb: "A digital misbaha for dhikr — counts stay on your device.",
     icon: "crescent",
     category: "Worship",
+    keywords: ["tasbeeh", "tasbeh", "zikir", "dhikr", "counter", "misbaha", "prayer beads"],
     privateLocal: true,
     live: true,
   },
@@ -68,6 +75,7 @@ export const TOOLS: Tool[] = [
     blurb: "Authentic everyday duas by occasion, with sources.",
     icon: "bookmark",
     category: "Worship",
+    keywords: ["doa", "supplication", "supplications", "zikir", "prayers"],
     live: true,
   },
   {
@@ -76,6 +84,7 @@ export const TOOLS: Tool[] = [
     blurb: "Al-Asma ul-Husna — Arabic, transliteration and meaning.",
     icon: "sparkles",
     category: "Knowledge",
+    keywords: ["asma", "asmaul husna", "names of allah", "attributes"],
     live: true,
   },
   {
@@ -100,6 +109,7 @@ export const TOOLS: Tool[] = [
     blurb: "Look up any E-number or food additive's halal status.",
     icon: "search",
     category: "Knowledge",
+    keywords: ["ingredients", "e-number", "e number", "additive", "additives", "gelatin", "emulsifier", "haram", "halal check", "food codes"],
     live: true,
   },
   {
@@ -108,6 +118,7 @@ export const TOOLS: Tool[] = [
     blurb: "Convert between Hijri and Gregorian dates.",
     icon: "calendar",
     category: "Calculators",
+    keywords: ["islamic date", "gregorian", "masehi", "date converter", "today hijri"],
     live: true,
   },
   {
@@ -158,6 +169,7 @@ export const TOOLS: Tool[] = [
     blurb: "Qur'anic shares for spouse, parents & children.",
     icon: "users",
     category: "Calculators",
+    keywords: ["faraid", "faraidh", "estate", "will", "waris", "harta pusaka"],
     live: true,
   },
   {
@@ -174,6 +186,7 @@ export const TOOLS: Tool[] = [
     blurb: "Find the direction of prayer from where you are.",
     icon: "near",
     category: "Worship",
+    keywords: ["kiblat", "kaaba", "direction", "compass", "arah kiblat"],
     privateLocal: true,
     live: true,
   },
@@ -240,6 +253,7 @@ export const TOOLS: Tool[] = [
     blurb: "Find masjids near you across Singapore.",
     icon: "mosque",
     category: "Finders",
+    keywords: ["masjid", "mosques", "surau", "jumaah", "friday prayer"],
     href: "/mosques",
     live: true,
   },
@@ -249,6 +263,7 @@ export const TOOLS: Tool[] = [
     blurb: "Non-mosque prayer spaces in malls, MRT & more.",
     icon: "mosque",
     category: "Finders",
+    keywords: ["musollah", "musolla", "surau", "prayer space", "prayer room"],
     href: "/prayer-rooms",
     live: true,
   },
@@ -266,4 +281,26 @@ export function toolsByCategory(): { category: ToolCategory; items: Tool[] }[] {
 
 export function getTool(slug: string): Tool | undefined {
   return TOOLS.find((t) => t.slug === slug && t.live);
+}
+
+/** Lowercase, strip punctuation to spaces (so "e-number" → "e number",
+    "Al-Asma" → "al asma"), collapse whitespace. */
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/** Does a tool match a free-text search query? Tokenised (every word must
+    hit), substring-based, and singular/plural tolerant so "ingredients"
+    finds "ingredient" and vice-versa. Searches title, blurb, category and
+    keywords. Empty query matches everything. */
+export function toolMatches(t: Tool, query: string): boolean {
+  const q = normalize(query);
+  if (!q) return true;
+  const hay = normalize(`${t.title} ${t.blurb} ${t.category} ${(t.keywords || []).join(" ")}`);
+  return q.split(" ").every((tok) => {
+    if (hay.includes(tok)) return true;
+    if (tok.endsWith("s") && hay.includes(tok.slice(0, -1))) return true; // plural → singular
+    if (!tok.endsWith("s") && hay.includes(`${tok}s`)) return true;       // singular → plural
+    return false;
+  });
 }

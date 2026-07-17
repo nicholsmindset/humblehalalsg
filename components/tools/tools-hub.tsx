@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui";
-import { CATEGORY_ORDER, toolHref, type Tool, type ToolCategory } from "@/lib/tools";
+import { CATEGORY_ORDER, toolHref, toolMatches, type Tool, type ToolCategory } from "@/lib/tools";
 import { PrayerWidget } from "./prayer-widget";
 import { QuranContinue } from "./quran-continue";
 
@@ -52,12 +52,10 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
   const [category, setCategory] = useState<ToolCategory | "All">("All");
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
     return live.filter((t) => {
       const categoryOk = category === "All" || t.category === category;
       if (!categoryOk) return false;
-      if (!q) return true;
-      return `${t.title} ${t.blurb} ${t.category}`.toLowerCase().includes(q);
+      return toolMatches(t, query);
     });
   }, [category, live, query]);
 
