@@ -192,6 +192,10 @@
 .seo-linkgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
 @media (max-width:560px){ .seo-linkgrid { grid-template-columns:1fr; } }
 .hub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+/* grid items default to min-width:auto — long labels (e.g. "Is Tiong Bahru
+   Bakery halal?") would widen their column past 1fr and push the grid off the
+   viewport edge at 768px. Let items shrink so .hs-row-name's ellipsis engages. */
+.hub-grid > * { min-width:0; }
 @media (max-width:760px){ .hub-grid { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:440px){ .hub-grid { grid-template-columns:1fr; } }
 .hub-link { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:15px 17px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); font-weight:600; font-size:.95rem; color:var(--ink); transition:border-color .14s, transform .14s; }
@@ -264,7 +268,7 @@
 /* ===== "Is it halal?" brand checker ===== */
 .hs-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); transition:border-color .14s, transform .14s; }
 .hs-row:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
-.hs-row-name { font-weight:700; font-size:.94rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hs-row-name { min-width:0; font-weight:700; font-size:.94rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .hs-pill { flex:none; font-size:.74rem; font-weight:800; letter-spacing:.02em; padding:4px 10px; border-radius:999px; text-transform:uppercase; }
 .hs-yes { background:var(--emerald-50,#e9f6f0); color:var(--emerald,#12525B); }
 .hs-no { background:#fdecec; color:#b3261e; }
