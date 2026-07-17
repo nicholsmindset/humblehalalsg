@@ -6,11 +6,26 @@
    listings, or no events yet — so the dashboard never breaks in mock mode. */
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useUser } from "@clerk/nextjs";
 import { resolveRange, fmt, pct } from "@/lib/analytics-dashboard";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { canUse } from "@/lib/plans";
+import { pctChange } from "@/lib/deltas";
+import { StatCard } from "@/components/stat-card";
 import { Icon } from "../ui";
+
+const InsightsChart = dynamic(() => import("./insights-chart"), { ssr: false });
+
+/** The same window, shifted one span earlier — powers real period-over-period
+ * deltas (the RPC takes p_from/p_to, so this works on every plan). */
+function priorWindow(from: string, to: string): { from: string; to: string } {
+  const f = new Date(from).getTime();
+  const t = new Date(to).getTime();
+  const span = Math.max(1, t - f);
+  const ymd = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return { from: ymd(f - span), to: ymd(f) };
+}
 
 type SummaryRow = {
   impressions: number; listing_views: number; lead_actions: number;
@@ -42,6 +57,7 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
   // "advanced analytics" differentiator (they were silently free-to-all).
   const advanced = canUse(plan, "analytics");
   const [summary, setSummary] = useState<SummaryRow | null>(null);
+  const [prev, setPrev] = useState<SummaryRow | null>(null);
   const [daily, setDaily] = useState<DailyRow[]>([]);
   const [queries, setQueries] = useState<QueryRow[]>([]);
   const [placements, setPlacements] = useState<PlacementRow[]>([]);
@@ -70,8 +86,10 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
       }
       const { from, to } = resolveRange(range);
       const scoped = { p_business_id: businessId, p_from: from, p_to: to };
-      const [main, trend, q, placement] = await Promise.all([
+      const prior = priorWindow(from, to);
+      const [main, prevMain, trend, q, placement] = await Promise.all([
         sb.rpc("owner_roi_summary", scoped),
+        sb.rpc("owner_roi_summary", { p_business_id: businessId, p_from: prior.from, p_to: prior.to }),
         advanced ? sb.rpc("owner_roi_daily", scoped) : Promise.resolve({ data: [], error: null }),
         advanced ? sb.rpc("owner_roi_queries", { ...scoped, p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
         advanced ? sb.rpc("owner_roi_placements", scoped) : Promise.resolve({ data: [], error: null }),
@@ -79,6 +97,7 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
       if (alive) {
         if (!main.error && Array.isArray(main.data)) setSummary((main.data[0] as SummaryRow | undefined) ?? null);
         else if (main.error) setLoadErr(true); // was silently swallowed → looked like "no activity"
+        setPrev(!prevMain.error && Array.isArray(prevMain.data) ? ((prevMain.data[0] as SummaryRow | undefined) ?? null) : null);
         if (!trend.error && Array.isArray(trend.data)) setDaily(trend.data as DailyRow[]);
         if (!q.error && Array.isArray(q.data)) setQueries(q.data as QueryRow[]);
         if (!placement.error && Array.isArray(placement.data)) setPlacements(placement.data as PlacementRow[]);
@@ -128,13 +147,18 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
     );
   }
 
+  // Headline KPI cards with real period-over-period deltas (delta hidden when
+  // the prior window has no data). website_clicks was collected but unsurfaced.
+  const kpis: { label: string; value: number; prevValue: number; icon: string }[] = [
+    { label: "Profile views", value: total.views, prevValue: prev?.listing_views || 0, icon: "eye" },
+    { label: "Direction requests", value: total.directions, prevValue: prev?.directions || 0, icon: "directions" },
+    { label: "Website clicks", value: summary?.website_clicks || 0, prevValue: prev?.website_clicks || 0, icon: "globe" },
+    { label: "Saves", value: total.saves, prevValue: prev?.shortlists || 0, icon: "bookmark" },
+  ];
   const cards: [string, number, string?][] = [
-    ["Profile views", total.views],
     ["Quote enquiries", total.enquiries, "var(--emerald)"],
     ["WhatsApp taps", total.whatsapp],
     ["Calls", total.calls],
-    ["Directions", total.directions],
-    ["Shortlisted", total.saves],
   ];
   const trend = daily.map((d) => d.listing_views + d.lead_actions);
   const maxQ = Math.max(...queries.map((q) => q.searches), 1);
@@ -147,7 +171,12 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
           {(["7d", "30d", "90d"] as const).map((value) => <button key={value} className={`btn btn-sm ${range === value ? "btn-soft" : "btn-ghost"}`} onClick={() => setRange(value)}>{value === "7d" ? "7 days" : value === "30d" ? "30 days" : "90 days"}</button>)}
         </div>
       </div>
-      <div className="admin-statgrid">
+      <div className="statx-grid">
+        {kpis.map((k) => (
+          <StatCard key={k.label} label={k.label} value={fmt(k.value)} delta={pctChange(k.value, k.prevValue)} icon={k.icon} />
+        ))}
+      </div>
+      <div className="admin-statgrid" style={{ marginTop: 12 }}>
         {cards.map(([l, v, c]) => (
           <div key={l} className="stat"><div className="v" style={c ? { color: c } : undefined}>{fmt(v)}</div><div className="l">{l}</div></div>
         ))}
@@ -161,10 +190,11 @@ export function OwnerInsights({ businessId, plan = "free", onUpgrade }: { busine
           {onUpgrade && <button className="btn btn-gold btn-sm" onClick={onUpgrade}>Upgrade</button>}
         </div>
       )}
-      {advanced && trend.length >= 2 && (
+      {advanced && daily.length >= 2 && (
         <div className="card" style={{ padding: "14px 18px", marginTop: 14 }}>
-          <p className="faint" style={{ fontSize: ".82rem", margin: 0 }}>Views &amp; lead actions per day</p>
-          <Sparkline data={trend} />
+          <p style={{ fontWeight: 800, margin: 0 }}>Profile performance</p>
+          <p className="faint" style={{ fontSize: ".78rem", margin: "2px 0 8px" }}>Times shown, profile views and customer actions per day</p>
+          <InsightsChart data={daily} />
         </div>
       )}
       {advanced && (

@@ -10,6 +10,14 @@ export type OwnerBiz = {
   featured: boolean;
   halal_tier: string | null;
   last_verified_at: string | null;
+  /* Profile-strength inputs (all optional — selected by the dashboard only). */
+  photos?: { url: string }[] | null;
+  description?: string | null;
+  opening_hours?: unknown[] | null;
+  website?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  socials?: Record<string, string> | null;
 };
 
 export type OwnerEvent = {
