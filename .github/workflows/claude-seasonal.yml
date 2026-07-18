@@ -28,7 +28,7 @@ jobs:
             --max-turns 50 || echo "claude run finished"
       - run: npm run typecheck
       - name: Open PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: claude/seasonal-${{ github.event.inputs.season }}
           title: "🌙 Seasonal drafts (AI): ${{ github.event.inputs.season }} — review before publishing"

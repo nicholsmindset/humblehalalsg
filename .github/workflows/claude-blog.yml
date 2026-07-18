@@ -27,7 +27,7 @@ jobs:
       - name: Typecheck draft
         run: npm run typecheck
       - name: Open PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: claude/blog-drafts
           title: "✍️ Blog drafts (AI) — review before publishing"
