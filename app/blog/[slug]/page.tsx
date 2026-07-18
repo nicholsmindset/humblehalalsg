@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { postWordCount } from "@/lib/blog";
-import { allBlogPosts, getBlogPost, relatedBlogPosts } from "@/lib/cms-blog";
+import { allBlogPosts, getBlogPost, relatedBlogPosts, resolveBlogAuthor } from "@/lib/cms-blog";
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, blogPostingJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
@@ -38,11 +38,14 @@ export async function generateMetadata({
   const p = await getBlogPost(slug);
   // Unknown slug → noindex (matches the category route); the page body 404s.
   if (!p) return pageMeta({ title: "Blog", path: `/blog/${slug}`, index: false });
+  const fallbackDesc = p.dek.length > 155 ? p.dek.slice(0, 152) + "…" : p.dek;
   return pageMeta({
-    title: p.title,
-    description: p.dek.length > 155 ? p.dek.slice(0, 152) + "…" : p.dek,
+    title: p.metaTitle || p.title,
+    description: p.metaDescription || fallbackDesc,
     path: `/blog/${p.slug}`,
-    image: p.image,
+    canonical: p.canonicalUrl,
+    index: !p.noindex,
+    image: p.socialImage || p.image,
     article: {
       publishedTime: p.datePublished,
       modifiedTime: p.dateModified,
@@ -63,6 +66,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   if (!p) notFound();
   const related = await relatedBlogPosts(p, 3);
   const cat = getCategory(p.category);
+  const author = await resolveBlogAuthor(p);
   const n = p.sections.length;
   const midIndex = n >= 4 ? Math.floor(n / 2) - 1 : -1; // newsletter after this section
   const adIndex = n >= 3 ? n - 2 : -1; // sponsored slot before the final section
@@ -83,6 +87,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             datePublished: p.datePublished,
             dateModified: p.dateModified,
             author: p.author,
+            authorEntity: author,
             wordCount: postWordCount(p),
             section: cat?.name || p.tags[0],
             image: p.image,
@@ -209,7 +214,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             ))}
           </div>
 
-          <AuthorBio name={p.author} />
+          <AuthorBio author={author} />
 
           <div className="article-cta">
             <strong>Find halal places near you</strong>

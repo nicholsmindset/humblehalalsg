@@ -10,7 +10,11 @@ export type BlogCategorySlug =
   | "cuisines"
   | "areas-malls"
   | "seasonal-events"
-  | "community-business";
+  | "community-business"
+  | "muslim-travel"
+  | "halal-questions"
+  | "muslim-services"
+  | "prayers-deen";
 
 export interface BlogCategory {
   slug: BlogCategorySlug;
@@ -90,6 +94,46 @@ export const BLOG_CATEGORIES: BlogCategory[] = [
     heroImage: bimg("1581349485608-9469926a8e5e"),
     heroAlt: "A Muslim-owned shop in Singapore",
     blurb: "Muslim-owned businesses & community stories.",
+  },
+  {
+    slug: "muslim-travel",
+    name: "Muslim Travel",
+    title: "Muslim & Halal Travel Guides from Singapore",
+    description:
+      "Where to go and how to plan it — halal food, prayer spaces and Muslim-friendly itineraries for JB, the region and beyond, plus umrah from Singapore.",
+    heroImage: bimg("1500835556837-99ac94a94552"),
+    heroAlt: "A traveller planning a Muslim-friendly trip from Singapore",
+    blurb: "Halal food, prayer & itineraries — JB, the region & umrah.",
+  },
+  {
+    slug: "halal-questions",
+    name: "Halal Questions",
+    title: "Is It Halal? Quick Answers for Singapore",
+    description:
+      "Straight answers to the halal questions Singaporeans actually search — from popular chains and bakeries to ingredients — with how we checked each one.",
+    heroImage: bimg("1504674900247-0877df9cc836"),
+    heroAlt: "Checking whether a popular food brand is halal in Singapore",
+    blurb: "Is X halal? Quick, checked answers for popular brands.",
+  },
+  {
+    slug: "muslim-services",
+    name: "Muslim Services",
+    title: "Muslim-Owned Services & Guides in Singapore",
+    description:
+      "Practical guides to Muslim-owned and Muslim-friendly services in Singapore — halal catering, aqiqah and qurban, Malay wedding vendors and more.",
+    heroImage: bimg("1519741497674-611481863552"),
+    heroAlt: "A Muslim-owned service provider at work in Singapore",
+    blurb: "Catering, aqiqah, qurban & Malay wedding vendors.",
+  },
+  {
+    slug: "prayers-deen",
+    name: "Prayers & Deen",
+    title: "Prayers, Duas & Deen Guides for Singapore",
+    description:
+      "Everyday worship, made simple — prayer times, duas (rumi, Arabic & meaning), zakat, qibla and the Deen tools Singaporean Muslims search for.",
+    heroImage: bimg("1543007630-9710e4a00a20"),
+    heroAlt: "A prayer mat, dates and prayer beads in soft light",
+    blurb: "Prayer times, duas, zakat, qibla & Deen tools.",
   },
 ];
 

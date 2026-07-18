@@ -1,0 +1,73 @@
+name: Blog — Publish scheduled posts
+
+# Daily "go-live" trigger for date-gated blog posts.
+#
+# Scheduled posts live as Keystatic entries (content/posts/*.yaml) with
+# `status: scheduled` + a `datePublished`. lib/cms-blog.ts only shows a scheduled
+# post once its date has arrived (Asia/Singapore) — but the blog is statically
+# generated, so a redeploy is needed for a newly-due post to appear. This job
+# checks each morning (SGT) whether anything is due today and, if so, dispatches
+# the production deploy workflow. It no-ops on days with nothing due, so it does
+# not spam deploys.
+#
+# No secrets of its own — it uses the default GITHUB_TOKEN to dispatch deploy.yml
+# (which itself is gated on VERCEL_TOKEN and skips cleanly if that is unset).
+
+on:
+  schedule:
+    - cron: "30 16 * * *" # 16:30 UTC = 00:30 Asia/Singapore
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Deploy even if nothing is due today"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: write # required to dispatch deploy.yml
+
+concurrency:
+  group: blog-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for posts due today (SGT)
+        id: due
+        run: |
+          TODAY=$(TZ=Asia/Singapore date +%F)
+          echo "Today (SGT): $TODAY"
+          DUE=0
+          for f in content/posts/*.yaml; do
+            [ -e "$f" ] || continue
+            if grep -qx "status: scheduled" "$f" && grep -qx "datePublished: $TODAY" "$f"; then
+              echo "Due today: $f"
+              DUE=1
+            fi
+          done
+          echo "due=$DUE" >> "$GITHUB_OUTPUT"
+      - name: Dispatch production deploy
+        if: ${{ steps.due.outputs.due == '1' || github.event.inputs.force == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering production redeploy so the due post(s) go live."
+          gh workflow run deploy.yml --ref master
+      - name: Ping IndexNow (best-effort)
+        if: ${{ steps.due.outputs.due == '1' || github.event.inputs.force == 'true' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -n "$CRON_SECRET" ]; then
+            curl -fsS "https://www.humblehalal.com/api/cron/indexnow" \
+              -H "authorization: Bearer $CRON_SECRET" || echo "indexnow ping failed (non-fatal)"
+          else
+            echo "CRON_SECRET unset — skipping IndexNow ping"
+          fi
+      - name: Nothing due
+        if: ${{ steps.due.outputs.due != '1' && github.event.inputs.force != 'true' }}
+        run: echo "No scheduled post is due today — no deploy triggered."

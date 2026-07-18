@@ -160,13 +160,15 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
     }
 
     case "blog": {
-      const blogEntries: SitemapUrl[] = (await allBlogPosts()).map((p) => ({
-        loc: `${base}/blog/${p.slug}`,
-        lastmod: new Date(p.dateModified || p.datePublished).toISOString(),
-        changefreq: "monthly",
-        priority: 0.7,
-        image: p.image || undefined,
-      }));
+      const blogEntries: SitemapUrl[] = (await allBlogPosts())
+        .filter((p) => !p.noindex) // per-post noindex override drops it from the sitemap too
+        .map((p) => ({
+          loc: `${base}/blog/${p.slug}`,
+          lastmod: new Date(p.dateModified || p.datePublished).toISOString(),
+          changefreq: "monthly",
+          priority: 0.7,
+          image: p.image || undefined,
+        }));
       const blogCatEntries: SitemapUrl[] = allCategories().map((c) => ({
         loc: `${base}/blog/category/${c.slug}`,
         lastmod: now,

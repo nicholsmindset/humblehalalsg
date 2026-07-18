@@ -247,6 +247,27 @@ export function articleJsonLd(a: {
   };
 }
 
+/** Author node — a Person (named editor, best for E-E-A-T) or Organization. */
+export function authorJsonLd(a: {
+  name: string;
+  type?: "Person" | "Organization";
+  role?: string;
+  url?: string;
+  sameAs?: string[];
+}) {
+  const type = a.type || "Organization";
+  return {
+    "@type": type,
+    name: a.name,
+    url: a.url || SITE.url,
+    ...(type === "Person" && a.role ? { jobTitle: a.role } : {}),
+    ...(a.sameAs && a.sameAs.length ? { sameAs: a.sameAs } : {}),
+    ...(type === "Person"
+      ? { worksFor: { "@type": "Organization", name: SITE.name, url: SITE.url } }
+      : {}),
+  };
+}
+
 export function blogPostingJsonLd(p: {
   headline: string;
   description: string;
@@ -254,6 +275,7 @@ export function blogPostingJsonLd(p: {
   datePublished: string;
   dateModified?: string;
   author: string;
+  authorEntity?: { name: string; type?: "Person" | "Organization"; role?: string; url?: string; sameAs?: string[] };
   wordCount?: number;
   section?: string;
   image?: string;
@@ -268,7 +290,7 @@ export function blogPostingJsonLd(p: {
     ...(p.image ? { image: [absUrl(p.image)] } : {}),
     datePublished: p.datePublished,
     dateModified: p.dateModified || p.datePublished,
-    author: { "@type": "Organization", name: p.author, url: SITE.url },
+    author: authorJsonLd(p.authorEntity || { name: p.author, type: "Organization" }),
     publisher: {
       "@type": "Organization",
       name: SITE.name,

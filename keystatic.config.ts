@@ -14,6 +14,31 @@ export default config({
     brand: { name: "Humble Halal CMS" },
   },
   collections: {
+    authors: collection({
+      label: "Authors",
+      slugField: "name",
+      path: "content/authors/*",
+      format: { data: "json" },
+      schema: {
+        name: fields.slug({ name: { label: "Name", ...required } }),
+        type: fields.select({
+          label: "Type",
+          defaultValue: "Person",
+          options: [
+            { label: "Person (named editor — best for E-E-A-T)", value: "Person" },
+            { label: "Organization (team)", value: "Organization" },
+          ],
+        }),
+        role: fields.text({ label: "Role / title" }),
+        bio: fields.text({ label: "Bio", multiline: true }),
+        avatar: fields.text({ label: "Avatar image URL" }),
+        url: fields.text({ label: "Profile / author page URL" }),
+        sameAs: fields.array(fields.text({ label: "Link", ...required }), {
+          label: "Social / professional links",
+          itemLabel: (props) => props.value || "link",
+        }),
+      },
+    }),
     posts: collection({
       label: "Blog posts",
       slugField: "title",
@@ -26,12 +51,17 @@ export default config({
           defaultValue: "draft",
           options: [
             { label: "Draft", value: "draft" },
+            // Scheduled: hidden from the site until `datePublished` arrives (SGT),
+            // then auto-published by the date-gate in lib/cms-blog.ts. Stays visible
+            // and editable in this admin the whole time.
+            { label: "Scheduled", value: "scheduled" },
             { label: "Published", value: "published" },
           ],
         }),
         dek: fields.text({ label: "Short description", multiline: true, ...required }),
         answer: fields.text({ label: "In short (40–70 words)", multiline: true, ...required }),
-        author: fields.text({ label: "Author", defaultValue: "The Humble Halal Team", ...required }),
+        author: fields.text({ label: "Author (display name)", defaultValue: "The Humble Halal Team", ...required }),
+        authorId: fields.text({ label: "Author ID (optional — links to an Authors entry for byline + schema)" }),
         datePublished: fields.date({ label: "Publish date", ...required }),
         dateModified: fields.date({ label: "Last updated" }),
         readMins: fields.integer({ label: "Reading time (minutes)", defaultValue: 5, ...required }),
@@ -45,6 +75,10 @@ export default config({
             { label: "Areas & Malls", value: "areas-malls" },
             { label: "Seasonal & Events", value: "seasonal-events" },
             { label: "Community & Business", value: "community-business" },
+            { label: "Muslim Travel", value: "muslim-travel" },
+            { label: "Halal Questions", value: "halal-questions" },
+            { label: "Muslim Services", value: "muslim-services" },
+            { label: "Prayers & Deen", value: "prayers-deen" },
           ],
         }),
         tags: fields.array(fields.text({ label: "Tag", ...required }), {
@@ -88,6 +122,12 @@ export default config({
         pullQuote: fields.text({ label: "Pull quote", multiline: true }),
         pullQuoteBy: fields.text({ label: "Pull quote attribution" }),
         leadVertical: fields.text({ label: "Lead vertical ID (optional)" }),
+        // --- SEO overrides (all optional; empty = sensible default) ---
+        metaTitle: fields.text({ label: "SEO title override (optional)" }),
+        metaDescription: fields.text({ label: "SEO meta description override (optional)", multiline: true }),
+        canonicalUrl: fields.text({ label: "Canonical URL override (optional)" }),
+        noindex: fields.checkbox({ label: "Hide from search engines (noindex)", defaultValue: false }),
+        socialImage: fields.text({ label: "Social share image URL override (optional)" }),
       },
     }),
     // "Is <brand> halal?" checker entries. A CMS entry with the same slug as a

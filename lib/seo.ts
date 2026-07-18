@@ -31,6 +31,9 @@ interface PageMetaInput {
   /** Blog posts / articles: emits og:type=article + article:published_time /
       modified_time / section so scrapers classify the page correctly. */
   article?: { publishedTime?: string; modifiedTime?: string; section?: string };
+  /** Override the canonical URL (absolute or root-relative). Defaults to `path`.
+      Used by CMS per-post canonical overrides — leave unset for self-canonical. */
+  canonical?: string;
 }
 
 /** Build per-page Metadata with canonical + Open Graph + Twitter in one line. */
@@ -42,9 +45,11 @@ export function pageMeta({
   index = true,
   absoluteTitle = false,
   article,
+  canonical: canonicalOverride,
 }: PageMetaInput): Metadata {
   // Absolute canonical/OG URL (robust even if metadataBase is ever absent).
-  const canonical = new URL(path, SITE.url).toString();
+  // A CMS override (absolute or root-relative) wins over the self-canonical path.
+  const canonical = new URL(canonicalOverride || path, SITE.url).toString();
   // Default to the branded site OG image (app/opengraph-image) when a page does
   // not supply its own. Because pageMeta defines openGraph, Next's file-based
   // opengraph-image convention is suppressed — so without this, pageMeta pages
