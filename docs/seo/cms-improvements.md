@@ -17,7 +17,11 @@
 > doubles as the Beehiiv RSS-to-email source), a shared OG card factory (`components/og/card.tsx` +
 > `/blog/[slug]/opengraph-image`), a finished weekly-digest cron with `beehiivBroadcast()`, and
 > IndexNow ping-on-publish (`lib/indexnow.ts` + `/api/cron/indexnow`, wired into `blog-publish.yml`).
-> Phase 4 (growth loops) below.
+>
+> **Shipped — Phase 4 (growth loops):** a monthly report-only SEO/GEO scan workflow
+> (`claude-seo-scan.yml` → `reports/`) and an **approval-gated social auto-posting outbox**
+> (`0077_social_outbox.sql` + `lib/social-outbox.ts` + enqueue/dispatch crons — queues each new post,
+> never posts without human approval). **All four CMS phases shipped.**
 
 
 Grounded in the current setup: Keystatic (GitHub storage, `content/posts/*` + `content/brands/*`),

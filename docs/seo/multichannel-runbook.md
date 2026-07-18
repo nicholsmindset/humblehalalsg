@@ -65,5 +65,19 @@ collection + `Person` schema, and the `check:content` CI validator. See `docs/se
 **Env to activate:** `BEEHIIV_BROADCAST_URL` (+ `BEEHIIV_API_KEY`) for direct digest send, `INDEXNOW_KEY`
 for fast indexing, `CRON_SECRET` for the workflow ping. All degrade gracefully when unset.
 
-## Phase 4 — planned
-GSC-driven refresh workflow + social auto-posting outbox. See the plan for detail.
+## Phase 4 — Growth loops (shipped)
+
+- **SEO/GEO scan workflow:** `.github/workflows/claude-seo-scan.yml` (monthly + dispatch, gated on
+  `CLAUDE_JOBS_ENABLED` + `ANTHROPIC_API_KEY`) runs the **report-only** `seo-scan.md` and opens a PR
+  with `reports/`. Feeds the roadmap/content calendar — makes no edits. Needs the **Ahrefs MCP** on the
+  runner for real data (hosted runners lack it → run on a connected/self-hosted runner or interactively).
+- **Social auto-posting outbox (approval-gated):** `supabase/migrations/0077_social_outbox.sql` +
+  `lib/social-outbox.ts`. `/api/cron/social-enqueue` queues each day's newly-live post as
+  **`pending_approval`** (caption from the post, image = its OG card); a human flips rows to
+  `approved`; `/api/cron/social-dispatch` (every 6h) POSTs approved rows to `SOCIAL_WEBHOOK_URL`
+  (Buffer/Meta/custom) and marks them sent. **Never auto-posts** — unapproved rows are never sent.
+  Both crons registered in `vercel.json`.
+
+**Env to activate:** `SOCIAL_WEBHOOK_URL` (+ optional `SOCIAL_WEBHOOK_SECRET`) for social sends; apply
+migration `0077`. Approve rows in the `social_outbox` table (or a future admin view). No keys → the
+outbox still queues + logs but dispatch no-ops.

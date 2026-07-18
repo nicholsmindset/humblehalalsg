@@ -12,6 +12,8 @@
     { "path": "/api/cron/freshness-audit", "schedule": "0 4 * * 1" },
     { "path": "/api/cron/refresh-stats", "schedule": "0 2 * * *" },
     { "path": "/api/cron/weekly-digest", "schedule": "0 9 * * 4" },
+    { "path": "/api/cron/social-enqueue", "schedule": "0 1 * * *" },
+    { "path": "/api/cron/social-dispatch", "schedule": "0 */6 * * *" },
     { "path": "/api/cron/owner-alerts", "schedule": "0 0 * * 1" },
     { "path": "/api/cron/owner-monthly-report", "schedule": "0 1 1 * *" },
     { "path": "/api/cron/index-health", "schedule": "0 6 * * *" },
