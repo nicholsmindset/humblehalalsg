@@ -1564,8 +1564,8 @@ export function HostEventScreen() {
           {step === 0 && (
             <div className="stack g16">
               <div className="field">
-                <label>Event title</label>
-                <input className="input" placeholder="e.g. Ramadan Cooking Workshop" value={d.title} onChange={(e) => set("title", e.target.value)} />
+                <label htmlFor="ev-title">Event title</label>
+                <input id="ev-title" className="input" placeholder="e.g. Ramadan Cooking Workshop" value={d.title} onChange={(e) => set("title", e.target.value)} />
               </div>
               <div>
                 <label style={{ fontWeight: 600, fontSize: ".88rem" }}>Category</label>
@@ -1578,8 +1578,8 @@ export function HostEventScreen() {
                 </div>
               </div>
               <div className="field">
-                <label>Description</label>
-                <textarea className="textarea" placeholder="What’s the event about?" value={d.desc} onChange={(e) => set("desc", e.target.value)} />
+                <label htmlFor="ev-desc">Description</label>
+                <textarea id="ev-desc" className="textarea" placeholder="What’s the event about?" value={d.desc} onChange={(e) => set("desc", e.target.value)} />
               </div>
             </div>
           )}
@@ -1587,8 +1587,8 @@ export function HostEventScreen() {
             <div className="stack g16">
               <div className="grid2">
                 <div className="field">
-                  <label>Date</label>
-                  <input className="input" type="date" value={d.date} onChange={(e) => set("date", e.target.value)} />
+                  <label htmlFor="ev-date">Date</label>
+                  <input id="ev-date" className="input" type="date" value={d.date} onChange={(e) => set("date", e.target.value)} />
                   {hijri && (
                     <span className="hint">
                       <Icon name="moon" size={13} /> {hijri}
@@ -1598,12 +1598,12 @@ export function HostEventScreen() {
                 </div>
                 <div className="grid2" style={{ gap: 10 }}>
                   <div className="field">
-                    <label>Start</label>
-                    <input className="input" type="time" value={d.time} onChange={(e) => set("time", e.target.value)} />
+                    <label htmlFor="ev-start">Start</label>
+                    <input id="ev-start" className="input" type="time" value={d.time} onChange={(e) => set("time", e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>End</label>
-                    <input className="input" type="time" value={d.endTime} onChange={(e) => set("endTime", e.target.value)} />
+                    <label htmlFor="ev-end">End</label>
+                    <input id="ev-end" className="input" type="time" value={d.endTime} onChange={(e) => set("endTime", e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -1619,8 +1619,8 @@ export function HostEventScreen() {
                 <span className="hint">{d.lat != null ? "📍 Location pinned — attendees get directions & nearby prayer spaces." : "Tip: pick a result to pin the location for maps & prayer-aware info."}</span>
               </div>
               <div className="field">
-                <label>Area</label>
-                <select className="select" value={d.area} onChange={(e) => set("area", e.target.value)}>
+                <label htmlFor="ev-area">Area</label>
+                <select id="ev-area" className="select" value={d.area} onChange={(e) => set("area", e.target.value)}>
                   <option value="">Select area</option>
                   {REGIONS.map((region) => (
                     <optgroup key={region} label={region}>
@@ -1653,8 +1653,8 @@ export function HostEventScreen() {
               </div>
               {d.prayer && (
                 <div className="field">
-                  <label>Prayer arrangement note <span className="faint">(optional)</span></label>
-                  <input className="input" placeholder="e.g. Musholla on level 2, wudhu area available" value={d.prayerNote} onChange={(e) => set("prayerNote", e.target.value)} />
+                  <label htmlFor="ev-prayer-note">Prayer arrangement note <span className="faint">(optional)</span></label>
+                  <input id="ev-prayer-note" className="input" placeholder="e.g. Musholla on level 2, wudhu area available" value={d.prayerNote} onChange={(e) => set("prayerNote", e.target.value)} />
                 </div>
               )}
               <div className="field">
@@ -1672,8 +1672,8 @@ export function HostEventScreen() {
               </div>
               {d.gender && d.gender !== "mixed" && (
                 <div className="field">
-                  <label>Seating note <span className="faint">(optional)</span></label>
-                  <input className="input" placeholder="e.g. Sisters level 2, brothers level 1" value={d.seating} onChange={(e) => set("seating", e.target.value)} />
+                  <label htmlFor="ev-seating">Seating note <span className="faint">(optional)</span></label>
+                  <input id="ev-seating" className="input" placeholder="e.g. Sisters level 2, brothers level 1" value={d.seating} onChange={(e) => set("seating", e.target.value)} />
                 </div>
               )}
             </div>
@@ -1703,17 +1703,17 @@ export function HostEventScreen() {
                 <>
                   <div className="grid2">
                     <div className="field">
-                      <label>Ticket price (SGD)</label>
-                      <input className="input" type="number" placeholder="0.00" value={d.price} onChange={(e) => set("price", e.target.value)} />
+                      <label htmlFor="ev-price">Ticket price (SGD)</label>
+                      <input id="ev-price" className="input" type="number" placeholder="0.00" value={d.price} onChange={(e) => set("price", e.target.value)} />
                     </div>
                     <div className="field">
-                      <label>Ticket name</label>
-                      <input className="input" placeholder="e.g. Standard" value={d.tierName} onChange={(e) => set("tierName", e.target.value)} />
+                      <label htmlFor="ev-tier-name">Ticket name</label>
+                      <input id="ev-tier-name" className="input" placeholder="e.g. Standard" value={d.tierName} onChange={(e) => set("tierName", e.target.value)} />
                     </div>
                   </div>
                   <div className="field">
-                    <label>Refund policy</label>
-                    <select className="select" value={d.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)}>
+                    <label htmlFor="ev-refund">Refund policy</label>
+                    <select id="ev-refund" className="select" value={d.refundPolicy} onChange={(e) => set("refundPolicy", e.target.value)}>
                       {REFUND_POLICIES.map((r) => <option key={r.id || "none"} value={r.id}>{r.label}</option>)}
                     </select>
                   </div>
@@ -1736,8 +1736,8 @@ export function HostEventScreen() {
                 </>
               )}
               <div className="field">
-                <label>Capacity</label>
-                <input className="input" type="number" placeholder="Max attendees" value={d.cap} onChange={(e) => set("cap", e.target.value)} />
+                <label htmlFor="ev-cap">Capacity</label>
+                <input id="ev-cap" className="input" type="number" placeholder="Max attendees" value={d.cap} onChange={(e) => set("cap", e.target.value)} />
                 <span className="hint">We’ll show “spots left” as people book.</span>
               </div>
               {isCharity && (

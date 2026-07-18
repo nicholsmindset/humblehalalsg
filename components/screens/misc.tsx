@@ -604,10 +604,10 @@ export function SuggestScreen() {
               {touched && nameErr && <span id="sg-name-err" className="field-error"><Icon name="warning" size={13}/> {nameErr}</span>}
             </div>
             <div className="grid2">
-              <div className="field"><label>Area</label><select className="select"><option>Select area</option>{HHData.areas.map(a=><option key={a.id}>{a.name}</option>)}</select></div>
-              <div className="field"><label>Category</label><select className="select"><option>Select category</option>{HHData.categories.map(c=><option key={c.id}>{c.label}</option>)}</select></div>
+              <div className="field"><label htmlFor="sg-area">Area</label><select id="sg-area" className="select"><option>Select area</option>{HHData.areas.map(a=><option key={a.id}>{a.name}</option>)}</select></div>
+              <div className="field"><label htmlFor="sg-category">Category</label><select id="sg-category" className="select"><option>Select category</option>{HHData.categories.map(c=><option key={c.id}>{c.label}</option>)}</select></div>
             </div>
-            <div className="field"><label>Why do you recommend it? <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Tell us what’s great about it" /></div>
+            <div className="field"><label htmlFor="sg-why">Why do you recommend it? <span className="hint">(optional)</span></label><textarea id="sg-why" className="textarea" placeholder="Tell us what’s great about it" /></div>
             <div className="field">
               <label htmlFor="sg-email">Your email <span className="hint">(optional — we’ll confirm we got it)</span></label>
               <input id="sg-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}
@@ -818,7 +818,7 @@ export function ClaimScreen() {
 
         {!picked ? (
           <div className="card form-card">
-            <div className="field"><label>Find your listing</label><div className="searchbar" style={{marginTop:6}}><Icon name="search" className="lead"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search your business name" /></div></div>
+            <div className="field"><label htmlFor="claim-search">Find your listing</label><div className="searchbar" style={{marginTop:6}}><Icon name="search" className="lead"/><input id="claim-search" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search your business name" /></div></div>
             <div className="stack g10 mt16">
               {results.map(l=>(
                 <button key={l.id} className="claim-result" onClick={()=>setPicked(l)}>
@@ -838,7 +838,7 @@ export function ClaimScreen() {
               <button className="btn btn-ghost btn-sm" onClick={()=>setPicked(null)}>Change</button>
             </div>
             <div className="stack g16 mt16">
-              <div className="field"><label>Your role</label><select className="select" value={role} onChange={e=>setRole(e.target.value)}><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
+              <div className="field"><label htmlFor="claim-role">Your role</label><select id="claim-role" className="select" value={role} onChange={e=>setRole(e.target.value)}><option>Owner</option><option>Manager</option><option>Authorised staff</option></select></div>
               <div className="field">
                 <label>Proof of ownership <span className="hint">(optional — speeds up approval)</span></label>
                 <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic" hidden onChange={e=>onPickFile(e.target.files?.[0] ?? null)} />
@@ -858,7 +858,7 @@ export function ClaimScreen() {
                   )}
                 </div>
               </div>
-              <div className="field"><label>Message to our team <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Anything we should know?" value={message} onChange={e=>setMessage(e.target.value)} /></div>
+              <div className="field"><label htmlFor="claim-message">Message to our team <span className="hint">(optional)</span></label><textarea id="claim-message" className="textarea" placeholder="Anything we should know?" value={message} onChange={e=>setMessage(e.target.value)} /></div>
               <button className="btn btn-primary btn-lg" disabled={submitting} onClick={async ()=>{
                 setSubmitting(true);
                 try {
@@ -935,7 +935,7 @@ export function ReportScreen() {
               </button>
             ))}
           </div>
-          <div className="field mt16"><label>Details <span className="hint">(optional)</span></label><textarea className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
+          <div className="field mt16"><label htmlFor="rp-details">Details <span className="hint">(optional)</span></label><textarea id="rp-details" className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
           <div className="field mt16">
             <label htmlFor="rp-email">Your email <span className="hint">(optional — we’ll confirm we got it)</span></label>
             <input id="rp-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={(e)=>setEmail(e.target.value)}

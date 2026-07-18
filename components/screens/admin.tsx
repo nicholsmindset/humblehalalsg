@@ -973,7 +973,7 @@ export function AdminCertQueue({ toast }: { toast: (msg: string) => void }) {
                       <tr>
                         <td colSpan={5} style={{ background: "var(--cream)" }}>
                           <div className="flex g8 wrap" style={{ alignItems: "flex-end" }}>
-                            <div className="field" style={{ flex: 1, minWidth: 220 }}><label>Reason (shown to the owner)</label><input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Certificate expired / unreadable" /></div>
+                            <div className="field" style={{ flex: 1, minWidth: 220 }}><label htmlFor={`cert-reject-reason-${c.id}`}>Reason (shown to the owner)</label><input id={`cert-reject-reason-${c.id}`} className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Certificate expired / unreadable" /></div>
                             <button className="btn btn-ghost btn-sm" style={{ color: "var(--danger)" }} disabled={busy === c.id} onClick={() => act(c.id, "reject", note.trim() || undefined)}>Confirm reject</button>
                             <button className="btn btn-soft btn-sm" onClick={() => setNoteFor(null)}>Cancel</button>
                           </div>
@@ -1067,9 +1067,9 @@ export function AdminVerification({ toast }: { toast: (msg: string) => void }) {
                     <tr>
                       <td colSpan={4} style={{ background: "var(--cream)" }}>
                         <div className="verify-certform">
-                          <div className="field"><label>Certificate no.</label><input className="input" value={certNo} onChange={(e) => setCertNo(e.target.value)} placeholder="From the HalalSG register" /></div>
-                          <div className="field"><label>Scheme</label><input className="input" value={scheme} onChange={(e) => setScheme(e.target.value)} placeholder="e.g. Eating Establishment" /></div>
-                          <div className="field"><label>Expiry</label><input type="date" className="input" value={expiry} onChange={(e) => setExpiry(e.target.value)} /></div>
+                          <div className="field"><label htmlFor={`verify-certno-${r.id}`}>Certificate no.</label><input id={`verify-certno-${r.id}`} className="input" value={certNo} onChange={(e) => setCertNo(e.target.value)} placeholder="From the HalalSG register" /></div>
+                          <div className="field"><label htmlFor={`verify-scheme-${r.id}`}>Scheme</label><input id={`verify-scheme-${r.id}`} className="input" value={scheme} onChange={(e) => setScheme(e.target.value)} placeholder="e.g. Eating Establishment" /></div>
+                          <div className="field"><label htmlFor={`verify-expiry-${r.id}`}>Expiry</label><input id={`verify-expiry-${r.id}`} type="date" className="input" value={expiry} onChange={(e) => setExpiry(e.target.value)} /></div>
                           <div className="flex g8">
                             <button className="btn btn-primary btn-sm" disabled={!certNo.trim()} onClick={() => submit(r.id, "muis")}>Record MUIS cert</button>
                             <button className="btn btn-ghost btn-sm" onClick={() => setVerifyingId(null)}>Cancel</button>
@@ -1118,16 +1118,16 @@ export function AdminHotelVerify({ toast }: { toast: (m: string) => void }) {
         <span>Mark a hotel&apos;s Muslim-friendly facilities (verified by you / an ustaz). This powers the &quot;Verified Muslim-friendly&quot; badge and the halal filters on /travel. Facilities only — not MUIS certification.</span>
       </div>
       <div className="card" style={{ padding: 20 }}>
-        <div className="field" style={{ marginBottom: 12 }}><label>LiteAPI hotel ID</label><input className="input" value={hotelId} onChange={(e) => setHotelId(e.target.value)} placeholder="e.g. lp52e1e" /></div>
+        <div className="field" style={{ marginBottom: 12 }}><label htmlFor="hotel-liteapi-id">LiteAPI hotel ID</label><input id="hotel-liteapi-id" className="input" value={hotelId} onChange={(e) => setHotelId(e.target.value)} placeholder="e.g. lp52e1e" /></div>
         <div className="flex g10" style={{ marginBottom: 12 }}>
-          <div className="field" style={{ flex: 1 }}><label>City</label><input className="input" value={city} onChange={(e) => setCity(e.target.value)} /></div>
-          <div className="field" style={{ flex: 1 }}><label>Country</label><input className="input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. AE" /></div>
+          <div className="field" style={{ flex: 1 }}><label htmlFor="hotel-city">City</label><input id="hotel-city" className="input" value={city} onChange={(e) => setCity(e.target.value)} /></div>
+          <div className="field" style={{ flex: 1 }}><label htmlFor="hotel-country">Country</label><input id="hotel-country" className="input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. AE" /></div>
         </div>
         <label style={{ fontWeight: 700, fontSize: ".85rem" }}>Facilities</label>
         <div className="flex g8 wrap" style={{ margin: "8px 0 14px" }}>
           {FLAGS.map(([k, l]) => <button key={k} type="button" className={`chip ${flags[k] ? "active" : ""}`} onClick={() => toggle(k)}>{l}</button>)}
         </div>
-        <div className="field" style={{ marginBottom: 14 }}><label>Halal score (optional — auto-computed if blank)</label><input className="input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} style={{ maxWidth: 150 }} /></div>
+        <div className="field" style={{ marginBottom: 14 }}><label htmlFor="hotel-score">Halal score (optional — auto-computed if blank)</label><input id="hotel-score" className="input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} style={{ maxWidth: 150 }} /></div>
         <button className="btn btn-primary" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save verification"}</button>
       </div>
     </div>
@@ -1577,8 +1577,8 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
           </div>
           {addCat && (
             <div className="card mt12" style={{ padding: 12 }}>
-              <div className="field"><label>Name</label><input className="input" autoFocus value={addCat.label} onChange={(e) => setAddCat({ ...addCat, label: e.target.value })} placeholder="e.g. Bakeries" /></div>
-              <div className="field"><label>Icon</label><select className="select" value={addCat.icon} onChange={(e) => setAddCat({ ...addCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
+              <div className="field"><label htmlFor="cat-add-name">Name</label><input id="cat-add-name" className="input" autoFocus value={addCat.label} onChange={(e) => setAddCat({ ...addCat, label: e.target.value })} placeholder="e.g. Bakeries" /></div>
+              <div className="field"><label htmlFor="cat-add-icon">Icon</label><select id="cat-add-icon" className="select" value={addCat.icon} onChange={(e) => setAddCat({ ...addCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
               <div className="flex g8 mt8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveAddCat}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setAddCat(null)}>Cancel</button></div>
             </div>
           )}
@@ -1586,8 +1586,8 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
             <div key={c.id} className="catalog-row">
               {editCat?.id === c.id ? (
                 <div className="stack g8" style={{ width: "100%" }}>
-                  <div className="field"><label>Name</label><input className="input" value={editCat.label} onChange={(e) => setEditCat({ ...editCat, label: e.target.value })} /></div>
-                  <div className="field"><label>Icon</label><select className="select" value={editCat.icon} onChange={(e) => setEditCat({ ...editCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
+                  <div className="field"><label htmlFor={`cat-edit-name-${c.id}`}>Name</label><input id={`cat-edit-name-${c.id}`} className="input" value={editCat.label} onChange={(e) => setEditCat({ ...editCat, label: e.target.value })} /></div>
+                  <div className="field"><label htmlFor={`cat-edit-icon-${c.id}`}>Icon</label><select id={`cat-edit-icon-${c.id}`} className="select" value={editCat.icon} onChange={(e) => setEditCat({ ...editCat, icon: e.target.value })}>{CAT_ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
                   <div className="flex g8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveEditCat}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setEditCat(null)}>Cancel</button></div>
                 </div>
               ) : (
@@ -1611,8 +1611,8 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
           </div>
           {addArea && (
             <div className="card mt12" style={{ padding: 12 }}>
-              <div className="field"><label>Name</label><input className="input" autoFocus value={addArea.name} onChange={(e) => setAddArea({ ...addArea, name: e.target.value })} placeholder="e.g. Woodlands" /></div>
-              <div className="field"><label>Tone</label><select className="select" value={addArea.tone} onChange={(e) => setAddArea({ ...addArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+              <div className="field"><label htmlFor="area-add-name">Name</label><input id="area-add-name" className="input" autoFocus value={addArea.name} onChange={(e) => setAddArea({ ...addArea, name: e.target.value })} placeholder="e.g. Woodlands" /></div>
+              <div className="field"><label htmlFor="area-add-tone">Tone</label><select id="area-add-tone" className="select" value={addArea.tone} onChange={(e) => setAddArea({ ...addArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
               <div className="flex g8 mt8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveAddArea}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setAddArea(null)}>Cancel</button></div>
             </div>
           )}
@@ -1620,8 +1620,8 @@ export function AdminCatalog({ toast }: { toast: (msg: string) => void }) {
             <div key={a.id} className="catalog-row">
               {editArea?.id === a.id ? (
                 <div className="stack g8" style={{ width: "100%" }}>
-                  <div className="field"><label>Name</label><input className="input" value={editArea.name} onChange={(e) => setEditArea({ ...editArea, name: e.target.value })} /></div>
-                  <div className="field"><label>Tone</label><select className="select" value={editArea.tone} onChange={(e) => setEditArea({ ...editArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
+                  <div className="field"><label htmlFor={`area-edit-name-${a.id}`}>Name</label><input id={`area-edit-name-${a.id}`} className="input" value={editArea.name} onChange={(e) => setEditArea({ ...editArea, name: e.target.value })} /></div>
+                  <div className="field"><label htmlFor={`area-edit-tone-${a.id}`}>Tone</label><select id={`area-edit-tone-${a.id}`} className="select" value={editArea.tone} onChange={(e) => setEditArea({ ...editArea, tone: e.target.value })}>{AREA_TONE_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
                   <div className="flex g8"><button className="btn btn-primary btn-sm" disabled={busy} onClick={saveEditArea}>Save</button><button className="btn btn-ghost btn-sm" onClick={() => setEditArea(null)}>Cancel</button></div>
                 </div>
               ) : (
@@ -1823,23 +1823,23 @@ export function AdminFeatured({ toast }: { toast: (msg: string) => void }) {
       {creating && (
         <div className="card" style={{ padding: 16 }}>
           <div className="grid2">
-            <div className="field"><label>Campaign title</label><input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Qahwa & Co. — Ramadan brunch" /></div>
-            <div className="field"><label>Placement</label>
-              <select className="select" value={form.placementKey} onChange={(e) => setForm({ ...form, placementKey: e.target.value })}>
+            <div className="field"><label htmlFor="ad-title">Campaign title</label><input id="ad-title" className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Qahwa & Co. — Ramadan brunch" /></div>
+            <div className="field"><label htmlFor="ad-placement">Placement</label>
+              <select id="ad-placement" className="select" value={form.placementKey} onChange={(e) => setForm({ ...form, placementKey: e.target.value })}>
                 <option value="">Select placement</option>
                 {placements.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
               </select>
             </div>
-            <div className="field"><label>Advertiser</label><input className="input" value={form.advertiserName} onChange={(e) => setForm({ ...form, advertiserName: e.target.value })} placeholder="Business name" /></div>
-            <div className="field"><label>Agreed rate (SGD)</label><input className="input" type="number" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} placeholder="0.00" /></div>
-            <div className="field"><label>Starts</label><input className="input" type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} /></div>
-            <div className="field"><label>Ends</label><input className="input" type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} /></div>
-            <div className="field"><label>Click-through URL</label><input className="input" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} placeholder="/business/… or https://…" /></div>
-            <div className="field"><label>Tagline</label><input className="input" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Short creative line" /></div>
+            <div className="field"><label htmlFor="ad-advertiser">Advertiser</label><input id="ad-advertiser" className="input" value={form.advertiserName} onChange={(e) => setForm({ ...form, advertiserName: e.target.value })} placeholder="Business name" /></div>
+            <div className="field"><label htmlFor="ad-rate">Agreed rate (SGD)</label><input id="ad-rate" className="input" type="number" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} placeholder="0.00" /></div>
+            <div className="field"><label htmlFor="ad-starts">Starts</label><input id="ad-starts" className="input" type="date" value={form.startsOn} onChange={(e) => setForm({ ...form, startsOn: e.target.value })} /></div>
+            <div className="field"><label htmlFor="ad-ends">Ends</label><input id="ad-ends" className="input" type="date" value={form.endsOn} onChange={(e) => setForm({ ...form, endsOn: e.target.value })} /></div>
+            <div className="field"><label htmlFor="ad-target-url">Click-through URL</label><input id="ad-target-url" className="input" value={form.targetUrl} onChange={(e) => setForm({ ...form, targetUrl: e.target.value })} placeholder="/business/… or https://…" /></div>
+            <div className="field"><label htmlFor="ad-tagline">Tagline</label><input id="ad-tagline" className="input" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Short creative line" /></div>
             <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label>Creative image {uploading && <span className="faint">· uploading…</span>}</label>
+              <label htmlFor="ad-creative">Creative image {uploading && <span className="faint">· uploading…</span>}</label>
               <div className="flex g10 center wrap">
-                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCreative(f); }} />
+                <input id="ad-creative" type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCreative(f); }} />
                 {form.imageUrl && <img src={form.imageUrl} alt="creative preview" style={{ height: 44, borderRadius: 8, border: "1px solid var(--line)" }} />}
               </div>
             </div>
@@ -2009,12 +2009,12 @@ function VoucherCreator() {
       <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Create a promo voucher</h3>
       <p className="muted" style={{ fontSize: ".84rem", marginBottom: 14 }}>Travellers redeem the code at checkout (hotels &amp; flights). Discounts come off LiteAPI&apos;s side.</p>
       <form className="flex g10" style={{ flexWrap: "wrap", alignItems: "flex-end" }} onSubmit={submit}>
-        <div className="field"><label>Code</label><input value={form.code} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="RAMADAN10" required /></div>
-        <div className="field"><label>Type</label><select value={form.discountType} onChange={(e) => set("discountType", e.target.value)}><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select></div>
-        <div className="field"><label>Value</label><input type="number" min="1" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder={form.discountType === "percentage" ? "10" : "25"} required /></div>
-        <div className="field"><label>Currency</label><input value={form.currency} onChange={(e) => set("currency", e.target.value.toUpperCase())} style={{ width: 80 }} /></div>
-        <div className="field"><label>Expires</label><input type="date" value={form.validityEnd} onChange={(e) => set("validityEnd", e.target.value)} /></div>
-        <div className="field"><label>Usage limit</label><input type="number" min="1" value={form.usagesLimit} onChange={(e) => set("usagesLimit", e.target.value)} placeholder="∞" style={{ width: 100 }} /></div>
+        <div className="field"><label htmlFor="voucher-code">Code</label><input id="voucher-code" value={form.code} onChange={(e) => set("code", e.target.value.toUpperCase())} placeholder="RAMADAN10" required /></div>
+        <div className="field"><label htmlFor="voucher-type">Type</label><select id="voucher-type" value={form.discountType} onChange={(e) => set("discountType", e.target.value)}><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select></div>
+        <div className="field"><label htmlFor="voucher-value">Value</label><input id="voucher-value" type="number" min="1" value={form.discountValue} onChange={(e) => set("discountValue", e.target.value)} placeholder={form.discountType === "percentage" ? "10" : "25"} required /></div>
+        <div className="field"><label htmlFor="voucher-currency">Currency</label><input id="voucher-currency" value={form.currency} onChange={(e) => set("currency", e.target.value.toUpperCase())} style={{ width: 80 }} /></div>
+        <div className="field"><label htmlFor="voucher-expires">Expires</label><input id="voucher-expires" type="date" value={form.validityEnd} onChange={(e) => set("validityEnd", e.target.value)} /></div>
+        <div className="field"><label htmlFor="voucher-usages">Usage limit</label><input id="voucher-usages" type="number" min="1" value={form.usagesLimit} onChange={(e) => set("usagesLimit", e.target.value)} placeholder="∞" style={{ width: 100 }} /></div>
         <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Creating…" : "Create voucher"}</button>
       </form>
       {msg && <p style={{ marginTop: 10, fontSize: ".88rem", color: msg.ok ? "var(--emerald)" : "var(--danger)" }}>{msg.text}</p>}

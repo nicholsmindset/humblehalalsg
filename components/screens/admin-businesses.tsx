@@ -364,7 +364,7 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, onDeleted, 
   };
 
   const input = (k: string, extra?: Record<string, unknown>) => (
-    <input className="input" value={form[k] ?? ""} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} {...extra} />
+    <input id={`biz-${k}`} className="input" value={form[k] ?? ""} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} {...extra} />
   );
 
   return (
@@ -401,33 +401,33 @@ function BusinessEditor({ businessId, onBack, onSaved, onRowChanged, onDeleted, 
         <h3 style={{ fontSize: "1.02rem", marginBottom: 12 }}>Listing details</h3>
         <div className="stack g12">
           <div className="flex g10 wrap">
-            <div className="field" style={{ flex: 2, minWidth: 220 }}><label>Business name</label>{input("name", { placeholder: "e.g. Warung Bumbu Rempah" })}</div>
+            <div className="field" style={{ flex: 2, minWidth: 220 }}><label htmlFor="biz-name">Business name</label>{input("name", { placeholder: "e.g. Warung Bumbu Rempah" })}</div>
             <div className="field" style={{ flex: 1, minWidth: 160 }}>
-              <label>Category</label>
-              <select className="input" value={form.cat_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, cat_id: e.target.value }))}>
+              <label htmlFor="biz-category">Category</label>
+              <select id="biz-category" className="input" value={form.cat_id ?? ""} onChange={(e) => setForm((f) => ({ ...f, cat_id: e.target.value }))}>
                 <option value="">—</option>
                 {HHData.categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               </select>
             </div>
             <div className="field" style={{ minWidth: 110 }}>
-              <label>Price</label>
-              <select className="input" value={form.price_level ?? ""} onChange={(e) => setForm((f) => ({ ...f, price_level: e.target.value }))}>
+              <label htmlFor="biz-price">Price</label>
+              <select id="biz-price" className="input" value={form.price_level ?? ""} onChange={(e) => setForm((f) => ({ ...f, price_level: e.target.value }))}>
                 {PRICE_LEVELS.map((p) => <option key={p} value={p}>{p || "—"}</option>)}
               </select>
             </div>
           </div>
           <div className="flex g10 wrap">
-            <div className="field" style={{ flex: 1, minWidth: 150 }}><label>Area</label>{input("area", { placeholder: "e.g. Kampong Glam" })}</div>
-            <div className="field" style={{ flex: 2, minWidth: 200 }}><label>Address</label>{input("address")}</div>
-            <div className="field" style={{ minWidth: 120 }}><label>Postal code</label>{input("postal", { inputMode: "numeric", maxLength: 6 })}</div>
+            <div className="field" style={{ flex: 1, minWidth: 150 }}><label htmlFor="biz-area">Area</label>{input("area", { placeholder: "e.g. Kampong Glam" })}</div>
+            <div className="field" style={{ flex: 2, minWidth: 200 }}><label htmlFor="biz-address">Address</label>{input("address")}</div>
+            <div className="field" style={{ minWidth: 120 }}><label htmlFor="biz-postal">Postal code</label>{input("postal", { inputMode: "numeric", maxLength: 6 })}</div>
           </div>
           <div className="flex g10 wrap">
-            <div className="field" style={{ flex: 1, minWidth: 150 }}><label>Phone</label>{input("phone", { type: "tel", placeholder: "+65 …" })}</div>
-            <div className="field" style={{ flex: 2, minWidth: 200 }}><label>Website</label>{input("website", { type: "url", placeholder: "https://…" })}</div>
+            <div className="field" style={{ flex: 1, minWidth: 150 }}><label htmlFor="biz-phone">Phone</label>{input("phone", { type: "tel", placeholder: "+65 …" })}</div>
+            <div className="field" style={{ flex: 2, minWidth: 200 }}><label htmlFor="biz-website">Website</label>{input("website", { type: "url", placeholder: "https://…" })}</div>
           </div>
           <div className="field">
-            <label>Description</label>
-            <textarea className="input" rows={3} value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What makes this place special?" />
+            <label htmlFor="biz-description">Description</label>
+            <textarea id="biz-description" className="input" rows={3} value={form.description ?? ""} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="What makes this place special?" />
           </div>
           <div className="field">
             <label>Amenities</label>

@@ -441,11 +441,11 @@ export function AddListingScreen() {
         <div className="card wizard-body">
           {step === 0 && (
             <div className="stack g16">
-              <div className="field"><label>Business name</label><input className="input" placeholder="e.g. Warung Bumbu Rempah" value={data.name} onChange={(e) => set("name", e.target.value)} /></div>
-              <div className="field"><label>Short description</label><textarea className="textarea" placeholder="What makes your place special?" value={data.desc} onChange={(e) => set("desc", e.target.value)} /></div>
+              <div className="field"><label htmlFor="biz-onboard-name">Business name</label><input id="biz-onboard-name" className="input" placeholder="e.g. Warung Bumbu Rempah" value={data.name} onChange={(e) => set("name", e.target.value)} /></div>
+              <div className="field"><label htmlFor="biz-onboard-desc">Short description</label><textarea id="biz-onboard-desc" className="textarea" placeholder="What makes your place special?" value={data.desc} onChange={(e) => set("desc", e.target.value)} /></div>
               <div className="grid2">
-                <div className="field"><label>Phone</label><input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+65 …" value={data.phone} onChange={(e) => set("phone", e.target.value)} /></div>
-                <div className="field"><label>WhatsApp</label><input className="input" type="tel" inputMode="tel" placeholder="+65 …" value={data.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /></div>
+                <div className="field"><label htmlFor="biz-onboard-phone">Phone</label><input id="biz-onboard-phone" className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+65 …" value={data.phone} onChange={(e) => set("phone", e.target.value)} /></div>
+                <div className="field"><label htmlFor="biz-onboard-whatsapp">WhatsApp</label><input id="biz-onboard-whatsapp" className="input" type="tel" inputMode="tel" placeholder="+65 …" value={data.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /></div>
               </div>
             </div>
           )}
@@ -474,13 +474,13 @@ export function AddListingScreen() {
                     <span className="hint" style={{ fontSize: ".78rem" }}>Pick a suggestion to auto-fill region, town & map pin{data.postal ? ` · postal ${data.postal}` : ""}.</span>
                   </div>
                   <div className="grid2">
-                    <div className="field"><label>Region</label>
-                      <select className="select" value={data.region} onChange={(e) => setData((d) => ({ ...d, region: e.target.value, town: "" }))}>
+                    <div className="field"><label htmlFor="biz-onboard-region">Region</label>
+                      <select id="biz-onboard-region" className="select" value={data.region} onChange={(e) => setData((d) => ({ ...d, region: e.target.value, town: "" }))}>
                         <option value="">Select region</option>
                         {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select></div>
-                    <div className="field"><label>Town / area</label>
-                      <select className="select" value={data.town} disabled={!data.region} onChange={(e) => set("town", e.target.value)}>
+                    <div className="field"><label htmlFor="biz-onboard-town">Town / area</label>
+                      <select id="biz-onboard-town" className="select" value={data.town} disabled={!data.region} onChange={(e) => set("town", e.target.value)}>
                         <option value="">{data.region ? "Select town" : "Pick a region first"}</option>
                         {townsInRegion(data.region).map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
                       </select></div>

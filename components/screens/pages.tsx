@@ -253,8 +253,8 @@ export function GrowthPartnerScreen() {
                   <div className="stack g16">
                     <div><span className="eyebrow">Step 1</span><h2>What are you trying to grow?</h2></div>
                     <div className="grid2">
-                      <div className="field"><label>Business name *</label><input value={form.business} onChange={(e) => set("business", e.target.value)} placeholder="e.g. Warung Bumbu Rempah" /></div>
-                      <div className="field"><label>Website or listing link</label><input value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://..." /></div>
+                      <div className="field"><label htmlFor="gp-business">Business name *</label><input id="gp-business" value={form.business} onChange={(e) => set("business", e.target.value)} placeholder="e.g. Warung Bumbu Rempah" /></div>
+                      <div className="field"><label htmlFor="gp-website">Website or listing link</label><input id="gp-website" value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://..." /></div>
                     </div>
                     <div className="field">
                       <label>Main goals *</label>
@@ -271,7 +271,7 @@ export function GrowthPartnerScreen() {
                     <div className="field"><label>Monthly marketing budget *</label><div className="option-grid">{GP_BUDGETS.map((b) => <button key={b} type="button" className={form.budget === b ? "on" : ""} onClick={() => set("budget", b)}>{b}</button>)}</div></div>
                     <div className="field"><label>When do you want to start? *</label><div className="option-grid">{GP_TIMELINES.map((t) => <button key={t} type="button" className={form.timeline === t ? "on" : ""} onClick={() => set("timeline", t)}>{t}</button>)}</div></div>
                     <div className="field"><label>What marketing are you doing now?</label><div className="option-grid">{GP_CHANNELS.map((c) => <button key={c} type="button" className={form.channels.includes(c) ? "on" : ""} onClick={() => toggle("channels", c)}>{c}</button>)}</div></div>
-                    <div className="field"><label>What has or has not worked?</label><textarea rows={4} value={form.current} onChange={(e) => set("current", e.target.value)} placeholder="Tell us about ads, social posts, offers, agencies, or what you’ve tried." /></div>
+                    <div className="field"><label htmlFor="gp-current">What has or has not worked?</label><textarea id="gp-current" rows={4} value={form.current} onChange={(e) => set("current", e.target.value)} placeholder="Tell us about ads, social posts, offers, agencies, or what you’ve tried." /></div>
                   </div>
                 )}
 
@@ -279,11 +279,11 @@ export function GrowthPartnerScreen() {
                   <div className="stack g16">
                     <div><span className="eyebrow">Step 3</span><h2>Where should we send the recommendation?</h2></div>
                     <div className="grid2">
-                      <div className="field"><label>Your name *</label><input value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
-                      <div className="field"><label>Email *</label><input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
+                      <div className="field"><label htmlFor="gp-name">Your name *</label><input id="gp-name" value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
+                      <div className="field"><label htmlFor="gp-email">Email *</label><input id="gp-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
                     </div>
-                    <div className="field"><label>Phone / WhatsApp</label><input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+65..." /></div>
-                    <div className="field"><label>Anything else we should know?</label><textarea rows={4} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Products to promote, target areas, preferred language, campaign deadlines..." /></div>
+                    <div className="field"><label htmlFor="gp-phone">Phone / WhatsApp</label><input id="gp-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+65..." /></div>
+                    <div className="field"><label htmlFor="gp-notes">Anything else we should know?</label><textarea id="gp-notes" rows={4} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Products to promote, target areas, preferred language, campaign deadlines..." /></div>
                     {state === "error" && <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>Please enter your name and a valid email.</p>}
                   </div>
                 )}
