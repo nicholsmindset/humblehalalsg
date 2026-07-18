@@ -397,8 +397,8 @@ function DiscoverRail({ dir, certifiedOnly, navigate }: { dir: ReturnType<typeof
     <>
       <div className="discover-head">
         <h2>Discover halal places</h2>
-        <div className="discover-tabs" role="tablist">
-          {tabs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
+        <div className="discover-tabs" role="group" aria-label="Filter places">
+          {tabs.map(([k, l]) => <button key={k} aria-pressed={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}
         </div>
         <button className="discover-all" onClick={() => navigate("explore", { sort })}>See all <Icon name="chevron" size={13} /></button>
       </div>

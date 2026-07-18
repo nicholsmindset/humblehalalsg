@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 export interface AddrPick {
   address: string;
@@ -78,11 +78,17 @@ export function AddressAutocomplete({
     setResults([]);
   };
 
+  const listboxId = useId();
+  const listOpen = open && (loading || results.length > 0);
   return (
     <div className="addr-ac" ref={wrap}>
       <input
         id={id}
         aria-label={ariaLabel}
+        role="combobox"
+        aria-expanded={listOpen}
+        aria-controls={listboxId}
+        aria-autocomplete="list"
         className="input"
         autoComplete="off"
         placeholder={placeholder}
@@ -90,12 +96,12 @@ export function AddressAutocomplete({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
       />
-      {open && (loading || results.length > 0) && (
-        <ul className="addr-ac-list" role="listbox">
+      {listOpen && (
+        <ul id={listboxId} className="addr-ac-list" role="listbox">
           {loading && <li className="addr-ac-empty">Searching addresses…</li>}
           {!loading &&
             results.map((r, i) => (
-              <li key={i}>
+              <li key={i} role="option" aria-selected={false}>
                 <button type="button" className="addr-ac-item" onClick={() => pick(r)}>
                   <span className="addr-ac-main">{r.building || r.road || r.address}</span>
                   <span className="addr-ac-sub">{r.address}</span>

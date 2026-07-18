@@ -120,12 +120,12 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
             </button>
           )}
         </div>
-        <div className="tools-category-pills" role="tablist" aria-label="Tool categories">
-          <button type="button" role="tab" aria-selected={category === "All"} className={category === "All" ? "on" : ""} onClick={() => setCategory("All")}>
+        <div className="tools-category-pills" role="group" aria-label="Tool categories">
+          <button type="button" aria-pressed={category === "All"} className={category === "All" ? "on" : ""} onClick={() => setCategory("All")}>
             All <span>{live.length}</span>
           </button>
           {CATEGORY_ORDER.map((cat) => (
-            <button key={cat} type="button" role="tab" aria-selected={category === cat} className={category === cat ? "on" : ""} onClick={() => setCategory(cat)}>
+            <button key={cat} type="button" aria-pressed={category === cat} className={category === cat ? "on" : ""} onClick={() => setCategory(cat)}>
               {cat} <span>{live.filter((t) => t.category === cat).length}</span>
             </button>
           ))}

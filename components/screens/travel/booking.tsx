@@ -185,12 +185,12 @@ export function TravelBookingScreen({ offerId, hotelId, hotelName, city, booking
               <form className="booking-form card" style={{ padding: 20 }} onSubmit={goToPayment}>
                 <h2 style={{ fontSize: "1.1rem", marginBottom: 14 }}>Guest details</h2>
                 <div className="form-row">
-                  <div className="field"><label>First name</label><input required value={holder.firstName} onChange={(e) => setHolder({ ...holder, firstName: e.target.value })} placeholder="As on your passport / ID" /></div>
-                  <div className="field"><label>Last name</label><input required value={holder.lastName} onChange={(e) => setHolder({ ...holder, lastName: e.target.value })} placeholder="As on your passport / ID" /></div>
+                  <div className="field"><label htmlFor="hb-first">First name</label><input id="hb-first" required value={holder.firstName} onChange={(e) => setHolder({ ...holder, firstName: e.target.value })} placeholder="As on your passport / ID" /></div>
+                  <div className="field"><label htmlFor="hb-last">Last name</label><input id="hb-last" required value={holder.lastName} onChange={(e) => setHolder({ ...holder, lastName: e.target.value })} placeholder="As on your passport / ID" /></div>
                 </div>
                 <div className="form-row">
-                  <div className="field"><label>Email</label><input required type="email" value={holder.email} onChange={(e) => setHolder({ ...holder, email: e.target.value })} placeholder="you@email.com" /></div>
-                  <div className="field"><label>Phone</label><input type="tel" inputMode="tel" value={holder.phone} onChange={(e) => setHolder({ ...holder, phone: e.target.value })} placeholder="+65 9123 4567" /></div>
+                  <div className="field"><label htmlFor="hb-email">Email</label><input id="hb-email" required type="email" value={holder.email} onChange={(e) => setHolder({ ...holder, email: e.target.value })} placeholder="you@email.com" /></div>
+                  <div className="field"><label htmlFor="hb-phone">Phone</label><input id="hb-phone" type="tel" inputMode="tel" value={holder.phone} onChange={(e) => setHolder({ ...holder, phone: e.target.value })} placeholder="+65 9123 4567" /></div>
                 </div>
                 {err && <p style={{ color: "var(--danger)", fontSize: ".9rem", margin: "10px 0" }}>{err}</p>}
                 <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={promoBusy}>

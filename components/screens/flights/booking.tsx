@@ -3,7 +3,7 @@
 /* Humble Halal — flight booking (3-step: Passenger & Contact → Seats & Bags →
    Review & Pay) with a price-hold countdown, payment mount, and PAID_FLIGHTS_ENABLED
    gating, plus the post-booking confirmation screen (with travel du‘ā). */
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon, Empty, RewardsNote, PromoCode } from "../../ui";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
@@ -30,10 +30,12 @@ function DateField({ label, d, m, y, set, future }: { label: string; d: string; 
   const value = d && m && y ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : "";
   const min = future ? isoLocal(today) : `${today.getFullYear() - 120}-01-01`;
   const max = future ? `${today.getFullYear() + 20}-12-31` : isoLocal(today);
+  const fid = useId();
   return (
     <div className="field">
-      <label>{label} <span className="req">*</span></label>
+      <label htmlFor={fid}>{label} <span className="req">*</span></label>
       <input
+        id={fid}
         type="date"
         className="date-input"
         value={value}
@@ -51,10 +53,11 @@ function DateField({ label, d, m, y, set, future }: { label: string; d: string; 
 }
 
 function CountrySelect({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const sid = useId();
   return (
     <div className="field">
-      <label>{label} <span className="req">*</span></label>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <label htmlFor={sid}>{label} <span className="req">*</span></label>
+      <select id={sid} value={value} onChange={(e) => onChange(e.target.value)}>
         {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{flagEmoji(c.code)} {c.name}</option>)}
       </select>
     </div>
@@ -251,22 +254,22 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                   <div key={i} className="card pax-card">
                     <h2>Traveller {i + 1} <span className="faint">· Adult</span></h2>
                     <div className="form-row-3">
-                      <div className="field"><label>First name <span className="req">*</span></label><input required value={p.firstName} onChange={(e) => setP(i, "firstName", e.target.value)} /></div>
-                      <div className="field"><label>Middle name</label><input placeholder="Optional" value={p.middleName} onChange={(e) => setP(i, "middleName", e.target.value)} /></div>
-                      <div className="field"><label>Last name <span className="req">*</span></label><input required value={p.lastName} onChange={(e) => setP(i, "lastName", e.target.value)} /></div>
+                      <div className="field"><label htmlFor={`pax-${i}-first`}>First name <span className="req">*</span></label><input id={`pax-${i}-first`} required value={p.firstName} onChange={(e) => setP(i, "firstName", e.target.value)} /></div>
+                      <div className="field"><label htmlFor={`pax-${i}-middle`}>Middle name</label><input id={`pax-${i}-middle`} placeholder="Optional" value={p.middleName} onChange={(e) => setP(i, "middleName", e.target.value)} /></div>
+                      <div className="field"><label htmlFor={`pax-${i}-last`}>Last name <span className="req">*</span></label><input id={`pax-${i}-last`} required value={p.lastName} onChange={(e) => setP(i, "lastName", e.target.value)} /></div>
                     </div>
                     <div className="form-row">
                       <CountrySelect label="Nationality" value={p.nationality} onChange={(v) => setP(i, "nationality", v)} />
-                      <div className="field"><label>Gender <span className="req">*</span></label><select value={p.gender} onChange={(e) => setP(i, "gender", e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></div>
+                      <div className="field"><label htmlFor={`pax-${i}-gender`}>Gender <span className="req">*</span></label><select id={`pax-${i}-gender`} value={p.gender} onChange={(e) => setP(i, "gender", e.target.value)}><option value="M">Male</option><option value="F">Female</option></select></div>
                     </div>
                     <DateField label="Date of birth" d={p.dobD} m={p.dobM} y={p.dobY} set={(k, v) => setP(i, k === "d" ? "dobD" : k === "m" ? "dobM" : "dobY", v)} />
                     <h3 className="pax-sub">Document details</h3>
                     <div className="form-row">
-                      <div className="field"><label>Document type <span className="req">*</span></label><select value={p.docType} onChange={(e) => setP(i, "docType", e.target.value)}><option value="passport">Passport</option><option value="national_id">National ID</option></select></div>
+                      <div className="field"><label htmlFor={`pax-${i}-doctype`}>Document type <span className="req">*</span></label><select id={`pax-${i}-doctype`} value={p.docType} onChange={(e) => setP(i, "docType", e.target.value)}><option value="passport">Passport</option><option value="national_id">National ID</option></select></div>
                       <CountrySelect label="Issue country" value={p.docCountry} onChange={(v) => setP(i, "docCountry", v)} />
                     </div>
                     <div className="form-row">
-                      <div className="field"><label>Document number <span className="req">*</span></label><input required value={p.docNumber} onChange={(e) => setP(i, "docNumber", e.target.value)} placeholder="Enter document number" /></div>
+                      <div className="field"><label htmlFor={`pax-${i}-docnum`}>Document number <span className="req">*</span></label><input id={`pax-${i}-docnum`} required value={p.docNumber} onChange={(e) => setP(i, "docNumber", e.target.value)} placeholder="Enter document number" /></div>
                       <DateField label="Expiry date" d={p.docExpD} m={p.docExpM} y={p.docExpY} future set={(k, v) => setP(i, k === "d" ? "docExpD" : k === "m" ? "docExpM" : "docExpY", v)} />
                     </div>
                   </div>
@@ -275,7 +278,7 @@ export function FlightBookingScreen({ offerId, from, to, date, price, currency, 
                 <div className="card pax-card">
                   <h2>Contact details</h2>
                   <div className="form-row">
-                    <div className="field"><label>Email <span className="req">*</span></label><input required type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@email.com" /></div>
+                    <div className="field"><label htmlFor="contact-email">Email <span className="req">*</span></label><input id="contact-email" required type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} placeholder="you@email.com" /></div>
                     <div className="field"><label>Phone <span className="req">*</span></label><div className="phone-grid"><span className="phone-plus">+</span><input className="phone-cc" inputMode="numeric" value={contact.phoneCc} onChange={(e) => setContact({ ...contact, phoneCc: e.target.value.replace(/\D/g, "") })} aria-label="Country code" title="Country code" /><input type="tel" inputMode="numeric" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} placeholder="Phone number" aria-label="Phone number" /></div></div>
                   </div>
                 </div>
