@@ -63,13 +63,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "event_over" }, { status: 409 });
   }
 
-  // Capacity gate (capacity 0 = unlimited). Final race bounded by the atomic RPC.
+  // Capacity gate (capacity 0 = unlimited). The read-check here is a cheap
+  // early-out for UX; the authoritative, race-safe guard is the atomic
+  // reserve_event_capacity RPC below.
   const capacity = Number(row.capacity) || 0;
   const taken = Number(row.taken) || 0;
   if (capacity > 0 && taken + qty > capacity) {
     const left = Math.max(0, capacity - taken);
     return NextResponse.json({ ok: false, reason: left > 0 ? "insufficient_capacity" : "sold_out", left }, { status: 409 });
   }
+
+  // RESERVE seats atomically and capacity-aware BEFORE creating the order. The
+  // old path incremented `taken` unconditionally (no capacity clause), so
+  // concurrent free RSVPs could oversell a nearly-full event (the read-check
+  // above is a TOCTOU on its own). reserve_event_capacity commits taken+=qty
+  // only when it stays within capacity, in one statement (0061). Pre-0061
+  // environments fall back to the unconditional counter.
+  let reserved = false;
+  const { data: gotSeats, error: resErr } = await supa.rpc("reserve_event_capacity", { p_event_id: row.id, p_qty: qty });
+  if (resErr) {
+    const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: row.id, p_qty: qty });
+    if (incErr) await supa.from("events").update({ taken: taken + qty }).eq("id", row.id);
+    reserved = true;
+  } else if (gotSeats !== true) {
+    return NextResponse.json({ ok: false, reason: "sold_out", left: 0 }, { status: 409 });
+  } else {
+    reserved = true;
+  }
+  const releaseHold = async () => {
+    if (!reserved) return;
+    try { await supa.rpc("decrement_event_taken", { p_event_id: row.id, p_qty: qty }); } catch { /* clamped RPC */ }
+  };
 
   const { data: ord, error } = await supa
     .from("orders")
@@ -86,23 +110,24 @@ export async function POST(req: Request) {
     })
     .select("id")
     .single();
-  if (error || !ord) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+  if (error || !ord) { await releaseHold(); return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 }); }
 
-  // Issue QR tickets + decrement capacity atomically (fall back to read+write).
-  // qr_refs derive from the emailed ref; on the (rare) unique collision of the
-  // 6-char code, retry with a fresh ref so the insert always lands.
+  // Issue QR tickets. qr_refs derive from the emailed ref; on the (rare) unique
+  // collision of the 6-char code, retry with a fresh ref so the insert always
+  // lands. Capacity is already reserved above; roll it (and the order) back if
+  // tickets can't be issued.
   let issuedRef = ref;
   for (let attempt = 0; attempt < 3; attempt++) {
     const tix = ticketRefs(issuedRef, qty).map((qr) => ({ order_id: ord.id, event_id: row.id, tier: "RSVP", qr_ref: qr }));
     const { error: tixErr } = await supa.from("tickets").insert(tix);
     if (!tixErr) break;
     if (tixErr.code !== "23505" || attempt === 2) {
+      await supa.from("orders").delete().eq("id", ord.id);
+      await releaseHold();
       return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
     }
     issuedRef = makeOrderRef("RSVP");
   }
-  const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: row.id, p_qty: qty });
-  if (incErr) await supa.from("events").update({ taken: taken + qty }).eq("id", row.id);
 
   // Confirmation email to the RSVP submitter (best-effort — never affects response).
   const eventTitle = String((row as { title?: string }).title || mockEv?.title || "your event");

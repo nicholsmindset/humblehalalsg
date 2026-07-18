@@ -119,19 +119,30 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (a.ev.slug) await recordRedirect(`/events/${a.ev.slug}`, eventHub(a.ev.display), "event");
   await admin.from("tickets").update({ status: "cancelled" }).eq("event_id", id).eq("status", "valid");
 
-  // Refund paid orders + donations for this event. We only mark a row refunded
-  // when Stripe actually reverses the charge — never optimistically — so the DB
-  // can't claim "refunded" while the customer's money is still held. The
-  // charge.refunded webhook reverses tickets/capacity; idempotency keys make a
-  // double-fire (cancel + manual refund) safe.
+  // Refund paid orders + donations for this event. We only tell a buyer they were
+  // "refunded" when Stripe actually reversed *their* charge — a best-effort refund
+  // that failed (or a missing Stripe config) must never send a "you've been
+  // refunded" email while the money is still held. The charge.refunded webhook
+  // reverses tickets/capacity; idempotency keys make a double-fire (cancel +
+  // manual refund) safe.
+  const refundedEmails = new Set<string>();   // buyers whose paid order(s) reversed OK
+  const failedEmails = new Set<string>();      // buyers with a paid order we could NOT reverse
+  const failures: string[] = [];               // human-readable summary for the ops alert
+  const stripe = getStripe();
+  if (!stripe) failures.push("Stripe not configured — no refunds were issued.");
+
   try {
-    const stripe = getStripe();
     if (stripe) {
       const { data: paid } = await admin
-        .from("orders").select("id, stripe_payment_intent, payout_status, stripe_transfer_id")
+        .from("orders").select("id, buyer_email, stripe_payment_intent, payout_status, stripe_transfer_id")
         .eq("event_id", id).gt("amount_cents", 0).neq("status", "refunded");
       for (const o of paid || []) {
-        if (!o.stripe_payment_intent) continue;
+        const email = (o.buyer_email as string | null) || "";
+        if (!o.stripe_payment_intent) {
+          if (email) failedEmails.add(email);
+          failures.push(`order ${o.id}: no payment reference to refund`);
+          continue;
+        }
         try {
           await stripe.refunds.create(
             { payment_intent: o.stripe_payment_intent as string },
@@ -143,8 +154,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
           // organiser keeps the money.
           const reversal = await reverseOrderTransferIfPaid(stripe, admin, o);
           if (reversal === "not_needed") await admin.from("orders").update({ payout_status: "none" }).eq("id", o.id);
+          if (email) refundedEmails.add(email);
         } catch (err) {
           console.error("event-cancel: order refund failed", o.id, err);
+          if (email) failedEmails.add(email);
+          failures.push(`order ${o.id}: refund failed`);
         }
       }
 
@@ -154,7 +168,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         .eq("event_id", id).eq("status", "paid");
       let anyDonationRefunded = false;
       for (const d of dons || []) {
-        if (!d.stripe_payment_intent) continue;
+        if (!d.stripe_payment_intent) { failures.push(`donation ${d.id}: no payment reference to refund`); continue; }
         try {
           await stripe.refunds.create(
             { payment_intent: d.stripe_payment_intent as string },
@@ -164,6 +178,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
           anyDonationRefunded = true;
         } catch (err) {
           console.error("event-cancel: donation refund failed", d.id, err);
+          failures.push(`donation ${d.id}: refund failed`);
         }
       }
       if (anyDonationRefunded) {
@@ -171,23 +186,40 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         await admin.from("events").update({ display: { ...cur, donationRaisedCents: 0 } }).eq("id", id);
       }
     }
-  } catch { /* refunds best-effort */ }
+  } catch (err) {
+    console.error("event-cancel: refund sweep failed", id, err);
+    failures.push("refund sweep aborted unexpectedly — verify all orders in Stripe");
+  }
 
-  // Email ticket holders (best-effort).
+  // Email ticket holders the TRUTH: only buyers whose payment actually reversed
+  // hear "you've been refunded"; everyone else gets a plain cancellation notice.
+  // Best-effort — never affects the response.
   try {
     const { data: orders } = await admin.from("orders").select("buyer_email").eq("event_id", id).not("buyer_email", "is", null);
     const emails = [...new Set((orders || []).map((o) => o.buyer_email as string).filter(Boolean))];
-    const title = (a.ev.display as Record<string, unknown>)?.title || "the event";
-    const { subject, html } = eventCancelledEmail({ eventTitle: String(title), refunded: true });
+    const title = String((a.ev.display as Record<string, unknown>)?.title || "the event");
     for (const to of emails.slice(0, 500)) {
-      await sendEmail({
-        to,
-        subject,
-        template: "event-cancelled",
-        html,
-      }).catch(() => {});
+      const wasRefunded = refundedEmails.has(to) && !failedEmails.has(to);
+      const { subject, html } = eventCancelledEmail({ eventTitle: title, refunded: wasRefunded });
+      await sendEmail({ to, subject, template: "event-cancelled", html }).catch(() => {});
     }
   } catch { /* notifications best-effort */ }
+
+  // If ANY refund could not be issued, alert ops so a human makes good — a silent
+  // failure would otherwise leave a buyer un-refunded with no signal.
+  if (failures.length) {
+    try {
+      const inbox = process.env.CONTACT_INBOX || "hello@humblehalal.com";
+      const rawTitle = String((a.ev.display as Record<string, unknown>)?.title || id);
+      const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] || c));
+      await sendEmail({
+        to: inbox,
+        subject: `⚠️ Event cancelled — ${failures.length} refund(s) need manual action: ${rawTitle}`,
+        template: "event-cancel-refund-alert",
+        html: `<p>Event <strong>${esc(rawTitle)}</strong> (id ${esc(id)}) was cancelled but ${failures.length} refund action(s) did not complete automatically:</p><ul>${failures.map((f) => `<li>${esc(f)}</li>`).join("")}</ul><p>Please review in Stripe and refund manually where needed. Affected buyers were told the event was cancelled but NOT that they were refunded.</p>`,
+      }).catch(() => {});
+    } catch { /* ops alert best-effort */ }
+  }
 
   revalidatePublic(["/events", ...(a.ev.slug ? [`/events/${a.ev.slug}`] : [`/events/${id}`])]);
   return NextResponse.json({ ok: true, cancelled: true });
