@@ -5,7 +5,7 @@ import { methodLines } from "@/lib/halal-status-content";
 /* Side panel: branded monogram (never a stock photo — same policy as
    BusinessMediaFallback) + "How we reached this answer" checklist. */
 
-export function BrandMonogram({ brand, category, tone }: { brand: string; category: string; tone: string }) {
+export function BrandMonogram({ brand, category, tone, logo }: { brand: string; category: string; tone: string; logo?: string }) {
   const initials = brand
     .split(/\s+/)
     .map((w) => w.replace(/[^A-Za-z0-9]/g, "")[0])
@@ -15,7 +15,14 @@ export function BrandMonogram({ brand, category, tone }: { brand: string; catego
     .toUpperCase();
   return (
     <div className={`hcx-monogram hcx-tone-${tone} hh-pattern`} role="img" aria-label={`${brand} — ${category}`}>
-      <span className="hcx-monogram-letter">{initials}</span>
+      {logo ? (
+        // A CMS-uploaded brand logo replaces the monogram letters when present.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="hcx-monogram-logo" src={logo} alt={brand} width={72} height={72}
+          style={{ width: 72, height: 72, objectFit: "contain", borderRadius: 12, background: "#fff", padding: 8 }} />
+      ) : (
+        <span className="hcx-monogram-letter">{initials}</span>
+      )}
       <span className="hcx-monogram-cat">{category}</span>
     </div>
   );

@@ -142,6 +142,7 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         lastmod: now,
         changefreq: "monthly",
         priority: 0.6,
+        image: b.logo || undefined,
       }));
 
     case "events": {

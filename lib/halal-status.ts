@@ -30,6 +30,8 @@ export interface BrandHalal {
   source: string;
   lastChecked: string; // human-readable, e.g. "June 2026"
   aliases?: string[];
+  /** Optional brand logo (CMS upload → /brands/…); shown in the page header. */
+  logo?: string;
   /* Curated depth (all optional — pages degrade to per-status defaults from
      lib/halal-status-content.ts when absent, so CMS-added brands never render thin). */
   certifiedSince?: string; // "1992" — certified/partial only; extra details-table row
