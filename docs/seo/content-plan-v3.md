@@ -111,7 +111,10 @@ The 5 mall pages render but stay `noindex` until each has ≥3 published `busine
 
 ### Phase 2 — Scale the factories (weeks 5–10)
 - WS-B: remaining ~15 location pages (+listings), next ~30 brand pages, hawker centres (Maxwell, Wisma Geylang Serai).
-- WS-A: 2nd optimization wave; create `AREA_PROFILES` for every area still on the fallback formula.
+- WS-A: 2nd optimization wave ✅ — cuisine factory complete (19/19) and **8 district AreaProfiles added**
+  (arab-street, ang-mo-kio, changi-airport, holland-village, pasir-ris, sentosa, botanic-gardens,
+  clarke-quay), so 23/23 EXTRA_AREAS districts now have hand-written intro/landmarks/FAQ. All 12
+  CATEGORY_CONTENT pages were already authored.
 - WS-C: cuisine-gap pages (Middle-Eastern, Vietnamese, Peranakan) + roundups; mini-buffet/catering guides; delivery hub.
 
 ### Phase 3 — Depth, seasonal & long-tail (weeks 11+, ongoing)

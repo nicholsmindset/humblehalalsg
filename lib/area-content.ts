@@ -335,6 +335,168 @@ export const AREA_PROFILES: Record<string, AreaProfile> = {
       { q: "Where can I eat halal near Coney Island?", a: "Northshore Plaza and Punggol Settlement are the closest options, though halal choices at the Settlement are limited — packing from Waterway Point before the walk is the safer plan." },
     ],
   },
+
+  "arab-street": {
+    id: "arab-street",
+    name: "Arab Street",
+    coords: { lat: 1.3021, lng: 103.8595 },
+    intro:
+      "Arab Street and the surrounding Kampong Glam quarter are the historic heart of Muslim Singapore, and the food follows. This is the island's densest strip for Middle Eastern, Turkish, Arab and Malay cooking — mezze and shawarma along Bussorah Street, biryani and murtabak near the mosque, and shisha cafés spilling onto Haji Lane after dark. Masjid Sultan, the golden-domed national landmark, anchors the district, so prayer is never far and the whole quarter runs on Muslim-friendly rhythms. Much of the food here is Muslim-run and pork-free by default, but 'default' is not 'certified' — so this guide scores each spot for halal confidence, flagging what carries a MUIS certificate versus what is Muslim-owned or self-declared. A short walk from Bugis MRT, Arab Street is the easiest place in Singapore to eat halal across cuisines in one evening, from a quick kebab to a sit-down Turkish spread.",
+    mrts: ["Bugis", "Nicoll Highway"],
+    landmarks: [
+      { name: "Masjid Sultan", type: "mosque" },
+      { name: "Bussorah Street", type: "heritage" },
+      { name: "Haji Lane", type: "heritage" },
+      { name: "Kampong Glam", type: "heritage" },
+      { name: "Malay Heritage Centre", type: "attraction" },
+    ],
+    faqs: [
+      { q: "Is the food at Arab Street halal?", a: "Most eateries around Arab Street and Kampong Glam are Muslim-run and pork-free, and many are MUIS-certified. It is still worth confirming the specific outlet's certificate on the MUIS HalalSG register or via its Humble Halal badge, especially for newer cafés." },
+      { q: "What food is Arab Street known for?", a: "Middle Eastern and Turkish (shawarma, kebab, mezze), Arab biryani and murtabak, and Malay dishes — the widest halal cuisine mix in one walkable district in Singapore." },
+      { q: "Is there a mosque at Arab Street?", a: "Yes — Masjid Sultan, the golden-domed national monument on Muscat Street, sits at the centre of the quarter, so prayer facilities are steps from most eateries." },
+    ],
+  },
+
+  "ang-mo-kio": {
+    id: "ang-mo-kio",
+    name: "Ang Mo Kio",
+    coords: { lat: 1.3691, lng: 103.8454 },
+    intro:
+      "Ang Mo Kio is one of the North-East's most reliable heartland food towns, and its halal options are spread across malls and markets rather than one strip. AMK Hub, right on the MRT, is the natural anchor — its food court and restaurants carry halal-certified chains and family spots — while Jubilee Square and Djitsun Mall add more choice around the bus interchange. For traditional flavours, the AMK 628 Market & Food Centre and the Teck Ghee blocks keep Malay and Muslim-owned stalls that locals have eaten at for decades. Masjid Al-Muttaqin serves the estate, anchoring the Friday crowd. With the North-South line and the Cross Island line arriving, Ang Mo Kio is only getting more connected. This guide tracks the certified and Muslim-owned options across the town centre and the quieter blocks, each with a halal-confidence score so you can tell MUIS-certified from self-declared before you go.",
+    mrts: ["Ang Mo Kio", "Mayflower"],
+    landmarks: [
+      { name: "AMK Hub", type: "mall", venueId: "amk-hub" },
+      { name: "Jubilee Square", type: "mall" },
+      { name: "Djitsun Mall", type: "mall" },
+      { name: "AMK 628 Market & Food Centre", type: "hawker" },
+      { name: "Masjid Al-Muttaqin", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food at AMK Hub?", a: "Yes — AMK Hub has halal-certified outlets across its food court and restaurants. Check each one's certificate on the MUIS HalalSG register, or look for the badge on its Humble Halal listing." },
+      { q: "Where can I find traditional halal food in Ang Mo Kio?", a: "The AMK 628 Market & Food Centre and the older Teck Ghee blocks have long-running Malay and Muslim-owned stalls, best visited for breakfast and lunch." },
+      { q: "Is there a mosque in Ang Mo Kio?", a: "Yes — Masjid Al-Muttaqin serves the Ang Mo Kio area, so many nearby eateries are used to the Friday-prayer lunch crowd." },
+    ],
+  },
+
+  "changi-airport": {
+    id: "changi-airport",
+    name: "Changi Airport",
+    coords: { lat: 1.3644, lng: 103.9915 },
+    intro:
+      "Changi Airport is one of the easiest places in Singapore to eat halal, whether you're flying or just visiting for the day. Jewel Changi Airport, connected to Terminal 1, holds the biggest concentration — its food halls and restaurants carry a strong line-up of halal-certified outlets — while all four terminals have halal options in their public and transit areas. Prayer rooms are available across the terminals, making Changi genuinely convenient for Muslim travellers. Because menus and operators change often at the airport, and transit-area access depends on your boarding pass, it pays to check before you commit: this guide scores each outlet for halal confidence and points to the MUIS HalalSG register for the current certificate. Whether you need a full meal before a long-haul flight, a quick bite at Jewel under the Rain Vortex, or suhoor timing around an early departure, the verified options are tracked here.",
+    mrts: ["Changi Airport", "Expo"],
+    landmarks: [
+      { name: "Jewel Changi Airport", type: "mall", venueId: "jewel-changi-airport" },
+      { name: "Terminal 1–4 food halls", type: "attraction" },
+      { name: "Changi Airport prayer rooms", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food at Changi Airport?", a: "Yes — Jewel and all four terminals have halal-certified outlets in their public and (some) transit areas. Menus and operators change often, so confirm the specific outlet on the MUIS HalalSG register before you rely on it." },
+      { q: "Are there prayer rooms at Changi Airport?", a: "Yes — prayer rooms are available across the terminals (public and transit sides). Locations are signposted and listed on the airport's own facilities guide." },
+      { q: "Where is the most halal food at Changi?", a: "Jewel Changi Airport (linked to Terminal 1) has the widest choice of halal-certified restaurants and food-hall stalls in one place." },
+    ],
+  },
+
+  "holland-village": {
+    id: "holland-village",
+    name: "Holland Village",
+    coords: { lat: 1.3116, lng: 103.7965 },
+    intro:
+      "Holland Village is a compact, café-heavy enclave in the west-central belt, popular for brunch, coffee and relaxed dining. It skews international and expat, so halal-certified spots are fewer here than in the heartlands — but they do exist, and the newer One Holland Village development plus Raffles Holland V and Holland Road Shopping Centre have broadened the choice. With its own Circle Line station and Buona Vista a stop away, 'Holland V' is an easy meet-up point; the trick is knowing which cafés and restaurants are Muslim-friendly before you sit down. This guide scores the verified halal and Muslim-owned options in and around the village, flags what's MUIS-certified versus self-declared, and — where on-site choices are thin — points you to the nearby Buona Vista and one-north clusters. Treat unmarked cafés with the usual caution: many serve alcohol and some use non-halal ingredients, so check the badge first.",
+    mrts: ["Holland Village", "Buona Vista"],
+    landmarks: [
+      { name: "One Holland Village", type: "mall" },
+      { name: "Raffles Holland V", type: "mall" },
+      { name: "Holland Road Shopping Centre", type: "mall" },
+      { name: "Holland Village Market & Food Centre", type: "hawker" },
+    ],
+    faqs: [
+      { q: "Is there halal food in Holland Village?", a: "Yes, but fewer than in the heartlands — Holland Village is café- and expat-oriented, and many outlets serve alcohol or aren't certified. Use this page to find the verified halal and Muslim-owned options, and confirm certificates on the MUIS HalalSG register." },
+      { q: "Which Holland Village mall has halal options?", a: "One Holland Village and Raffles Holland V are the newest and carry more halal-certified outlets; Holland Road Shopping Centre adds a few more. Check individual badges before you go." },
+      { q: "Where else can I eat halal near Holland Village?", a: "Buona Vista and the one-north area, one MRT stop away, have additional halal-certified options if the village is quiet." },
+    ],
+  },
+
+  "pasir-ris": {
+    id: "pasir-ris",
+    name: "Pasir Ris",
+    coords: { lat: 1.3721, lng: 103.9493 },
+    intro:
+      "Pasir Ris pairs seaside leisure with solid heartland halal food. White Sands mall, directly at the MRT, is the everyday anchor, with halal-certified chains and a food court, while the newer Pasir Ris Mall adds more choice at the interchange. The real draw for families is the coast: Pasir Ris Park and the Downtown East resort strip (with E!Hub and Wild Wild Wet nearby) make this a weekend destination, and the Pasir Ris Central Hawker Centre brings modern hawker dining to the town centre. Malay and Muslim-owned stalls are woven through the estate, and Masjid Al-Istighfar serves the community off Pasir Ris Street 51. Whether you want a quick meal before the beach, a barbecue-supply run for the chalets, or dinner after a day at Downtown East, this guide tracks the verified halal and Muslim-owned options, each scored so you know what's MUIS-certified before you order.",
+    mrts: ["Pasir Ris", "Pasir Ris East"],
+    landmarks: [
+      { name: "White Sands", type: "mall" },
+      { name: "Pasir Ris Mall", type: "mall" },
+      { name: "Pasir Ris Central Hawker Centre", type: "hawker" },
+      { name: "Downtown East", type: "attraction" },
+      { name: "Pasir Ris Park", type: "park" },
+      { name: "Masjid Al-Istighfar", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food at Pasir Ris / White Sands?", a: "Yes — White Sands and Pasir Ris Mall carry halal-certified outlets across their food courts and restaurants. Confirm each certificate on the MUIS HalalSG register or via the Humble Halal badge." },
+      { q: "Where can I eat halal near Downtown East?", a: "The Pasir Ris town centre (White Sands, Pasir Ris Mall and the Central Hawker Centre) is the closest cluster; some outlets within Downtown East are halal-certified too — check the badges." },
+      { q: "Is there a mosque in Pasir Ris?", a: "Yes — Masjid Al-Istighfar serves the Pasir Ris area, off Pasir Ris Street 51." },
+    ],
+  },
+
+  sentosa: {
+    id: "sentosa",
+    name: "Sentosa",
+    coords: { lat: 1.2494, lng: 103.8303 },
+    intro:
+      "Sentosa is a resort island, so eating halal here is about knowing where to look rather than assuming. Resorts World Sentosa carries the biggest concentration of halal-certified restaurants and food-hall outlets, and pockets of the beach and attraction zones have Muslim-friendly options — but many standalone bars and beach clubs are not suitable, so it pays to plan. The gateway is VivoCity at HarbourFront, which has a deep line-up of halal-certified eateries; many visitors eat there before crossing via the Sentosa Express or boardwalk. This guide scores the verified halal and Muslim-owned options on the island and at the VivoCity gateway, flagging MUIS-certified versus self-declared, so a day of beaches, Universal Studios or the cable car doesn't mean going hungry. When on-island choices near your spot are thin, the simplest move is to eat at VivoCity on the way in or out.",
+    mrts: ["HarbourFront", "Sentosa Express"],
+    landmarks: [
+      { name: "Resorts World Sentosa", type: "attraction" },
+      { name: "VivoCity (gateway)", type: "mall", venueId: "vivocity" },
+      { name: "Sentosa beaches", type: "attraction" },
+      { name: "Universal Studios Singapore", type: "attraction" },
+    ],
+    faqs: [
+      { q: "Is there halal food on Sentosa?", a: "Yes, but it's concentrated — Resorts World Sentosa has the most halal-certified outlets, with some Muslim-friendly options in the attraction and beach zones. Many standalone bars and beach clubs are not suitable, so check badges and the MUIS register." },
+      { q: "Where should I eat halal before going to Sentosa?", a: "VivoCity at HarbourFront, the island's gateway, has a wide range of halal-certified restaurants and food-hall stalls — many visitors eat there before crossing over." },
+      { q: "Are there prayer facilities near Sentosa?", a: "The most convenient options are around HarbourFront/VivoCity on the mainland side; check the resort's guest services for prayer-space provisions on the island." },
+    ],
+  },
+
+  "botanic-gardens": {
+    id: "botanic-gardens",
+    name: "Botanic Gardens",
+    coords: { lat: 1.3138, lng: 103.8159 },
+    intro:
+      "The Singapore Botanic Gardens — a UNESCO World Heritage Site — is a place to walk first and eat second, and halal options right at the gates are limited. The dining inside and immediately around the Gardens skews café and fine-dining, and much of it is neither certified nor alcohol-free, so Muslim visitors are better off planning around the edges. Cluny Court by the Bukit Timah gate has a few options, and the Botanic Gardens and Napier MRT stations put you one or two stops from far richer halal clusters at Orchard and along the Downtown Line. This guide is honest about the on-site gap: it scores the verified halal and Muslim-owned options nearby, and points to the closest reliable clusters so you can pair a morning at the Gardens with a proper halal meal without a long detour. As always, check the badge before you sit down — 'garden café' rarely means certified.",
+    mrts: ["Botanic Gardens", "Napier", "Stevens"],
+    landmarks: [
+      { name: "Singapore Botanic Gardens", type: "park" },
+      { name: "National Orchid Garden", type: "attraction" },
+      { name: "Cluny Court", type: "mall" },
+    ],
+    faqs: [
+      { q: "Is there halal food at the Botanic Gardens?", a: "On-site halal options are limited — the Gardens' cafés and restaurants are mostly uncertified and some serve alcohol. Check any outlet's certificate on the MUIS HalalSG register, and consider eating at a nearby cluster instead." },
+      { q: "Where can I eat halal near the Botanic Gardens?", a: "Orchard (a couple of MRT stops away) and the Downtown Line stations have far more halal-certified choices. Packing a picnic from a halal outlet before your visit is also a popular option." },
+      { q: "Can I bring my own food to the Botanic Gardens?", a: "Yes — the Gardens are picnic-friendly, which makes bringing halal food from elsewhere an easy workaround for the limited on-site options." },
+    ],
+  },
+
+  "clarke-quay": {
+    id: "clarke-quay",
+    name: "Clarke Quay",
+    coords: { lat: 1.2906, lng: 103.8465 },
+    intro:
+      "Clarke Quay is best known for riverside nightlife, so halal-conscious diners need to choose carefully — a large share of the quay's venues are bars and clubs, and many restaurants serve alcohol. That said, the wider Singapore River area is more halal-friendly than its reputation suggests: Central Mall and the nearby Riverside and Hong Lim precincts carry halal-certified outlets, and Chinatown's deep halal clusters are a short walk or one MRT stop away. With Clarke Quay and Fort Canning stations on the North-East and Downtown lines, it's an easy pivot from the river to better options. This guide scores the verified halal and Muslim-owned spots in and around Clarke Quay, is upfront about where the gaps are, and points you to the closest reliable clusters — so an evening by the river can still end with a halal meal you can trust. Check the badge first; riverside 'restaurant' usually means a full bar too.",
+    mrts: ["Clarke Quay", "Fort Canning", "Chinatown"],
+    landmarks: [
+      { name: "Clarke Quay", type: "attraction" },
+      { name: "Central Mall", type: "mall" },
+      { name: "Singapore River", type: "attraction" },
+      { name: "Hong Lim Market & Food Centre", type: "hawker" },
+    ],
+    faqs: [
+      { q: "Is there halal food at Clarke Quay?", a: "Some — but be selective. Much of Clarke Quay is bars and alcohol-serving restaurants. Central Mall and the nearby precincts have halal-certified outlets; confirm each on the MUIS HalalSG register or via its Humble Halal badge." },
+      { q: "Where can I eat halal near Clarke Quay?", a: "Chinatown, one MRT stop or a short walk away, has far deeper halal clusters, and Hong Lim Market & Food Centre has Muslim-owned stalls. These are the safer bets for a reliable halal meal." },
+      { q: "Is Clarke Quay suitable for Muslim visitors?", a: "It's primarily a nightlife district, so plan around it — enjoy the riverside walk, but choose your dining from the verified halal options here or in adjacent Chinatown." },
+    ],
+  },
 };
 
 /** Profile for an area-page id (returns undefined for areas without one). */
