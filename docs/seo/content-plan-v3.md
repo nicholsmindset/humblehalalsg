@@ -48,7 +48,7 @@ tracker for the content roadmap — five workstreams, a "do-now" tranche and a p
 |----|------|----------------|--------|
 | WS-B | Ingredient batch — E-numbers already covered; added lard, mirin, shortening, whey, vanilla extract (indexable, cited) | ~1,550 / KD 0 | ✅ Done |
 | WS-D/C | "What is Halal? Meaning, Logo & MUIS Certification" explainer | `halal meaning` 600, `what is halal`, `halal logo` 650 | ⬜ In progress |
-| WS-B | First ~20 KD-0 brand pages (verified: trending + highest-SV first) | ~20k / KD 0–2 | ⬜ Queued |
+| WS-B | Brand pages — batch 1 shipped (8 web-verified): PastaMania, Poulet, Soup Spoon, Namu Bulgogi (certified); Sushi Tei, Oriental Kopi (no-pork); IKEA (partial); Astons (not-cert). Each-a-Cup/Mixue held back — conflicting sources. | ~20k / KD 0–2 | 🟡 Batch 1 of ~3 done |
 | WS-A | Optimize top ~10 existing pages (Orchard/Tampines/Jurong/Bugis + Korean/Japanese/Western/Dessert cuisine + catering hub) | "Optimise" rows | ⬜ Queued |
 | WS-B | First 5 location page objects + seed listings (ION, MBS, Parkway Parade, Raffles City, Star Vista) | ~1,900 / KD 0 | ⬜ Queued (needs directory data) |
 | WS-C | 3 biggest-gap guides (Best Halal Cafés, Halal Dessert Guide, Halal Korean/BBQ) | ~4,400 / KD 0–26 | ⬜ Queued |

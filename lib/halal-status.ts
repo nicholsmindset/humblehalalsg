@@ -298,6 +298,48 @@ export const brands: BrandHalal[] = [
     answer: "Takagi Ramen is not MUIS halal-certified. Its ramen commonly uses pork-based broth and pork chashu, so it is not suitable for Muslim diners. For halal ramen in Singapore, choose a MUIS-certified outlet and verify it on the HalalSG register.",
     aliases: ["takagi ramen singapore"],
   },
+  // ── v3 brand fan-out (keyword-research-v3) — statuses verified against MUIS
+  //    HalalSG + public brand statements, July 2026. Re-verify per outlet. ──
+  {
+    slug: "pastamania", brand: "PastaMania", category: "Italian restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — every PastaMania outlet in Singapore is MUIS halal-certified, covering its pasta, pizza, baked rice and desserts. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["pasta mania", "pastamania singapore"],
+  },
+  {
+    slug: "poulet", brand: "Poulet", category: "French rotisserie restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all Poulet outlets in Singapore have been MUIS halal-certified since November 2020, so its signature French roast chicken and sides are halal. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["poulet singapore", "poulet french"],
+  },
+  {
+    slug: "soup-spoon", brand: "The Soup Spoon", category: "Soup & café chain", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all The Soup Spoon (and Soup Spoon Union) outlets in Singapore have been MUIS halal-certified since June 2019, with alcohol-containing soups reformulated. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["the soup spoon", "soup spoon union", "soupspoon"],
+  },
+  {
+    slug: "namu-bulgogi", brand: "Namu Bulgogi", category: "Korean BBQ restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Namu Bulgogi is MUIS halal-certified and bills itself as Singapore's first halal Korean oakwood smoke-grill, with outlets including Tampines 1, Hillion Mall and Northpoint City. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["namu bulgogi", "namu korean", "namu bbq"],
+  },
+  {
+    slug: "sushi-tei", brand: "Sushi Tei", category: "Japanese restaurant", status: "no-pork", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Sushi Tei is not MUIS halal-certified in Singapore. The chain states it serves no pork and no lard, but it is not on the MUIS HalalSG register and some items may use mirin or sake. 'No pork, no lard' is self-declared and is not halal certification — verify on MUIS HalalSG.",
+    aliases: ["sushi tei singapore"],
+  },
+  {
+    slug: "oriental-kopi", brand: "Oriental Kopi", category: "Malaysian kopitiam & café", status: "no-pork", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Oriental Kopi's Singapore outlets are not MUIS halal-certified — only its Malaysian outlets hold JAKIM certification, which does not apply here. The Singapore menu is stated to be pork-free, but it is not on the MUIS HalalSG register, so treat it as no-pork, not certified, and verify on MUIS HalalSG.",
+    aliases: ["oriental kopi singapore", "oriental kopi bugis"],
+  },
+  {
+    slug: "ikea", brand: "IKEA", category: "Swedish restaurant & café", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — it depends on the store. IKEA Tampines runs a MUIS halal-certified restaurant line (Line 3) serving halal meatballs and mains, while stores such as IKEA Alexandra do not offer halal-certified food. Check the specific store and confirm the current certificate on the MUIS HalalSG register.",
+    aliases: ["ikea restaurant", "ikea menu", "ikea tampines", "ikea meatballs"],
+  },
+  {
+    slug: "astons", brand: "Astons", category: "Western steakhouse", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Astons Specialities is not halal — its menu includes pork and alcohol and its outlets are not MUIS-certified. For a halal alternative, the same group runs ANDES by Astons, a separate halal-certified steak-and-Western brand — confirm ANDES outlets on the MUIS HalalSG register.",
+    aliases: ["astons specialities", "aston", "andes by astons"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
