@@ -113,8 +113,6 @@ export const postSchedule: ScheduledPost[] = [
   { publishDate: "2026-09-22", slug: "is-mirin-halal", title: "Is Mirin Halal? Cooking With Japanese Rice Wine", category: "halal-questions", template: "T6", primaryKeyword: "is mirin halal", volume: 70, kd: 0, status: "queued" },
   { publishDate: "2026-09-23", slug: "halal-food-bali-guide", title: "Halal Food in Bali: Eating Well in Kuta, Seminyak & Ubud", category: "muslim-travel", template: "T4", primaryKeyword: "halal food in bali", volume: 70, kd: 0, status: "queued" },
   { publishDate: "2026-09-24", slug: "women-only-gym-singapore", title: "Women-Only & Muslimah Gyms in Singapore", category: "muslim-services", template: "T7", primaryKeyword: "women only gym singapore", volume: 70, kd: 0, status: "queued" },
-  // ── v3 extension (keyword-research-v3): cornerstone GEO + gap guides ────────
-  { publishDate: "2026-09-25", slug: "what-is-halal-meaning-singapore", title: "What Is Halal? Meaning, the Halal Logo & MUIS Certification", category: "halal-basics", template: "T5", primaryKeyword: "halal meaning", volume: 600, kd: 15, status: "seeded" },
 ];
 
 /** The publish gate used by lib/cms-blog.ts. A post is live when it is Published,

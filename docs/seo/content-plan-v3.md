@@ -47,11 +47,28 @@ tracker for the content roadmap — five workstreams, a "do-now" tranche and a p
 | WS | Item | Target SV / KD | Status |
 |----|------|----------------|--------|
 | WS-B | Ingredient batch — E-numbers already covered; added lard, mirin, shortening, whey, vanilla extract (indexable, cited) | ~1,550 / KD 0 | ✅ Done |
-| WS-D/C | "What is Halal? Meaning, Logo & MUIS Certification" explainer | `halal meaning` 600, `what is halal`, `halal logo` 650 | ⬜ In progress |
+| WS-D/C | "What is Halal?" explainer — **CANCELLED (reverted)**: duplicates the already-published legacy post `what-is-halal-singapore`. See coverage correction below. | — | ❌ Reverted |
 | WS-B | Brand pages — batch 1 shipped (8 web-verified): PastaMania, Poulet, Soup Spoon, Namu Bulgogi (certified); Sushi Tei, Oriental Kopi (no-pork); IKEA (partial); Astons (not-cert). Each-a-Cup/Mixue held back — conflicting sources. | ~20k / KD 0–2 | 🟡 Batch 1 of ~3 done |
-| WS-A | Optimize top ~10 existing pages (Orchard/Tampines/Jurong/Bugis + Korean/Japanese/Western/Dessert cuisine + catering hub) | "Optimise" rows | ⬜ Queued |
+| WS-A | Enriched Korean/Japanese/Western/Dessert cuisine *pSEO* pages (lookFor + considerations + 4 FAQ each) — distinct from the legacy blog roundups (pSEO owns the transactional head, blog owns the roundup) | "Optimise" rows | ✅ Batch 1 done |
 | WS-B | First 5 location page objects + seed listings (ION, MBS, Parkway Parade, Raffles City, Star Vista) | ~1,900 / KD 0 | ⬜ Queued (needs directory data) |
-| WS-C | 3 biggest-gap guides (Best Halal Cafés, Halal Dessert Guide, Halal Korean/BBQ) | ~4,400 / KD 0–26 | ⬜ Queued |
+| WS-C | Gap guides — **most already exist as legacy posts** (cafés, dessert/cakes, Korean, Japanese, buffet…). True remaining blog gaps are narrow (see below). | — | ↩︎ Rescoped |
+
+> **⚠️ Coverage correction (important).** The `keyword-research-v3` gap analysis audited the CMS
+> `content/posts` (19) + app routes but **missed the 31 published legacy posts in `lib/blog.ts`**
+> (`PUBLISHED_SLUGS`). Those already cover most "un-guided" clusters: `best-halal-cafes-singapore`,
+> `halal-cakes-bakeries-singapore`, `halal-korean-bbq-singapore`, `halal-korean-food-singapore`,
+> `halal-sushi-japanese-singapore`, `halal-dim-sum/steak/western/mala/mookata/buffet/high-tea/
+> breakfast/fine-dining`, `what-is-halal-singapore`, `how-to-check-muis-halal-certification`,
+> `halal-food-johor-bahru-guide`, `umrah-from-singapore-guide`, `aqiqah-singapore-guide`, etc. The
+> 42 **queued** `postSchedule` rows cover most of the rest (Thai, seafood, pizza, Chinese, Mexican,
+> Middle-Eastern, mini-buffet, JB/Bangkok/Bali/Seoul/Tokyo travel, gelatin/mirin/kombucha Q&As).
+> **Net: the blog pipeline is ~92 posts and nearly saturates the food/cuisine/travel clusters.**
+> The content plan's centre of gravity therefore shifts from *new blog* to **pSEO fan-out
+> (locations, brands, hawker) + on-page optimization + a few genuine blog gaps.**
+>
+> **Genuine remaining blog gaps** (not in legacy, CMS, or queued): halal **mooncake** (seasonal,
+> 700 SV), **Vietnamese** food, **Peranakan** food, halal **cake delivery / birthday cake** (distinct
+> from the cakes-bakeries roundup). Everything else = optimise existing or pSEO.
 
 ### Hawker centres — dedicated opportunity (`/hawker/[centre]`, Supabase-driven)
 Separate Ahrefs harvest: [`keywords/v3-hawker-matching-terms.csv`](./keywords/v3-hawker-matching-terms.csv)

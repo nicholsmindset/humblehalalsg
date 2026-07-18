@@ -13,6 +13,19 @@ This supersedes the earlier passes as the **master dataset**:
   cross-checked against **live page coverage** to separate "optimise what we have"
   from "genuine gap". Feeds guides, pSEO tuning and the blog calendar.
 
+> **⚠️ Coverage-correction note (2026-07-18).** The gap analysis below (esp. §4.4 "dessert/café is
+> the biggest un-guided cluster" and the §5 new-guide list) was built against the CMS `content/posts`
+> (19) + app routes and **did not account for the 31 published legacy blog posts** in `lib/blog.ts`
+> (`PUBLISHED_SLUGS`) or the 42 queued `postSchedule` rows. Those already cover most food/cuisine/
+> travel roundup demand (cafés, cakes/dessert, Korean, Japanese, dim sum, steak, western, mala,
+> mookata, buffet, high-tea, breakfast, JB, umrah, "what is halal", etc.). **The blog is ~92 posts
+> and near-saturates those clusters.** Treat the §5 blog-guide recommendations as *largely already
+> shipped*; the live, corrected build queue is in
+> [content-plan-v3.md](./content-plan-v3.md) — weighted to **pSEO fan-out (locations, brands, hawker)
+> + on-page optimization**, with only a few genuine blog gaps left (mooncake, Vietnamese, Peranakan,
+> cake-delivery). The keyword clusters and the CSV remain valid; only the coverage/gap labels needed
+> this correction.
+
 Monetary values in the CSV are USD (CPC). Units convention lives in the Ahrefs MCP
 server instructions, not here.
 
