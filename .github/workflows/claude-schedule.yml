@@ -1,0 +1,60 @@
+name: Claude — Schedule Drafting
+
+# Weekly job that keeps the scheduled-post pipeline filled ahead of the daily
+# publisher. It reads the dated plan in lib/content-calendar.ts (`postSchedule`),
+# finds the next still-"queued" slots that don't yet have a Keystatic entry, and
+# drafts each as content/posts/<slug>.yaml with `status: scheduled` + its
+# `datePublished`. It opens a PR for human approval — it never publishes and never
+# edits lib/blog.ts. Mirrors the existing claude-blog.yml pattern.
+#
+# Skips cleanly until ANTHROPIC_API_KEY is added and CLAUDE_JOBS_ENABLED=1 is set.
+
+on:
+  schedule:
+    - cron: "0 2 * * 0" # Sundays 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "How many upcoming slots to draft"
+        default: "7"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.CLAUDE_JOBS_ENABLED == '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm i -g @anthropic-ai/claude-code
+      - name: Draft upcoming scheduled posts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DRAFT_COUNT: ${{ github.event.inputs.count || '7' }}
+        run: |
+          claude -p "$(cat scripts/claude-jobs/prompts/blog-schedule.md)" \
+            --allowedTools "Read" "Write" "Bash(npx tsx*)" "Bash(npm run typecheck)" \
+            --max-turns 80 || echo "claude run finished"
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: claude/scheduled-posts
+          title: "🗓️ Scheduled blog posts (AI) — review before they go live"
+          body: |
+            Auto-drafted by the weekly scheduling job as **Keystatic entries**
+            (`content/posts/*.yaml`, `status: scheduled`) from the dated plan in
+            `lib/content-calendar.ts` (`postSchedule`).
+
+            Each post is date-gated by `lib/cms-blog.ts` and will go live on its
+            `datePublished` (SGT) once merged — the daily `blog-publish.yml` workflow
+            redeploys on the day. Review the content, then merge. Reschedule by editing
+            the entry's `datePublished` in Keystatic.
+          labels: automation, content, needs-human-review
+          add-paths: content/posts/**

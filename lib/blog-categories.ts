@@ -13,7 +13,8 @@ export type BlogCategorySlug =
   | "community-business"
   | "muslim-travel"
   | "halal-questions"
-  | "muslim-services";
+  | "muslim-services"
+  | "prayers-deen";
 
 export interface BlogCategory {
   slug: BlogCategorySlug;
@@ -123,6 +124,16 @@ export const BLOG_CATEGORIES: BlogCategory[] = [
     heroImage: bimg("1519741497674-611481863552"),
     heroAlt: "A Muslim-owned service provider at work in Singapore",
     blurb: "Catering, aqiqah, qurban & Malay wedding vendors.",
+  },
+  {
+    slug: "prayers-deen",
+    name: "Prayers & Deen",
+    title: "Prayers, Duas & Deen Guides for Singapore",
+    description:
+      "Everyday worship, made simple — prayer times, duas (rumi, Arabic & meaning), zakat, qibla and the Deen tools Singaporean Muslims search for.",
+    heroImage: bimg("1543007630-9710e4a00a20"),
+    heroAlt: "A prayer mat, dates and prayer beads in soft light",
+    blurb: "Prayer times, duas, zakat, qibla & Deen tools.",
   },
 ];
 

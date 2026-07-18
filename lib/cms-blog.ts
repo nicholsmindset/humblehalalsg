@@ -4,6 +4,7 @@ import { createReader } from "@keystatic/core/reader";
 import keystaticConfig from "../keystatic.config";
 import { allPosts as allLegacyPosts, type BlogPost } from "./blog";
 import type { BlogCategorySlug } from "./blog-categories";
+import { isPostLive } from "./content-calendar";
 
 const reader = createReader(process.cwd(), keystaticConfig);
 
@@ -12,11 +13,23 @@ function clean(value: string | null | undefined): string | undefined {
   return result || undefined;
 }
 
-/** Published Keystatic entries, converted to the existing blog view model. */
+/** Today's date (YYYY-MM-DD) in Asia/Singapore — the go-live boundary for
+    scheduled posts. en-CA yields ISO format; a plain string compare is safe
+    against Keystatic's `date` field, which is also YYYY-MM-DD. Kept local so
+    the blog path stays free of the events/Supabase module. */
+function todaySG(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+}
+
+/** Live Keystatic entries, converted to the existing blog view model. A post is
+    live when it is Published, or Scheduled with a publish date that has arrived
+    (SGT). Scheduled future posts stay hidden from the site but remain visible in
+    the Keystatic admin. */
 export async function cmsPosts(): Promise<BlogPost[]> {
   const entries = await reader.collections.posts.all();
+  const today = todaySG();
   return entries
-    .filter(({ entry }) => entry.status === "published")
+    .filter(({ entry }) => isPostLive(entry.status, entry.datePublished, today))
     .map(({ slug, entry }) => ({
       slug,
       title: entry.title,

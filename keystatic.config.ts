@@ -26,6 +26,10 @@ export default config({
           defaultValue: "draft",
           options: [
             { label: "Draft", value: "draft" },
+            // Scheduled: hidden from the site until `datePublished` arrives (SGT),
+            // then auto-published by the date-gate in lib/cms-blog.ts. Stays visible
+            // and editable in this admin the whole time.
+            { label: "Scheduled", value: "scheduled" },
             { label: "Published", value: "published" },
           ],
         }),
@@ -48,6 +52,7 @@ export default config({
             { label: "Muslim Travel", value: "muslim-travel" },
             { label: "Halal Questions", value: "halal-questions" },
             { label: "Muslim Services", value: "muslim-services" },
+            { label: "Prayers & Deen", value: "prayers-deen" },
           ],
         }),
         tags: fields.array(fields.text({ label: "Tag", ...required }), {
