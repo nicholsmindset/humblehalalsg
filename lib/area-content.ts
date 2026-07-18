@@ -497,6 +497,169 @@ export const AREA_PROFILES: Record<string, AreaProfile> = {
       { q: "Is Clarke Quay suitable for Muslim visitors?", a: "It's primarily a nightlife district, so plan around it — enjoy the riverside walk, but choose your dining from the verified halal options here or in adjacent Chinatown." },
     ],
   },
+
+  "city-hall": {
+    id: "city-hall",
+    name: "City Hall",
+    coords: { lat: 1.2931, lng: 103.8520 },
+    intro:
+      "City Hall sits at the civic heart of Singapore, and its halal food lives mostly inside the malls that ring the interchange. Raffles City, directly above the station, and Funan a short walk away both carry halal-certified outlets across their food halls, while the CHIJMES and Bras Basah side adds cafés and restaurants — though not all are certified, so check before you sit. This is a lunchtime district for the offices around Beach Road and the Padang, and a natural staging point for the Marina Bay and Esplanade attractions nearby. With City Hall being a major North-South/East-West interchange, it connects fast to the deeper halal clusters at Bugis and Arab Street one or two stops away. This guide tracks the verified halal and Muslim-owned options across the City Hall malls and the surrounding civic district, each scored so you can tell MUIS-certified from self-declared.",
+    mrts: ["City Hall", "Bras Basah", "Esplanade"],
+    landmarks: [
+      { name: "Raffles City", type: "mall", venueId: "raffles-city" },
+      { name: "Funan", type: "mall", venueId: "funan" },
+      { name: "CHIJMES", type: "heritage" },
+      { name: "Padang & Civic District", type: "attraction" },
+    ],
+    faqs: [
+      { q: "Is there halal food at Raffles City?", a: "Yes — Raffles City carries halal-certified outlets in its food hall and among its restaurants. Confirm each certificate on the MUIS HalalSG register or via the badge on its Humble Halal listing." },
+      { q: "Where can I eat halal near City Hall?", a: "Raffles City and Funan are the closest malls with halal-certified options; for a wider choice, Bugis and Arab Street are one to two MRT stops away." },
+      { q: "Is City Hall good for a halal work lunch?", a: "Yes — the malls around the interchange have halal-certified food-hall and fast-casual options that suit the Beach Road and civic-district office crowd." },
+    ],
+  },
+
+  chinatown: {
+    id: "chinatown",
+    name: "Chinatown",
+    coords: { lat: 1.2820, lng: 103.8443 },
+    intro:
+      "Chinatown surprises people: beneath the obvious Chinese-food reputation sits a genuinely deep halal layer. Chinatown Complex — Singapore's largest hawker centre — and the nearby Maxwell Food Centre both hold Muslim-owned and halal stalls among their hundreds, while the historic South Bridge Road stretch is home to two of the country's oldest mosques, Masjid Jamae and Masjid Al-Abrar, plus the Indian-Muslim heritage that spills over from adjacent Telok Ayer. People's Park Complex and Centre add food-court options. The trick here is precision — most stalls are not halal, so you eat by the badge, not the block. This guide scores the verified halal and Muslim-owned options across Chinatown's hawker centres and shophouses, flagging MUIS-certified versus self-declared, so a wander through the lanes can still end at a halal plate you can trust.",
+    mrts: ["Chinatown", "Maxwell", "Telok Ayer"],
+    landmarks: [
+      { name: "Chinatown Complex Food Centre", type: "hawker" },
+      { name: "Maxwell Food Centre", type: "hawker" },
+      { name: "Masjid Jamae (Chulia)", type: "mosque" },
+      { name: "Masjid Al-Abrar", type: "mosque" },
+      { name: "People's Park Complex", type: "mall" },
+    ],
+    faqs: [
+      { q: "Is there halal food in Chinatown?", a: "Yes, but you have to look — most stalls aren't halal. Chinatown Complex and Maxwell Food Centre have Muslim-owned and halal stalls, and the Telok Ayer side has Indian-Muslim food. Check each stall's badge or the MUIS HalalSG register." },
+      { q: "Are there mosques in Chinatown?", a: "Yes — Masjid Jamae and Masjid Al-Abrar, two of Singapore's oldest mosques, sit on South Bridge Road, so prayer is convenient in the area." },
+      { q: "Is there halal food at Maxwell Food Centre?", a: "There are Muslim-owned and halal stalls at Maxwell, though many stalls are not halal. Look for the stall's own halal marking and verify on the MUIS register." },
+    ],
+  },
+
+  "tanjong-pagar": {
+    id: "tanjong-pagar",
+    name: "Tanjong Pagar",
+    coords: { lat: 1.2765, lng: 103.8455 },
+    intro:
+      "Tanjong Pagar is a CBD district that eats well at lunch and into the evening. The office towers around the MRT drive demand, and the halal options cluster in the food centres and malls — Amoy Street Food Centre and Maxwell Food Centre (on the Chinatown edge) carry Muslim-owned and halal stalls, while Tanjong Pagar Plaza and 100AM add food-court and restaurant choices. The district is also known for its Korean strip, though most of those are not halal — so it pays to eat by the badge. Historic mosques on the Telok Ayer side are within walking distance. With the East-West line here and the Thomson-East Coast line at Maxwell, it's well connected to the wider halal clusters. This guide tracks the verified halal and Muslim-owned options across Tanjong Pagar's food centres, malls and shophouses, each scored for halal confidence before you go.",
+    mrts: ["Tanjong Pagar", "Maxwell"],
+    landmarks: [
+      { name: "Amoy Street Food Centre", type: "hawker" },
+      { name: "Maxwell Food Centre", type: "hawker" },
+      { name: "Tanjong Pagar Plaza", type: "mall" },
+      { name: "100 AM", type: "mall" },
+    ],
+    faqs: [
+      { q: "Is there halal food in Tanjong Pagar?", a: "Yes — the food centres (Amoy Street, Maxwell) have Muslim-owned and halal stalls, and the malls carry halal-certified outlets, though many CBD restaurants are not halal. Check each one's badge or the MUIS HalalSG register." },
+      { q: "Is the Korean food in Tanjong Pagar halal?", a: "Mostly not — Tanjong Pagar's Korean strip largely serves pork and alcohol. For halal Korean, choose a MUIS-certified Korean restaurant and verify it on the register." },
+      { q: "Where's the best halal lunch in Tanjong Pagar?", a: "The hawker centres for quick, affordable stalls, or the mall food halls for halal-certified fast-casual — both suit the CBD lunch crowd." },
+    ],
+  },
+
+  somerset: {
+    id: "somerset",
+    name: "Somerset",
+    coords: { lat: 1.3006, lng: 103.8388 },
+    intro:
+      "Somerset is the youth-and-lifestyle end of the Orchard belt, and its halal food sits inside the cluster of malls around the station. 313@Somerset, Orchard Central and Orchard Gateway all carry halal-certified outlets across their food halls and restaurants, making this one of the easier stretches of Orchard to eat halal without hunting. The Cathay and the tail of Somerset Road add a few more options. Because it flows straight into the main Orchard shopping strip, Somerset works as a halal dining base for a day of retail, with Masjid Al-Falah a short walk away near Cairnhill for prayer. This guide keeps score of the verified halal and Muslim-owned options across the Somerset malls, from quick food-court meals between shops to sit-down dinners, flagging what's MUIS-certified versus self-declared before you order.",
+    mrts: ["Somerset", "Orchard", "Dhoby Ghaut"],
+    landmarks: [
+      { name: "313@Somerset", type: "mall" },
+      { name: "Orchard Central", type: "mall" },
+      { name: "Orchard Gateway", type: "mall" },
+      { name: "The Cathay", type: "mall" },
+      { name: "Masjid Al-Falah", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food at 313@Somerset?", a: "Yes — 313@Somerset carries halal-certified outlets in its food hall and among its restaurants. Confirm each certificate on the MUIS HalalSG register or via its Humble Halal badge." },
+      { q: "Is there a mosque near Somerset?", a: "Yes — Masjid Al-Falah near Cairnhill is a short walk from Somerset MRT, making the area easy to combine with prayers." },
+      { q: "Where can I eat halal around Somerset?", a: "313@Somerset, Orchard Central and Orchard Gateway all have halal-certified options; the main Orchard strip adds more a short walk away." },
+    ],
+  },
+
+  harbourfront: {
+    id: "harbourfront",
+    name: "HarbourFront",
+    coords: { lat: 1.2653, lng: 103.8220 },
+    intro:
+      "HarbourFront is the gateway to Sentosa and cruise terminals, and its halal food is anchored by one of Singapore's strongest mall line-ups: VivoCity. The island's largest mall carries a deep set of halal-certified restaurants and food-hall stalls, so most visitors — whether heading to Sentosa, boarding a cruise, or walking Mount Faber — eat here. HarbourFront Centre next door adds a few more options. Because Sentosa's own halal choices are concentrated and pricier, VivoCity at HarbourFront is the smart place to eat before or after crossing over. With the North-East and Circle lines meeting here, it's easy to reach from across the island. This guide tracks the verified halal and Muslim-owned options across the HarbourFront malls, each scored so you know what's MUIS-certified before a day at the waterfront.",
+    mrts: ["HarbourFront"],
+    landmarks: [
+      { name: "VivoCity", type: "mall", venueId: "vivocity" },
+      { name: "HarbourFront Centre", type: "mall" },
+      { name: "Mount Faber", type: "park" },
+      { name: "Sentosa gateway", type: "attraction" },
+    ],
+    faqs: [
+      { q: "Is there halal food at HarbourFront / VivoCity?", a: "Yes — VivoCity has one of the deepest halal-certified line-ups of any Singapore mall, spanning restaurants and food-hall stalls. Confirm each on the MUIS HalalSG register or via its Humble Halal badge." },
+      { q: "Where should I eat halal before Sentosa?", a: "VivoCity at HarbourFront is the gateway and the best bet — Sentosa's own halal options are more limited and pricier, so many visitors eat here first." },
+      { q: "Is HarbourFront convenient for Muslim families?", a: "Yes — VivoCity's wide halal choice, the waterfront promenade and the Sentosa link make HarbourFront an easy family base." },
+    ],
+  },
+
+  "toa-payoh": {
+    id: "toa-payoh",
+    name: "Toa Payoh",
+    coords: { lat: 1.3329, lng: 103.8497 },
+    intro:
+      "Toa Payoh is a mature central heartland with a solid, everyday halal food scene. The town centre around HDB Hub and Toa Payoh Central carries halal-certified chains and food-court stalls, while the Toa Payoh Lorong 8 and Lorong 1 markets and food centres keep long-running Malay and Muslim-owned stalls that regulars swear by. Masjid Muhajirin off Braddell anchors the community. Being one of Singapore's oldest towns, Toa Payoh has a settled, local rhythm — this is neighbourhood halal eating rather than destination dining, and it's all the more reliable for it. With the North-South line at Toa Payoh and the Circle/Thomson lines at Braddell and Caldecott nearby, it's easy to reach. This guide tracks the verified halal and Muslim-owned options across the town centre and the market food centres, each scored so you can tell MUIS-certified from self-declared.",
+    mrts: ["Toa Payoh", "Braddell", "Caldecott"],
+    landmarks: [
+      { name: "HDB Hub", type: "mall" },
+      { name: "Toa Payoh Central", type: "mall" },
+      { name: "Toa Payoh Lorong 8 Market & Food Centre", type: "hawker" },
+      { name: "Masjid Muhajirin", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food in Toa Payoh?", a: "Yes — the town centre (HDB Hub, Toa Payoh Central) has halal-certified chains and food-court stalls, and the Lorong 8 and Lorong 1 food centres have Malay and Muslim-owned stalls. Check each one's badge or the MUIS HalalSG register." },
+      { q: "Is there a mosque in Toa Payoh?", a: "Yes — Masjid Muhajirin, off Braddell Road, serves the Toa Payoh area." },
+      { q: "Where's the best traditional halal food in Toa Payoh?", a: "The Lorong 8 and Lorong 1 market and food centres, best visited for breakfast and lunch when the Malay stalls are freshest." },
+    ],
+  },
+
+  "raffles-place": {
+    id: "raffles-place",
+    name: "Raffles Place",
+    coords: { lat: 1.2839, lng: 103.8515 },
+    intro:
+      "Raffles Place is the core of Singapore's CBD, and it eats hardest at weekday lunch. The standout for halal diners is Lau Pa Sat — the historic cast-iron market whose Satay Street fires up in the evening and whose interior holds Muslim-owned and halal stalls — while nearby Telok Ayer and Amoy Street food centres add more, and the office malls (One Raffles Place, Marina Bay Link Mall) carry halal-certified fast-casual outlets. Two of the country's oldest mosques sit a short walk away on the Telok Ayer/South Bridge stretch. Weekends are quiet here, so time your visit for lunch or the satay-street evenings. This guide tracks the verified halal and Muslim-owned options across Raffles Place's food centres and towers, each scored for halal confidence so the CBD lunch run lands somewhere you can trust.",
+    mrts: ["Raffles Place", "Telok Ayer", "Downtown"],
+    landmarks: [
+      { name: "Lau Pa Sat", type: "hawker" },
+      { name: "Telok Ayer Market", type: "hawker" },
+      { name: "One Raffles Place", type: "mall" },
+      { name: "Marina Bay Link Mall", type: "mall" },
+      { name: "Masjid Al-Abrar", type: "mosque" },
+    ],
+    faqs: [
+      { q: "Is there halal food at Raffles Place?", a: "Yes — Lau Pa Sat has Muslim-owned and halal stalls (and the famous Satay Street in the evenings), and the office malls carry halal-certified fast-casual outlets. Check each stall's badge or the MUIS HalalSG register." },
+      { q: "Is Satay Street at Lau Pa Sat halal?", a: "Satay Street has Muslim-owned satay stalls, but not every stall is certified — look for the stall's halal marking and verify where you can." },
+      { q: "When is the best time to eat halal at Raffles Place?", a: "Weekday lunch for the food centres and malls, or the evening for Lau Pa Sat's Satay Street. Weekends in the CBD are much quieter." },
+    ],
+  },
+
+  esplanade: {
+    id: "esplanade",
+    name: "Esplanade",
+    coords: { lat: 1.2899, lng: 103.8558 },
+    intro:
+      "The Esplanade — Theatres on the Bay is Singapore's waterfront arts centre, and halal dining around it is a matter of stepping to the adjacent malls. The Esplanade's own outlets are limited and not all suitable, but Suntec City and Marina Square, both a short covered walk away, carry deep halal-certified line-ups, and Marina Bay Sands across the bay adds more. Masjid options are a little further, so plan prayer around City Hall or Bugis. For a concert or a bayside evening, the smart move is to eat at Suntec or Marina Square first, then walk over. This guide scores the verified halal and Muslim-owned options around the Esplanade and its neighbouring malls, is honest about the on-site gap, and points to the nearest reliable clusters so a night at the theatre still ends with a halal meal.",
+    mrts: ["Esplanade", "City Hall", "Bayfront"],
+    landmarks: [
+      { name: "Esplanade — Theatres on the Bay", type: "attraction" },
+      { name: "Suntec City", type: "mall", venueId: "suntec-city" },
+      { name: "Marina Square", type: "mall", venueId: "marina-square" },
+      { name: "Marina Bay waterfront", type: "attraction" },
+    ],
+    faqs: [
+      { q: "Is there halal food at the Esplanade?", a: "On-site options are limited, but Suntec City and Marina Square — a short covered walk away — have deep halal-certified line-ups. Confirm outlets on the MUIS HalalSG register or via their Humble Halal badges." },
+      { q: "Where can I eat halal before an Esplanade show?", a: "Suntec City or Marina Square are the closest reliable clusters; Marina Bay Sands across the bay adds more. Eat there, then walk over to the theatre." },
+      { q: "Is the Esplanade area convenient for Muslim visitors?", a: "Yes, if you use the neighbouring malls — Suntec and Marina Square make the bayfront easy to combine with a halal meal, with prayer facilities around City Hall and Bugis." },
+    ],
+  },
 };
 
 /** Profile for an area-page id (returns undefined for areas without one). */
