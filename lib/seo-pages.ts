@@ -95,6 +95,16 @@ const VENUES: Venue[] = [
   // Blueprint Wave-3 malls (Keyword Master Plan, Location Page Factory tab).
   { id: "amk-hub", name: "AMK Hub", mrt: "Ang Mo Kio", match: ["Ang Mo Kio"] },
   { id: "compass-one", name: "Compass One", mrt: "Sengkang", match: ["Sengkang"] },
+  // v3 fan-out (keyword-research-v3 §4.1) — high-demand malls, KD 0. Pages
+  // render immediately and self-noindex until ≥3 published listings carry a
+  // matching `area` value (AREA_INDEX_MIN). When seeding the directory, tag
+  // each mall's listings with the `match` area token below (reconcile with the
+  // real Listing.area values in Supabase if they differ).
+  { id: "ion-orchard", name: "ION Orchard", mrt: "Orchard", match: ["Orchard"] },
+  { id: "marina-bay-sands", name: "Marina Bay Sands", mrt: "Bayfront", match: ["Marina Bay", "Marina Square"] },
+  { id: "parkway-parade", name: "Parkway Parade", mrt: "Marine Parade", match: ["Marine Parade"] },
+  { id: "raffles-city", name: "Raffles City", mrt: "City Hall", match: ["City Hall", "Bugis"] },
+  { id: "star-vista", name: "The Star Vista", mrt: "Buona Vista", match: ["Buona Vista", "Holland Village"] },
 ];
 
 /* ---- Cuisine / concept pages (validated KD 0–8 demand). `match` fragments
