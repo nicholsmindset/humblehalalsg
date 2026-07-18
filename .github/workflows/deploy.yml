@@ -19,6 +19,13 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      vercel_token_override:
+        description: >-
+          One-off Vercel token override — use ONLY when the VERCEL_TOKEN secret is
+          broken. The token is masked in logs but recorded in the run's inputs, so
+          revoke it at vercel.com after the deploy and fix the repo secret.
+        required: false
 
 concurrency:
   group: vercel-production
@@ -38,7 +45,9 @@ jobs:
       - name: Verify VERCEL_TOKEN is configured
         id: gate
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # A manual-dispatch override (rare, for a broken secret) wins over the
+          # stored secret; it is masked immediately in the gate below.
+          VERCEL_TOKEN: ${{ github.event.inputs.vercel_token_override || secrets.VERCEL_TOKEN }}
         run: |
           if [ -z "$VERCEL_TOKEN" ]; then
             echo "::warning::VERCEL_TOKEN secret is not set — skipping deploy. Add it in Settings → Secrets and variables → Actions, then re-run."
