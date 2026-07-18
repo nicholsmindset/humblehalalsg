@@ -1,5 +1,9 @@
 # Humble Halal — Keyword Research v2 (Blog Cluster Expansion)
 
+> **Superseded as the master dataset by [keyword-research-v3.md](./keyword-research-v3.md)**
+> (full 1,921-keyword Ahrefs harvest, clustered + coverage-gap-checked, July 2026). v2
+> remains valid for its blog-cluster architecture and cannibalisation rules.
+
 *Fresh Ahrefs harvest — Singapore market, July 2026. Supplements the directory-page-focused
 [keyword-research.md](./keyword-research.md). This round is **blog-led**: it maps demand into
 new editorial clusters, protects existing landing/pSEO pages from cannibalization, and feeds the
