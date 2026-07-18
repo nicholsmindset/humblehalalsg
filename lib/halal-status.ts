@@ -377,6 +377,43 @@ export const brands: BrandHalal[] = [
     answer: "Sushi Express is not MUIS halal-certified in Singapore. It is not on the MUIS HalalSG register and some items use mirin (rice wine), with reports on other non-halal items varying. Treat it as not certified — for halal sushi, choose a MUIS-certified Japanese restaurant and verify on MUIS HalalSG.",
     aliases: ["sushi express singapore"],
   },
+  // ── v3 brand fan-out batch 3 (verified vs MUIS HalalSG + public statements,
+  //    July 2026). Re-verify per outlet/product. ──
+  {
+    slug: "stuffd", brand: "Stuff'd", category: "Burrito & kebab fast food", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Stuff'd is MUIS halal-certified across its outlets, serving halal burritos, kebabs and quesadillas. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["stuff'd", "stuffd singapore"],
+  },
+  {
+    slug: "encik-tan", brand: "Encik Tan", category: "Halal Chinese food atrium", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Encik Tan is MUIS halal-certified across its outlets, serving halal versions of local Chinese hawker dishes such as Hainanese curry rice and wanton noodles. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["encik tan singapore"],
+  },
+  {
+    slug: "beard-papa", brand: "Beard Papa's", category: "Cream puffs & bakery", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Beard Papa's Singapore menu is MUIS halal-certified, so its cream puffs are halal. Certification is per-premises and renewable — confirm the outlet's current certificate on the MUIS HalalSG register.",
+    aliases: ["beard papa", "beardpapa", "beard papas"],
+  },
+  {
+    slug: "haagen-dazs", brand: "Häagen-Dazs", category: "Ice cream", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — many Häagen-Dazs products sold in Singapore are halal-certified, but some flavours contain alcohol (e.g. Baileys, Rum Raisin) and are not. Check the specific tub or item's packaging for the halal mark, and verify on MUIS HalalSG.",
+    aliases: ["haagen dazs", "haagendazs", "häagen-dazs"],
+  },
+  {
+    slug: "royce", brand: "ROYCE'", category: "Chocolate", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "ROYCE' is not MUIS halal-certified in Singapore. Most of its chocolates are liquor-free and gelatine-free, but some (e.g. Nama Champagne, Rum Raisin) contain alcohol. Check each product's label or ask staff, and treat the brand as not certified — verify on MUIS HalalSG.",
+    aliases: ["royce chocolate", "royce singapore"],
+  },
+  {
+    slug: "luckin-coffee", brand: "Luckin Coffee", category: "Coffee chain", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Luckin Coffee is not MUIS halal-certified in Singapore — its Singapore FAQ confirms this (its Malaysian outlets hold JAKIM certification, which does not apply here). Most drinks are pork-free, but it is not on the MUIS HalalSG register, so verify before ordering.",
+    aliases: ["luckin", "luckin coffee singapore"],
+  },
+  {
+    slug: "beauty-in-the-pot", brand: "Beauty in the Pot", category: "Hotpot restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Beauty in the Pot is not halal. Its signature Beauty Collagen Broth is made from pork bones and it serves pork, and it is not on the MUIS HalalSG register. It is not suitable for halal-conscious diners.",
+    aliases: ["beauty in the pot", "paradise beauty in the pot"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
