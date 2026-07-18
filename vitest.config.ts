@@ -16,5 +16,21 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/unit/**/*.test.ts"],
+    coverage: {
+      // `npm run test:coverage` — a MEASUREMENT tool, not a CI gate (yet). Scoped
+      // to lib/** (the unit-testable domain layer); app routes/components are
+      // covered by Playwright e2e, and pure data/content modules carry no logic
+      // to unit-test, so blanket thresholds here would be noise. Raise the floor
+      // deliberately as coverage grows rather than gating on a number today.
+      provider: "v8",
+      reporter: ["text", "text-summary", "html"],
+      include: ["lib/**/*.ts"],
+      exclude: [
+        "lib/**/*.d.ts",
+        "lib/types.ts",
+        "lib/**/*-data.ts", // static datasets (verdicts-data, travel-data, …)
+        "lib/supabase/**", // thin client factories — no logic
+      ],
+    },
   },
 });
