@@ -13,6 +13,7 @@ import { parseAttributionCookie } from "@/lib/attribution";
 import { sendEmail } from "@/lib/email";
 import { ticketConfirmationEmail } from "@/lib/emails/templates";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { capacityGate, clampTicketQty, buildTicketLineItems } from "@/lib/ticket-checkout";
 
 /* Paid event-ticket checkout — SEPARATE CHARGES + delayed transfer model.
 
@@ -70,14 +71,14 @@ export async function POST(req: Request) {
   }
   if (!ev || ev.free) return NextResponse.json({ ok: false, reason: "not_a_paid_event" }, { status: 404 });
 
-  const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
+  const qty = clampTicketQty(body.qty);
 
   // Capacity gate (security audit M2): don't sell past capacity. capacity===0
   // means unlimited. Final oversell-on-race is also bounded by the atomic
   // increment in the webhook (increment_event_taken).
-  if (ev.capacity > 0 && (ev.taken ?? 0) + qty > ev.capacity) {
-    const left = Math.max(0, ev.capacity - (ev.taken ?? 0));
-    return NextResponse.json({ ok: false, reason: left > 0 ? "insufficient_capacity" : "sold_out", left }, { status: 409 });
+  const cap = capacityGate({ capacity: ev.capacity, taken: ev.taken, qty });
+  if (!cap.ok) {
+    return NextResponse.json({ ok: false, reason: cap.reason, left: cap.left }, { status: 409 });
   }
   const tier = ev.tiers?.find((t) => t.name === body.tier) ?? ev.tiers?.[0];
   const faceCents = Math.round((tier ? tier.price : ev.priceFrom) * 100);
@@ -255,21 +256,7 @@ export async function POST(req: Request) {
   // undiscounted in pass mode; with a discount or absorbed fee the per-unit
   // price no longer matches, so we collapse to one exact-total ticket line.
   const ticketName = `${ev.title} — ${tier?.name ?? "Ticket"}`;
-  const ticketLine =
-    order.discountCents > 0
-      ? {
-          quantity: 1,
-          price_data: {
-            currency: CURRENCY,
-            unit_amount: order.subtotalCents - order.discountCents,
-            product_data: { name: `${ticketName} × ${qty} (${promo?.code})` },
-          },
-        }
-      : { quantity: qty, price_data: { currency: CURRENCY, unit_amount: faceCents, product_data: { name: ticketName } } };
-  const lineItems =
-    feeMode === "pass" && order.feeCents > 0
-      ? [ticketLine, { quantity: 1, price_data: { currency: CURRENCY, unit_amount: order.feeCents, product_data: { name: "Booking fee" } } }]
-      : [ticketLine];
+  const lineItems = buildTicketLineItems({ order, faceCents, qty, feeMode, ticketName, promoCode: promo?.code, currency: CURRENCY });
 
   const sessionParams = {
     mode: "payment" as const,

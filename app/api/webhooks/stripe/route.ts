@@ -10,12 +10,14 @@ import { AD_PRODUCTS } from "@/lib/ad-products";
 import { makeOrderRef, ticketRefs } from "@/lib/ticket-ref";
 import { reverseOrderTransferIfPaid, setPayoutStatus } from "@/lib/payout-reversal";
 import { notify } from "@/lib/notify";
-
-const addDaysISO = (base: Date, days: number) => {
-  const d = new Date(base);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-};
+import {
+  FEATURED_PLANS,
+  addDaysISO,
+  donationRefundDelta,
+  resolveTicketOrderMoney,
+  ticketPayoutStatus,
+  subscriptionListingUpdate,
+} from "@/lib/stripe-webhook-logic";
 
 /** In-app bell for a business's owner, keyed off a lifecycle/money event. The
  *  Stripe webhook already emails these events; this adds the bell so owners see
@@ -63,18 +65,18 @@ async function reconcileDonationRefund(
     return !!d2?.id;
   }
   if (!don?.id) return false;
-  const already = Number(don.refunded_cents) || 0;
-  // Clamp to the recorded donation so a weird Stripe payload can't drive the
-  // public total negative beyond this donation's own contribution.
-  const donated = Number(don.amount_cents) || 0;
-  const nowRefunded = Math.min(charge.amount_refunded || 0, donated || charge.amount_refunded || 0);
-  const delta = nowRefunded - already;
-  if (delta > 0) {
+  const { newRefundedCents, deltaCents, shouldApply, markRefunded } = donationRefundDelta({
+    amountRefundedCents: charge.amount_refunded,
+    alreadyRefundedCents: don.refunded_cents,
+    donatedCents: don.amount_cents,
+    chargeFullyRefunded: !!charge.refunded,
+  });
+  if (shouldApply) {
     await supa.from("donations")
-      .update({ refunded_cents: nowRefunded, ...(charge.refunded ? { status: "refunded" } : {}) })
+      .update({ refunded_cents: newRefundedCents, ...(markRefunded ? { status: "refunded" } : {}) })
       .eq("id", don.id);
     if (don.event_id) {
-      await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -delta });
+      await supa.rpc("increment_donation_raised", { p_event_id: don.event_id, p_amount: -deltaCents });
     }
   }
   return true;
@@ -123,8 +125,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "idempotency_store_unavailable" }, { status: 500 });
     }
   }
-
-  const FEATURED_PLANS = new Set(["featured", "premium"]);
 
   try {
     switch (event.type) {
@@ -229,18 +229,13 @@ export async function POST(req: Request) {
         // payment-go-live.md) — until then PayNow is safe-but-inert.
         else if (s.mode === "payment" && s.metadata?.kind === "ticket" && (s.payment_status ?? "paid") === "paid" && supa) {
           const m = s.metadata;
-          const qty = Math.max(1, parseInt(m.qty || "1", 10));
-          const subtotal = parseInt(m.subtotalCents || "0", 10);
-          const fee = parseInt(m.feeCents || "0", 10);
-          // Organiser's transfer amount. netCents is authoritative (fee-mode +
-          // promo aware); sessions created before that metadata existed carry
-          // only subtotalCents, whose old semantics WERE the organiser net.
-          const net = m.netCents != null && m.netCents !== "" ? parseInt(m.netCents, 10) : subtotal;
-          const total = s.amount_total ?? subtotal + fee;
+          // Money split (qty/subtotal/fee/net/total/discount/fee-mode) is derived
+          // in one place (lib/stripe-webhook-logic) so the recorded order matches
+          // exactly what the buyer was charged.
+          const { qty, subtotalCents: subtotal, feeCents: fee, netCents: net, totalCents: total, discountCents: discount, feeMode } = resolveTicketOrderMoney(m, s.amount_total);
           const pi = typeof s.payment_intent === "string" ? s.payment_intent : null;
           const buyerEmail = s.customer_details?.email || null;
           const connected = m.connectedAccount || null;
-          const discount = parseInt(m.discountCents || "0", 10) || 0;
           let utm: unknown = null;
           try {
             utm = m.utm ? JSON.parse(m.utm) : null;
@@ -264,9 +259,9 @@ export async function POST(req: Request) {
             stripe_payment_intent: pi,
             status: "confirmed",
             connected_account_id: connected,
-            payout_status: connected && net > 0 ? "pending" : "none",
+            payout_status: ticketPayoutStatus(connected, net),
             payout_due: payoutDue,
-            fee_mode: m.feeMode === "absorb" ? "absorb" : "pass",
+            fee_mode: feeMode,
             promo_code_id: m.promoCodeId || null,
             discount_cents: discount,
             ref_code: m.refCode || null,
@@ -472,7 +467,6 @@ export async function POST(req: Request) {
         const sub = event.data.object as Stripe.Subscription;
         const businessId = sub.metadata?.business_id || undefined;
         const plan = sub.metadata?.plan || null;
-        const active = sub.status === "active" || sub.status === "trialing";
         // Basil API (stripe v22+): current_period_end lives on the subscription
         // ITEMS; the top-level field only exists on older pinned API versions.
         const cpe =
@@ -514,18 +508,16 @@ export async function POST(req: Request) {
           // the paid listing to free on the first declined card punishes a
           // paying customer mid-recovery. Keep their plan untouched during
           // past_due; downgrade only on terminal/none-paying states
-          // (canceled, unpaid, incomplete, paused …).
-          if (sub.status !== "past_due") {
-            await supa.from("businesses").update({
-              plan: active && plan ? plan : "free",
-              featured: active && FEATURED_PLANS.has(plan || ""),
-            }).eq("id", businessId);
+          // (canceled, unpaid, incomplete, paused …). Decision in lib/stripe-webhook-logic.
+          const { effectivePlan, featured, shouldUpdateBusiness } = subscriptionListingUpdate(sub.status, plan);
+          if (shouldUpdateBusiness) {
+            await supa.from("businesses").update({ plan: effectivePlan, featured }).eq("id", businessId);
           }
           await supa.from("plan_entitlement_events").upsert({
             stripe_event_id: event.id,
             stripe_subscription_id: sub.id,
             business_id: businessId,
-            plan: active && plan ? plan : "free",
+            plan: effectivePlan,
             subscription_status: sub.status,
             source: "stripe",
           }, { onConflict: "stripe_event_id", ignoreDuplicates: true });

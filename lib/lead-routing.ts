@@ -117,12 +117,22 @@ export async function matchBusinessesForLead(db: Db, lead: LeadRow, opts: MatchO
     phone: (b.phone as string) ?? null,
   }));
 
+  const ranked = rankLeadCandidates(candidates, lead.source_listing_slug);
+  const capped = opts.uncapped ? ranked : ranked.slice(0, LEAD_ROUTE_CAP);
+  return { candidates: capped, vertical, area, gap: capped.length < TARGET_MIN };
+}
+
+/** Rank matched candidates for a lead (pure). The consumer's source listing takes
+    slot 1; then claimed businesses outrank unclaimed outreach; then those with an
+    active leads-subscription quota; then higher listing plan. This is the order
+    the marketplace fans a lead out in, so a bug here mis-prioritises who gets it. */
+export function rankLeadCandidates(candidates: MatchCandidate[], sourceListingSlug: string | null | undefined): MatchCandidate[] {
   const planRank = (p: string | null) => PLAN_KEYS.indexOf(planKey(p));
-  candidates.sort((a, b) => {
+  return [...candidates].sort((a, b) => {
     // 1. the listing the consumer was viewing gets slot 1
-    if (lead.source_listing_slug) {
-      if (a.slug === lead.source_listing_slug) return -1;
-      if (b.slug === lead.source_listing_slug) return 1;
+    if (sourceListingSlug) {
+      if (a.slug === sourceListingSlug) return -1;
+      if (b.slug === sourceListingSlug) return 1;
     }
     // 2. claimed businesses always outrank unclaimed outreach targets
     if (a.claimed !== b.claimed) return a.claimed ? -1 : 1;
@@ -131,9 +141,6 @@ export async function matchBusinessesForLead(db: Db, lead: LeadRow, opts: MatchO
     // 4. higher listing plan first
     return planRank(b.plan) - planRank(a.plan);
   });
-
-  const capped = opts.uncapped ? candidates : candidates.slice(0, LEAD_ROUTE_CAP);
-  return { candidates: capped, vertical, area, gap: capped.length < TARGET_MIN };
 }
 
 /** Remaining quota per business in the CURRENT billing period (counted, not stored). */
