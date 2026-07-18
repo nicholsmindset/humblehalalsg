@@ -116,6 +116,26 @@ export async function POST(req: Request) {
   if (order.totalCents < STRIPE_MIN_CHARGE_CENTS) {
     const { data: dbEvent } = await supa.from("events").select("id, taken").eq("id", ev.id).maybeSingle();
     if (!dbEvent) return NextResponse.json({ ok: true, simulated: true, comp: true });
+    // Reserve capacity atomically and capacity-aware BEFORE recording the comped
+    // order — mirroring the paid path (step 5). The old path incremented `taken`
+    // unconditionally AFTER issuing tickets, so concurrent comped/free orders
+    // could oversell a nearly-full event. Pre-0061 falls back to the counter.
+    let reserved = false;
+    const { data: gotSeats, error: resErr } = await supa.rpc("reserve_event_capacity", { p_event_id: dbEvent.id, p_qty: qty });
+    if (resErr) {
+      const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: dbEvent.id, p_qty: qty });
+      if (incErr) await supa.from("events").update({ taken: (Number(dbEvent.taken) || 0) + qty }).eq("id", dbEvent.id);
+      reserved = true;
+    } else if (gotSeats !== true) {
+      return NextResponse.json({ ok: false, reason: "sold_out", left: 0 }, { status: 409 });
+    } else {
+      reserved = true;
+    }
+    const releaseCompHold = async () => {
+      if (!reserved) return;
+      try { await supa.rpc("decrement_event_taken", { p_event_id: dbEvent.id, p_qty: qty }); } catch { /* clamped RPC */ }
+    };
+
     const { data: ord, error } = await supa
       .from("orders")
       .insert({
@@ -138,20 +158,23 @@ export async function POST(req: Request) {
       })
       .select("id")
       .single();
-    if (error || !ord) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    if (error || !ord) { await releaseCompHold(); return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 }); }
 
     // Human-friendly qr_refs (lib/ticket-ref) — the emailed reference IS the
     // scannable/typable door code (the old order-id prefix matched nothing).
+    // Capacity is already reserved; roll it (and the order) back if tickets fail.
     let compRef = makeOrderRef("TKT");
     for (let attempt = 0; attempt < 3; attempt++) {
       const tix = ticketRefs(compRef, qty).map((qr) => ({ order_id: ord.id, event_id: dbEvent.id, tier: tier?.name ?? "Standard", qr_ref: qr }));
       const { error: tixErr } = await supa.from("tickets").insert(tix);
       if (!tixErr) break;
-      if (tixErr.code !== "23505" || attempt === 2) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+      if (tixErr.code !== "23505" || attempt === 2) {
+        await supa.from("orders").delete().eq("id", ord.id);
+        await releaseCompHold();
+        return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+      }
       compRef = makeOrderRef("TKT");
     }
-    const { error: incErr } = await supa.rpc("increment_event_taken", { p_event_id: dbEvent.id, p_qty: qty });
-    if (incErr) await supa.from("events").update({ taken: (Number(dbEvent.taken) || 0) + qty }).eq("id", dbEvent.id);
     if (promo) await supa.rpc("redeem_promo", { p_id: promo.promoId });
     if (body.email) {
       try {

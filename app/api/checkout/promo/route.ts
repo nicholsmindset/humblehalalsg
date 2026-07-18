@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getServerFlags } from "@/lib/feature-flags";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, STATEMENT_SUFFIX } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
@@ -41,15 +41,26 @@ export async function POST(req: Request) {
   } catch { /* attribution best-effort */ }
 
   const meta = { kind: "ad", product: product!, ...(businessId ? { businessId } : {}), checkout_type: "ad", ...analyticsSessionMeta(rawBody) };
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      { quantity: 1, price_data: { currency: CURRENCY, unit_amount: item.cents, product_data: { name: item.name } } },
-    ],
-    metadata: meta,
-    payment_intent_data: { metadata: meta },
-    success_url: `${SITE.url}/advertise?purchase=done&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE.url}/advertise`,
-  });
+  // Guarded like checkout/plan: a bad/live-mode/archived key throws here — surface
+  // a clean, logged reason instead of an unhandled 500 the client can't explain.
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        { quantity: 1, price_data: { currency: CURRENCY, unit_amount: item.cents, product_data: { name: item.name } } },
+      ],
+      metadata: meta,
+      // Shared Stripe account: without OUR suffix the card statement shows another
+      // brand's descriptor → "unknown charge" disputes. Mirror the sibling one-time
+      // charges (donate, owner/ads, ticket).
+      payment_intent_data: { metadata: meta, statement_descriptor_suffix: STATEMENT_SUFFIX },
+      success_url: `${SITE.url}/advertise?purchase=done&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE.url}/advertise`,
+    });
+  } catch (e) {
+    console.error(`[checkout/promo] stripe session create failed (product=${product}):`, e instanceof Error ? e.message : e);
+    return NextResponse.json({ ok: false, reason: "stripe_error" }, { status: 502 });
+  }
   return NextResponse.json({ ok: true, url: session.url });
 }
