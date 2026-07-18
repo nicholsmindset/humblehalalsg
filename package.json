@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "check:content": "tsx scripts/check-blog-content.mts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

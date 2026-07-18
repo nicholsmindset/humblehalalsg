@@ -28,6 +28,8 @@ export interface BlogPost {
   datePublished: string; // YYYY-MM-DD
   dateModified?: string;
   author: string;
+  /** Optional link to a CMS Authors entry (lib/blog-authors) for byline + schema. */
+  authorId?: string;
   readMins: number;
   tags: string[];
   /** Primary category — exactly one (see lib/blog-categories.ts). */
@@ -48,6 +50,14 @@ export interface BlogPost {
   /** Lead vertical (lib/lead-verticals id, e.g. "catering") — when set, the
       post renders the subtle inline lead-capture teaser (flag-gated). */
   leadVertical?: string;
+  /** Optional per-post SEO overrides (CMS). Empty → sensible defaults:
+      metaTitle→title, metaDescription→dek, canonical→self, index unless noindex,
+      socialImage→hero image. */
+  metaTitle?: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
+  noindex?: boolean;
+  socialImage?: string;
 }
 
 const AUTHOR = "The Humble Halal Team";

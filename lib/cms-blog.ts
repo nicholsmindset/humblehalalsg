@@ -5,6 +5,7 @@ import keystaticConfig from "../keystatic.config";
 import { allPosts as allLegacyPosts, type BlogPost } from "./blog";
 import type { BlogCategorySlug } from "./blog-categories";
 import { isPostLive } from "./content-calendar";
+import { DEFAULT_AUTHOR, resolveAuthor, type BlogAuthor } from "./blog-authors";
 
 const reader = createReader(process.cwd(), keystaticConfig);
 
@@ -36,6 +37,7 @@ export async function cmsPosts(): Promise<BlogPost[]> {
       dek: entry.dek,
       answer: entry.answer,
       author: entry.author,
+      authorId: clean(entry.authorId),
       datePublished: entry.datePublished,
       dateModified: clean(entry.dateModified),
       readMins: entry.readMins,
@@ -61,6 +63,11 @@ export async function cmsPosts(): Promise<BlogPost[]> {
       pullQuote: clean(entry.pullQuote),
       pullQuoteBy: clean(entry.pullQuoteBy),
       leadVertical: clean(entry.leadVertical),
+      metaTitle: clean(entry.metaTitle),
+      metaDescription: clean(entry.metaDescription),
+      canonicalUrl: clean(entry.canonicalUrl),
+      noindex: entry.noindex || undefined,
+      socialImage: clean(entry.socialImage),
     }));
 }
 
@@ -73,6 +80,27 @@ export async function allBlogPosts(): Promise<BlogPost[]> {
 
 export async function getBlogPost(slug: string): Promise<BlogPost | undefined> {
   return (await allBlogPosts()).find((post) => post.slug === slug);
+}
+
+/** CMS-managed authors (content/authors/*), converted to the BlogAuthor shape. */
+export async function getBlogAuthors(): Promise<BlogAuthor[]> {
+  const entries = await reader.collections.authors.all();
+  return entries.map(({ slug, entry }) => ({
+    id: slug,
+    name: entry.name,
+    type: entry.type,
+    role: clean(entry.role),
+    bio: clean(entry.bio),
+    avatar: clean(entry.avatar),
+    url: clean(entry.url),
+    sameAs: entry.sameAs.length ? [...entry.sameAs] : undefined,
+  }));
+}
+
+/** Resolve a post's author entity (CMS author or the team fallback) for byline + schema. */
+export async function resolveBlogAuthor(post: BlogPost): Promise<BlogAuthor> {
+  const authors = await getBlogAuthors();
+  return resolveAuthor(post.authorId || post.author, authors) || DEFAULT_AUTHOR;
 }
 
 export async function blogPostsByCategory(category: BlogCategorySlug): Promise<BlogPost[]> {

@@ -1,5 +1,14 @@
 # Keystatic CMS — Improvement Ideas
 
+> **Shipped — Phase 1 (CMS control & E-E-A-T):** per-post SEO overrides
+> (`metaTitle`/`metaDescription`/`canonicalUrl`/`noindex`/`socialImage`, wired through
+> `pageMeta()`; `noindex` also drops from the sitemap); an **Authors** collection + `Person`
+> schema (`lib/blog-authors.ts`, `authorJsonLd`, resolved byline/AuthorBio — add a named author
+> entry + set a post's `authorId` to upgrade from Organization to Person); and a **CI content
+> validator** (`scripts/check-blog-content.mts` in `ci.yml`). Phases 2–4 (images, distribution/OG,
+> growth loops) below.
+
+
 Grounded in the current setup: Keystatic (GitHub storage, `content/posts/*` + `content/brands/*`),
 a structured `posts` schema (no rich-text body — prose lives in `sections[]`), and the new
 `scheduled` status + date-gate (`lib/cms-blog.ts`). Ordered by value-to-effort.
