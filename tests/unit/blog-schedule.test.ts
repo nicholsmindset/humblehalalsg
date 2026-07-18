@@ -37,10 +37,14 @@ describe("postSchedule integrity", () => {
     const dates = new Set(postSchedule.map((p) => p.publishDate));
     expect(dates.size).toBe(postSchedule.length);
   });
-  it("marks exactly the five seeded launch posts", () => {
+  it("marks the drafted posts as seeded (26 Jul–13 Aug written)", () => {
     const seeded = postSchedule.filter((p) => p.status === "seeded").map((p) => p.slug);
     expect(seeded).toContain("waktu-solat-singapore");
-    expect(seeded.length).toBe(5);
+    expect(seeded).toContain("halal-food-tampines"); // last of the drafted batch
+    expect(seeded.length).toBe(19);
+    // Everything seeded is contiguous from the start of the schedule.
+    expect(postSchedule.slice(0, 19).every((p) => p.status === "seeded")).toBe(true);
+    expect(postSchedule[19].status).toBe("queued");
   });
 });
 
