@@ -10,7 +10,8 @@ import { BLOG_CATEGORIES } from "../lib/blog-categories";
 import { allPosts as legacyPosts } from "../lib/blog";
 import { postSchedule } from "../lib/content-calendar";
 
-const cfg = (cfgMod as any).default ?? cfgMod;
+// tsx double-wraps the default export; unwrap without `any`.
+const cfg = ((cfgMod as { default?: unknown }).default ?? cfgMod) as Parameters<typeof createReader>[1];
 const reader = createReader(process.cwd(), cfg);
 
 const CATS = new Set(BLOG_CATEGORIES.map((c) => c.slug));
