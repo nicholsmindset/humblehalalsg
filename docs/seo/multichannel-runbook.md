@@ -81,3 +81,12 @@ for fast indexing, `CRON_SECRET` for the workflow ping. All degrade gracefully w
 **Env to activate:** `SOCIAL_WEBHOOK_URL` (+ optional `SOCIAL_WEBHOOK_SECRET`) for social sends; apply
 migration `0077`. Approve rows in the `social_outbox` table (or a future admin view). No keys → the
 outbox still queues + logs but dispatch no-ops.
+
+## Deploy ops note (Jul 2026)
+Production deploys run via `.github/workflows/deploy.yml` (push to master + manual dispatch) and
+require a valid `VERCEL_TOKEN` repo secret. If every deploy fails within seconds at the token gate,
+the secret value is malformed or stale — update it (Settings → Secrets and variables → Actions →
+`VERCEL_TOKEN`, paste the raw token, no quotes) and re-run. When rotating the token, put the
+replacement into the secret **first**: the daily blog auto-publish (`blog-publish.yml`) depends on
+this deploy path. A one-off `vercel_token_override` dispatch input also exists for emergencies
+(masked in logs; revoke the token after use).
