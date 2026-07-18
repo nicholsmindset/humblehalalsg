@@ -51,6 +51,12 @@ export function isSitemapSegment(v: string): v is SitemapSegment {
   return (SITEMAP_SEGMENTS as readonly string[]).includes(v);
 }
 
+// Stable lastmod for evergreen/static + entity pages. Request-time `new Date()`
+// made every URL's lastmod change hourly regardless of content, which trains
+// Google to discount the signal — bump this on a meaningful content release.
+// (Blog posts use their real dateModified below.)
+const STATIC_LASTMOD = "2026-07-19";
+
 const PUBLIC_STATIC = [
   "/",
   "/explore",
@@ -85,6 +91,10 @@ const PUBLIC_STATIC = [
   "/advertise",
   "/pricing",
   "/quotes",
+  "/about",
+  "/contact",
+  "/faq",
+  "/guides",
   "/verify",
   "/disclaimer",
   "/suggest",
@@ -98,7 +108,7 @@ const PUBLIC_STATIC = [
 /** URLs for one sitemap segment. Unknown segments return []. */
 export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
   const base = SITE.url;
-  const now = new Date().toISOString();
+  const now = STATIC_LASTMOD;
 
   switch (seg) {
     case "core":

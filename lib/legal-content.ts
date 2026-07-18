@@ -284,15 +284,21 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Analytics (only with consent)",
+        h2: "Analytics (with consent)",
         body: [
-          "If we enable analytics in future, we will only set analytics cookies after you accept them in the consent banner. You can change your choice at any time by clearing site data.",
+          "With your consent we use Google Analytics 4 and Microsoft Clarity to understand how the site is used so we can improve it. These set analytics cookies/identifiers only after you accept analytics in the consent banner; until then they run in a cookieless, modelled mode. You can change or withdraw your choice at any time by clearing this site's cookies and local storage.",
+        ],
+      },
+      {
+        h2: "Advertising (with consent)",
+        body: [
+          "With your consent we show ads through Google AdSense and may use advertising and measurement pixels from Meta, TikTok, LinkedIn and Google Ads. Until you accept marketing cookies, ads are served in a non-personalised mode and these advertising pixels stay blocked.",
         ],
       },
       {
         h2: "Third parties",
         body: [
-          "Embedded map tiles (OpenStreetMap) and payment pages (Stripe) may set their own cookies when used. These are governed by their respective policies.",
+          "Google (AdSense and Analytics), embedded map tiles (OpenStreetMap) and payment pages (Stripe) may set their own cookies when used. These are governed by their respective privacy and cookie policies.",
         ],
       },
       {

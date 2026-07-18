@@ -24,10 +24,15 @@ function readConsent(): Consent | null {
 function applyConsentMode(analytics: boolean, marketing: boolean) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: unknown[]) {
-    window.dataLayer!.push(args as unknown as Record<string, unknown>);
+  // GTM only honors Consent Mode commands pushed as a REAL `arguments` object;
+  // an Array (from a rest parameter) is silently ignored, so the granted/denied
+  // update wouldn't take effect until the next full page load. Keep it a classic
+  // function that pushes `arguments`.
+  function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments as unknown as Record<string, unknown>);
   }
-  gtag("consent", "update", {
+  (gtag as unknown as (...args: unknown[]) => void)("consent", "update", {
     analytics_storage: analytics ? "granted" : "denied",
     ad_storage: marketing ? "granted" : "denied",
     ad_user_data: marketing ? "granted" : "denied",
