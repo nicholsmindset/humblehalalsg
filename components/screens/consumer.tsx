@@ -278,7 +278,7 @@ export function HomeScreen() {
       <HomeNewsletterCapture />
 
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
-      <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" />
+      <Faq items={HOME_FAQ} title="Halal in Singapore — your questions, answered" columns={2} />
     </div>
   );
 }

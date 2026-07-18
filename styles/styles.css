@@ -768,6 +768,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 /* ---- FAQ (visible + FAQPage schema) ---- */
 .faq-section { max-width: 820px; }
 .faq-list { display: flex; flex-direction: column; gap: 10px; }
+/* Opt-in 2-column FAQ (long lists) — one column on mobile, two from 760px. */
+.faq-section.cols-2 { max-width: 1100px; }
+.faq-list.cols-2 { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
+@media (min-width: 760px) { .faq-list.cols-2 { grid-template-columns: 1fr 1fr; column-gap: 14px; } }
 .faq-item {
   background: var(--white); border: 1px solid var(--line); border-radius: var(--r-md);
   box-shadow: var(--sh-sm); overflow: hidden;
