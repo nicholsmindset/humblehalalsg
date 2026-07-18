@@ -10,6 +10,10 @@ export const SITE = {
     "Discover halal restaurants, cafés, Muslim-owned businesses, services and community-friendly places across Singapore. A discovery platform — not a certifier.",
   locale: "en_SG",
   twitter: "@humblehalalsg",
+  // Brand palette — single source of truth so the manifest, viewport theme-color
+  // and any icon generator stay in sync (previously #12525B was hardcoded in 3+ places).
+  themeColor: "#12525B",
+  backgroundColor: "#F8F6F1",
   org: {
     legalName: "ONN GROUP LLP",
     streetAddress: "60 Paya Lebar Road, #06-28 Paya Lebar Square",

@@ -91,7 +91,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#12525B",
+  themeColor: SITE.themeColor,
   width: "device-width",
   initialScale: 1,
   // No maximumScale/user-scalable lock — pinch-zoom must stay enabled (WCAG 1.4.4).
