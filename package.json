@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "check:content": "tsx scripts/check-blog-content.mts",
+    "gen:blog-images": "tsx scripts/gen-blog-images.mts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",

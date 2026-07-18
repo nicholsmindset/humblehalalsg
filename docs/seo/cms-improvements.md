@@ -5,8 +5,13 @@
 > `pageMeta()`; `noindex` also drops from the sitemap); an **Authors** collection + `Person`
 > schema (`lib/blog-authors.ts`, `authorJsonLd`, resolved byline/AuthorBio — add a named author
 > entry + set a post's `authorId` to upgrade from Organization to Person); and a **CI content
-> validator** (`scripts/check-blog-content.mts` in `ci.yml`). Phases 2–4 (images, distribution/OG,
-> growth loops) below.
+> validator** (`scripts/check-blog-content.mts` in `ci.yml`).
+>
+> **Shipped — Phase 2 (images):** AI hero generator (`scripts/gen-blog-images.mts` +
+> `lib/blog-image-prompt.ts`) — fal text-to-image with hard halal guardrails → Supabase `blog-photos`
+> → rewrites the entry `image:` + a governance manifest (`content/blog-image-manifest.json`). Kills the
+> duplicated Unsplash hotlinks. Run `npm run gen:blog-images -- --apply` once `FAL_KEY` + Supabase creds
+> are set (see `docs/seo/multichannel-runbook.md`). Phases 3–4 (distribution/OG, growth loops) below.
 
 
 Grounded in the current setup: Keystatic (GitHub storage, `content/posts/*` + `content/brands/*`),
