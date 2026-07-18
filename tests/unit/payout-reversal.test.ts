@@ -17,7 +17,7 @@ function fakeDb(opts: { updateError?: boolean } = {}) {
       return {
         update(patch: Record<string, unknown>) {
           return {
-            eq(_col: string, _val: unknown) {
+            eq() {
               patches.push(patch);
               return Promise.resolve({ error: opts.updateError ? { message: "boom" } : null });
             },
@@ -30,7 +30,7 @@ function fakeDb(opts: { updateError?: boolean } = {}) {
 }
 
 function fakeStripe(opts: { throwOnReversal?: boolean } = {}) {
-  const createReversal = vi.fn((_id: string, _params: unknown, _extra: unknown) =>
+  const createReversal = vi.fn(() =>
     opts.throwOnReversal ? Promise.reject(new Error("insufficient balance")) : Promise.resolve({ id: "trr_1" }),
   );
   return { stripe: { transfers: { createReversal } } as unknown as Stripe, createReversal };
