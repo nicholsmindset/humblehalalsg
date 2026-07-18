@@ -6,9 +6,13 @@
    filters live. Verdict UI mirrors /is-halal (.hs-pill / tone classes). */
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Icon } from "../ui";
 import { track } from "@/lib/analytics";
-import { ADDITIVES, STATUS_META, searchAdditives, type AdditiveStatus } from "@/lib/tools/ingredients";
+import {
+  ADDITIVES, STATUS_META, searchAdditives, ingredientQualifies, ingredientSlug,
+  type AdditiveStatus,
+} from "@/lib/tools/ingredients";
 
 const FILTERS: { key: AdditiveStatus | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -49,7 +53,7 @@ export function IngredientChecker() {
       <div className="notice notice-info" style={{ marginBottom: 16 }}>
         <Icon name="info" size={18} />
         <span>
-          This tells you the usual <strong>origin</strong> of an additive — it is general guidance, not certification.
+          This tells you the usual <strong>origin</strong>{" "}of an additive — it is general guidance, not certification.
           &ldquo;Doubtful&rdquo; means the source can be animal or plant, so check with the manufacturer. A product using
           only halal additives is still not halal-certified unless it&apos;s on the{" "}
           <a href="/verify" className="link-inline">MUIS HalalSG register</a>.
@@ -92,6 +96,10 @@ export function IngredientChecker() {
             const m = STATUS_META[a.status];
             const key = rowKey(a.code, a.name);
             const isOpen = open === key;
+            // Indexable ingredients get a crawlable link to their detail page.
+            // Rendered outside the toggle <button> (not nested — a11y) and
+            // outside the collapsed panel, so it is present in the SSR HTML.
+            const hasPage = ingredientQualifies(a);
             return (
               <li key={key} id={a.code || undefined} className="ing-item card" style={{ padding: 0, marginBottom: 8, overflow: "hidden" }}>
                 <button
@@ -110,6 +118,12 @@ export function IngredientChecker() {
                     {a.note && <p className="faint" style={{ marginTop: 6, fontSize: ".88rem" }}><Icon name="info" size={13} /> {a.note}</p>}
                     <div className="faint" style={{ marginTop: 8, fontSize: ".78rem", textTransform: "uppercase", letterSpacing: ".04em" }}>{a.category} · {m.label}</div>
                   </div>
+                )}
+                {hasPage && (
+                  <Link href={`/tools/ingredient-checker/${ingredientSlug(a)}`} className="ing-detail-link" prefetch={false}>
+                    Read the full {a.code || a.name} guide
+                    <Icon name="arrow" size={14} />
+                  </Link>
                 )}
               </li>
             );
