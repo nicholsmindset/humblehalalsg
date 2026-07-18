@@ -67,7 +67,7 @@ export function PrayerWidget() {
           <p>Singapore{data?.hijri ? ` · ${data.hijri}` : ""}</p>
         </div>
         {next && (
-          <ProgressRing value={next.progress} size={72} stroke={6} label={`Time until ${next.name}`}>
+          <ProgressRing value={next.progress} size={72} stroke={6} tone="gold" label={`Time until ${next.name}`}>
             <span className="tools-ring-count">{formatCountdown(next.minsUntil)}</span>
             <span className="tools-ring-sub">until {next.name}</span>
           </ProgressRing>
