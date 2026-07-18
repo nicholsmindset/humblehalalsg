@@ -704,59 +704,61 @@ function FooterSection({ title, cloud, children }: { title: string; cloud?: bool
 }
 
 export function Footer() {
-  const { navigate } = useApp();
+  const { navigate, t } = useApp();
   // Five balanced columns (≤6 links each) so the footer reads short + organised.
   // "Halal disclaimer" lives in the legal row only (it was duplicated here).
+  // Labels are i18n keys resolved via t() so the footer follows the EN/BM toggle
+  // like the header nav (previously the whole footer was hardcoded English).
   const cols: [string, [string, string][]][] = [
     [
-      "Discover",
+      t("footer.col.discover"),
       [
-        ["Explore", "explore"],
-        ["Deals & coupons", "deals"],
-        ["Events", "events"],
-        ["Map view", "map"],
-        ["Halal travel & hotels", "travel"],
-        ["Flights", "travel-flights"],
-        ["My trips", "travel-trips"],
+        [t("nav.explore"), "explore"],
+        [t("footer.link.deals"), "deals"],
+        [t("nav.events"), "events"],
+        [t("footer.link.map"), "map"],
+        [t("footer.link.travel"), "travel"],
+        [t("footer.link.flights"), "travel-flights"],
+        [t("footer.link.trips"), "travel-trips"],
       ],
     ],
     [
-      "Community & tools",
+      t("footer.col.community"),
       [
-        ["Islamic tools", "tools"],
-        ["Mosques in Singapore", "mosques"],
-        ["Prayer rooms (musollah)", "prayer-rooms"],
-        ["Saved places", "saved"],
-        ["Blog & guides", "blog"],
+        [t("footer.link.tools"), "tools"],
+        [t("footer.link.mosques"), "mosques"],
+        [t("footer.link.prayerRooms"), "prayer-rooms"],
+        [t("footer.link.saved"), "saved"],
+        [t("footer.link.blog"), "blog"],
       ],
     ],
     [
-      "For business",
+      t("footer.col.business"),
       [
-        ["List your business", "for-business"],
-        ["Owner getting-started", "for-business-onboarding"],
-        ["Advertise with us", "advertise"],
-        ["Host an event", "host-event"],
-        ["Pricing", "pricing"],
-        ["Claim a listing", "claim"],
-        ["Request a quote", "request-quote"],
+        [t("nav.listBusiness"), "for-business"],
+        [t("footer.link.ownerStart"), "for-business-onboarding"],
+        [t("footer.link.advertise"), "advertise"],
+        [t("footer.link.hostEvent"), "host-event"],
+        [t("nav.pricing"), "pricing"],
+        [t("footer.link.claim"), "claim"],
+        [t("footer.link.quote"), "request-quote"],
       ],
     ],
     [
-      "Trust & safety",
+      t("footer.col.trust"),
       [
-        ["How we verify", "verify"],
-        ["Is it halal? checker", "is-halal"],
-        ["Report an issue", "report"],
-        ["Suggest a place", "suggest"],
+        [t("footer.link.verify"), "verify"],
+        [t("footer.link.isHalal"), "is-halal"],
+        [t("footer.link.report"), "report"],
+        [t("footer.link.suggest"), "suggest"],
       ],
     ],
     [
-      "Company",
+      t("footer.col.company"),
       [
-        ["About us", "about"],
-        ["Contact us", "contact"],
-        ["FAQ", "faq"],
+        [t("footer.link.about"), "about"],
+        [t("footer.link.contact"), "contact"],
+        [t("footer.link.faq"), "faq"],
       ],
     ],
   ];
@@ -770,13 +772,10 @@ export function Footer() {
           <div className="hh-footer-brand">
             <div>
               <Logo light onClick={() => navigate("home")} />
-              <p className="hh-footer-intro">
-                Singapore’s most trusted halal &amp; Muslim-owned business directory. A discovery
-                platform, not a certifier.
-              </p>
+              <p className="hh-footer-intro">{t("footer.intro")}</p>
             </div>
             <div className="hh-footer-newsletter">
-              <h2 className="hh-footer-title">Get the weekly halal guide</h2>
+              <h2 className="hh-footer-title">{t("footer.newsletter")}</h2>
               <Newsletter source="footer" />
             </div>
             <div className="hh-footer-badges" aria-label="Trust badges">
@@ -784,13 +783,13 @@ export function Footer() {
               <Badge type="owned" />
             </div>
             <address className="hh-footer-addr">
-              <span>Operated by <strong>{SITE.org.legalName}</strong></span>
+              <span>{t("footer.operatedBy")} <strong>{SITE.org.legalName}</strong></span>
               <br />
               {SITE.org.streetAddress}
               <br />
               {SITE.org.addressLocality} {SITE.org.postalCode}
               <br />
-              Growth services by{" "}
+              {t("footer.growthBy")}{" "}
               <a href="https://onnifyworks.com" target="_blank" rel="noopener noreferrer">Onnifyworks</a>
             </address>
           </div>
@@ -809,8 +808,8 @@ export function Footer() {
         {/* One cloud row: categories (wide) + guides (bounded) side by side —
             two stacked full-width clouds doubled the footer's height. */}
         <div className="hh-wrap hh-footer-clouds">
-          <FooterSection title="Browse by category" cloud>
-            <li><Link href="/halal">Halal directory</Link></li>
+          <FooterSection title={t("footer.browseCategory")} cloud>
+            <li><Link href="/halal">{t("footer.halalDirectory")}</Link></li>
             {catPages.map((p) => {
               const rawLabel = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
               return (
@@ -821,30 +820,30 @@ export function Footer() {
                 </li>
               );
             })}
-            <li><Link href="/halal">All categories →</Link></li>
+            <li><Link href="/halal">{t("footer.allCategories")}</Link></li>
           </FooterSection>
-          <FooterSection title="Halal guides" cloud>
+          <FooterSection title={t("footer.halalGuides")} cloud>
             {allCategories().slice(0, 6).map((c) => (
               <li key={c.slug}>
                 <Link href={`/blog/category/${c.slug}`}>{c.name}</Link>
               </li>
             ))}
-            <li><Link href="/blog">All guides →</Link></li>
+            <li><Link href="/blog">{t("footer.allGuides")}</Link></li>
           </FooterSection>
         </div>
       </nav>
       <nav className="hh-wrap hh-footer-legal" aria-label="Legal">
-        <Link href="/terms">Terms</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/pdpa">PDPA</Link>
-        <Link href="/cookies">Cookies</Link>
-        <Link href="/accessibility">Accessibility</Link>
-        <Link href="/disclaimer">Halal disclaimer</Link>
+        <Link href="/terms">{t("footer.legal.terms")}</Link>
+        <Link href="/privacy">{t("footer.legal.privacy")}</Link>
+        <Link href="/pdpa">{t("footer.legal.pdpa")}</Link>
+        <Link href="/cookies">{t("footer.legal.cookies")}</Link>
+        <Link href="/accessibility">{t("footer.legal.accessibility")}</Link>
+        <Link href="/disclaimer">{t("footer.legal.disclaimer")}</Link>
       </nav>
       <div className="hh-wrap hh-footer-base">
-        <span>© 2026 Humble Halal. Built for the Singapore Muslim community.</span>
+        <span>{t("footer.base.copyright")}</span>
         <div className="flex g12 center">
-          <span className="faint">Always verify certification on MUIS HalalSG.</span>
+          <span className="faint">{t("footer.base.verify")}</span>
         </div>
       </div>
     </footer>
