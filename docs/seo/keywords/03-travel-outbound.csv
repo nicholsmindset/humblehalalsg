@@ -1,0 +1,44 @@
+keyword,volume,kd,cluster,note
+jb food,1000,0,travel-jb,new-post-hub
+city square jb food,900,0,travel-jb,section
+jb city square food,500,0,travel-jb,section
+best food in jb,300,0,travel-jb,new-post
+food in jb,250,0,travel-jb,new-post
+johor bahru food,200,0,travel-jb,new-post
+good food in jb,200,0,travel-jb,section
+halal buffet jb,100,12,travel-jb,section
+jb halal food,90,0,travel-jb,new-post
+jb itinerary,70,0,travel-jb,new-post
+jb day trip itinerary,70,0,travel-jb,new-post
+halal buffet in jb,60,12,travel-jb,section
+halal lok lok jb,60,0,travel-jb,section
+halal buffet johor bahru,50,12,travel-jb,section
+jb halal buffet,50,16,travel-jb,section
+halal food jb,40,0,travel-jb,new-post
+umrah,1500,6,travel-umrah,new-post-hub
+umrah mabrur,700,0,travel-umrah,section
+umrah package,450,0,travel-umrah,section
+umrah in english,350,7,travel-umrah,section
+umrah package singapore,200,1,travel-umrah,new-post+lead
+umrah vaccination singapore,200,0,travel-umrah,new-post
+umrah visa,150,11,travel-umrah,section
+umrah packages,150,0,travel-umrah,section
+umrah visa singapore,100,0,travel-umrah,section
+what is umrah,100,2,travel-umrah,section
+umrah singapore,60,0,travel-umrah,new-post
+umrah vs hajj,60,0,travel-umrah,section
+difference between hajj and umrah,60,0,travel-umrah,section
+umrah course singapore,50,0,travel-umrah,section
+halal food in seoul,100,0,travel-city,new-post
+halal food in bangkok,90,0,travel-city,new-post
+halal food in hong kong,90,0,travel-city,new-post
+halal food in tokyo,80,1,travel-city,new-post
+halal food bangkok,80,0,travel-city,new-post
+halal food in bali,70,0,travel-city,new-post
+muslim friendly restaurant singapore,100,5,travel-inbound,pSEO
+muslim friendly countries,40,0,travel-outbound,section
+muslim friendly hotels bangkok,30,0,travel-city,pSEO-hotel
+muslim friendly hotel in seoul,30,0,travel-city,pSEO-hotel
+muslim friendly honeymoon,30,0,travel-outbound,new-post
+muslim friendly holiday destinations,30,0,travel-outbound,new-post
+muslim friendly tour package,30,0,travel-outbound,section

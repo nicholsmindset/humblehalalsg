@@ -45,6 +45,9 @@ export default config({
             { label: "Areas & Malls", value: "areas-malls" },
             { label: "Seasonal & Events", value: "seasonal-events" },
             { label: "Community & Business", value: "community-business" },
+            { label: "Muslim Travel", value: "muslim-travel" },
+            { label: "Halal Questions", value: "halal-questions" },
+            { label: "Muslim Services", value: "muslim-services" },
           ],
         }),
         tags: fields.array(fields.text({ label: "Tag", ...required }), {

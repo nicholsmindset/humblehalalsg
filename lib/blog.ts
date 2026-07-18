@@ -1523,6 +1523,703 @@ const rawPosts: RawPost[] = [
     pullQuoteBy: "The Humble Halal Team",
     leadVertical: "weddings",
   },
+
+  /* ===== Cluster expansion batch 1 (2026-07) — see docs/seo/keyword-research-v2.md ===== */
+
+  {
+    slug: "halal-food-johor-bahru-guide",
+    title: "Halal Food in Johor Bahru: A Singaporean's Day-Trip Guide (2026)",
+    dek: "Where to eat halal in JB on a day trip from Singapore — City Square, malls, buffets and local musts, with how to be sure a stall is genuinely halal.",
+    answer:
+      "Johor Bahru is very easy for halal eating: the majority of local Malay and Muslim-Indian stalls are halal, and big malls like City Square, Mid Valley Southkey and Paradigm have clearly signed halal outlets and JAKIM-certified chains. Look for the JAKIM halal logo or a Muslim-run stall, avoid outlets serving pork or alcohol, and you can eat well all day for a fraction of Singapore prices.",
+    datePublished: "2026-07-14",
+    author: AUTHOR,
+    readMins: 9,
+    tags: ["Johor Bahru", "Travel", "Halal food"],
+    sections: [
+      {
+        h2: "Is it easy to find halal food in JB?",
+        body: [
+          "Yes — arguably easier than in many parts of Singapore. Johor is a Malay-Muslim-majority state, so a large share of hawker stalls, kopitiams and mall outlets are halal or Muslim-run. Malaysia's national halal authority is JAKIM, and its logo is the one to look for on certified outlets.",
+          "As always, certification beats assumption. A stall run by a Muslim family serving Malay food is a strong signal; a chain with a displayed JAKIM certificate is stronger still. Skip any outlet that also serves pork or alcohol unless it clearly operates a separate halal-certified line.",
+        ],
+        bullets: [
+          "Look for the JAKIM halal logo (Malaysia's equivalent of MUIS)",
+          "Malay, Muslim-Indian and mamak stalls are usually halal — confirm if unsure",
+          "Avoid outlets serving pork or alcohol without separate certification",
+          "When in doubt, ask: “Ada sijil halal?” (Do you have a halal certificate?)",
+        ],
+      },
+      {
+        h2: "City Square & the JB Sentral cluster",
+        body: [
+          "Most Singaporeans start at Johor Bahru City Square — it is a two-minute walk from the CIQ checkpoint, so it is the natural first stop. The mall and the surrounding JB Sentral area are packed with halal options, from food-court local fare to certified chains.",
+          "It gets crowded on weekends and public holidays. If you want a relaxed meal, go early or push a little further out to the quieter malls listed below.",
+        ],
+        bullets: [
+          "City Square food court — mixed halal stalls, quick and cheap",
+          "Certified chains — many Malaysian halal F&B brands have outlets here",
+          "Dessert & bubble tea — plenty of Muslim-friendly options for an afternoon break",
+        ],
+      },
+      {
+        h2: "Beyond City Square: quieter malls & buffets",
+        body: [
+          "If you are driving or taking Grab, the malls a little further from the checkpoint are less packed and just as halal-friendly. Mid Valley Southkey, Paradigm Mall and KSL City all have strong halal line-ups, and JB is well known for value halal buffets — hotpot, Korean BBQ and steamboat at prices well below Singapore.",
+        ],
+        bullets: [
+          "Mid Valley Southkey — large, modern, many halal outlets",
+          "Paradigm Mall — family-friendly with a good food selection",
+          "Halal buffets — steamboat, mookata and Korean BBQ are JB favourites",
+        ],
+      },
+      {
+        h2: "Local dishes worth crossing for",
+        body: [
+          "Beyond the malls, JB rewards anyone willing to eat like a local. Look for Johor specialities and classic Malay hawker fare — much of it halal and hard to find at the same price back home.",
+        ],
+        bullets: [
+          "Nasi lemak and mee rebus at Muslim-run kopitiams",
+          "Roti canai and murtabak at mamak stalls",
+          "Satay, lok lok and grilled seafood in the evenings",
+          "Cendol, ABC and durian in season for dessert",
+        ],
+      },
+      {
+        h2: "Planning your day trip",
+        body: [
+          "Sort out the crossing before you sort out lunch — the checkpoint, not the food, is the part that goes wrong. Our JB transport guide covers Woodlands vs Tuas, the bus and train options, and when to avoid the jams. Then browse Singapore-side halal spots for the trip back.",
+        ],
+        links: [
+          { label: "Crossing to JB: checkpoints & transport →", href: "/blog/crossing-to-johor-bahru-checkpoints-transport" },
+          { label: "Browse the halal directory", href: "/halal" },
+          { label: "Is it halal? brand checker", href: "/is-halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is most food in Johor Bahru halal?", a: "A large share is. Johor is a Malay-Muslim-majority state, so many stalls and mall outlets are halal or Muslim-run. Look for the JAKIM halal logo or a Muslim-run stall, and avoid outlets serving pork or alcohol without separate certification." },
+      { q: "Where is the best halal food near JB City Square?", a: "City Square itself, two minutes from the CIQ checkpoint, has a food court and several certified halal chains. For a quieter meal, Mid Valley Southkey, Paradigm Mall and KSL City all have strong halal line-ups a short Grab ride away." },
+      { q: "Is there a good halal buffet in JB?", a: "Yes — JB is known for value halal buffets including steamboat, mookata and Korean BBQ, usually well below Singapore prices. Confirm the outlet displays JAKIM certification or is clearly Muslim-run before booking." },
+      { q: "How do I know a JB stall is really halal?", a: "Look for the JAKIM halal certificate on display, a Muslim-run kitchen, and no pork or alcohol on the menu. If it is not clear, ask “Ada sijil halal?” — most outlets are happy to confirm." },
+    ],
+    related: ["crossing-to-johor-bahru-checkpoints-transport", "halal-catering-singapore-guide"],
+    dropcap: true,
+  },
+
+  {
+    slug: "crossing-to-johor-bahru-checkpoints-transport",
+    title: "Crossing to Johor Bahru: Checkpoints & Transport Guide (2026)",
+    dek: "Woodlands vs Tuas, bus, train, car and Grab — how to cross from Singapore to JB with less queuing, plus prayer and halal-food tips for the trip.",
+    answer:
+      "There are two land crossings from Singapore to Johor Bahru: the Woodlands Causeway (via Woodlands Checkpoint) and the Tuas Second Link (via Tuas Checkpoint). Woodlands is closest to JB city and City Square; Tuas is better for west-side destinations and driving. The KTM Shuttle Tebrau train from Woodlands to JB Sentral is the fastest way to skip the jam, but tickets sell out fast. Avoid peak hours — early mornings, Friday evenings and the eve of public holidays.",
+    datePublished: "2026-07-13",
+    author: AUTHOR,
+    readMins: 8,
+    tags: ["Johor Bahru", "Travel", "Transport"],
+    sections: [
+      {
+        h2: "The two crossings: Woodlands vs Tuas",
+        body: [
+          "Singapore connects to Johor by two land crossings. The Woodlands Causeway feeds Woodlands Checkpoint in the north and lands you closest to JB city centre — City Square and JB Sentral are right there. The Tuas Second Link feeds Tuas Checkpoint in the west and is better if you are driving to Legoland, the west of Johor, or want to avoid Causeway congestion.",
+        ],
+        bullets: [
+          "Woodlands Checkpoint — closest to JB city, City Square, JB Sentral",
+          "Tuas Checkpoint (Second Link) — better for west Johor and driving",
+          "Both can jam badly at peak times — timing matters more than which one",
+        ],
+      },
+      {
+        h2: "By train: the KTM Shuttle Tebrau",
+        body: [
+          "The five-minute Shuttle Tebrau train from Woodlands CIQ to JB Sentral is the single fastest way across — you clear both immigration points at the stations, not in a bus queue. The catch is availability: tickets are released in advance and popular slots sell out quickly, especially weekends and holidays.",
+        ],
+        bullets: [
+          "Book early via KTMB's official channel — slots open weeks ahead",
+          "Clears the jam entirely when you get a ticket",
+          "JB Sentral connects directly to City Square mall",
+        ],
+      },
+      {
+        h2: "By bus, car & Grab",
+        body: [
+          "Public buses (such as the causeway cross-border services) are the cheapest option, but you disembark to clear immigration and re-board, which adds time at peak hours. Driving gives flexibility but means Vehicle Entry Permit and toll considerations, plus parking in JB. Cross-border Grab and private-hire options exist but can be pricier and subject to their own rules.",
+        ],
+        bullets: [
+          "Bus — cheapest; expect to queue at immigration on both sides",
+          "Car — flexible; plan for VEP, tolls and JB parking",
+          "Grab / private hire — convenient but check current cross-border rules",
+        ],
+      },
+      {
+        h2: "When to go (and when not to)",
+        body: [
+          "The difference between a smooth crossing and a two-hour crawl is almost entirely timing. Weekday mornings before the work rush and mid-afternoon lulls are easiest. The worst windows are Friday and Saturday evenings, Sunday nights heading back, and the eve of any public holiday.",
+        ],
+        bullets: [
+          "Best: weekday mid-morning or mid-afternoon",
+          "Worst: Fri/Sat evenings, Sun nights, eve of public holidays",
+          "Check live checkpoint traffic before you leave",
+        ],
+      },
+      {
+        h2: "Prayer & halal food on the way",
+        body: [
+          "There are surau (prayer rooms) at the checkpoints and inside JB Sentral and City Square, so you can pray shortly after crossing. Once you are through, JB is easy for halal eating — start with our day-trip food guide.",
+        ],
+        links: [
+          { label: "Halal food in Johor Bahru: day-trip guide →", href: "/blog/halal-food-johor-bahru-guide" },
+          { label: "Find mosques & prayer spaces", href: "/mosques" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Should I use Woodlands or Tuas checkpoint for JB?", a: "Use Woodlands if you are heading to JB city, City Square or JB Sentral — it is the closest. Use Tuas (Second Link) for west Johor, Legoland or if you are driving and want to avoid Causeway congestion. Timing affects the queue more than the choice of crossing." },
+      { q: "What is the fastest way to cross to JB?", a: "The KTM Shuttle Tebrau train from Woodlands CIQ to JB Sentral — about five minutes and you skip the vehicle jam. Book early through KTMB's official channel because popular slots sell out weeks ahead." },
+      { q: "When is the JB checkpoint least crowded?", a: "Weekday mid-mornings and mid-afternoons are easiest. Avoid Friday and Saturday evenings, Sunday nights on the way back, and the eve of public holidays, when queues can stretch to hours." },
+      { q: "Is there a prayer room at the checkpoints?", a: "Yes. There are surau at the Singapore and JB checkpoints, and prayer spaces inside JB Sentral and City Square, so you can pray soon after crossing." },
+    ],
+    related: ["halal-food-johor-bahru-guide", "ramadan-singapore-2026-guide"],
+  },
+
+  {
+    slug: "umrah-from-singapore-guide",
+    title: "Umrah from Singapore: Packages, Visa & Vaccination (2026 Guide)",
+    dek: "A practical guide to performing umrah from Singapore — how packages work, the Saudi visa, the required meningitis vaccination, costs and how to choose an agent.",
+    answer:
+      "To perform umrah from Singapore you book through a travel agent offering an umrah package, which typically bundles flights, hotels in Makkah and Madinah, transport and a guide. You need a Saudi umrah visa (arranged by the agent or via the official Nusuk platform) and the mandatory meningococcal (ACWY) vaccination, available at polyclinics and GPs. Package prices vary widely by hotel distance to the Haram and season; book early for Ramadan and school holidays.",
+    datePublished: "2026-07-15",
+    author: AUTHOR,
+    readMins: 9,
+    tags: ["Umrah", "Travel", "Guides"],
+    sections: [
+      {
+        h2: "What umrah involves",
+        body: [
+          "Umrah is the non-mandatory pilgrimage to Makkah that can be performed at any time of year, unlike Hajj which falls on fixed dates. The core rites — entering ihram, tawaf around the Kaaba, sa'i between Safa and Marwah, and cutting the hair — can be completed in a few hours, but most trips combine umrah with several days in Makkah and a visit to the Prophet's Mosque in Madinah.",
+        ],
+        bullets: [
+          "Can be done any time of year (Ramadan is the busiest and most rewarding)",
+          "Most Singapore packages run 9–14 days, covering Makkah and Madinah",
+          "Not the same as Hajj — see our note on the difference below",
+        ],
+      },
+      {
+        h2: "How umrah packages work",
+        body: [
+          "Almost everyone from Singapore travels on a package through a licensed umrah travel agent. The package usually bundles return flights, hotels in both holy cities, ground transport, a muttawif (guide) and sometimes ziarah (visits to historical sites). The single biggest price driver is how close your hotel is to the Haram — walking distance costs more; a short shuttle ride costs less.",
+        ],
+        bullets: [
+          "Bundled: flights, hotels, transport, guide, often meals",
+          "Price driver: hotel distance to the Haram, and the season",
+          "Ramadan and June/December school holidays are the most expensive",
+        ],
+      },
+      {
+        h2: "Visa & the Nusuk platform",
+        body: [
+          "Umrah requires a Saudi umrah visa. Most Singapore travellers have this handled by their agent, but visas can also be issued through Saudi Arabia's official Nusuk app/platform. Passport validity and other entry requirements apply, so confirm the current rules with your agent well before departure.",
+        ],
+        bullets: [
+          "Agent-arranged visa is the norm for package travellers",
+          "Nusuk is the official Saudi platform for umrah permits and services",
+          "Check passport validity and current entry rules early",
+        ],
+      },
+      {
+        h2: "The meningitis vaccination (required)",
+        body: [
+          "Saudi Arabia requires proof of meningococcal (ACWY) vaccination for pilgrims. In Singapore this is available at polyclinics and many GP clinics; get it at least the recommended number of days before travel so the certificate is valid on arrival. Keep the vaccination certificate with your travel documents.",
+        ],
+        bullets: [
+          "Meningococcal ACWY vaccine is mandatory for umrah",
+          "Available at polyclinics and GP clinics in Singapore",
+          "Get it early — the certificate must be valid on arrival",
+        ],
+      },
+      {
+        h2: "Choosing an agent & preparing",
+        body: [
+          "Pick a licensed agent with a clear itinerary, transparent hotel names (so you can check the distance to the Haram yourself) and good reviews from recent pilgrims. Attend an umrah course if you are a first-timer — several are run in Singapore and they walk you through the rites and the du'a. Then plan the practical side, including any Madinah ziarah.",
+        ],
+        links: [
+          { label: "Explore Madinah & Makkah travel guides", href: "/travel/medina" },
+          { label: "Browse Muslim-owned services", href: "/halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "How much does umrah cost from Singapore?", a: "It varies widely by hotel distance to the Haram, airline and season. Ramadan and school-holiday departures are the most expensive. Compare packages on what is actually bundled — flights, hotel star rating and distance, transport and guide — rather than headline price alone." },
+      { q: "What vaccination do I need for umrah?", a: "The meningococcal (ACWY) vaccination is mandatory. In Singapore you can get it at polyclinics and many GP clinics. Have it done early enough that the certificate is valid on arrival, and keep the certificate with your documents." },
+      { q: "Do I need a visa for umrah, and how do I get it?", a: "Yes, a Saudi umrah visa is required. Most Singapore travellers have their agent arrange it as part of the package; visas and services can also be handled through Saudi Arabia's official Nusuk platform. Confirm current requirements with your agent." },
+      { q: "What is the difference between umrah and Hajj?", a: "Hajj is the obligatory pilgrimage performed on fixed dates in Dhul-Hijjah and is one of the five pillars of Islam. Umrah is a non-obligatory pilgrimage with fewer rites that can be performed at any time of year." },
+    ],
+    related: ["ramadan-singapore-2026-guide", "halal-food-johor-bahru-guide"],
+    dropcap: true,
+  },
+
+  {
+    slug: "halal-mala-singapore",
+    title: "Halal Mala in Singapore: Where to Get Your Mala Xiang Guo Fix",
+    dek: "Mala is one of Singapore's favourite flavours — here's how to find genuinely halal mala xiang guo and hotpot, and how to tell if a stall is really halal.",
+    answer:
+      "Halal mala is widely available in Singapore through Muslim-run stalls and MUIS-certified outlets that serve mala xiang guo (dry stir-fried) and mala hotpot. Because classic mala stalls often share woks with non-halal meat, look for a dedicated halal-certified or Muslim-owned stall rather than assuming — check for the MUIS certificate or the Muslim-Owned label, and confirm there's no pork or lard in the base.",
+    datePublished: "2026-07-16",
+    author: AUTHOR,
+    readMins: 7,
+    tags: ["Mala", "Cuisines", "Halal food"],
+    sections: [
+      {
+        h2: "Is mala halal?",
+        body: [
+          "Mala itself — the numbing-spicy Sichuan seasoning of chillies and peppercorns — is just a spice blend, so the flavour is not the issue. What matters is the meat, the stock and the wok. Many mainstream mala stalls cook pork and non-halal meat in the same equipment, which is why you should seek out a stall that is specifically halal-certified or Muslim-run.",
+        ],
+        bullets: [
+          "The spice blend is fine — the meat, stock and shared woks are the concern",
+          "Look for a MUIS certificate or the Muslim-Owned label",
+          "Confirm no pork, lard or non-halal broth in the base",
+        ],
+      },
+      {
+        h2: "Mala xiang guo vs mala hotpot",
+        body: [
+          "Mala comes two main ways. Mala xiang guo is the dry, wok-tossed version where you pick your ingredients by weight and choose your spice and numbness level — quick, portable and the more common halal format. Mala hotpot (malatang or steamboat-style) simmers everything in a spicy broth, so the stock's halal status matters as much as the ingredients.",
+        ],
+        bullets: [
+          "Xiang guo — dry stir-fry, pick-your-own ingredients, choose spice level",
+          "Hotpot / malatang — simmered in broth; check the broth is halal",
+          "Both let you control heat: xiao la (mild) to da la (very spicy)",
+        ],
+      },
+      {
+        h2: "How to find a halal mala stall",
+        body: [
+          "Halal mala has boomed, so you have options — but verify each one. The Humble Halal directory lets you filter for MUIS-certified and Muslim-owned outlets, and you can open the map to find the closest. If a stall can't show certification and isn't clearly Muslim-run, treat it as unconfirmed.",
+        ],
+        links: [
+          { label: "Find halal mala & steamboat near you", href: "/halal" },
+          { label: "Halal steamboat & hotpot guide", href: "/blog/halal-steamboat-hotpot-singapore" },
+        ],
+      },
+      {
+        h2: "Ordering tips",
+        body: [
+          "Mala is priced by weight, so it is easy to overshoot. Grab a basket, keep an eye on how much you pile in, and tell the stall your spice and numbness level. Popular halal-friendly picks include lotus root, enoki, fishball, chicken, luncheon-style halal meat, cabbage and instant noodles.",
+        ],
+        bullets: [
+          "Priced by weight — pace yourself when filling the basket",
+          "State your level: xiao la (mild), zhong la (medium), da la (spicy)",
+          "Crowd-pleasers: lotus root, enoki, fishball, chicken, cabbage, noodles",
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is mala halal in Singapore?", a: "Mala can be halal when it is cooked by a MUIS-certified or Muslim-run stall using halal meat, stock and dedicated equipment. Because many mainstream stalls share woks with pork and non-halal meat, look for certification or the Muslim-Owned label rather than assuming." },
+      { q: "Where can I find halal mala xiang guo?", a: "Halal mala xiang guo is available at Muslim-owned and MUIS-certified stalls across Singapore. Use the Humble Halal directory to filter for halal outlets and open the map to find the nearest one." },
+      { q: "Is mala hotpot halal?", a: "It can be, but the broth matters as much as the ingredients. For hotpot or malatang, confirm the base stock is halal and that no pork or non-halal meat shares the pot — a certified or Muslim-run outlet is the safe choice." },
+      { q: "What does mala taste like?", a: "Mala is a numbing-and-spicy Sichuan flavour: dried chillies bring the heat while Sichuan peppercorns create a tingling numbness. You can usually choose your spice and numbness level, from mild (xiao la) to very spicy (da la)." },
+    ],
+    related: ["halal-steamboat-hotpot-singapore", "halal-korean-bbq-singapore"],
+    dropcap: true,
+  },
+
+  {
+    slug: "halal-mookata-singapore",
+    title: "Halal Mookata in Singapore: The Best Thai BBQ Steamboat Spots",
+    dek: "Mookata — the Thai grill-and-steamboat combo — is a halal-friendly favourite. Here's how it works, what to order, and how to find a genuinely halal mookata.",
+    answer:
+      "Halal mookata is easy to find in Singapore, with many Muslim-owned and MUIS-certified outlets serving the Thai grill-and-steamboat combo. Mookata pairs a domed charcoal grill with a moat of broth for steamboat, so you cook marinated meats, seafood and vegetables at your table. Look for a MUIS certificate or the Muslim-Owned label and confirm the marinades and broth are halal.",
+    datePublished: "2026-07-16",
+    author: AUTHOR,
+    readMins: 7,
+    tags: ["Mookata", "Cuisines", "Halal food"],
+    sections: [
+      {
+        h2: "What is mookata?",
+        body: [
+          "Mookata (Thai for “pork” + “skillet”, though halal versions swap the pork) is a communal Thai-style barbecue. A dome-shaped pan sits over hot charcoal: you grill marinated meats on the raised centre while a moat of broth around the edge doubles as steamboat for vegetables, seafood and noodles. Fat from the grill drips into the broth and flavours it as you go.",
+        ],
+        bullets: [
+          "Grill on top, steamboat in the moat — two ways to cook at once",
+          "Charcoal-heated dome pan gives that smoky char",
+          "Halal outlets use halal meats, marinades and broth (no pork)",
+        ],
+      },
+      {
+        h2: "Is mookata halal?",
+        body: [
+          "The format is naturally suited to halal dining — plenty of Singapore mookata outlets are Muslim-owned or MUIS-certified. The things to verify are the marinated meats, the sauces and the broth, since traditional Thai versions centre on pork. A certified or clearly Muslim-run outlet removes the guesswork.",
+        ],
+        bullets: [
+          "Look for the MUIS certificate or the Muslim-Owned label",
+          "Confirm marinades, dipping sauces and broth are halal",
+          "Halal mookata typically features chicken, beef and seafood",
+        ],
+      },
+      {
+        h2: "What to order",
+        body: [
+          "Most mookata places do a set for sharing, which is the easiest way to start. Beyond the marinated meats, load the broth with vegetables and seafood, and don't skip the signature Thai dips.",
+        ],
+        bullets: [
+          "Marinated chicken, beef and lamb for the grill",
+          "Prawns, squid, fishball and crabstick for the steamboat",
+          "Vegetables, tofu, mushrooms and glass noodles in the broth",
+          "Thai seafood dip (nam jim) and chilli sauce on the side",
+        ],
+      },
+      {
+        h2: "Finding halal mookata near you",
+        body: [
+          "Halal mookata is spread across the island, from heartland coffeeshops to dedicated restaurants. Filter the directory for halal outlets and open the map to find the nearest table — and if you love the steamboat side, our hotpot guide has more.",
+        ],
+        links: [
+          { label: "Find halal mookata near you", href: "/halal" },
+          { label: "Halal steamboat & hotpot guide", href: "/blog/halal-steamboat-hotpot-singapore" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is mookata halal in Singapore?", a: "Many mookata outlets in Singapore are Muslim-owned or MUIS-certified and serve fully halal sets. Because traditional Thai mookata centres on pork, look for the MUIS certificate or the Muslim-Owned label and confirm the marinades and broth are halal." },
+      { q: "What is the difference between mookata and steamboat?", a: "Mookata combines both: a domed grill in the centre for barbecuing meats and a surrounding moat of broth that works like steamboat for vegetables and seafood. Plain steamboat only simmers ingredients in broth, with no grill." },
+      { q: "What do you eat with halal mookata?", a: "Grill marinated chicken, beef and lamb on top while cooking prawns, squid, fishball, vegetables and glass noodles in the broth. Thai seafood dip (nam jim) and chilli sauce are the classic accompaniments." },
+      { q: "Where can I find halal mookata near me?", a: "Halal mookata is available across Singapore in coffeeshops and dedicated restaurants. Use the Humble Halal directory to filter for halal outlets and open the map to find the closest one." },
+    ],
+    related: ["halal-steamboat-hotpot-singapore", "halal-korean-bbq-singapore"],
+  },
+
+  {
+    slug: "halal-korean-bbq-singapore",
+    title: "Halal Korean BBQ in Singapore: Where to Grill Halal Samgyeopsal Style",
+    dek: "Korean BBQ, minus the pork and alcohol — here's how to find genuinely halal KBBQ in Singapore and what to order for the full grill-at-your-table experience.",
+    answer:
+      "Halal Korean BBQ is available in Singapore at Muslim-owned and MUIS-certified restaurants that serve marinated beef and chicken (in place of pork) grilled at your table, with the full spread of banchan side dishes. Look for the MUIS certificate or the Muslim-Owned label, and confirm the marinades and sauces contain no mirin, rice wine or other alcohol.",
+    datePublished: "2026-07-17",
+    author: AUTHOR,
+    readMins: 7,
+    tags: ["Korean", "Cuisines", "Halal food"],
+    sections: [
+      {
+        h2: "Can Korean BBQ be halal?",
+        body: [
+          "Yes — with two swaps. Traditional Korean BBQ leans on pork (samgyeopsal) and often uses alcohol-based marinades and soups, so halal KBBQ replaces the pork with beef, chicken and seafood and uses alcohol-free seasoning. The tabletop-grill experience, the banchan and the lettuce wraps all stay exactly the same.",
+        ],
+        bullets: [
+          "Pork is swapped for marinated beef, chicken and seafood",
+          "Marinades and stews must be free of mirin, soju and rice wine",
+          "Look for the MUIS certificate or the Muslim-Owned label",
+        ],
+      },
+      {
+        h2: "What to order",
+        body: [
+          "Halal KBBQ menus keep all the fun of grilling at the table. Order a mix of marinated and plain cuts, then build lettuce wraps with rice, ssamjang and kimchi. Many outlets do a buffet, which is the best-value way to try everything.",
+        ],
+        bullets: [
+          "Bulgogi (marinated beef) and dak-galbi (spicy chicken)",
+          "Beef short rib (galbi) and chicken for the grill",
+          "Banchan — kimchi, pickles, beansprouts — usually free-flow",
+          "Wrap it: lettuce, rice, ssamjang and grilled meat",
+        ],
+      },
+      {
+        h2: "Halal KBBQ buffet vs à la carte",
+        body: [
+          "If you want to eat a lot and try many cuts, a halal KBBQ buffet is the move — a fixed price for free-flow meat and sides. À la carte suits smaller appetites or a specific craving. Either way, confirm the outlet's halal status before you go.",
+        ],
+        bullets: [
+          "Buffet — best value for groups and big eaters",
+          "À la carte — lighter, order exactly what you want",
+          "Check certification first — some KBBQ chains are not halal",
+        ],
+      },
+      {
+        h2: "Find halal Korean BBQ near you",
+        body: [
+          "Halal Korean food has grown fast in Singapore, from fried chicken to full KBBQ. Filter the directory for halal outlets, and see our wider Korean guide for stews, bibimbap and fried chicken too.",
+        ],
+        links: [
+          { label: "Find halal Korean BBQ near you", href: "/halal" },
+          { label: "Halal Korean food guide", href: "/blog/halal-korean-food-singapore" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is Korean BBQ halal in Singapore?", a: "It can be. Halal Korean BBQ restaurants swap pork for beef, chicken and seafood and use alcohol-free marinades, and several in Singapore are Muslim-owned or MUIS-certified. Confirm the certificate or Muslim-Owned label before dining, as many mainstream KBBQ chains are not halal." },
+      { q: "What do you eat at halal Korean BBQ?", a: "Grill marinated beef (bulgogi, galbi) and chicken (dak-galbi) at the table, wrap them in lettuce with rice and ssamjang, and enjoy free-flow banchan like kimchi and pickled sides. Many outlets offer a buffet." },
+      { q: "Is there a halal Korean BBQ buffet?", a: "Yes, several halal-certified and Muslim-owned outlets in Singapore run Korean BBQ buffets with free-flow marinated meats and side dishes. Use the directory to find one near you and check its halal status first." },
+      { q: "Why isn't all Korean BBQ halal?", a: "Traditional Korean BBQ features pork (samgyeopsal) and frequently uses alcohol-based marinades and soups such as mirin, soju or rice wine. Halal versions remove both, which is why certification matters." },
+    ],
+    related: ["halal-korean-food-singapore", "halal-mookata-singapore"],
+  },
+
+  {
+    slug: "halal-western-food-singapore",
+    title: "Halal Western Food in Singapore: Steaks, Burgers & Brunch",
+    dek: "From juicy burgers to sizzling steaks and all-day brunch — here's where to find halal Western food in Singapore, and how to be sure it's genuinely halal.",
+    answer:
+      "Halal Western food is easy to find in Singapore, from MUIS-certified steakhouses and burger joints to Muslim-owned cafés doing all-day brunch. Because Western menus often include pork (bacon, ham) and alcohol, look for a MUIS certificate or the Muslim-Owned label and check that meats are halal and dishes are cooked without wine or pork stock.",
+    datePublished: "2026-07-17",
+    author: AUTHOR,
+    readMins: 7,
+    tags: ["Western", "Cuisines", "Halal food"],
+    sections: [
+      {
+        h2: "Is Western food halal-friendly?",
+        body: [
+          "Western food covers a lot of ground — steaks, burgers, pasta, brunch — and much of it is naturally halal-friendly once you remove pork and alcohol. The classic pitfalls are bacon and ham, pork-based stocks, and wine used in sauces and cooking. A certified or Muslim-run kitchen handles all of that for you.",
+        ],
+        bullets: [
+          "Watch for pork (bacon, ham) and alcohol in sauces",
+          "Halal steakhouses use halal-slaughtered beef and lamb",
+          "Look for the MUIS certificate or the Muslim-Owned label",
+        ],
+      },
+      {
+        h2: "Halal steak",
+        body: [
+          "Steak is one of the strongest halal Western categories in Singapore, with dedicated halal steakhouses serving proper cuts — ribeye, sirloin, tenderloin — with the usual sides. If a good steak is what you're after, we have a full guide.",
+        ],
+        links: [
+          { label: "Halal steak in Singapore: full guide", href: "/blog/halal-steak-singapore" },
+        ],
+        bullets: [
+          "Dedicated halal steakhouses across the island",
+          "Ribeye, sirloin and tenderloin with classic sides",
+          "Great for date nights and celebrations",
+        ],
+      },
+      {
+        h2: "Halal burgers & comfort food",
+        body: [
+          "Burgers, wings, pasta and mac-and-cheese are café staples, and plenty of Muslim-owned spots do them well. Many popular fast-food and casual chains are also MUIS-certified — but not all, so it is still worth a quick check for the ones that aren't.",
+        ],
+        bullets: [
+          "Smashed and gourmet burgers at Muslim-owned cafés",
+          "Wings, fries, pasta and mains for the whole table",
+          "Some chains are certified; verify the ones that aren't",
+        ],
+      },
+      {
+        h2: "Halal brunch & cafés",
+        body: [
+          "All-day brunch — big breakfasts, pancakes, eggs and good coffee — is a booming halal category. Our breakfast and café guides go deeper, and you can filter the directory for Western and café outlets near you.",
+        ],
+        links: [
+          { label: "Best halal cafés in Singapore", href: "/blog/best-halal-cafes-singapore" },
+          { label: "Best halal breakfast in Singapore", href: "/blog/best-halal-breakfast-singapore" },
+          { label: "Browse the halal directory", href: "/halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is Western food halal in Singapore?", a: "Much of it is available halal. Look for MUIS-certified or Muslim-owned steakhouses, burger joints and cafés. The things to check are pork items like bacon and ham, pork-based stocks, and wine used in cooking — a certified or Muslim-run kitchen avoids all three." },
+      { q: "Where can I find halal steak in Singapore?", a: "There are dedicated halal steakhouses across Singapore serving ribeye, sirloin and tenderloin with classic sides. See our halal steak guide for specifics, or filter the Humble Halal directory for halal Western outlets." },
+      { q: "Are fast-food burger chains halal in Singapore?", a: "Some are MUIS-certified and some are not, and it can vary by outlet. Check each brand's certification before ordering — our “Is it halal?” brand checker and roundups cover the popular chains." },
+      { q: "Is there halal Western brunch in Singapore?", a: "Yes — all-day halal brunch is popular, with Muslim-owned cafés serving big breakfasts, pancakes, eggs and coffee. Our halal café and breakfast guides list where to go." },
+    ],
+    related: ["halal-steak-singapore", "best-halal-cafes-singapore"],
+  },
+
+  {
+    slug: "is-it-halal-popular-chains-singapore",
+    title: "Is It Halal? Popular Food Chains in Singapore, Checked (2026)",
+    dek: "Is MOS Burger halal? Genki Sushi? Yoshinoya? A plain-English roundup of Singapore's most-searched chains — and how to verify each one yourself.",
+    answer:
+      "Some popular chains in Singapore are MUIS-certified halal (including several outlets of well-known Japanese and fast-food brands), while others are not, and status can differ by outlet. Always confirm using the official MUIS HalalSG register or the certificate displayed in-store rather than a “no pork” sign. Below we cover the chains Singaporeans search for most and how to check each one.",
+    datePublished: "2026-07-18",
+    author: AUTHOR,
+    readMins: 8,
+    tags: ["Is it halal", "Brands", "Halal basics"],
+    sections: [
+      {
+        h2: "How to check any chain yourself",
+        body: [
+          "Before the specifics, the method: a chain is only officially halal if it holds a valid MUIS halal certificate for that outlet. Certification can vary between branches of the same brand, and menus change, so the reliable check is the MUIS HalalSG register or the certificate on display — never just a “no pork, no lard” sign, which is self-declared.",
+        ],
+        links: [
+          { label: "Is it halal? brand checker", href: "/is-halal" },
+          { label: "How to check MUIS halal certification", href: "/blog/how-to-check-muis-halal-certification" },
+        ],
+        bullets: [
+          "Official = valid MUIS certificate for that specific outlet",
+          "Status can differ by branch — check the one you're visiting",
+          "“No pork, no lard” is self-declared, not certification",
+        ],
+      },
+      {
+        h2: "Japanese chains people ask about",
+        body: [
+          "Japanese food is the most-searched halal-check category in Singapore. Brands like MOS Burger, Genki Sushi, Sukiya and Yoshinoya come up constantly. Several have MUIS-certified outlets, but because certification and menus vary, verify the specific outlet before you order.",
+        ],
+        bullets: [
+          "MOS Burger, Genki Sushi, Sukiya, Yoshinoya, Pepper Lunch — frequently searched",
+          "Some outlets are certified; confirm the branch you're at",
+          "Our brand checker tracks halal status where available",
+        ],
+      },
+      {
+        h2: "Fast food & casual chains",
+        body: [
+          "Beyond Japanese, the other big cluster is Western fast food and casual dining — the “is it halal” questions around burger, pizza, chicken and grill chains. Some are certified island-wide, some at selected outlets, and some not at all.",
+        ],
+        bullets: [
+          "Burger, pizza, fried-chicken and grill chains vary widely",
+          "A brand can be certified in one country and not another",
+          "Check the Singapore outlet's certificate, not overseas status",
+        ],
+      },
+      {
+        h2: "When a chain isn't certified",
+        body: [
+          "If a chain has no MUIS certification for its Singapore outlets, treat it as not halal even if it avoids pork — cross-contamination, non-halal meat and alcohol in sauces are all possible. Use the directory to find a certified alternative for the same craving.",
+        ],
+        links: [
+          { label: "Browse MUIS-certified & Muslim-owned places", href: "/halal" },
+          { label: "Is it halal? brand checker", href: "/is-halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is MOS Burger halal in Singapore?", a: "MOS Burger has had MUIS-certified outlets in Singapore, but certification can vary by branch and over time. Confirm the specific outlet on the MUIS HalalSG register or check the certificate displayed in-store before ordering." },
+      { q: "Is Genki Sushi halal?", a: "Some Genki Sushi outlets in Singapore have been MUIS-certified, but status can differ by location. Verify the branch you plan to visit on the official MUIS register or via the displayed certificate rather than assuming." },
+      { q: "How can I tell if a chain is really halal?", a: "Check for a valid MUIS halal certificate for that specific outlet, using the MUIS HalalSG register or the certificate on display. A “no pork, no lard” sign is self-declared and does not mean the outlet is certified." },
+      { q: "Does halal status differ between outlets of the same chain?", a: "Yes. A brand can have some MUIS-certified outlets and others that are not, and certification can change. Always check the specific branch you are visiting." },
+    ],
+    related: ["is-it-halal-bakeries-cafes-singapore", "how-to-check-muis-halal-certification"],
+    dropcap: true,
+  },
+
+  {
+    slug: "is-it-halal-bakeries-cafes-singapore",
+    title: "Is It Halal? Bakeries & Café Chains in Singapore, Checked (2026)",
+    dek: "Is Paris Baguette halal? BreadTalk? Cedele? Four Leaves? A clear roundup of Singapore's most-searched bakeries and cafés — and how to verify each one.",
+    answer:
+      "Bakery and café halal status in Singapore is mixed: some chains hold MUIS certification for their products or outlets, while others are not certified and may use alcohol (in vanilla essence, rum-soaked items) or non-halal gelatine and emulsifiers. Confirm via the MUIS HalalSG register or the certificate in-store — a “no pork” sign is not enough for baked goods.",
+    datePublished: "2026-07-18",
+    author: AUTHOR,
+    readMins: 8,
+    tags: ["Is it halal", "Bakery", "Halal basics"],
+    sections: [
+      {
+        h2: "Why bakeries need extra checking",
+        body: [
+          "Baked goods have halal pitfalls that aren't obvious. Alcohol can appear in flavourings (some vanilla essences, rum-soaked cakes and liqueur fillings), while gelatine, emulsifiers and some fats can be animal-derived and non-halal. That's why, even more than with savoury food, a bakery needs proper certification rather than a “no pork” assurance.",
+        ],
+        bullets: [
+          "Alcohol hides in flavourings and some cake fillings",
+          "Gelatine and emulsifiers may be non-halal",
+          "Certification matters more than a “no pork” sign here",
+        ],
+      },
+      {
+        h2: "The chains people search for",
+        body: [
+          "The most-searched bakery and café halal questions in Singapore are Paris Baguette, BreadTalk, Cedele, Four Leaves, Swee Heng and Tiong Bahru Bakery, plus dessert names like Awfully Chocolate. Status varies — some carry MUIS certification for products or outlets, others don't — so check each specifically.",
+        ],
+        bullets: [
+          "Paris Baguette, BreadTalk, Cedele, Four Leaves, Swee Heng — top searches",
+          "Some are certified for products/outlets; others are not",
+          "Check the specific outlet or product line, not the brand name alone",
+        ],
+      },
+      {
+        h2: "Coffee chains & cafés",
+        body: [
+          "Café questions — Starbucks, Coffee Bean, Tiong Bahru Bakery and the like — usually come down to the food menu rather than the drinks. Plain coffee and tea are generally fine; the check is on cakes, pastries and any items with alcohol-based flavouring or non-halal gelatine.",
+        ],
+        bullets: [
+          "Plain coffee and tea are generally not the concern",
+          "Check cakes, pastries and cream fillings",
+          "Muslim-owned cafés remove the guesswork — filter for them",
+        ],
+      },
+      {
+        h2: "Finding certified bakes & desserts",
+        body: [
+          "For celebration cakes and everyday bakes you can trust, use the directory to filter for MUIS-certified and Muslim-owned bakeries, and see our cakes-and-bakeries guide for where to order.",
+        ],
+        links: [
+          { label: "Halal cakes & bakeries in Singapore", href: "/blog/halal-cakes-bakeries-singapore" },
+          { label: "Is it halal? brand checker", href: "/is-halal" },
+          { label: "Browse the halal directory", href: "/halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "Is Paris Baguette halal in Singapore?", a: "Paris Baguette's halal status in Singapore should be confirmed per outlet and product on the MUIS HalalSG register or via the certificate in-store. Bakeries can use alcohol-based flavourings or non-halal gelatine, so certification — not a “no pork” sign — is the reliable check." },
+      { q: "Is BreadTalk halal?", a: "BreadTalk's certification can vary by product line and outlet, so verify on the official MUIS register or the in-store certificate. Some items or outlets may be certified while others are not." },
+      { q: "Why do bakeries need certification if there's no pork?", a: "Because baked goods can contain alcohol in flavourings and fillings, and non-halal gelatine, emulsifiers or fats — none of which a “no pork” sign covers. MUIS certification checks the full ingredient and process chain." },
+      { q: "Where can I find guaranteed halal cakes?", a: "Filter the Humble Halal directory for MUIS-certified and Muslim-owned bakeries, or see our halal cakes and bakeries guide for celebration cakes and everyday bakes you can order with confidence." },
+    ],
+    related: ["is-it-halal-popular-chains-singapore", "halal-cakes-bakeries-singapore"],
+  },
+
+  {
+    slug: "aqiqah-singapore-guide",
+    title: "Aqiqah in Singapore: A Simple Guide for New Parents (2026)",
+    dek: "What aqiqah is, when to do it, how many sheep, and how aqiqah packages work in Singapore — a plain-English guide for new Muslim parents.",
+    answer:
+      "Aqiqah is the sunnah of sacrificing sheep or goat to celebrate a new baby, traditionally on the seventh day after birth — two animals for a boy and one for a girl, with the meat cooked and shared. In Singapore, most families use an aqiqah service or provider that handles the sacrifice (often overseas) and delivers cooked food or arranges a kenduri, so parents can fulfil the sunnah without managing it themselves.",
+    datePublished: "2026-07-15",
+    author: AUTHOR,
+    readMins: 7,
+    tags: ["Aqiqah", "Community", "Muslim services"],
+    sections: [
+      {
+        h2: "What is aqiqah?",
+        body: [
+          "Aqiqah is a recommended act (sunnah) performed to give thanks for the birth of a child. It involves sacrificing a sheep or goat, with the meat prepared and distributed to family, neighbours and those in need. It is traditionally paired with naming the baby and shaving the head, and giving the weight of the hair in silver to charity.",
+        ],
+        bullets: [
+          "A sunnah to celebrate and give thanks for a newborn",
+          "Meat is cooked and shared, including with those in need",
+          "Often paired with naming and the hair-shaving custom",
+        ],
+      },
+      {
+        h2: "When and how many animals",
+        body: [
+          "The recommended time is the seventh day after birth, though it can be done later if needed. The commonly cited sunnah is two sheep or goats for a boy and one for a girl — but scholars note that one for a boy is also acceptable if that is what a family can manage. Your provider or a religious teacher can advise on your situation.",
+        ],
+        bullets: [
+          "Recommended on the 7th day; can be done later",
+          "Two animals for a boy, one for a girl (one for a boy is also accepted)",
+          "Ask a provider or asatizah if you're unsure",
+        ],
+      },
+      {
+        h2: "How aqiqah services work in Singapore",
+        body: [
+          "Because livestock sacrifice isn't practical in Singapore, most families book an aqiqah package. Providers typically arrange the sacrifice (frequently overseas, where the meat is also distributed to those in need) and then deliver cooked food to your home or cater a small kenduri. Packages differ in what's included, so compare carefully.",
+        ],
+        bullets: [
+          "Provider arranges the sacrifice, often overseas with local distribution",
+          "You receive cooked food delivery or a catered kenduri in Singapore",
+          "Compare packages on animals, portions, menu and distribution",
+        ],
+      },
+      {
+        h2: "Choosing an aqiqah provider",
+        body: [
+          "Look for a Muslim-owned provider with clear pricing, transparency on where and how the sacrifice is done, and good reviews. Confirm the food is halal-catered, whether distribution to the needy is included, and the delivery date around your baby's seventh day. Browse Muslim-owned services and halal caterers to compare.",
+        ],
+        links: [
+          { label: "Browse Muslim-owned businesses & services", href: "/blog/muslim-owned-businesses-singapore" },
+          { label: "Halal catering in Singapore", href: "/blog/halal-catering-singapore-guide" },
+          { label: "Find services in the directory", href: "/halal" },
+        ],
+      },
+    ],
+    faq: [
+      { q: "What is aqiqah?", a: "Aqiqah is the sunnah of sacrificing a sheep or goat to give thanks for a newborn, with the meat cooked and shared, including with those in need. It is traditionally done on the seventh day after birth alongside naming the baby." },
+      { q: "How many sheep for aqiqah, boy vs girl?", a: "The commonly cited sunnah is two sheep or goats for a boy and one for a girl. Scholars also accept one animal for a boy if that is what a family can afford, so ask a provider or religious teacher about your situation." },
+      { q: "When should aqiqah be done?", a: "The recommended time is the seventh day after the baby's birth, though it can be performed later if the seventh day isn't possible. Many Singapore providers schedule the cooked-food delivery or kenduri around that date." },
+      { q: "How does aqiqah work in Singapore?", a: "Most families book an aqiqah package: the provider arranges the sacrifice (often overseas, with the meat distributed to those in need) and delivers cooked food or caters a kenduri in Singapore. Compare packages on the number of animals, menu and what distribution is included." },
+    ],
+    related: ["muslim-owned-businesses-singapore", "halal-catering-singapore-guide"],
+    dropcap: true,
+  },
 ];
 
 /* ---- Feature image + category, keyed by slug ----
@@ -1558,6 +2255,16 @@ const META: Record<string, BlogMeta> = {
   "ramadan-singapore-2026-guide": { category: "seasonal-events", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and a meal for breaking fast during Ramadan" },
   "muslim-owned-businesses-singapore": { category: "community-business", image: "/blog/muslim-owned-businesses-singapore.webp", imageAlt: "Hijabi shopkeeper serving a customer at a Muslim-owned beauty and fashion store in Singapore" },
   "malay-wedding-cost-singapore": { category: "community-business", image: bimg("1519741497674-611481863552"), imageAlt: "Elegantly set Malay wedding reception table with floral pelamin decor in Singapore", leadVertical: "weddings" },
+  "halal-food-johor-bahru-guide": { category: "muslim-travel", image: bimg("1504674900247-0877df9cc836"), imageAlt: "Halal spread at a Johor Bahru food court on a day trip from Singapore" },
+  "crossing-to-johor-bahru-checkpoints-transport": { category: "muslim-travel", image: bimg("1500835556837-99ac94a94552"), imageAlt: "The road crossing from Singapore to Johor Bahru" },
+  "umrah-from-singapore-guide": { category: "muslim-travel", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and preparations for an umrah pilgrimage from Singapore" },
+  "halal-mala-singapore": { category: "cuisines", image: bimg("1565299624946-b28f40a0ae38"), imageAlt: "Halal mala xiang guo with vegetables and sliced meat in Singapore" },
+  "halal-mookata-singapore": { category: "cuisines", image: bimg("1556909114-f6e7ad7d3136"), imageAlt: "Halal mookata Thai barbecue steamboat cooking at a table in Singapore" },
+  "halal-korean-bbq-singapore": { category: "cuisines", image: bimg("1565557623262-b51c2513a641"), imageAlt: "Halal Korean BBQ with marinated beef and banchan side dishes in Singapore" },
+  "halal-western-food-singapore": { category: "cuisines", image: bimg("1556909114-f6e7ad7d3136"), imageAlt: "Halal Western steak and sides plated at a Singapore restaurant" },
+  "is-it-halal-popular-chains-singapore": { category: "halal-questions", image: bimg("1504674900247-0877df9cc836"), imageAlt: "Checking whether popular food chains are halal in Singapore" },
+  "is-it-halal-bakeries-cafes-singapore": { category: "halal-questions", image: bimg("1565299624946-b28f40a0ae38"), imageAlt: "Checking whether popular bakeries and cafés are halal in Singapore" },
+  "aqiqah-singapore-guide": { category: "muslim-services", image: bimg("1519741497674-611481863552"), imageAlt: "A family kenduri table for an aqiqah celebration in Singapore" },
 };
 
 const builtPosts: BlogPost[] = rawPosts.map((p) => {
@@ -1591,6 +2298,16 @@ const PUBLISHED_SLUGS = new Set<string>([
   "halal-dim-sum-singapore",
   "muslim-owned-businesses-singapore",
   "malay-wedding-cost-singapore",
+  "halal-food-johor-bahru-guide",
+  "crossing-to-johor-bahru-checkpoints-transport",
+  "umrah-from-singapore-guide",
+  "halal-mala-singapore",
+  "halal-mookata-singapore",
+  "halal-korean-bbq-singapore",
+  "halal-western-food-singapore",
+  "is-it-halal-popular-chains-singapore",
+  "is-it-halal-bakeries-cafes-singapore",
+  "aqiqah-singapore-guide",
 ]);
 
 export const posts: BlogPost[] = builtPosts.filter((p) => PUBLISHED_SLUGS.has(p.slug));
