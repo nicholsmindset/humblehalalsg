@@ -1216,12 +1216,12 @@ export function CheckoutScreen() {
               <hr className="divider" style={{ margin: "16px 0" }} />
               <div className="stack g14">
                 <div className="field">
-                  <label>Full name</label>
-                  <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+                  <label htmlFor="ev-ck-name">Full name</label>
+                  <input id="ev-ck-name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
                 </div>
                 <div className="field">
-                  <label>Email</label>
-                  <input className="input" type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <label htmlFor="ev-ck-email">Email</label>
+                  <input id="ev-ck-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                   {free && !ev.requiresApproval && (
                     <span className="hint" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <Icon name="ticket" size={14} /> We’ll email your confirmation with a QR ticket — show it at the door.
