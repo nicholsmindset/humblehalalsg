@@ -252,8 +252,8 @@ export const brands: BrandHalal[] = [
     aliases: ["coffee bean", "coffee bean and tea leaf", "cbtl"],
   },
   {
-    slug: "twelve-cupcakes", brand: "Twelve Cupcakes", category: "Cake shop", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
-    answer: "Yes — Twelve Cupcakes is MUIS halal-certified in Singapore, so its cupcakes and cakes are suitable for Muslim customers. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register before ordering.",
+    slug: "twelve-cupcakes", brand: "Twelve Cupcakes", category: "Cake shop", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Twelve Cupcakes is not confirmed as MUIS halal-certified. Public sources conflict and its status appears to have changed, with reports that an earlier certification has lapsed, so do not assume it is halal. Always check the current listing on the official MUIS HalalSG register before ordering.",
     aliases: ["12 cupcakes"],
   },
   {
