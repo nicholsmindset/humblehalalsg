@@ -340,6 +340,43 @@ export const brands: BrandHalal[] = [
     answer: "Astons Specialities is not halal — its menu includes pork and alcohol and its outlets are not MUIS-certified. For a halal alternative, the same group runs ANDES by Astons, a separate halal-certified steak-and-Western brand — confirm ANDES outlets on the MUIS HalalSG register.",
     aliases: ["astons specialities", "aston", "andes by astons"],
   },
+  // ── v3 brand fan-out batch 2 (statuses verified vs MUIS HalalSG + public
+  //    brand statements, July 2026). Re-verify per outlet. ──
+  {
+    slug: "4fingers", brand: "4Fingers Crispy Chicken", category: "Fried chicken", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all 4Fingers Crispy Chicken outlets in Singapore are MUIS halal-certified, from its Korean-inspired crispy chicken to the sides. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["4 fingers", "four fingers", "4fingers crispy chicken"],
+  },
+  {
+    slug: "texas-chicken", brand: "Texas Chicken", category: "Fast food", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Texas Chicken Singapore is MUIS halal-certified across its outlets, so its fried chicken, tenders and sides are halal. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["texas fried chicken", "texas chicken singapore"],
+  },
+  {
+    slug: "wok-hey", brand: "Wok Hey", category: "Zi char / wok fast-casual", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Wok Hey is MUIS halal-certified across its outlets islandwide, serving halal wok-fried zi char in a fast-casual format. Certification is renewed periodically — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["wok hey singapore", "wokhey"],
+  },
+  {
+    slug: "swensens", brand: "Swensen's", category: "Western & ice cream", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — many Swensen's and Swensen's Unlimited outlets in Singapore are MUIS halal-certified, but certification is per-outlet and not every location is covered. Check the specific outlet and confirm its current certificate on the MUIS HalalSG register before dining.",
+    aliases: ["swensens", "swensens unlimited", "swensen"],
+  },
+  {
+    slug: "toast-box", brand: "Toast Box", category: "Kopitiam & café", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Toast Box is not MUIS halal-certified. Part of the BreadTalk Group, it holds no halal certification and some outlets serve non-halal items such as braised pork rice. Treat it as not halal-certified and verify on MUIS HalalSG.",
+    aliases: ["toastbox", "toast box singapore"],
+  },
+  {
+    slug: "collins", brand: "COLLIN'S", category: "Western restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "COLLIN'S (and Collin's Grille) is not halal — its outlets serve pork and are not MUIS-certified. For a halal alternative, the same group runs El Fuego by COLLIN'S, a separate MUIS halal-certified modern-European concept — confirm El Fuego outlets on the MUIS HalalSG register.",
+    aliases: ["collins", "collins grille", "collin's grille", "el fuego by collins"],
+  },
+  {
+    slug: "sushi-express", brand: "Sushi Express", category: "Japanese restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Sushi Express is not MUIS halal-certified in Singapore. It is not on the MUIS HalalSG register and some items use mirin (rice wine), with reports on other non-halal items varying. Treat it as not certified — for halal sushi, choose a MUIS-certified Japanese restaurant and verify on MUIS HalalSG.",
+    aliases: ["sushi express singapore"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
