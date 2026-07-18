@@ -194,6 +194,7 @@ export async function GET(req: Request) {
     const daily = new Map<string, { day: string; s: Set<string>; searches: number; listingViews: number; leadActions: number }>();
     const device = new Map<string, { device: string; s: Set<string>; leadActions: number }>();
     const channel = new Map<Channel, { channel: Channel; s: Set<string>; leadActions: number }>();
+    const catDayLeads = new Map<string, Map<string, number>>(); // category → day → lead actions (sparkline trend)
 
     for (const e of events) {
       const sid = e.session_id || "";
@@ -212,6 +213,12 @@ export async function GET(req: Request) {
       if (isSearch) d.searches++;
       if (isView) d.listingViews++;
       if (isLead) d.leadActions++;
+
+      if (isLead && e.category) {
+        const byDay = catDayLeads.get(e.category) || new Map<string, number>();
+        catDayLeads.set(e.category, byDay);
+        byDay.set(day, (byDay.get(day) || 0) + 1);
+      }
 
       const dev = (e.device || "unknown").toLowerCase();
       const dv = device.get(dev) || { device: dev, s: new Set<string>(), leadActions: 0 };
@@ -239,11 +246,15 @@ export async function GET(req: Request) {
     const channelRows = [...channel.values()]
       .map((c) => ({ channel: c.channel, sessions: c.s.size, leadActions: c.leadActions, convRate: convRate(c.leadActions, c.s.size) }))
       .sort((a, b) => b.sessions - a.sessions);
+    // Per-category lead trend aligned to the daily day-axis (for KPI sparklines).
+    const dayAxis = dailySeries.map((d) => d.day);
+    const categoryTrends: Record<string, number[]> = {};
+    for (const [cat, byDay] of catDayLeads) categoryTrends[cat] = dayAxis.map((day) => byDay.get(day) || 0);
 
     return NextResponse.json({
       ok: true,
       listings: listingRows, opportunities, journeys,
-      funnel, daily: dailySeries, device: deviceRows, channel: channelRows,
+      funnel, daily: dailySeries, device: deviceRows, channel: channelRows, categoryTrends,
     });
   } catch (e) {
     return NextResponse.json(

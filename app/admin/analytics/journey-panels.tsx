@@ -5,7 +5,7 @@
 // the ranking/derivation is pure (lib/analytics-overview).
 
 import { fmt } from "@/lib/analytics-dashboard";
-import { searchOpportunities, type Funnel, type Channel } from "@/lib/analytics-overview";
+import { searchOpportunities, recommendExperiment, type Funnel, type Channel } from "@/lib/analytics-overview";
 import type { SearchRow } from "./dashboard-sections";
 import { S } from "./dashboard-sections";
 
@@ -93,6 +93,32 @@ export function SearchOpportunitiesPanel({ searches }: { searches: SearchRow[] }
             {ops.length === 0 && <tr><td style={{ ...S.td, color: "#888" }} colSpan={5}>Not enough search volume yet to surface opportunities.</td></tr>}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Recommended experiment ───────────────────────────────────────────────────
+const CONF_STYLE: Record<string, { c: string; bg: string }> = {
+  High: { c: GREEN, bg: "#E1F5EE" }, Medium: { c: GOLD, bg: "#FBF3E0" }, Low: { c: "#6C7682", bg: "rgba(128,128,128,.1)" },
+};
+
+export function RecommendedExperimentPanel({ funnel, searches }: { funnel: Funnel | null; searches: SearchRow[] }) {
+  const exp = recommendExperiment(funnel, searchOpportunities(searches, { minSearches: 5 }));
+  if (!exp) return null;
+  const conf = CONF_STYLE[exp.confidence];
+  return (
+    <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", background: "linear-gradient(135deg,#FBF7EF,#FFFCF5)", border: "1px solid #E5DECE", borderRadius: 16, padding: "16px 20px" }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, display: "grid", placeItems: "center", background: "#fff", color: GOLD, fontSize: 22, flexShrink: 0, border: "1px solid #E5DECE" }}>💡</div>
+      <div style={{ minWidth: 260, flex: 1 }}>
+        <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: GOLD }}>Recommended experiment</p>
+        <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 800, color: "#1F2933" }}>{exp.title}</p>
+        <p style={{ margin: 0, fontSize: 13, color: "#586471" }}>{exp.detail}</p>
+      </div>
+      <div style={{ textAlign: "center", minWidth: 120 }}>
+        <p style={{ margin: 0, fontSize: 22, fontWeight: 850, color: GREEN, letterSpacing: "-.02em" }}>+{exp.upliftMin}–{exp.upliftMax}</p>
+        <p style={{ margin: "0 0 6px", fontSize: 11, color: "#7A8490" }}>est. leads / month</p>
+        <span style={{ fontSize: 11, fontWeight: 700, color: conf.c, background: conf.bg, padding: "2px 8px", borderRadius: 999 }}>{exp.confidence} confidence</span>
       </div>
     </div>
   );

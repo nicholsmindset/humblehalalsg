@@ -22,7 +22,7 @@ import {
   AreasSection, CategoriesSection, OpportunitiesSection, JourneysSection,
 } from "./dashboard-sections";
 import { InsightBanner, FunnelPanel, PlatformHealthPanel, RecentAlertsPanel, TopCategoriesPanel, type Health } from "./overview-panels";
-import { DevicePanel, ChannelPanel, SearchOpportunitiesPanel, DropoffPanel, type DeviceRow, type ChannelRow } from "./journey-panels";
+import { DevicePanel, ChannelPanel, SearchOpportunitiesPanel, DropoffPanel, RecommendedExperimentPanel, type DeviceRow, type ChannelRow } from "./journey-panels";
 
 // Extended fallback-route payload (funnel/daily/device/channel added server-side).
 export interface OverviewDaily { day: string; sessions: number; searches: number; listingViews: number; leadActions: number }
@@ -96,6 +96,7 @@ export default function Dashboard() {
   const [overviewDaily, setOverviewDaily] = useState<OverviewDaily[]>([]);
   const [device, setDevice] = useState<DeviceRow[]>([]);
   const [channel, setChannel] = useState<ChannelRow[]>([]);
+  const [categoryTrends, setCategoryTrends] = useState<Record<string, number[]>>({});
   const [health, setHealth] = useState<Health | null>(null);
   const [alerts, setAlerts] = useState<import("@/lib/analytics-overview").Alert[]>([]);
 
@@ -120,7 +121,8 @@ export default function Dashboard() {
       setSummary(null); setPrevSummary(null); setVendors([]); setDaily([]);
       setSearches([]); setAreas([]); setCats([]); setOpps([]); setJourneys([]);
       setLeadValues([]); setFunnel(null); setOverviewDaily([]); setDevice([]);
-      setChannel([]); setHealth(null); setAlerts([]); setLoading(false); setErr(null);
+      setChannel([]); setCategoryTrends({}); setHealth(null); setAlerts([]);
+      setLoading(false); setErr(null);
       return;
     }
     setLoading(true); setErr(null);
@@ -142,6 +144,7 @@ export default function Dashboard() {
               ? { data: json as {
                   listings: VendorRow[]; opportunities: OpportunityRow[]; journeys: Journey[];
                   funnel: Funnel; daily: OverviewDaily[]; device: DeviceRow[]; channel: ChannelRow[];
+                  categoryTrends: Record<string, number[]>;
                 }, error: null }
               : { data: null, error: new Error(json?.error || "Failed to load listing detail fallback") };
           })
@@ -172,6 +175,7 @@ export default function Dashboard() {
         setOverviewDaily(fallbackRes.data.daily ?? []);
         setDevice(fallbackRes.data.device ?? []);
         setChannel(fallbackRes.data.channel ?? []);
+        setCategoryTrends(fallbackRes.data.categoryTrends ?? {});
       }
       if (!healthRes.error && healthRes.data) {
         setHealth(healthRes.data.health ?? null);
@@ -263,7 +267,7 @@ export default function Dashboard() {
             {tab === "overview" && (
               <Overview
                 daily={daily} overviewDaily={overviewDaily} vendors={vendors} cats={cats}
-                funnel={funnel} health={health} alerts={alerts}
+                categoryTrends={categoryTrends} funnel={funnel} health={health} alerts={alerts}
                 insight={deriveInsight(summary, prevSummary)}
               />
             )}
@@ -347,8 +351,9 @@ function Cards({ summary, prev, estValueCents, health, daily, loading }: {
   );
 }
 
-function Overview({ daily, overviewDaily, vendors, cats, funnel, health, alerts, insight }: {
+function Overview({ daily, overviewDaily, vendors, cats, categoryTrends, funnel, health, alerts, insight }: {
   daily: DailyRow[]; overviewDaily: OverviewDaily[]; vendors: VendorRow[]; cats: CategoryRow[];
+  categoryTrends: Record<string, number[]>;
   funnel: Funnel | null; health: Health | null; alerts: import("@/lib/analytics-overview").Alert[];
   insight: import("@/lib/analytics-overview").Insight;
 }) {
@@ -403,7 +408,7 @@ function Overview({ daily, overviewDaily, vendors, cats, funnel, health, alerts,
       </div>
 
       <div style={{ ...S.chartGrid, marginTop: 16 }}>
-        <TopCategoriesPanel cats={cats} />
+        <TopCategoriesPanel cats={cats} trends={categoryTrends} spark={(data) => <Sparkline data={data} height={22} />} />
         <PlatformHealthPanel health={health} />
         <RecentAlertsPanel alerts={alerts} />
       </div>
@@ -436,6 +441,9 @@ function JourneySummary({ funnel, searches, device, channel, overviewDaily }: {
           <div style={S.chartBody}><SessionsLeadsChart daily={overviewDaily} /></div>
         </div>
       )}
+      <div style={{ marginTop: 16 }}>
+        <RecommendedExperimentPanel funnel={funnel} searches={searches} />
+      </div>
     </div>
   );
 }

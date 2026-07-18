@@ -134,7 +134,11 @@ export function RecentAlertsPanel({ alerts }: { alerts: Alert[] }) {
 }
 
 // ── Top-performing categories ────────────────────────────────────────────────
-export function TopCategoriesPanel({ cats }: { cats: CategoryRow[] }) {
+export function TopCategoriesPanel({ cats, trends, spark }: {
+  cats: CategoryRow[];
+  trends?: Record<string, number[]>;
+  spark?: (data: number[]) => React.ReactNode;
+}) {
   const rows = [...cats].sort((a, b) => b.lead_actions - a.lead_actions).slice(0, 6);
   const maxLeads = Math.max(1, ...rows.map((c) => c.lead_actions));
   return (
@@ -142,15 +146,19 @@ export function TopCategoriesPanel({ cats }: { cats: CategoryRow[] }) {
       <p style={{ ...S.sectionLabel, margin: "0 0 6px" }}>Top-performing categories</p>
       {rows.length === 0 ? (
         <p style={{ fontSize: 13, color: "#888", padding: "8px 0" }}>No category activity in this window yet.</p>
-      ) : rows.map((c) => (
-        <div key={c.category} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 4, padding: "9px 0", borderTop: "0.5px solid rgba(128,128,128,.14)" }}>
-          <span style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{c.category}</span>
-          <span style={{ fontSize: 12, color: "#586471" }}>{fmt(c.lead_actions)} leads · {pct(c.lead_actions, c.listing_views)}%</span>
-          <div style={{ gridColumn: "1 / -1", height: 5, borderRadius: 999, background: "rgba(15,110,86,.1)", overflow: "hidden" }}>
-            <div style={{ width: `${(100 * c.lead_actions) / maxLeads}%`, height: "100%", background: GREEN, borderRadius: 999 }} />
+      ) : rows.map((c) => {
+        const trend = trends?.[c.category];
+        return (
+          <div key={c.category} style={{ display: "grid", gridTemplateColumns: "1fr 64px auto", gap: 8, alignItems: "center", padding: "9px 0", borderTop: "0.5px solid rgba(128,128,128,.14)" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{c.category}</span>
+            <span style={{ height: 22 }}>{spark && trend && trend.some((n) => n > 0) ? spark(trend) : null}</span>
+            <span style={{ fontSize: 12, color: "#586471", textAlign: "right" }}>{fmt(c.lead_actions)} leads · {pct(c.lead_actions, c.listing_views)}%</span>
+            <div style={{ gridColumn: "1 / -1", height: 5, borderRadius: 999, background: "rgba(15,110,86,.1)", overflow: "hidden" }}>
+              <div style={{ width: `${(100 * c.lead_actions) / maxLeads}%`, height: "100%", background: GREEN, borderRadius: 999 }} />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   searchOpportunities,
   deriveInsight,
   deriveAlerts,
+  recommendExperiment,
 } from "@/lib/analytics-overview";
 
 /* Pure logic behind the admin analytics overview (lib/analytics-overview). These
@@ -143,5 +144,41 @@ describe("deriveAlerts", () => {
 
   it("ignores a sub-threshold demand spike", () => {
     expect(deriveAlerts({ demandSpikePct: 10 })).toEqual([]);
+  });
+});
+
+describe("recommendExperiment", () => {
+  const searchOps = [
+    { query: "halal buffet", searches: 1204, ctr: 2.1, convRate: 1, opportunity: "High" as const },
+    { query: "halal catering", searches: 876, ctr: 3.2, convRate: 1, opportunity: "High" as const },
+    { query: "muslim wedding venue", searches: 522, ctr: 4, convRate: 4, opportunity: "Medium" as const },
+  ];
+
+  it("returns null without a funnel", () => {
+    expect(recommendExperiment(null, searchOps)).toBeNull();
+  });
+
+  it("recommends richer result cards when the search→views step is the biggest drop", () => {
+    const funnel = buildFunnel({ sessions: 4434, listingViews: 116, actions: 19, qualified: 5 }); // drop = listing_views
+    const exp = recommendExperiment(funnel, searchOps);
+    expect(exp?.title).toMatch(/result cards/i);
+    expect(exp?.upliftMin).toBeGreaterThan(0);
+    expect(exp?.upliftMax).toBeGreaterThanOrEqual(exp!.upliftMin);
+    expect(exp?.confidence).toBe("High"); // 3 opportunities → high confidence
+  });
+
+  it("recommends prominent contact actions when views→actions is the drop", () => {
+    const funnel = buildFunnel({ sessions: 100, listingViews: 100, actions: 5, qualified: 3 }); // drop = actions
+    expect(recommendExperiment(funnel, searchOps)?.title).toMatch(/contact actions/i);
+  });
+
+  it("recommends a leaner quote form when actions→qualified is the drop", () => {
+    const funnel = buildFunnel({ sessions: 100, listingViews: 100, actions: 100, qualified: 2 }); // drop = qualified
+    expect(recommendExperiment(funnel, searchOps)?.title).toMatch(/quote form/i);
+  });
+
+  it("downgrades confidence when there are no search opportunities", () => {
+    const funnel = buildFunnel({ sessions: 4434, listingViews: 116, actions: 19, qualified: 5 });
+    expect(recommendExperiment(funnel, [])?.confidence).toBe("Low");
   });
 });

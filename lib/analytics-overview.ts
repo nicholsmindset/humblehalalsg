@@ -212,3 +212,49 @@ export function deriveAlerts(input: AlertInput): Alert[] {
   }
   return alerts;
 }
+
+// ── Recommended experiment (journey view) ────────────────────────────────────
+export interface Experiment {
+  title: string;
+  detail: string;
+  upliftMin: number; // estimated additional leads / month (heuristic)
+  upliftMax: number;
+  confidence: "High" | "Medium" | "Low";
+}
+
+/** Turn the funnel's biggest drop-off into a concrete, prioritised experiment
+ *  with a rough predicted uplift. The uplift is an ESTIMATE — a small conversion
+ *  delta applied to the unmet demand surfaced by searchOpportunities — not a
+ *  promise. Returns null when there's no funnel or no clear bottleneck. */
+export function recommendExperiment(funnel: Funnel | null, searchOps: SearchOpportunity[]): Experiment | null {
+  if (!funnel) return null;
+  const stage = funnel.biggestDropoffStage;
+  const unmetDemand = searchOps.reduce((a, o) => a + num(o.searches), 0);
+  const base = unmetDemand * 0.005; // ~0.5% of high-opportunity demand → leads/mo
+  const upliftMin = Math.max(1, Math.round(base * 0.6));
+  const upliftMax = Math.max(upliftMin + 1, Math.round(base * 1.2));
+  const confidence: Experiment["confidence"] = searchOps.length >= 3 ? "High" : searchOps.length >= 1 ? "Medium" : "Low";
+
+  if (stage === "listing_views" || (stage == null && funnel.viewRate > 0 && funnel.viewRate < 10)) {
+    return {
+      title: "Add images, distance and verification to high-demand result cards",
+      detail: "The biggest drop is search → listing views. Richer result cards typically lift click-through on high-demand queries.",
+      upliftMin, upliftMax, confidence,
+    };
+  }
+  if (stage === "actions") {
+    return {
+      title: "Make contact actions (call / WhatsApp / quote) prominent on listing detail",
+      detail: "Views aren't converting to actions — surfacing the primary contact CTA above the fold usually recovers some of this.",
+      upliftMin, upliftMax, confidence: "Medium",
+    };
+  }
+  if (stage === "qualified") {
+    return {
+      title: "Streamline the quote form and prefill it from context",
+      detail: "Actions aren't becoming qualified leads — a shorter, prefilled quote form reduces abandonment.",
+      upliftMin, upliftMax, confidence: "Medium",
+    };
+  }
+  return null;
+}
