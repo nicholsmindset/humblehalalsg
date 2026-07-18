@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { mosqueBySlug, allMosques, mosqueSlug } from "@/lib/mosques";
 import { mosqueProfile, profiledMosqueSlugs, mosqueFaqs } from "@/lib/mosque-content";
+import { getMosqueOverlay } from "@/lib/cms-mosques";
 import { getPrayerTimes } from "@/lib/prayer-times";
 import { getDirectory } from "@/lib/directory";
 import { locationIdForArea } from "@/lib/seo-pages";
@@ -38,10 +39,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const m = mosqueBySlug(slug);
   const p = mosqueProfile(slug);
   if (!m || !p) return pageMeta({ title: "Mosque in Singapore", path: `/mosques/${slug}` });
+  const overlay = await getMosqueOverlay(slug);
   return pageMeta({
     title: `${enTitle(m.name)} — Prayer Times, Jumu'ah & Directions`,
     description: `${m.name} in ${m.area}, Singapore — today's prayer times, Friday (Jumu'ah) info, qibla direction, address, map and directions, plus halal food nearby.`,
     path: `/mosques/${slug}`,
+    // Social image: a CMS/real photo when set, else the branded per-mosque OG card
+    // (wiring this makes og:image the per-mosque card, not the site-wide fallback).
+    image: overlay.image ?? p.image ?? `/mosques/${slug}/opengraph-image`,
     absoluteTitle: true,
   });
 }
@@ -79,10 +84,15 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const foodLocation = locationIdForArea(m.area);
 
   const path = `/mosques/${slug}`;
-  // Per-mosque image for schema/social: a real licensed photo (profile.image)
-  // when provided, else the branded OG card route — itself a 1200×630 per-mosque
-  // PNG — so schema/sitemap always carry a mosque-specific image with no assets.
-  const heroImage = p.image ?? `${path}/opengraph-image`;
+  // CMS overlay (content/mosques/<slug>.json) — a photo/intro the owner adds in
+  // Keystatic overrides the hardcoded profile; empty fields keep the defaults.
+  const overlay = await getMosqueOverlay(slug);
+  const photo = overlay.image ?? p.image; // a real mosque photo, when provided
+  const intro = overlay.intro ?? p.intro;
+  // Per-mosque image for schema/social: the real photo when set, else the branded
+  // OG card route — itself a 1200×630 per-mosque PNG — so schema/sitemap always
+  // carry a mosque-specific image with no assets.
+  const heroImage = photo ?? `${path}/opengraph-image`;
   const faqs = mosqueFaqs(p, m.name, m.area);
 
   return (
@@ -107,18 +117,23 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               <span style={{ color: "var(--ink)" }}>{m.name}</span>
             </nav>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>{enTitle(m.name)}</h1>
-            <p className="muted" style={{ maxWidth: 680, marginTop: 10, fontSize: "1.05rem" }}>{p.intro}</p>
+            <p className="muted" style={{ maxWidth: 680, marginTop: 10, fontSize: "1.05rem" }}>{intro}</p>
             <div className="flex g8 wrap" style={{ marginTop: 14, fontSize: ".9rem" }}>
               <span className="tag"><Icon name="pin" size={13} /> {m.area}</span>
               {p.heritage && <span className="tag">{p.heritage}</span>}
               {p.builtYear && <span className="tag">Built {p.builtYear}</span>}
             </div>
-            {/* On-page hero photo only when a real licensed image is provided
-                (profile.image). The OG-card fallback is for social/schema only. */}
-            {p.image && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.image} alt={`${m.name} in ${m.area}, Singapore`} width={720} height={360}
-                style={{ width: "100%", maxWidth: 720, height: "auto", marginTop: 18, borderRadius: 16, objectFit: "cover", aspectRatio: "2 / 1" }} />
+            {/* On-page hero photo only when a real image is provided (CMS overlay
+                or profile.image). The OG-card fallback is for social/schema only. */}
+            {photo && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo} alt={overlay.imageAlt || `${m.name} in ${m.area}, Singapore`} width={720} height={360}
+                  style={{ width: "100%", maxWidth: 720, height: "auto", marginTop: 18, borderRadius: 16, objectFit: "cover", aspectRatio: "2 / 1" }} />
+                {overlay.imageCredit && (
+                  <span className="faint" style={{ display: "block", fontSize: ".72rem", marginTop: 4 }}>{overlay.imageCredit}</span>
+                )}
+              </>
             )}
           </div>
         </section>

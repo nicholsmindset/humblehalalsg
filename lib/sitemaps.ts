@@ -16,6 +16,7 @@ import { SURAHS } from "@/lib/tools/surahs";
 import { indexableIngredients, ingredientSlug } from "@/lib/tools/ingredients";
 import { indexableHubs } from "@/lib/tools/ingredient-hubs";
 import { profiledMosqueSlugs, mosqueProfile } from "@/lib/mosque-content";
+import { getMosqueOverlays } from "@/lib/cms-mosques";
 import { getHawkerCentres } from "@/lib/hawker";
 import { getServerFlags } from "@/lib/feature-flags";
 import { SITE } from "@/lib/seo";
@@ -246,17 +247,20 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         "/aqiqah-kenduri-catering-singapore",
       ].map((path) => ({ loc: `${base}${path}`, lastmod: now, changefreq: "weekly", priority: 0.7 }));
 
-    case "mosques":
+    case "mosques": {
       // Only PROFILED mosques get an indexable detail page (thin-content gate).
-      // image = a real photo when provided, else the branded per-mosque OG card
-      // route (itself a 1200×630 PNG) so every mosque URL carries an image.
+      // image = a CMS/real photo when provided (overlay or profile), else the
+      // branded per-mosque OG card route (itself a 1200×630 PNG) so every mosque
+      // URL carries an image.
+      const overlays = await getMosqueOverlays();
       return profiledMosqueSlugs().map((slug) => ({
         loc: `${base}/mosques/${slug}`,
         lastmod: now,
         changefreq: "weekly",
         priority: 0.6,
-        image: mosqueProfile(slug)?.image || `/mosques/${slug}/opengraph-image`,
+        image: overlays.get(slug)?.image || mosqueProfile(slug)?.image || `/mosques/${slug}/opengraph-image`,
       }));
+    }
 
     case "hawker": {
       // The /hawker hub + /hawker/[centre] pages are live & indexable but were

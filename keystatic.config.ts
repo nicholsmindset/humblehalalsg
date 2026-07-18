@@ -191,5 +191,29 @@ export default config({
         explainer: fields.text({ label: "Status explainer override (optional)", multiline: true }),
       },
     }),
+    // Mosque page overrides. An entry whose slug matches a mosque page slug
+    // (e.g. "masjid-sultan") OVERLAYS its photo + optional copy on top of the
+    // hardcoded profile in lib/mosque-content.ts, merged in lib/cms-mosques.ts.
+    // Leave a field empty to keep the built-in default. No entry = no change.
+    mosques: collection({
+      label: "Mosque pages (photos & copy)",
+      slugField: "name",
+      path: "content/mosques/*",
+      format: { data: "json" },
+      schema: {
+        // Type the mosque's exact name — the slug it derives (e.g. "Masjid
+        // Sultan" → masjid-sultan) must match the /mosques/<slug> URL.
+        name: fields.slug({ name: { label: "Mosque name (e.g. Masjid Sultan)", ...required } }),
+        image: fields.image({
+          label: "Mosque photo",
+          description: "Upload a photo — becomes the page hero + share image. Optional; leave empty to use the branded card.",
+          directory: "public/mosques",
+          publicPath: "/mosques/",
+        }),
+        imageAlt: fields.text({ label: "Photo alt text (accessibility)" }),
+        imageCredit: fields.text({ label: "Photo credit (optional)" }),
+        intro: fields.text({ label: "Intro override (optional — replaces the default description)", multiline: true }),
+      },
+    }),
   },
 });
