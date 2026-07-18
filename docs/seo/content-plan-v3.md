@@ -51,7 +51,7 @@ tracker for the content roadmap — five workstreams, a "do-now" tranche and a p
 | WS-B | Brand pages — batch 1 shipped (8 web-verified): PastaMania, Poulet, Soup Spoon, Namu Bulgogi (certified); Sushi Tei, Oriental Kopi (no-pork); IKEA (partial); Astons (not-cert). Each-a-Cup/Mixue held back — conflicting sources. | ~20k / KD 0–2 | 🟡 Batch 1 of ~3 done |
 | WS-A | Enriched Korean/Japanese/Western/Dessert cuisine *pSEO* pages (lookFor + considerations + 4 FAQ each) — distinct from the legacy blog roundups (pSEO owns the transactional head, blog owns the roundup) | "Optimise" rows | ✅ Batch 1 done |
 | WS-B | First 5 location page objects + seed listings (ION, MBS, Parkway Parade, Raffles City, Star Vista) | ~1,900 / KD 0 | ⬜ Queued (needs directory data) |
-| WS-C | Gap guides — **most already exist as legacy posts** (cafés, dessert/cakes, Korean, Japanese, buffet…). True remaining blog gaps are narrow (see below). | — | ↩︎ Rescoped |
+| WS-C | Gap guides — most already exist as legacy posts. Queued the 4 genuine gaps as `postSchedule` rows for the drafter: halal **mooncake** (700), **Vietnamese** (150), **Peranakan** (150), **cake delivery** (400). | ~1,400 / KD 0–9 | ✅ Queued for drafter |
 
 > **⚠️ Coverage correction (important).** The `keyword-research-v3` gap analysis audited the CMS
 > `content/posts` (19) + app routes but **missed the 31 published legacy posts in `lib/blog.ts`**
