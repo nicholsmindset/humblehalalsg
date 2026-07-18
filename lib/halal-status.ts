@@ -298,6 +298,154 @@ export const brands: BrandHalal[] = [
     answer: "Takagi Ramen is not MUIS halal-certified. Its ramen commonly uses pork-based broth and pork chashu, so it is not suitable for Muslim diners. For halal ramen in Singapore, choose a MUIS-certified outlet and verify it on the HalalSG register.",
     aliases: ["takagi ramen singapore"],
   },
+  // ── v3 brand fan-out (keyword-research-v3) — statuses verified against MUIS
+  //    HalalSG + public brand statements, July 2026. Re-verify per outlet. ──
+  {
+    slug: "pastamania", brand: "PastaMania", category: "Italian restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — every PastaMania outlet in Singapore is MUIS halal-certified, covering its pasta, pizza, baked rice and desserts. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["pasta mania", "pastamania singapore"],
+  },
+  {
+    slug: "poulet", brand: "Poulet", category: "French rotisserie restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all Poulet outlets in Singapore have been MUIS halal-certified since November 2020, so its signature French roast chicken and sides are halal. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["poulet singapore", "poulet french"],
+  },
+  {
+    slug: "soup-spoon", brand: "The Soup Spoon", category: "Soup & café chain", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all The Soup Spoon (and Soup Spoon Union) outlets in Singapore have been MUIS halal-certified since June 2019, with alcohol-containing soups reformulated. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["the soup spoon", "soup spoon union", "soupspoon"],
+  },
+  {
+    slug: "namu-bulgogi", brand: "Namu Bulgogi", category: "Korean BBQ restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Namu Bulgogi is MUIS halal-certified and bills itself as Singapore's first halal Korean oakwood smoke-grill, with outlets including Tampines 1, Hillion Mall and Northpoint City. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["namu bulgogi", "namu korean", "namu bbq"],
+  },
+  {
+    slug: "sushi-tei", brand: "Sushi Tei", category: "Japanese restaurant", status: "no-pork", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Sushi Tei is not MUIS halal-certified in Singapore. The chain states it serves no pork and no lard, but it is not on the MUIS HalalSG register and some items may use mirin or sake. 'No pork, no lard' is self-declared and is not halal certification — verify on MUIS HalalSG.",
+    aliases: ["sushi tei singapore"],
+  },
+  {
+    slug: "oriental-kopi", brand: "Oriental Kopi", category: "Malaysian kopitiam & café", status: "no-pork", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Oriental Kopi's Singapore outlets are not MUIS halal-certified — only its Malaysian outlets hold JAKIM certification, which does not apply here. The Singapore menu is stated to be pork-free, but it is not on the MUIS HalalSG register, so treat it as no-pork, not certified, and verify on MUIS HalalSG.",
+    aliases: ["oriental kopi singapore", "oriental kopi bugis"],
+  },
+  {
+    slug: "ikea", brand: "IKEA", category: "Swedish restaurant & café", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — it depends on the store. IKEA Tampines runs a MUIS halal-certified restaurant line (Line 3) serving halal meatballs and mains, while stores such as IKEA Alexandra do not offer halal-certified food. Check the specific store and confirm the current certificate on the MUIS HalalSG register.",
+    aliases: ["ikea restaurant", "ikea menu", "ikea tampines", "ikea meatballs"],
+  },
+  {
+    slug: "astons", brand: "Astons", category: "Western steakhouse", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Astons Specialities is not halal — its menu includes pork and alcohol and its outlets are not MUIS-certified. For a halal alternative, the same group runs ANDES by Astons, a separate halal-certified steak-and-Western brand — confirm ANDES outlets on the MUIS HalalSG register.",
+    aliases: ["astons specialities", "aston", "andes by astons"],
+  },
+  // ── v3 brand fan-out batch 2 (statuses verified vs MUIS HalalSG + public
+  //    brand statements, July 2026). Re-verify per outlet. ──
+  {
+    slug: "4fingers", brand: "4Fingers Crispy Chicken", category: "Fried chicken", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — all 4Fingers Crispy Chicken outlets in Singapore are MUIS halal-certified, from its Korean-inspired crispy chicken to the sides. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["4 fingers", "four fingers", "4fingers crispy chicken"],
+  },
+  {
+    slug: "texas-chicken", brand: "Texas Chicken", category: "Fast food", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Texas Chicken Singapore is MUIS halal-certified across its outlets, so its fried chicken, tenders and sides are halal. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["texas fried chicken", "texas chicken singapore"],
+  },
+  {
+    slug: "wok-hey", brand: "Wok Hey", category: "Zi char / wok fast-casual", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Wok Hey is MUIS halal-certified across its outlets islandwide, serving halal wok-fried zi char in a fast-casual format. Certification is renewed periodically — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["wok hey singapore", "wokhey"],
+  },
+  {
+    slug: "swensens", brand: "Swensen's", category: "Western & ice cream", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — many Swensen's and Swensen's Unlimited outlets in Singapore are MUIS halal-certified, but certification is per-outlet and not every location is covered. Check the specific outlet and confirm its current certificate on the MUIS HalalSG register before dining.",
+    aliases: ["swensens", "swensens unlimited", "swensen"],
+  },
+  {
+    slug: "toast-box", brand: "Toast Box", category: "Kopitiam & café", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Toast Box is not MUIS halal-certified. Part of the BreadTalk Group, it holds no halal certification and some outlets serve non-halal items such as braised pork rice. Treat it as not halal-certified and verify on MUIS HalalSG.",
+    aliases: ["toastbox", "toast box singapore"],
+  },
+  {
+    slug: "collins", brand: "COLLIN'S", category: "Western restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "COLLIN'S (and Collin's Grille) is not halal — its outlets serve pork and are not MUIS-certified. For a halal alternative, the same group runs El Fuego by COLLIN'S, a separate MUIS halal-certified modern-European concept — confirm El Fuego outlets on the MUIS HalalSG register.",
+    aliases: ["collins", "collins grille", "collin's grille", "el fuego by collins"],
+  },
+  {
+    slug: "sushi-express", brand: "Sushi Express", category: "Japanese restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Sushi Express is not MUIS halal-certified in Singapore. It is not on the MUIS HalalSG register and some items use mirin (rice wine), with reports on other non-halal items varying. Treat it as not certified — for halal sushi, choose a MUIS-certified Japanese restaurant and verify on MUIS HalalSG.",
+    aliases: ["sushi express singapore"],
+  },
+  // ── v3 brand fan-out batch 3 (verified vs MUIS HalalSG + public statements,
+  //    July 2026). Re-verify per outlet/product. ──
+  {
+    slug: "stuffd", brand: "Stuff'd", category: "Burrito & kebab fast food", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Stuff'd is MUIS halal-certified across its outlets, serving halal burritos, kebabs and quesadillas. Certification is per-premises and renewable — confirm the specific outlet on the MUIS HalalSG register.",
+    aliases: ["stuff'd", "stuffd singapore"],
+  },
+  {
+    slug: "encik-tan", brand: "Encik Tan", category: "Halal Chinese food atrium", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Encik Tan is MUIS halal-certified across its outlets, serving halal versions of local Chinese hawker dishes such as Hainanese curry rice and wanton noodles. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["encik tan singapore"],
+  },
+  {
+    slug: "beard-papa", brand: "Beard Papa's", category: "Cream puffs & bakery", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Beard Papa's Singapore menu is MUIS halal-certified, so its cream puffs are halal. Certification is per-premises and renewable — confirm the outlet's current certificate on the MUIS HalalSG register.",
+    aliases: ["beard papa", "beardpapa", "beard papas"],
+  },
+  {
+    slug: "haagen-dazs", brand: "Häagen-Dazs", category: "Ice cream", status: "partial", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Partly — many Häagen-Dazs products sold in Singapore are halal-certified, but some flavours contain alcohol (e.g. Baileys, Rum Raisin) and are not. Check the specific tub or item's packaging for the halal mark, and verify on MUIS HalalSG.",
+    aliases: ["haagen dazs", "haagendazs", "häagen-dazs"],
+  },
+  {
+    slug: "royce", brand: "ROYCE'", category: "Chocolate", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "ROYCE' is not MUIS halal-certified in Singapore. Most of its chocolates are liquor-free and gelatine-free, but some (e.g. Nama Champagne, Rum Raisin) contain alcohol. Check each product's label or ask staff, and treat the brand as not certified — verify on MUIS HalalSG.",
+    aliases: ["royce chocolate", "royce singapore"],
+  },
+  {
+    slug: "luckin-coffee", brand: "Luckin Coffee", category: "Coffee chain", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Luckin Coffee is not MUIS halal-certified in Singapore — its Singapore FAQ confirms this (its Malaysian outlets hold JAKIM certification, which does not apply here). Most drinks are pork-free, but it is not on the MUIS HalalSG register, so verify before ordering.",
+    aliases: ["luckin", "luckin coffee singapore"],
+  },
+  {
+    slug: "beauty-in-the-pot", brand: "Beauty in the Pot", category: "Hotpot restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Beauty in the Pot is not halal. Its signature Beauty Collagen Broth is made from pork bones and it serves pork, and it is not on the MUIS HalalSG register. It is not suitable for halal-conscious diners.",
+    aliases: ["beauty in the pot", "paradise beauty in the pot"],
+  },
+  // ── v3 brand fan-out batch 4 (verified vs MUIS HalalSG + public statements,
+  //    July 2026). Re-verify per outlet. ──
+  {
+    slug: "andes-by-astons", brand: "ANDES by Astons", category: "Western steakhouse (halal)", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — ANDES by Astons is MUIS halal-certified: it is the halal steak-and-Western sister brand of Astons Specialities (which is not halal). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["andes", "andes astons", "andes by aston"],
+  },
+  {
+    slug: "el-fuego", brand: "El Fuego by COLLIN'S", category: "Western restaurant (halal)", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — El Fuego by COLLIN'S is MUIS halal-certified: it is the halal modern-European concept from the COLLIN'S group (the main COLLIN'S / Collin's Grille is not halal). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["el fuego", "elfuego", "el fuego by collins", "el fuego collins"],
+  },
+  {
+    slug: "springleaf-prata", brand: "Springleaf Prata Place", category: "Indian / prata restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Springleaf Prata Place is MUIS halal-certified across its outlets, serving halal prata, murtabak, thosai and curries. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["springleaf prata", "springleaf prata place", "springleaf"],
+  },
+  {
+    slug: "seoul-garden", brand: "Seoul Garden", category: "Korean BBQ & hotpot buffet", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Seoul Garden is one of Singapore's longest-running MUIS halal-certified Korean BBQ-and-hotpot buffets. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["seoul garden", "seoul garden hotpot"],
+  },
+  {
+    slug: "hjh-maimunah", brand: "Hjh Maimunah", category: "Malay / nasi padang restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Hjh Maimunah is a MUIS halal-certified Malay and nasi padang restaurant (a Michelin Bib Gourmand). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["hajjah maimunah", "hjh maimunah restaurant", "haji maimunah"],
+  },
+  {
+    slug: "chir-chir", brand: "Chir Chir", category: "Korean fried chicken", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Chir Chir is not halal-certified in Singapore — it serves alcohol. Its chicken is stated to come from a halal-certified supplier with no pork or lard, but the alcohol on the premises means it is not MUIS-certified. For halal Korean fried chicken, choose a MUIS-certified chain and verify on the MUIS HalalSG register.",
+    aliases: ["chir chir singapore", "chirchir"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));

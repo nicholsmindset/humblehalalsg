@@ -113,6 +113,14 @@ export const postSchedule: ScheduledPost[] = [
   { publishDate: "2026-09-22", slug: "is-mirin-halal", title: "Is Mirin Halal? Cooking With Japanese Rice Wine", category: "halal-questions", template: "T6", primaryKeyword: "is mirin halal", volume: 70, kd: 0, status: "queued" },
   { publishDate: "2026-09-23", slug: "halal-food-bali-guide", title: "Halal Food in Bali: Eating Well in Kuta, Seminyak & Ubud", category: "muslim-travel", template: "T4", primaryKeyword: "halal food in bali", volume: 70, kd: 0, status: "queued" },
   { publishDate: "2026-09-24", slug: "women-only-gym-singapore", title: "Women-Only & Muslimah Gyms in Singapore", category: "muslim-services", template: "T7", primaryKeyword: "women only gym singapore", volume: 70, kd: 0, status: "queued" },
+  // ── v3 extension (keyword-research-v3): genuine blog gaps not covered by the
+  //    31 legacy posts, the 19 CMS posts, or the queued rows above. Drafter to
+  //    write these. NOTE: halal-mooncake is seasonal — pull forward to ~6 weeks
+  //    before Mid-Autumn (late Aug) rather than this placeholder date. ──
+  { publishDate: "2026-09-25", slug: "halal-mooncake-singapore", title: "Halal Mooncakes in Singapore: Where to Buy", category: "seasonal-events", template: "T4", primaryKeyword: "halal mooncake", volume: 700, kd: 3, status: "queued" },
+  { publishDate: "2026-09-26", slug: "halal-vietnamese-food-singapore", title: "Halal Vietnamese Food in Singapore", category: "cuisines", template: "T4", primaryKeyword: "halal vietnamese food", volume: 150, kd: 2, status: "queued" },
+  { publishDate: "2026-09-27", slug: "halal-peranakan-food-singapore", title: "Halal Peranakan Food in Singapore", category: "cuisines", template: "T4", primaryKeyword: "halal peranakan food singapore", volume: 150, kd: 5, status: "queued" },
+  { publishDate: "2026-09-28", slug: "halal-cake-delivery-singapore", title: "Halal Cake Delivery & Birthday Cakes in Singapore", category: "cuisines", template: "T4", primaryKeyword: "halal cake delivery singapore", volume: 400, kd: 9, status: "queued" },
 ];
 
 /** The publish gate used by lib/cms-blog.ts. A post is live when it is Published,

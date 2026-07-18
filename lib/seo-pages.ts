@@ -67,6 +67,18 @@ const EXTRA_AREAS: SeoArea[] = [
   // Blueprint Wave-3 districts (Keyword Master Plan, Location Page Factory tab).
   { id: "clarke-quay", name: "Clarke Quay", mrt: "Clarke Quay", match: [] },
   { id: "holland-village", name: "Holland Village", mrt: "Holland Village", match: [] },
+  // v3 fan-out batch 2 (keyword-research-v3 §4.1) — CBD/central districts, KD 0.
+  // Render immediately; self-noindex until ≥3 listings carry a matching `area`.
+  // NOTE: add AREA_PROFILES (lib/area-content.ts) for these before they're
+  // seeded/indexed so they launch above the pSEO thin-content bar.
+  { id: "city-hall", name: "City Hall", mrt: "City Hall", match: ["City Hall"] },
+  { id: "chinatown", name: "Chinatown", mrt: "Chinatown", match: ["Chinatown"] },
+  { id: "tanjong-pagar", name: "Tanjong Pagar", mrt: "Tanjong Pagar", match: ["Tanjong Pagar"] },
+  { id: "somerset", name: "Somerset", mrt: "Somerset", match: ["Somerset", "Orchard"] },
+  { id: "harbourfront", name: "HarbourFront", mrt: "HarbourFront", match: ["HarbourFront"] },
+  { id: "toa-payoh", name: "Toa Payoh", mrt: "Toa Payoh", match: ["Toa Payoh"] },
+  { id: "raffles-place", name: "Raffles Place", mrt: "Raffles Place", match: ["Raffles Place"] },
+  { id: "esplanade", name: "Esplanade", mrt: "Esplanade", match: ["City Hall", "Esplanade"] },
 ];
 
 /* ---- Malls / venues (KD≈0, high-volume `{venue} halal food` cluster).
@@ -95,6 +107,25 @@ const VENUES: Venue[] = [
   // Blueprint Wave-3 malls (Keyword Master Plan, Location Page Factory tab).
   { id: "amk-hub", name: "AMK Hub", mrt: "Ang Mo Kio", match: ["Ang Mo Kio"] },
   { id: "compass-one", name: "Compass One", mrt: "Sengkang", match: ["Sengkang"] },
+  // v3 fan-out (keyword-research-v3 §4.1) — high-demand malls, KD 0. Pages
+  // render immediately and self-noindex until ≥3 published listings carry a
+  // matching `area` value (AREA_INDEX_MIN). When seeding the directory, tag
+  // each mall's listings with the `match` area token below (reconcile with the
+  // real Listing.area values in Supabase if they differ).
+  { id: "ion-orchard", name: "ION Orchard", mrt: "Orchard", match: ["Orchard"] },
+  { id: "marina-bay-sands", name: "Marina Bay Sands", mrt: "Bayfront", match: ["Marina Bay", "Marina Square"] },
+  { id: "parkway-parade", name: "Parkway Parade", mrt: "Marine Parade", match: ["Marine Parade"] },
+  { id: "raffles-city", name: "Raffles City", mrt: "City Hall", match: ["City Hall", "Bugis"] },
+  { id: "star-vista", name: "The Star Vista", mrt: "Buona Vista", match: ["Buona Vista", "Holland Village"] },
+  // v3 fan-out batch 2 (keyword-research-v3 §4.1) — more high-demand malls, KD 0.
+  // Self-noindex until ≥3 listings carry a matching `area` token (reconcile with
+  // real Listing.area values in Supabase when seeding).
+  { id: "downtown-east", name: "Downtown East", mrt: "Pasir Ris", match: ["Pasir Ris"] },
+  { id: "great-world-city", name: "Great World City", mrt: "Great World", match: ["Great World", "Kim Seng"] },
+  { id: "hillion-mall", name: "Hillion Mall", mrt: "Bukit Panjang", match: ["Bukit Panjang"] },
+  { id: "junction-8", name: "Junction 8", mrt: "Bishan", match: ["Bishan"] },
+  { id: "tiong-bahru-plaza", name: "Tiong Bahru Plaza", mrt: "Tiong Bahru", match: ["Tiong Bahru"] },
+  { id: "wisma-geylang-serai", name: "Wisma Geylang Serai", mrt: "Paya Lebar", match: ["Geylang", "Geylang Serai", "Paya Lebar"] },
 ];
 
 /* ---- Cuisine / concept pages (validated KD 0–8 demand). `match` fragments
