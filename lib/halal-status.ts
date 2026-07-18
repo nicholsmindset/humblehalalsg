@@ -414,6 +414,38 @@ export const brands: BrandHalal[] = [
     answer: "Beauty in the Pot is not halal. Its signature Beauty Collagen Broth is made from pork bones and it serves pork, and it is not on the MUIS HalalSG register. It is not suitable for halal-conscious diners.",
     aliases: ["beauty in the pot", "paradise beauty in the pot"],
   },
+  // ── v3 brand fan-out batch 4 (verified vs MUIS HalalSG + public statements,
+  //    July 2026). Re-verify per outlet. ──
+  {
+    slug: "andes-by-astons", brand: "ANDES by Astons", category: "Western steakhouse (halal)", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — ANDES by Astons is MUIS halal-certified: it is the halal steak-and-Western sister brand of Astons Specialities (which is not halal). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["andes", "andes astons", "andes by aston"],
+  },
+  {
+    slug: "el-fuego", brand: "El Fuego by COLLIN'S", category: "Western restaurant (halal)", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — El Fuego by COLLIN'S is MUIS halal-certified: it is the halal modern-European concept from the COLLIN'S group (the main COLLIN'S / Collin's Grille is not halal). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["el fuego", "elfuego", "el fuego by collins", "el fuego collins"],
+  },
+  {
+    slug: "springleaf-prata", brand: "Springleaf Prata Place", category: "Indian / prata restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Springleaf Prata Place is MUIS halal-certified across its outlets, serving halal prata, murtabak, thosai and curries. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["springleaf prata", "springleaf prata place", "springleaf"],
+  },
+  {
+    slug: "seoul-garden", brand: "Seoul Garden", category: "Korean BBQ & hotpot buffet", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Seoul Garden is one of Singapore's longest-running MUIS halal-certified Korean BBQ-and-hotpot buffets. Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["seoul garden", "seoul garden hotpot"],
+  },
+  {
+    slug: "hjh-maimunah", brand: "Hjh Maimunah", category: "Malay / nasi padang restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Hjh Maimunah is a MUIS halal-certified Malay and nasi padang restaurant (a Michelin Bib Gourmand). Certification is per-premises and renewable — confirm the outlet on the MUIS HalalSG register.",
+    aliases: ["hajjah maimunah", "hjh maimunah restaurant", "haji maimunah"],
+  },
+  {
+    slug: "chir-chir", brand: "Chir Chir", category: "Korean fried chicken", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Chir Chir is not halal-certified in Singapore — it serves alcohol. Its chicken is stated to come from a halal-certified supplier with no pork or lard, but the alcohol on the premises means it is not MUIS-certified. For halal Korean fried chicken, choose a MUIS-certified chain and verify on the MUIS HalalSG register.",
+    aliases: ["chir chir singapore", "chirchir"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
