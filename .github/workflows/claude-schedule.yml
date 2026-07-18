@@ -43,7 +43,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
       - name: Open PR
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: claude/scheduled-posts
           title: "🗓️ Scheduled blog posts (AI) — review before they go live"
