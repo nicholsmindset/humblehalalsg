@@ -388,12 +388,12 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
               </div>
             </div>
             <div className="field">
-              <label>Description</label>
-              <textarea className="textarea" placeholder="Tell customers what makes your place special." value={description} onChange={(e) => setDescription(e.target.value)} style={{ fontSize: 16, minHeight: 88 }} />
+              <label htmlFor="ed-description">Description</label>
+              <textarea id="ed-description" className="textarea" placeholder="Tell customers what makes your place special." value={description} onChange={(e) => setDescription(e.target.value)} style={{ fontSize: 16, minHeight: 88 }} />
             </div>
             <div className="field">
-              <label>Price level</label>
-              <select className="select" value={priceLevel} onChange={(e) => setPriceLevel(e.target.value)} style={{ fontSize: 16, minHeight: 44 }}>
+              <label htmlFor="ed-price-level">Price level</label>
+              <select id="ed-price-level" className="select" value={priceLevel} onChange={(e) => setPriceLevel(e.target.value)} style={{ fontSize: 16, minHeight: 44 }}>
                 <option value="">Not set</option>
                 <option value="$">$</option>
                 <option value="$$">$$</option>
@@ -408,28 +408,28 @@ export function OwnerListingEditor({ id, name, toast, onClose, onSaved }: { id: 
             <h4 className="ed-h">Contact &amp; links</h4>
             <div className="ed-grid2">
               <div className="field">
-                <label>Phone</label>
-                <input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+65 9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-phone">Phone</label>
+                <input id="ed-phone" className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+65 9123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
               <div className="field">
-                <label>WhatsApp</label>
-                <input className="input" type="tel" inputMode="tel" placeholder="+65 9123 4567" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-whatsapp">WhatsApp</label>
+                <input id="ed-whatsapp" className="input" type="tel" inputMode="tel" placeholder="+65 9123 4567" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
               <div className="field">
-                <label>Website</label>
-                <input className="input" type="url" inputMode="url" placeholder="https://example.com" value={website} onChange={(e) => setWebsite(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-website">Website</label>
+                <input id="ed-website" className="input" type="url" inputMode="url" placeholder="https://example.com" value={website} onChange={(e) => setWebsite(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
               <div className="field">
-                <label>Instagram</label>
-                <input className="input" type="text" placeholder="@yourhandle" value={instagram} onChange={(e) => setInstagram(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-instagram">Instagram</label>
+                <input id="ed-instagram" className="input" type="text" placeholder="@yourhandle" value={instagram} onChange={(e) => setInstagram(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
               <div className="field">
-                <label>Address</label>
-                <input className="input" type="text" autoComplete="street-address" placeholder="123 Example Street, #01-23" value={address} onChange={(e) => setAddress(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-address">Address</label>
+                <input id="ed-address" className="input" type="text" autoComplete="street-address" placeholder="123 Example Street, #01-23" value={address} onChange={(e) => setAddress(e.target.value)} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
               <div className="field">
-                <label>Postal code</label>
-                <input className="input" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="postal-code" maxLength={6} placeholder="123456" value={postal} onChange={(e) => setPostal(e.target.value.replace(/\D/g, "").slice(0, 6))} style={{ fontSize: 16, minHeight: 44 }} />
+                <label htmlFor="ed-postal">Postal code</label>
+                <input id="ed-postal" className="input" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="postal-code" maxLength={6} placeholder="123456" value={postal} onChange={(e) => setPostal(e.target.value.replace(/\D/g, "").slice(0, 6))} style={{ fontSize: 16, minHeight: 44 }} />
               </div>
             </div>
           </section>

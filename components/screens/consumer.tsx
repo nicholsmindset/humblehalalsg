@@ -24,7 +24,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, BusinessMediaFallback, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
+import { Badge, BusinessMediaFallback, clickable, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -521,7 +521,7 @@ export function TrustStrip({ navigate }: { navigate: (screen: string, params?: R
         </div>
         <p className="faint" style={{ fontSize: ".82rem", marginTop: 16 }}>
           Humble Halal is a discovery platform, not a certifier. Always confirm certification on the official
-          <span style={{ color: "var(--emerald)", fontWeight: 600 }} onClick={() => navigate("verify")}> MUIS HalalSG</span> register.
+          <span style={{ color: "var(--emerald)", fontWeight: 600, cursor: "pointer" }} {...clickable(() => navigate("verify"), "MUIS HalalSG register")}> MUIS HalalSG</span> register.
         </p>
       </div>
     </section>

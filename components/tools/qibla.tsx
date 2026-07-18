@@ -48,6 +48,12 @@ export function QiblaTool() {
           setHeading((360 - e.alpha) % 360);
         }
       };
+      // Recalculate can call this again — remove the previous listener first so
+      // handlers don't stack (each would fire setHeading independently).
+      if (orientationHandler.current) {
+        window.removeEventListener("deviceorientationabsolute", orientationHandler.current as EventListener);
+        window.removeEventListener("deviceorientation", orientationHandler.current as EventListener);
+      }
       orientationHandler.current = handler;
       window.addEventListener("deviceorientationabsolute", handler as EventListener);
       window.addEventListener("deviceorientation", handler as EventListener);

@@ -1608,8 +1608,9 @@ export function HostEventScreen() {
                 </div>
               </div>
               <div className="field">
-                <label>Venue name &amp; address</label>
+                <label htmlFor="ev-venue">Venue name &amp; address</label>
                 <AddressAutocomplete
+                  id="ev-venue"
                   value={d.venue}
                   placeholder="Search venue, street or postal code"
                   onChange={(v) => setD((s) => ({ ...s, venue: v, lat: null, lng: null }))}

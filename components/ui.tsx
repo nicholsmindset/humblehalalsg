@@ -2,6 +2,7 @@
 
 /* Humble Halal — shared UI components (ported from components.jsx) */
 import Image from "next/image";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Fragment,
   useEffect,
@@ -145,9 +146,25 @@ export function Icon({ name, size, style, className, strokeWidth = 1.9 }: IconPr
 /* ---------------------------------------------------------------
    LOGO
 --------------------------------------------------------------- */
+/** a11y props that make a non-<button> element behave like a button for keyboard
+ *  and screen-reader users (WCAG 2.1.1 / 4.1.2). Spread onto a <div>/<span> whose
+ *  markup or styling must stay non-button. Do NOT use on elements that contain
+ *  their own interactive children (nested interactive is invalid). */
+export function clickable(onActivate: () => void, label?: string) {
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    ...(label ? { "aria-label": label } : {}),
+    onClick: onActivate,
+    onKeyDown: (e: ReactKeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onActivate(); }
+    },
+  };
+}
+
 export function Logo({ onClick, light }: { onClick?: () => void; light?: boolean }) {
   return (
-    <div className="hh-logo" onClick={onClick}>
+    <div className="hh-logo" {...(onClick ? clickable(onClick, "Humble Halal — home") : {})}>
       <div className="mark">
         <Icon name="crescent" size={19} />
       </div>
@@ -637,7 +654,7 @@ export function SectionHead({
     <div className="section-head">
       <h2>{title}</h2>
       {action && (
-        <span className="link" onClick={onAction}>
+        <span className="link" {...(onAction ? clickable(onAction) : {})}>
           {action}
           <Icon name="chevron" size={15} />
         </span>
@@ -755,7 +772,7 @@ export function PromoCode({ amount, currency, onApply }: { amount: number | null
   return (
     <div className="promo-box">
       <div className="promo-row">
-        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Promo code" />
+        <input aria-label="Promo code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Promo code" />
         <button type="button" className="btn btn-soft btn-sm" disabled={busy} onClick={apply}>{busy ? "…" : "Apply"}</button>
       </div>
       {msg && <p className="promo-msg">{msg}</p>}

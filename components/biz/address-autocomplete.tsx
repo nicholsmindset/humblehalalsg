@@ -16,12 +16,14 @@ export interface AddrPick {
    with the full record (incl. coords + postal) when a suggestion is chosen. */
 export function AddressAutocomplete({
   id,
+  ariaLabel,
   value,
   placeholder,
   onChange,
   onPick,
 }: {
   id?: string;
+  ariaLabel?: string;
   value: string;
   placeholder?: string;
   onChange: (v: string) => void;
@@ -80,6 +82,7 @@ export function AddressAutocomplete({
     <div className="addr-ac" ref={wrap}>
       <input
         id={id}
+        aria-label={ariaLabel}
         className="input"
         autoComplete="off"
         placeholder={placeholder}

@@ -3,7 +3,7 @@
 /* Humble Halal — city hub (Muslim-friendly hotels in a destination).
    List/Map toggle, halal filters, price tip, top-picks carousel, FAQ. */
 import { useState } from "react";
-import { Icon, Empty } from "../../ui";
+import { Icon, Empty, clickable } from "../../ui";
 import { Carousel } from "../../ota";
 import { MapView } from "../../map/map-view";
 import type { Hotel } from "@/lib/halal-hotels";
@@ -79,7 +79,7 @@ export function TravelCityScreen({ hub, hotels, faq, related, priceTip }: { hub:
             <h2 style={{ fontSize: "1.3rem", marginBottom: 8 }}>Frequently asked</h2>
             {faq.map((f, i) => (
               <div key={i} className="faq-item">
-                <div className="faq-q" onClick={() => setOpen(open === i ? null : i)}>{f.q} <Icon name={open === i ? "minus" : "plus"} size={16} /></div>
+                <div className="faq-q" aria-expanded={open === i} {...clickable(() => setOpen(open === i ? null : i))}>{f.q} <Icon name={open === i ? "minus" : "plus"} size={16} /></div>
                 {open === i && <div className="faq-a">{f.a}</div>}
               </div>
             ))}

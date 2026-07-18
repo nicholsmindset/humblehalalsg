@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 import { couponAvailability, couponValue, type PublicCoupon } from "@/lib/coupons";
 import { track } from "@/lib/analytics";
 import { Icon } from "./ui";
@@ -17,8 +16,17 @@ export function CouponCard({ coupon, compact = false }: { coupon: PublicCoupon; 
   useEffect(() => { if (slug) track.couponView(slug, coupon.id); }, [coupon.id, slug]);
   useEffect(() => {
     if (!claimed?.token || typeof window === "undefined") return;
-    QRCode.toDataURL(`${window.location.origin}/owner?tab=promotions&redeem=${claimed.token}`, { width: 220, margin: 1, color: { dark: "#0d4f4f", light: "#ffffff" } })
-      .then(setQr).catch(() => setQr(""));
+    let alive = true;
+    // Load the QR library lazily — it's only needed AFTER a coupon is claimed,
+    // so keep it out of the home/initial bundle (it was eagerly imported before).
+    (async () => {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const url = await QRCode.toDataURL(`${window.location.origin}/owner?tab=promotions&redeem=${claimed.token}`, { width: 220, margin: 1, color: { dark: "#0d4f4f", light: "#ffffff" } });
+        if (alive) setQr(url);
+      } catch { if (alive) setQr(""); }
+    })();
+    return () => { alive = false; };
   }, [claimed]);
 
   const claim = async () => {
