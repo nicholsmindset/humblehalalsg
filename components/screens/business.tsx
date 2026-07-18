@@ -900,6 +900,9 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                 ) : (
                   <button className="dash-quick" onClick={() => navigate("add-listing")}><Icon name="plus" size={18} /> Add listing</button>
                 )}
+                {live && myBiz?.slug && (
+                  <a className="dash-quick" href={`/for-business/badge?slug=${myBiz.slug}`} target="_blank" rel="noopener noreferrer"><Icon name="badge-check" size={18} /> Badge &amp; sticker</a>
+                )}
               </div>
             </div>
             {/* Upcoming & active events strip (real ownerEvents data). */}
@@ -930,6 +933,19 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
                   <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>Print your free QR poster and display it in-store. Customers scan it to collect a visit stamp on their Halal Passport — a reason to come back. It&apos;s a loyalty hook only; it never changes your halal status.</p>
                 </div>
                 <a className="btn btn-outline btn-sm" href={`/business/${myBiz.slug}/poster`} target="_blank" rel="noopener noreferrer" style={{ flex: "none" }}><Icon name="doc" size={15} /> Get your QR poster</a>
+              </div>
+            )}
+            {/* Verified sticker — a shareable/printable badge owners display in-store
+                or on social. Wording reflects real halal status (honest ladder),
+                so it is safe to surface for any live listing. */}
+            {live && myBiz?.slug && (
+              <div className="card" style={{ padding: 20, display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+                <div className="empty-ico" style={{ width: 44, height: 44, borderRadius: 12, background: "var(--emerald-50)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}><Icon name="badge-check" size={22} /></div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Your Humble Halal sticker</h3>
+                  <p className="muted" style={{ fontSize: ".9rem", lineHeight: 1.5 }}>Download a shareable sticker showing you&apos;re listed on Singapore&apos;s halal directory — print it for your storefront or share it on social. You can also grab the website badge to embed on your own site.</p>
+                </div>
+                <a className="btn btn-outline btn-sm" href={`/for-business/badge?slug=${myBiz.slug}`} target="_blank" rel="noopener noreferrer" style={{ flex: "none" }}><Icon name="badge-check" size={15} /> Get your sticker</a>
               </div>
             )}
             <GrowthServicesCard onContact={() => navigate("growth-partner")} />
