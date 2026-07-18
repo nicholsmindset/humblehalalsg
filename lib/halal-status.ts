@@ -232,6 +232,70 @@ export const brands: BrandHalal[] = [
     answer: "Emicakes is not MUIS halal-certified — its own FAQ confirms this. The chain states it uses no pork, lard or alcohol in its products and processes, but that is self-declared and not halal certification. Verify the latest status on the MUIS HalalSG register.",
     aliases: ["emi cakes"],
   },
+
+  // ── Batch added July 2026 from search-demand research; each status verified
+  //    against publicly available information. Certification is per-premises and
+  //    renewable — the answers direct users to the MUIS HalalSG register.
+  {
+    slug: "dominos", brand: "Domino's Pizza", category: "Pizza restaurant", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Domino's Pizza outlets in Singapore are MUIS halal-certified and appear on the MUIS HalalSG register of certified eating establishments. Certification is per-premises and renewable, so confirm the specific outlet on the register before ordering.",
+    aliases: ["dominos pizza", "domino's", "domino pizza"],
+  },
+  {
+    slug: "potato-corner", brand: "Potato Corner", category: "Snacks", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Potato Corner Singapore is MUIS halal-certified, so its flavoured fries are suitable for Muslim diners. Certification is per-premises and renewable and applies to listed outlets, so confirm the specific location on the MUIS HalalSG register before ordering.",
+    aliases: ["potato corner fries"],
+  },
+  {
+    slug: "coffee-bean", brand: "The Coffee Bean & Tea Leaf", category: "Coffee chain", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — The Coffee Bean & Tea Leaf states its food and beverages in Singapore are MUIS halal-certified, and its outlets appear on the MUIS HalalSG register. Certification is per-premises and renewable, so confirm the specific outlet on the register before ordering.",
+    aliases: ["coffee bean", "coffee bean and tea leaf", "cbtl"],
+  },
+  {
+    slug: "twelve-cupcakes", brand: "Twelve Cupcakes", category: "Cake shop", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Twelve Cupcakes is MUIS halal-certified in Singapore, so its cupcakes and cakes are suitable for Muslim customers. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register before ordering.",
+    aliases: ["12 cupcakes"],
+  },
+  {
+    slug: "primadeli", brand: "PrimaDeli", category: "Bakery", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — PrimaDeli is MUIS halal-certified in Singapore, so its cakes, buns and pastries are suitable for Muslim customers. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register before ordering.",
+    aliases: ["prima deli"],
+  },
+  {
+    slug: "polar-puffs-cakes", brand: "Polar Puffs & Cakes", category: "Bakery", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Polar Puffs & Cakes is MUIS halal-certified in Singapore, so its puffs, cakes and pastries are suitable for Muslim customers. Certification is per-premises and renewable, so confirm the specific outlet on the MUIS HalalSG register before ordering.",
+    aliases: ["polar puffs", "polar cakes", "polar"],
+  },
+  {
+    slug: "neo-garden", brand: "Neo Garden Catering", category: "Catering", status: "certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Yes — Neo Garden Catering is MUIS halal-certified in Singapore, so its buffet and event catering is suitable for Muslim functions. Certification is renewable, so confirm the current status on the MUIS HalalSG register (or ask for the halal certificate) before booking.",
+    aliases: ["neo garden catering", "neo group catering"],
+  },
+  {
+    slug: "monster-curry", brand: "Monster Curry", category: "Japanese restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Monster Curry is not MUIS halal-certified, so it is best avoided if you require certification. Its sister brand, Monster Planet, runs a separate MUIS halal-certified Japanese-curry menu — look for Monster Planet outlets and confirm them on the MUIS HalalSG register.",
+    aliases: ["monster curry singapore"],
+  },
+  {
+    slug: "sushiro", brand: "Sushiro", category: "Sushi restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Sushiro is not MUIS halal-certified in Singapore. Although much of its conveyor-belt menu is seafood, the outlets are not certified and items may involve non-halal ingredients or cross-contact, so it cannot be treated as halal. Choose a MUIS-certified sushi option and verify on the HalalSG register.",
+    aliases: ["sushiro singapore"],
+  },
+  {
+    slug: "fun-toast", brand: "Fun Toast", category: "Kopitiam", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Fun Toast is not MUIS halal-certified. Recent public information indicates the kopitiam chain does not hold MUIS certification, so it should not be assumed halal. If you need certified food, choose a listed halal kopitiam and verify the outlet on the MUIS HalalSG register.",
+    aliases: ["fun toast singapore"],
+  },
+  {
+    slug: "ferrero-rocher", brand: "Ferrero Rocher", category: "Snacks", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Ferrero Rocher sold in Singapore is not MUIS halal-certified. Some Ferrero products made in Muslim-majority countries carry halal certification from other bodies, so check the packaging for a recognised halal mark and the ingredients. When in doubt, treat uncertified imports as not halal-certified.",
+    aliases: ["ferrero", "ferrero rocher chocolate"],
+  },
+  {
+    slug: "takagi-ramen", brand: "Takagi Ramen", category: "Japanese restaurant", status: "not-certified", lastChecked: CHECKED, source: PUBLIC_INFO,
+    answer: "Takagi Ramen is not MUIS halal-certified. Its ramen commonly uses pork-based broth and pork chashu, so it is not suitable for Muslim diners. For halal ramen in Singapore, choose a MUIS-certified outlet and verify it on the HalalSG register.",
+    aliases: ["takagi ramen singapore"],
+  },
 ];
 
 const BY_SLUG = new Map(brands.map((b) => [b.slug, b]));
