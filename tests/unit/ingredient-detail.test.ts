@@ -61,21 +61,23 @@ describe("quality gate (ingredientQualifies)", () => {
       expect(a.verificationAdvice || a.singaporeGuidance).toBeTruthy();
       expect(a.sources && a.sources.length >= 1).toBeTruthy();
       expect(a.lastReviewed).toBeTruthy();
-      expect(a.code).toBeTruthy();
+      // Coded entries have an E-number; codeless entries (e.g. Rennet) must pin a slug.
+      expect(a.code || a.slug).toBeTruthy();
     }
   });
 
-  it("rejects a thin entry, a name-only entry, and an explicit indexable:false", () => {
+  it("rejects a thin entry, a codeless-and-slugless pointer, and an explicit indexable:false", () => {
     const thin: Additive = { code: "E999", name: "Thin", category: "Other", status: "halal", origin: "x" };
     expect(ingredientQualifies(thin)).toBe(false);
-    const nameOnly = ADDITIVES.find((a) => !a.code)!;
+    // A codeless entry with no pinned slug is a duplicate pointer (e.g. Carmine → E120) and must not qualify.
+    const nameOnly = ADDITIVES.find((a) => !a.code && !a.slug)!;
     expect(ingredientQualifies(nameOnly)).toBe(false);
     const killed: Additive = { ...ADDITIVES.find((a) => a.code === "E104")!, indexable: false };
     expect(ingredientQualifies(killed)).toBe(false);
   });
 
-  it("authors a meaningful set of indexable ingredients (>= 40)", () => {
-    expect(indexableIngredients().length).toBeGreaterThanOrEqual(40);
+  it("authors a meaningful set of indexable ingredients (>= 60)", () => {
+    expect(indexableIngredients().length).toBeGreaterThanOrEqual(60);
   });
 });
 
