@@ -65,6 +65,12 @@ export function CheckinScanner({ slug }: { slug: string }) {
     setCode("");
   }, [busy]);
 
+  // Keep the camera scan loop pointed at the latest `submit` WITHOUT listing it
+  // as an effect dependency — otherwise every scan flips `busy`, changes
+  // `submit`'s identity, and tears down + re-acquires the camera mid-scan.
+  const submitRef = useRef(submit);
+  useEffect(() => { submitRef.current = submit; });
+
   // Camera scan loop (best-effort; manual entry always works).
   useEffect(() => {
     if (!scanning) return;
@@ -100,6 +106,9 @@ export function CheckinScanner({ slug }: { slug: string }) {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        // getUserMedia is async — the effect may have been cleaned up while it
+        // resolved. Don't orphan a live camera stream: stop it and bail.
+        if (!alive) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
         if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
       } catch (err) {
@@ -123,7 +132,7 @@ export function CheckinScanner({ slug }: { slug: string }) {
         try {
           if (detector) {
             const codes = await detector.detect(video);
-            if (codes[0]?.rawValue) submit(codes[0].rawValue);
+            if (codes[0]?.rawValue) submitRef.current(codes[0].rawValue);
           } else if (jsqr && ctx && video.videoWidth) {
             // Downscale for decode speed — jsQR is fine at ~480px wide.
             const w = Math.min(480, video.videoWidth);
@@ -132,7 +141,7 @@ export function CheckinScanner({ slug }: { slug: string }) {
             ctx.drawImage(video, 0, 0, w, h);
             const img = ctx.getImageData(0, 0, w, h);
             const hit = jsqr(img.data, w, h, { inversionAttempts: "dontInvert" });
-            if (hit?.data) submit(hit.data);
+            if (hit?.data) submitRef.current(hit.data);
           }
         } catch { /* transient */ }
         raf = requestAnimationFrame(tick);
@@ -145,7 +154,10 @@ export function CheckinScanner({ slug }: { slug: string }) {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, [scanning, submit]);
+    // submit is intentionally omitted — accessed via submitRef so a scan can't
+    // restart the camera. See the submitRef effect above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning]);
 
   const rc = result?.kind === "ok" ? "var(--emerald)" : result?.kind === "warn" ? "var(--gold)" : "var(--danger)";
 

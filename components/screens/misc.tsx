@@ -14,7 +14,7 @@ import { useClerk } from "@clerk/nextjs";
 // v7's default useSignIn/useSignUp are the newer signals API; the legacy entry
 // keeps the resource API this custom flow is built on.
 import { useSignIn, useSignUp } from "@clerk/nextjs/legacy";
-import { Badge, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
+import { Badge, clickable, Empty, Icon, ImagePh, ListingCard, Logo, MobileHeader } from "../ui";
 import { EventCard, EventBadges } from "./events";
 import { useEvents } from "../events-context";
 import { downloadIcs } from "@/lib/ics";
@@ -828,7 +828,7 @@ export function ClaimScreen() {
                 </button>
               ))}
             </div>
-            <p className="faint tc" style={{fontSize:'.84rem', marginTop:16}}>Can’t find it? <span className="link-inline" onClick={()=>navigate('add-listing')}>Add a new listing →</span></p>
+            <p className="faint tc" style={{fontSize:'.84rem', marginTop:16}}>Can’t find it? <span className="link-inline" {...clickable(()=>navigate('add-listing'))}>Add a new listing →</span></p>
           </div>
         ) : (
           <div className="card form-card">
@@ -1243,7 +1243,7 @@ export function SeoScreen({ slug }: { slug?: string } = {}) {
           {isFood && (
             <div className="card" style={{ padding: 18, marginTop: 16 }}>
               <h3 style={{ fontSize: "1.05rem" }}>Popular cuisines</h3>
-              <div className="flex g8 wrap mt12">{["Nasi Padang", "Biryani", "Malay", "Western", "Korean", "Thai", "Café"].map((c) => <span key={c} className="chip" style={{ cursor: "pointer" }} onClick={() => navigate("explore", { q: c })}>{c}</span>)}</div>
+              <div className="flex g8 wrap mt12">{["Nasi Padang", "Biryani", "Malay", "Western", "Korean", "Thai", "Café"].map((c) => <span key={c} className="chip" style={{ cursor: "pointer" }} {...clickable(() => navigate("explore", { q: c }), `Explore ${c}`)}>{c}</span>)}</div>
             </div>
           )}
         </aside>

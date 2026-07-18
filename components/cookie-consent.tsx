@@ -63,7 +63,7 @@ export function CookieConsent() {
 
   if (!show || pathname.startsWith("/keystatic")) return null;
   return (
-    <div className="cookie-banner" role="dialog" aria-label="Cookie consent" aria-live="polite">
+    <div className="cookie-banner" role="region" aria-label="Cookie consent" aria-live="polite">
       <p className="cookie-text">
         We use essential storage to run the site. With your consent we also use analytics (to improve the site) and
         marketing cookies (to measure ads). See our <a href="/cookies">Cookie Policy</a> and{" "}

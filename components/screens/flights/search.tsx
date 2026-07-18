@@ -124,13 +124,18 @@ function pushRecent(input: RecentInput): RecentSearch[] {
 export function FlightsScreen({ bookingEnabled, embedded = false }: { bookingEnabled: boolean; embedded?: boolean }) {
   const today = useMemo(() => new Date(), []);
   const iso = (d: Date) => isoOf(d);
+  // The initial dates render on the server (UTC) then hydrate on the client
+  // (SG) — isoOf uses LOCAL parts, so for SG 00:00–08:00 the two disagree by a
+  // day (hydration mismatch). Format the DEFAULTS in SG so both agree and they
+  // line up with the SG-local calendar; isoOf stays for user interaction.
+  const sgISO = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(d);
   const [tab, setTab] = useState<"search" | "ai">("search");
   const [tripType, setTripType] = useState<"one" | "round">("one");
   const [nonStop, setNonStop] = useState(false);
   const [from, setFrom] = useState<Airport | null>(null);
   const [to, setTo] = useState<Airport | null>(null);
-  const [date, setDate] = useState<string | null>(iso(new Date(today.getTime() + 30 * 864e5)));
-  const [returnDate, setReturnDate] = useState<string | null>(iso(new Date(today.getTime() + 37 * 864e5)));
+  const [date, setDate] = useState<string | null>(sgISO(new Date(today.getTime() + 30 * 864e5)));
+  const [returnDate, setReturnDate] = useState<string | null>(sgISO(new Date(today.getTime() + 37 * 864e5)));
   const [pax, setPax] = useState<Pax3>({ adults: 1, children: 0, infants: 0 });
   const [cabin, setCabin] = useState("ECONOMY");
   const [loading, setLoading] = useState(false);

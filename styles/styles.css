@@ -547,7 +547,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 
 .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .section-head h2 { font-size: 1.6rem; }
-.section-head .link { color: var(--emerald); font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.section-head .link { color: var(--emerald); font-weight: 600; font-size: .9rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; min-height: 24px; }
 .section-head .link:hover { color: var(--emerald-700); }
 
 /* category buttons */

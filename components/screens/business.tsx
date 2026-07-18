@@ -501,12 +501,12 @@ export function AddListingScreen() {
                     <div key={i} className="outlet-form">
                       <div className="flex between center" style={{ marginBottom: 10 }}>
                         <span style={{ fontWeight: 700, fontSize: ".9rem" }}>Outlet {i + 1}{i === 0 ? " · Flagship" : ""}</span>
-                        {data.outlets.length > 1 && <button className="btn btn-ghost btn-sm" style={{ padding: 6 }} onClick={() => removeOutlet(i)}><Icon name="x" size={16} /></button>}
+                        {data.outlets.length > 1 && <button className="btn btn-ghost btn-sm" style={{ padding: 6 }} aria-label={`Remove outlet ${i + 1}`} onClick={() => removeOutlet(i)}><Icon name="x" size={16} /></button>}
                       </div>
                       <div className="stack g10">
-                        <input className="input" placeholder="Outlet name (e.g. Tampines Hub)" value={o.name} onChange={(e) => setOutlet(i, { name: e.target.value })} />
-                        <AddressAutocomplete value={o.address} placeholder="Start typing the outlet address…" onChange={(v) => setOutlet(i, { address: v })} onPick={(r) => applyOutletPick(i, r)} />
-                        <select className="select" value={o.town} onChange={(e) => setOutlet(i, { town: e.target.value })}>
+                        <input className="input" aria-label={`Outlet ${i + 1} name`} placeholder="Outlet name (e.g. Tampines Hub)" value={o.name} onChange={(e) => setOutlet(i, { name: e.target.value })} />
+                        <AddressAutocomplete ariaLabel={`Outlet ${i + 1} address`} value={o.address} placeholder="Start typing the outlet address…" onChange={(v) => setOutlet(i, { address: v })} onPick={(r) => applyOutletPick(i, r)} />
+                        <select className="select" aria-label={`Outlet ${i + 1} town or area`} value={o.town} onChange={(e) => setOutlet(i, { town: e.target.value })}>
                           <option value="">Select town / area</option>
                           {REGIONS.map((r) => <optgroup key={r} label={r}>{townsInRegion(r).map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}</optgroup>)}
                         </select>
@@ -778,7 +778,9 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
           <div className="flex between center wrap g12">
             <div><span className="eyebrow" style={{ color: "var(--gold)" }}>Business dashboard</span>
               <h1 style={{ color: "#fff", fontSize: "1.8rem", marginTop: 6 }}>{(() => {
-                const h = new Date().getHours();
+                // SG hour on both server (UTC) and client (SG) so the greeting
+                // doesn't hydrate-mismatch and flip on load.
+                const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Singapore", hour: "numeric", hourCycle: "h23" }).format(new Date()));
                 const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
                 const name = live ? (myBiz?.name || (biz === null ? "…" : "Your business")) : "Warung Bumbu Rempah";
                 return `${greet}, ${name}`;
