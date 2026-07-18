@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { mosqueBySlug } from "@/lib/mosques";
+import { mosqueBySlug, allMosques, mosqueSlug } from "@/lib/mosques";
 import { mosqueProfile, profiledMosqueSlugs } from "@/lib/mosque-content";
 import { getPrayerTimes } from "@/lib/prayer-times";
 import { getDirectory } from "@/lib/directory";
+import { locationIdForArea } from "@/lib/seo-pages";
 import { qiblaBearing, compassLabel } from "@/lib/qibla";
 import { certSuffix } from "@/lib/halal-score";
 import { haversineKm, formatKm, directionsUrl } from "@/lib/geo";
@@ -65,13 +66,25 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     .sort((a, b) => a.km - b.km)
     .slice(0, 6);
 
+  // Other mosques nearby — profiled only (so every link resolves), closest first.
+  const nearbyMosques = allMosques()
+    .map((o) => ({ o, oslug: mosqueSlug(o) }))
+    .filter(({ o, oslug }) => oslug !== slug && !!mosqueProfile(oslug) && !!o.coords)
+    .map(({ o, oslug }) => ({ o, oslug, km: haversineKm(m.coords, o.coords) }))
+    .sort((a, b) => a.km - b.km)
+    .slice(0, 5);
+
+  // /halal-food/[location] link — only when a real area page exists (else the
+  // old area.split(" ")[0] guess 404'd, e.g. "kampong", "little", "ang").
+  const foodLocation = locationIdForArea(m.area);
+
   const path = `/mosques/${slug}`;
 
   return (
     <>
       <JsonLd
         data={[
-          mosqueJsonLd({ name: m.name, path, address: p.address ?? `${m.area}, Singapore`, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng }),
+          mosqueJsonLd({ name: m.name, path, address: p.address ?? `${m.area}, Singapore`, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng, image: p.image, builtYear: p.builtYear, facilities: p.facilities, sameAs: p.sameAs }),
           breadcrumbJsonLd([
             { name: "Home", path: "/" },
             { name: "Mosques", path: "/mosques" },
@@ -115,7 +128,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               ) : (
                 <p className="muted">Live prayer times are temporarily unavailable — see <Link className="link-inline" href="/tools/prayer-times">the prayer-times tool</Link>.</p>
               )}
-              <p className="faint" style={{ fontSize: ".82rem", marginTop: 8 }}>Times follow the official MUIS timetable for Singapore, updated daily. Full monthly timetable on <Link className="link-inline" href="/tools/prayer-times">the prayer-times tool</Link>.</p>
+              <p className="faint" style={{ fontSize: ".82rem", marginTop: 8 }}>Times follow the official MUIS timetable for Singapore, updated daily. Full monthly timetable on <Link className="link-inline" href="/tools/prayer-times">the prayer-times tool</Link>, or read our <Link className="link-inline" href="/blog/waktu-solat-singapore">guide to waktu solat in Singapore</Link>.</p>
             </section>
 
             {/* Jumu'ah */}
@@ -158,8 +171,31 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                     </li>
                   ))}
                 </ul>
+                {foodLocation && (
+                  <p style={{ marginTop: 10 }}>
+                    <Link className="link" href={`/halal-food/${foodLocation}`}>More halal food in {m.area} <Icon name="arrow" size={14} /></Link>
+                  </p>
+                )}
+              </section>
+            ) : null}
+
+            {/* Other mosques nearby — internal-link depth + discovery. */}
+            {nearbyMosques.length ? (
+              <section style={{ marginBottom: 26 }}>
+                <h2 style={{ fontSize: "1.3rem", marginBottom: 10 }}>Other mosques near {m.name}</h2>
+                <ul style={{ display: "grid", gap: 10, padding: 0, margin: 0, listStyle: "none" }}>
+                  {nearbyMosques.map(({ o, oslug, km }) => (
+                    <li key={oslug} style={{ display: "flex", gap: 12, alignItems: "baseline", borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <Link href={`/mosques/${oslug}`} style={{ fontWeight: 700 }}>{o.name}</Link>
+                        <div className="muted" style={{ fontSize: ".9rem", marginTop: 2 }}>{o.area}</div>
+                      </div>
+                      <span className="faint" style={{ fontSize: ".84rem", whiteSpace: "nowrap" }}>{formatKm(km)}</span>
+                    </li>
+                  ))}
+                </ul>
                 <p style={{ marginTop: 10 }}>
-                  <Link className="link" href={`/halal-food/${m.area.toLowerCase().split(" ")[0]}`}>More halal food in {m.area} <Icon name="arrow" size={14} /></Link>
+                  <Link className="link" href="/mosques">All mosques in Singapore <Icon name="arrow" size={14} /></Link>
                 </p>
               </section>
             ) : null}

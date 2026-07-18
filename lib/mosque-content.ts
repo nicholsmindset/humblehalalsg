@@ -27,6 +27,12 @@ export interface MosqueProfile {
   intro: string;
   facilities?: string[];
   faqs: { q: string; a: string }[];
+  /** Hero/OG image path (e.g. "/mosques/<slug>.webp"). Populated by the branded
+   *  image generator; a real licensed photo at the same path overrides it. */
+  image?: string;
+  /** Authoritative references for schema.org sameAs (MUIS directory page,
+   *  Google Maps place, Wikipedia). Only add verified URLs — never fabricate. */
+  sameAs?: string[];
 }
 
 function baseFaqs(name: string): { q: string; a: string }[] {
