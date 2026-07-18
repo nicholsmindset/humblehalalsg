@@ -82,6 +82,19 @@ Village (1.2k), One Punggol (1.2k), Buangkok (1.1k), Newton (1.1k), Bukit Timah 
 (600), Clementi (600), Kampung Admiralty (500). *(Exclude news/noise queries: "hawker chan", stall
 feuds, personalities.)* Requires the `hawkerFinder` flag on. Tracked as tasks WS-B/WS-A Hawker.
 
+**Seeding runbook** (needs Supabase — no in-repo file; centres are DB rows read by `lib/hawker.ts`):
+1. Ready-to-enrich seed list: [`keywords/v3-hawker-centres-seed.csv`](./keywords/v3-hawker-centres-seed.csv)
+   — 22 centres with `id` (slug), `name`, `region` (one of `HAWKER_REGIONS`: Central/East/North-East/
+   North/West) and `nearestMrt` filled; `address`/`lat`/`lng`/`blurb` left as TODO to verify (don't
+   fabricate geodata).
+2. Insert each as a `hawker_centres` row (id, name, region, nearest_mrt, address, lat, lng, blurb).
+3. Attach stalls: set `hawker_centre_id` on published `businesses` rows (prioritise halal/Muslim-owned
+   stalls — that overlay is the value-add). A centre needs stalls to be useful, and the halal overlay
+   is what differentiates us from generic hawker directories.
+4. Ensure the `hawkerFinder` server flag is on; the route + `/sitemap/hawker.xml` pick up rows live.
+5. WS-A follow-up: add `blurb` (halal-stall highlights + nearest prayer room), and per-centre FAQ
+   ("Is there halal food at {centre}?", "How to get there", "Prayer room nearby?").
+
 ### Phase 2 — Scale the factories (weeks 5–10)
 - WS-B: remaining ~15 location pages (+listings), next ~30 brand pages, hawker centres (Maxwell, Wisma Geylang Serai).
 - WS-A: 2nd optimization wave; create `AREA_PROFILES` for every area still on the fallback formula.
