@@ -14,12 +14,18 @@ import { useSession } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import { resolveRange, RANGE_LABELS, fmt, pct, type RangeKey } from "@/lib/analytics-dashboard";
 import { useSupabaseBrowser } from "@/lib/supabase/client";
+import { deriveInsight, type Funnel } from "@/lib/analytics-overview";
 import {
   type Summary, type VendorRow, type SearchRow, type AreaRow, type CategoryRow,
   type OpportunityRow, type Journey, type DailyRow, type LeadValueRow,
   S, sgd, badge, DeltaChip, PlanBadge, ListingsTable, SearchSection,
   AreasSection, CategoriesSection, OpportunitiesSection, JourneysSection,
 } from "./dashboard-sections";
+import { InsightBanner, FunnelPanel, PlatformHealthPanel, RecentAlertsPanel, TopCategoriesPanel, type Health } from "./overview-panels";
+import { DevicePanel, ChannelPanel, SearchOpportunitiesPanel, DropoffPanel, type DeviceRow, type ChannelRow } from "./journey-panels";
+
+// Extended fallback-route payload (funnel/daily/device/channel added server-side).
+export interface OverviewDaily { day: string; sessions: number; searches: number; listingViews: number; leadActions: number }
 
 // Recharts is code-split into its own chunk (loaded only after the dashboard
 // shell paints, and only on this auth-gated route — never on public pages).
@@ -34,6 +40,14 @@ const EnquiriesByVendorChart = dynamic(
   () => import("./analytics-charts").then((m) => m.EnquiriesByVendorChart),
   { ssr: false, loading: chartLoading },
 );
+const SessionsLeadsChart = dynamic(
+  () => import("./analytics-charts").then((m) => m.SessionsLeadsChart),
+  { ssr: false, loading: chartLoading },
+);
+const Sparkline = dynamic(
+  () => import("./analytics-charts").then((m) => m.Sparkline),
+  { ssr: false, loading: () => <div style={{ height: 34 }} /> },
+);
 
 type Tab = "overview" | "listings" | "search" | "areas" | "categories" | "opportunities" | "journeys";
 const TAB_LABEL: Record<Tab, string> = {
@@ -44,7 +58,7 @@ const TAB_LABEL: Record<Tab, string> = {
 // Names shown in the error banner — index-aligned with the Promise.all below.
 const SECTION_NAMES = [
   "Summary", "Comparison", "Trend", "Search",
-  "Areas", "Categories", "Lead values", "Listing detail fallback",
+  "Areas", "Categories", "Lead values", "Listing detail fallback", "Platform health",
 ] as const;
 
 /** The equal-length window immediately before [from, to) — for Δ% chips. */
@@ -77,6 +91,13 @@ export default function Dashboard() {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [leadValues, setLeadValues] = useState<LeadValueRow[]>([]);
   const [openVendor, setOpenVendor] = useState<VendorRow | null>(null);
+  // Overview/journey extras (extended fallback route + platform-health route).
+  const [funnel, setFunnel] = useState<Funnel | null>(null);
+  const [overviewDaily, setOverviewDaily] = useState<OverviewDaily[]>([]);
+  const [device, setDevice] = useState<DeviceRow[]>([]);
+  const [channel, setChannel] = useState<ChannelRow[]>([]);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [alerts, setAlerts] = useState<import("@/lib/analytics-overview").Alert[]>([]);
 
   // Custom range only takes effect once BOTH dates are chosen — a half-filled
   // range used to refetch (and fail) on every date-input change.
@@ -98,7 +119,8 @@ export default function Dashboard() {
       // Mock mode: no backend configured → show a zeroed, non-crashing dashboard.
       setSummary(null); setPrevSummary(null); setVendors([]); setDaily([]);
       setSearches([]); setAreas([]); setCats([]); setOpps([]); setJourneys([]);
-      setLeadValues([]); setLoading(false); setErr(null);
+      setLeadValues([]); setFunnel(null); setOverviewDaily([]); setDevice([]);
+      setChannel([]); setHealth(null); setAlerts([]); setLoading(false); setErr(null);
       return;
     }
     setLoading(true); setErr(null);
@@ -117,12 +139,23 @@ export default function Dashboard() {
           .then(async (r) => {
             const json = await r.json().catch(() => null);
             return r.ok && json?.ok
-              ? { data: json as { listings: VendorRow[]; opportunities: OpportunityRow[]; journeys: Journey[] }, error: null }
+              ? { data: json as {
+                  listings: VendorRow[]; opportunities: OpportunityRow[]; journeys: Journey[];
+                  funnel: Funnel; daily: OverviewDaily[]; device: DeviceRow[]; channel: ChannelRow[];
+                }, error: null }
               : { data: null, error: new Error(json?.error || "Failed to load listing detail fallback") };
           })
           .catch((error: Error) => ({ data: null, error })),
+        fetch(`/api/admin/analytics/platform-health?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+          .then(async (r) => {
+            const json = await r.json().catch(() => null);
+            return r.ok && json?.ok
+              ? { data: json as { health: Health; alerts: import("@/lib/analytics-overview").Alert[] }, error: null }
+              : { data: null, error: new Error(json?.error || "Failed to load platform health") };
+          })
+          .catch((error: Error) => ({ data: null, error })),
       ] as const);
-      const [sumRes, prevRes, dailyRes, searchRes, areaRes, catRes, lvRes, fallbackRes] = results;
+      const [sumRes, prevRes, dailyRes, searchRes, areaRes, catRes, lvRes, fallbackRes, healthRes] = results;
       // Apply each successful dataset; failures never clobber loaded data.
       if (!sumRes.error) setSummary(Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data);
       if (!prevRes.error) setPrevSummary(Array.isArray(prevRes.data) ? prevRes.data[0] : prevRes.data);
@@ -135,6 +168,14 @@ export default function Dashboard() {
         setVendors(fallbackRes.data.listings ?? []);
         setOpps(fallbackRes.data.opportunities ?? []);
         setJourneys(fallbackRes.data.journeys ?? []);
+        setFunnel(fallbackRes.data.funnel ?? null);
+        setOverviewDaily(fallbackRes.data.daily ?? []);
+        setDevice(fallbackRes.data.device ?? []);
+        setChannel(fallbackRes.data.channel ?? []);
+      }
+      if (!healthRes.error && healthRes.data) {
+        setHealth(healthRes.data.health ?? null);
+        setAlerts(healthRes.data.alerts ?? []);
       }
 
       const failedNames = results.flatMap((r, i) => (r.error ? [SECTION_NAMES[i]] : []));
@@ -204,7 +245,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <Cards summary={summary} prev={prevSummary} estValueCents={estValueCents} loading={loading && summary === null} />
+      <Cards summary={summary} prev={prevSummary} estValueCents={estValueCents} health={health} daily={overviewDaily} loading={loading && summary === null} />
 
       <nav style={S.tabs}>
         {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
@@ -219,7 +260,13 @@ export default function Dashboard() {
       <section style={S.panel}>
         {loading && summary === null ? <Skeleton /> : (
           <>
-            {tab === "overview" && <Overview daily={daily} vendors={vendors} />}
+            {tab === "overview" && (
+              <Overview
+                daily={daily} overviewDaily={overviewDaily} vendors={vendors} cats={cats}
+                funnel={funnel} health={health} alerts={alerts}
+                insight={deriveInsight(summary, prevSummary)}
+              />
+            )}
             {tab === "listings" && (openVendor
               ? <VendorDetail v={openVendor} onBack={() => setOpenVendor(null)} />
               : <ListingsTable vendors={vendors} onOpen={setOpenVendor} />)}
@@ -227,7 +274,12 @@ export default function Dashboard() {
             {tab === "areas" && <AreasSection areas={areas} />}
             {tab === "categories" && <CategoriesSection cats={cats} />}
             {tab === "opportunities" && <OpportunitiesSection opps={opps} leadValues={leadValues} onSaveValue={saveLeadValue} />}
-            {tab === "journeys" && <JourneysSection journeys={journeys} />}
+            {tab === "journeys" && (
+              <>
+                <JourneySummary funnel={funnel} searches={searches} device={device} channel={channel} overviewDaily={overviewDaily} />
+                <JourneysSection journeys={journeys} />
+              </>
+            )}
           </>
         )}
       </section>
@@ -259,20 +311,22 @@ function RangeBar(props: {
   );
 }
 
-function Cards({ summary, prev, estValueCents, loading }: {
-  summary: Summary | null; prev: Summary | null; estValueCents: number; loading: boolean;
+function Cards({ summary, prev, estValueCents, health, daily, loading }: {
+  summary: Summary | null; prev: Summary | null; estValueCents: number;
+  health: Health | null; daily: OverviewDaily[]; loading: boolean;
 }) {
   const s = summary;
   const leads = (x: Summary | null) =>
     x ? x.enquiries + x.whatsapp_clicks + x.calls + x.website_clicks + x.directions : 0;
-  const items: { label: string; val: string; cur: number; prev: number | null; hint?: string; accent?: string }[] = [
-    { label: "Enquiries", val: fmt(s?.enquiries), cur: s?.enquiries ?? 0, prev: prev?.enquiries ?? null, hint: "the metric you sell", accent: "#0F6E56" },
-    { label: "WhatsApp", val: fmt(s?.whatsapp_clicks), cur: s?.whatsapp_clicks ?? 0, prev: prev?.whatsapp_clicks ?? null },
-    { label: "Calls", val: fmt(s?.calls), cur: s?.calls ?? 0, prev: prev?.calls ?? null },
-    { label: "Total leads", val: fmt(leads(s)), cur: leads(s), prev: prev ? leads(prev) : null, hint: "all lead actions" },
-    { label: "Sessions", val: fmt(s?.total_sessions), cur: s?.total_sessions ?? 0, prev: prev?.total_sessions ?? null },
+  const sessionsSeries = daily.map((d) => d.sessions);
+  const leadsSeries = daily.map((d) => d.leadActions);
+  const items: { label: string; val: string; cur: number; prev: number | null; hint?: string; accent?: string; spark?: number[]; sparkColor?: string }[] = [
+    { label: "Sessions", val: fmt(s?.total_sessions), cur: s?.total_sessions ?? 0, prev: prev?.total_sessions ?? null, spark: sessionsSeries, sparkColor: "#0F6E56" },
+    { label: "Total leads", val: fmt(leads(s)), cur: leads(s), prev: prev ? leads(prev) : null, hint: "all lead actions", spark: leadsSeries, sparkColor: "#BA7517" },
     { label: "Search → lead", val: `${s?.search_conv_rate ?? 0}%`, cur: Number(s?.search_conv_rate ?? 0), prev: prev ? Number(prev.search_conv_rate ?? 0) : null, hint: "of searches convert", accent: "#185FA5" },
-    { label: "Est. lead value", val: sgd(estValueCents), cur: estValueCents, prev: null, hint: "configurable per action", accent: "#8A5A0B" },
+    { label: "Est. lead value", val: sgd(estValueCents), cur: estValueCents, prev: null, hint: "per window", accent: "#8A5A0B" },
+    { label: "Active listings", val: fmt(health?.activeListings), cur: health?.activeListings ?? 0, prev: null, hint: "published" },
+    { label: "Listings complete", val: `${health?.listingsCompletePct ?? 0}%`, cur: health?.listingsCompletePct ?? 0, prev: null, hint: "profile fill" },
   ];
   return (
     <div style={S.cards}>
@@ -284,14 +338,21 @@ function Cards({ summary, prev, estValueCents, loading }: {
             {!loading && it.prev !== null && <DeltaChip cur={it.cur} prev={it.prev} />}
             {it.hint && <p style={S.cardHint}>{it.hint}</p>}
           </div>
+          {!loading && it.spark && it.spark.some((n) => n > 0) && (
+            <div style={{ marginTop: 6 }}><Sparkline data={it.spark} color={it.sparkColor} /></div>
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] }) {
-  // pivot daily rows -> [{day, enquiry_form, whatsapp, ...}]
+function Overview({ daily, overviewDaily, vendors, cats, funnel, health, alerts, insight }: {
+  daily: DailyRow[]; overviewDaily: OverviewDaily[]; vendors: VendorRow[]; cats: CategoryRow[];
+  funnel: Funnel | null; health: Health | null; alerts: import("@/lib/analytics-overview").Alert[];
+  insight: import("@/lib/analytics-overview").Insight;
+}) {
+  // pivot daily lead-action rows -> [{day, enquiry_form, whatsapp, ...}]
   const byDay = useMemo(() => {
     const map: Record<string, Record<string, number | string>> = {};
     daily.forEach((r) => {
@@ -309,20 +370,30 @@ function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] 
 
   return (
     <>
+      <InsightBanner insight={insight} />
+
       <div style={S.chartGrid}>
         <div style={S.chartCard}>
           <div style={S.chartHead}>
-            <p style={S.sectionLabel}>Lead actions over time</p>
-            <span style={S.chartHint}>Calls, directions, quotes, saves, and website clicks</span>
+            <p style={{ ...S.sectionLabel, margin: 0 }}>Sessions and leads over time</p>
+            <span style={S.chartHint}>Traffic (left) vs leads (right)</span>
           </div>
-          <div style={S.chartBody}>
-            <LeadsOverTimeChart byDay={byDay} />
-          </div>
+          <div style={S.chartBody}><SessionsLeadsChart daily={overviewDaily} /></div>
         </div>
+        <FunnelPanel funnel={funnel} />
+      </div>
 
+      <div style={{ ...S.chartGrid, marginTop: 16 }}>
         <div style={S.chartCard}>
           <div style={S.chartHead}>
-            <p style={S.sectionLabel}>Enquiries by vendor</p>
+            <p style={{ ...S.sectionLabel, margin: 0 }}>Lead actions over time</p>
+            <span style={S.chartHint}>Calls, directions, quotes, saves, and website clicks</span>
+          </div>
+          <div style={S.chartBody}><LeadsOverTimeChart byDay={byDay} /></div>
+        </div>
+        <div style={S.chartCard}>
+          <div style={S.chartHead}>
+            <p style={{ ...S.sectionLabel, margin: 0 }}>Enquiries by vendor</p>
             <span style={S.chartHint}>Top listings by quote enquiries</span>
           </div>
           <div style={{ ...S.chartBody, height: Math.max(topVendors.length * 38 + 40, 180) }}>
@@ -330,7 +401,42 @@ function Overview({ daily, vendors }: { daily: DailyRow[]; vendors: VendorRow[] 
           </div>
         </div>
       </div>
+
+      <div style={{ ...S.chartGrid, marginTop: 16 }}>
+        <TopCategoriesPanel cats={cats} />
+        <PlatformHealthPanel health={health} />
+        <RecentAlertsPanel alerts={alerts} />
+      </div>
     </>
+  );
+}
+
+function JourneySummary({ funnel, searches, device, channel, overviewDaily }: {
+  funnel: Funnel | null; searches: SearchRow[]; device: DeviceRow[]; channel: ChannelRow[]; overviewDaily: OverviewDaily[];
+}) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={S.chartGrid}>
+        <FunnelPanel funnel={funnel} />
+        <DropoffPanel funnel={funnel} searches={searches} />
+      </div>
+      <div style={{ ...S.chartGrid, marginTop: 16 }}>
+        <DevicePanel device={device} />
+        <ChannelPanel channel={channel} />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <SearchOpportunitiesPanel searches={searches} />
+      </div>
+      {overviewDaily.length > 0 && (
+        <div style={{ ...S.chartCard, marginTop: 16 }}>
+          <div style={S.chartHead}>
+            <p style={{ ...S.sectionLabel, margin: 0 }}>Journey trend</p>
+            <span style={S.chartHint}>Sessions vs leads across the window</span>
+          </div>
+          <div style={S.chartBody}><SessionsLeadsChart daily={overviewDaily} /></div>
+        </div>
+      )}
+    </div>
   );
 }
 

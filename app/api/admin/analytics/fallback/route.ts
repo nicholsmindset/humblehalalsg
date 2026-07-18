@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { classifyChannel, buildFunnel, type Channel } from "@/lib/analytics-overview";
 
 type EventRow = {
   created_at: string;
@@ -11,7 +12,15 @@ type EventRow = {
   area: string | null;
   session_id: string | null;
   path: string | null;
+  device: string | null;
+  referrer: string | null;
 };
+
+const SG_OFFSET_MS = 8 * 60 * 60 * 1000;
+/** SG-local YYYY-MM-DD for a UTC timestamp (day boundaries match the range bar). */
+const sgDay = (iso: string) => new Date(new Date(iso).getTime() + SG_OFFSET_MS).toISOString().slice(0, 10);
+const convRate = (leads: number, sessions: number) =>
+  sessions > 0 ? Number(((100 * leads) / sessions).toFixed(1)) : 0;
 
 type BizRow = {
   slug: string;
@@ -59,7 +68,7 @@ async function fetchAllEvents(admin: NonNullable<ReturnType<typeof getSupabaseAd
   for (let fromIdx = 0; ; fromIdx += pageSize) {
     const { data, error } = await admin
       .from("analytics_events")
-      .select("created_at,event_type,lead_action_type,listing_slug,category,area,session_id,path")
+      .select("created_at,event_type,lead_action_type,listing_slug,category,area,session_id,path,device,referrer")
       .gte("created_at", from)
       .lt("created_at", to)
       .order("created_at", { ascending: true })
@@ -177,7 +186,65 @@ export async function GET(req: Request) {
       .sort((a, b) => b.final_action_at.localeCompare(a.final_action_at))
       .slice(0, limit);
 
-    return NextResponse.json({ ok: true, listings: listingRows, opportunities, journeys });
+    // ── Overview aggregates (single pass over ALL events) — funnel stage counts,
+    //    daily series, device + acquisition-channel breakdowns. Sessions are
+    //    distinct session_ids; conversion is lead-actions ÷ sessions.
+    const sessions = new Set<string>();
+    let totalListingViews = 0, totalLeadActions = 0, totalQualified = 0;
+    const daily = new Map<string, { day: string; s: Set<string>; searches: number; listingViews: number; leadActions: number }>();
+    const device = new Map<string, { device: string; s: Set<string>; leadActions: number }>();
+    const channel = new Map<Channel, { channel: Channel; s: Set<string>; leadActions: number }>();
+
+    for (const e of events) {
+      const sid = e.session_id || "";
+      const isView = e.event_type === "listing_view";
+      const isLead = e.event_type === "lead_action";
+      const isSearch = e.event_type === "search";
+      if (sid) sessions.add(sid);
+      if (isView) totalListingViews++;
+      if (isLead) totalLeadActions++;
+      if (e.lead_action_type === "enquiry_form") totalQualified++;
+
+      const day = sgDay(e.created_at);
+      const d = daily.get(day) || { day, s: new Set<string>(), searches: 0, listingViews: 0, leadActions: 0 };
+      daily.set(day, d);
+      if (sid) d.s.add(sid);
+      if (isSearch) d.searches++;
+      if (isView) d.listingViews++;
+      if (isLead) d.leadActions++;
+
+      const dev = (e.device || "unknown").toLowerCase();
+      const dv = device.get(dev) || { device: dev, s: new Set<string>(), leadActions: 0 };
+      device.set(dev, dv);
+      if (sid) dv.s.add(sid);
+      if (isLead) dv.leadActions++;
+
+      const ch = classifyChannel(e.referrer);
+      const cv = channel.get(ch) || { channel: ch, s: new Set<string>(), leadActions: 0 };
+      channel.set(ch, cv);
+      if (sid) cv.s.add(sid);
+      if (isLead) cv.leadActions++;
+    }
+
+    const funnel = buildFunnel({
+      sessions: sessions.size, listingViews: totalListingViews,
+      actions: totalLeadActions, qualified: totalQualified,
+    });
+    const dailySeries = [...daily.values()]
+      .map((d) => ({ day: d.day, sessions: d.s.size, searches: d.searches, listingViews: d.listingViews, leadActions: d.leadActions }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+    const deviceRows = [...device.values()]
+      .map((d) => ({ device: d.device, sessions: d.s.size, leadActions: d.leadActions, convRate: convRate(d.leadActions, d.s.size) }))
+      .sort((a, b) => b.sessions - a.sessions);
+    const channelRows = [...channel.values()]
+      .map((c) => ({ channel: c.channel, sessions: c.s.size, leadActions: c.leadActions, convRate: convRate(c.leadActions, c.s.size) }))
+      .sort((a, b) => b.sessions - a.sessions);
+
+    return NextResponse.json({
+      ok: true,
+      listings: listingRows, opportunities, journeys,
+      funnel, daily: dailySeries, device: deviceRows, channel: channelRows,
+    });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "analytics_fallback_failed" },
