@@ -46,12 +46,24 @@ tracker for the content roadmap — five workstreams, a "do-now" tranche and a p
 ### Phase 1 — "Do now" balanced quick wins (weeks 1–4)
 | WS | Item | Target SV / KD | Status |
 |----|------|----------------|--------|
-| WS-B | Ingredient / E-number batch (`halal pork`, gelatin, mirin, E471/E322/E330/E621…) | ~1,550 / KD 0 | ⬜ In progress |
+| WS-B | Ingredient batch — E-numbers already covered; added lard, mirin, shortening, whey, vanilla extract (indexable, cited) | ~1,550 / KD 0 | ✅ Done |
 | WS-D/C | "What is Halal? Meaning, Logo & MUIS Certification" explainer | `halal meaning` 600, `what is halal`, `halal logo` 650 | ⬜ In progress |
 | WS-B | First ~20 KD-0 brand pages (verified: trending + highest-SV first) | ~20k / KD 0–2 | ⬜ Queued |
 | WS-A | Optimize top ~10 existing pages (Orchard/Tampines/Jurong/Bugis + Korean/Japanese/Western/Dessert cuisine + catering hub) | "Optimise" rows | ⬜ Queued |
 | WS-B | First 5 location page objects + seed listings (ION, MBS, Parkway Parade, Raffles City, Star Vista) | ~1,900 / KD 0 | ⬜ Queued (needs directory data) |
 | WS-C | 3 biggest-gap guides (Best Halal Cafés, Halal Dessert Guide, Halal Korean/BBQ) | ~4,400 / KD 0–26 | ⬜ Queued |
+
+### Hawker centres — dedicated opportunity (`/hawker/[centre]`, Supabase-driven)
+Separate Ahrefs harvest: [`keywords/v3-hawker-matching-terms.csv`](./keywords/v3-hawker-matching-terms.csv)
+— **415 kw / 114,150 SV, almost all KD 0–6**. Demand is for *specific named centres* (mostly
+non-halal-specific navigation queries), so the play is to seed the top centres into the Supabase
+`hawker_centres` table and win them with a **halal-stall overlay + nearby prayer room** as the
+value-add. Top targets: Punggol Coast (6.0k), Bukit Canberra (3.1k), Yishun Park (2.7k), Senja
+(2.6k), Changi Village (1.9k), Anchorvale (1.5k), Chinatown Complex (1.4k), Ci Yuan (1.3k), Woodleigh
+Village (1.2k), One Punggol (1.2k), Buangkok (1.1k), Newton (1.1k), Bukit Timah (900), Old Airport Rd
+(900), Market St (900), Jurong West (800), Maxwell (800), Pasir Ris (800), Circuit Rd (700), Kovan
+(600), Clementi (600), Kampung Admiralty (500). *(Exclude news/noise queries: "hawker chan", stall
+feuds, personalities.)* Requires the `hawkerFinder` flag on. Tracked as tasks WS-B/WS-A Hawker.
 
 ### Phase 2 — Scale the factories (weeks 5–10)
 - WS-B: remaining ~15 location pages (+listings), next ~30 brand pages, hawker centres (Maxwell, Wisma Geylang Serai).
