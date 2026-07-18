@@ -13,6 +13,8 @@ import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
+import { indexableIngredients, ingredientSlug } from "@/lib/tools/ingredients";
+import { indexableHubs } from "@/lib/tools/ingredient-hubs";
 import { profiledMosqueSlugs } from "@/lib/mosque-content";
 import { getHawkerCentres } from "@/lib/hawker";
 import { getServerFlags } from "@/lib/feature-flags";
@@ -200,7 +202,24 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         changefreq: "yearly",
         priority: 0.6,
       }));
-      return [...toolEntries, ...quranEntries];
+      // Indexable ingredient detail pages (only quality-gated ones; alt slugs 301).
+      const ingredientEntries: SitemapUrl[] = indexableIngredients().map((a) => ({
+        loc: `${base}/tools/ingredient-checker/${ingredientSlug(a)}`,
+        lastmod: a.lastReviewed ? new Date(a.lastReviewed).toISOString() : now,
+        changefreq: "monthly",
+        priority: 0.6,
+      }));
+      // Qualifying ingredient category hubs (thin hubs are noindex + excluded).
+      const hubEntries: SitemapUrl[] = [
+        { loc: `${base}/tools/ingredient-checker/categories`, lastmod: now, changefreq: "monthly", priority: 0.5 },
+        ...indexableHubs().map((h) => ({
+          loc: `${base}/tools/ingredient-checker/categories/${h.slug}`,
+          lastmod: now,
+          changefreq: "monthly" as const,
+          priority: 0.5,
+        })),
+      ];
+      return [...toolEntries, ...quranEntries, ...ingredientEntries, ...hubEntries];
     }
 
     case "weddings":

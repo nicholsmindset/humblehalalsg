@@ -1,4 +1,5 @@
 import { CATEGORY_URL_MIGRATIONS } from "./category-presentation";
+import { indexableIngredients, ingredientSlug, ingredientAltSlugs } from "./tools/ingredients";
 
 /* Humble Halal — routing-layer redirect + rewrite map (flat-URL migration).
    Consumed by next.config.ts redirects()/rewrites() — the ONLY safe place for
@@ -55,9 +56,31 @@ const CUISINE_ALIASES: Array<[from: string, to: string]> = [
   ["halal-cake-singapore", "halal-cakes-singapore"],
 ];
 
+/* Ingredient checker — 301 alternative slugs (bare E-number, aliases) to the
+   canonical detail-page slug. Build-time only + real 301s via next.config.ts —
+   never a page-level redirect() (that streams a soft 200). Guards: an alt slug
+   is dropped if it equals ANY canonical slug (never shadow a real page), and
+   duplicate sources are de-duplicated (first wins). */
+export function ingredientRedirects(): Redirect[] {
+  const base = "/tools/ingredient-checker";
+  const canonical = new Set(indexableIngredients().map((a) => ingredientSlug(a)));
+  const seen = new Set<string>();
+  const out: Redirect[] = [];
+  for (const a of indexableIngredients()) {
+    const dest = ingredientSlug(a);
+    for (const alt of ingredientAltSlugs(a)) {
+      if (canonical.has(alt) || seen.has(alt)) continue;
+      seen.add(alt);
+      out.push({ source: `${base}/${alt}`, destination: `${base}/${dest}`, permanent: true });
+    }
+  }
+  return out;
+}
+
 export function seoRedirects(): Redirect[] {
   return [
     ...LEGACY_HALAL_REDIRECTS,
+    ...ingredientRedirects(),
     // Non-food categories no longer use "halal" as a blanket business label.
     // Both previously canonical and legacy-nested URLs go straight to the new
     // wording so there are no redirect chains.
