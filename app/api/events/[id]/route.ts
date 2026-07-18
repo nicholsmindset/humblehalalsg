@@ -6,6 +6,13 @@ import { eventCancelledEmail } from "@/lib/emails/templates";
 import { getStripe } from "@/lib/stripe";
 import { reverseOrderTransferIfPaid } from "@/lib/payout-reversal";
 import { revalidatePublic } from "@/lib/revalidate";
+import { recordRedirect, clearRedirect, eventRedirectTarget } from "@/lib/gone-redirects";
+
+/** Best relevant /events hub for an event's own category/area (in `display`). */
+function eventHub(display: unknown): string {
+  const d = (display && typeof display === "object" ? display : {}) as Record<string, unknown>;
+  return eventRedirectTarget(typeof d.catId === "string" ? d.catId : "community", typeof d.area === "string" ? d.area : "");
+}
 
 /* Organiser event management — edit + cancel. Authorised for the event's
    business owner or an admin. Cancel is a soft status flip (preserves orders)
@@ -69,6 +76,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { error } = await admin.from("events").update(patch).eq("id", id);
   if (error) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
+  // Status change → keep the durable 301 in sync (draft/cancelled = gone → hub).
+  if (patch.status && ev.slug) {
+    if (patch.status === "published") await clearRedirect(`/events/${ev.slug}`);
+    else await recordRedirect(`/events/${ev.slug}`, eventHub(ev.display), "event");
+  }
   // Pending paid-event tiers are safe to replace because no orders have been
   // issued yet. Once published, prices/quantities remain immutable here.
   if (["pending", "draft"].includes(String(ev.status)) && Array.isArray(b.tiers)) {
@@ -103,6 +115,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   // Soft-cancel: flip status, invalidate unused tickets, notify holders.
   const { error } = await admin.from("events").update({ status: "cancelled" }).eq("id", id);
   if (error) return NextResponse.json({ ok: false, reason: "cancel_failed" }, { status: 500 });
+  // Cancelled event is gone from public surfaces → 301 its URL to a relevant hub.
+  if (a.ev.slug) await recordRedirect(`/events/${a.ev.slug}`, eventHub(a.ev.display), "event");
   await admin.from("tickets").update({ status: "cancelled" }).eq("event_id", id).eq("status", "valid");
 
   // Refund paid orders + donations for this event. We only mark a row refunded

@@ -2332,6 +2332,14 @@ export function getPost(slug: string): BlogPost | undefined {
   return BY_SLUG.get(slug);
 }
 
+const BY_SLUG_ALL = new Map(builtPosts.map((p) => [p.slug, p]));
+
+/** Any authored post by slug — including ones not in PUBLISHED_SLUGS. Lets a
+ *  gone /blog/<slug> recover its category for a relevant 301 (lib/gone-redirects). */
+export function getAnyPost(slug: string): BlogPost | undefined {
+  return BY_SLUG_ALL.get(slug);
+}
+
 export function relatedPosts(post: BlogPost, limit = 3): BlogPost[] {
   const picked = (post.related || []).map((s) => BY_SLUG.get(s)).filter(Boolean) as BlogPost[];
   if (picked.length >= limit) return picked.slice(0, limit);

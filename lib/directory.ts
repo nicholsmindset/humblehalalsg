@@ -161,3 +161,23 @@ export async function getListingBySlug(slug: string): Promise<Listing | undefine
     return data && !isBlockedFoodListing((data as Row).slug) ? rowToListing(data as Row) : undefined;
   } catch { return undefined; }
 }
+
+/** Category + area of a business by slug (or id), IGNORING status — so a
+ *  suspended/closed /business/<slug> can resolve a relevant 301 target. Uses the
+ *  service-role client (like getDirectory) to see non-published rows. Null when
+ *  no such business ever existed → the route then 404s honestly. */
+export async function getGoneBusinessMeta(slug: string): Promise<{ catId: string; area: string } | null> {
+  if (!supabaseConfigured) return null;
+  const sb = getSupabaseAdmin();
+  if (!sb) return null;
+  try {
+    let { data } = await sb.from("businesses").select("cat_id, area").eq("slug", slug).maybeSingle();
+    if (!data && /^[0-9a-f-]{36}$/i.test(slug)) {
+      ({ data } = await sb.from("businesses").select("cat_id, area").eq("id", slug).maybeSingle());
+    }
+    if (!data) return null;
+    return { catId: str(data.cat_id) || "restaurants", area: str(data.area) };
+  } catch {
+    return null;
+  }
+}

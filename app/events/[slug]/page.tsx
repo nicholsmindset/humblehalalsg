@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EventDetailScreen } from "@/components/screens/events";
 import { SimilarEvents } from "@/components/events/similar-events";
-import { getEvents } from "@/lib/events-source";
+import { getEvents, getGoneEventMeta } from "@/lib/events-source";
+import { eventRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
@@ -64,7 +65,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   // a slug — matching both prevents direct-load / refresh / crawler 404s.
   const events = await getEvents();
   const e = events.find((x) => x.slug === slug || x.id === slug);
-  if (!e) notFound(); // missing/unpublished event → clean 404 (never renders the screen without data)
+  if (!e) {
+    // Finished/cancelled: self-heal a durable 301 so the next request 308s (in
+    // middleware) to the relevant events hub. Never-existed → honest not-found.
+    const meta = await getGoneEventMeta(slug);
+    if (meta) await recordRedirect(`/events/${slug}`, eventRedirectTarget(meta.catId, meta.area), "event");
+    notFound();
+  }
   const certVerified = await organiserCertVerified(e.organiserId);
   return (
     <>

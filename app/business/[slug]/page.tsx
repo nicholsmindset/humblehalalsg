@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetailScreen } from "@/components/screens/consumer";
-import { getDirectory, getListingBySlug } from "@/lib/directory";
+import { getDirectory, getListingBySlug, getGoneBusinessMeta } from "@/lib/directory";
+import { businessRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { getHawkerCentre } from "@/lib/hawker";
 import { pageMeta } from "@/lib/seo";
 import { joinParts } from "@/lib/format";
@@ -67,7 +68,13 @@ export async function generateMetadata({
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const l = await getListingBySlug(slug);
-  if (!l) notFound(); // unknown slug → clean 404 (used to render the first listing)
+  if (!l) {
+    // Gone (suspended/closed): self-heal a durable 301 so the next request 308s
+    // (in middleware) to a relevant hub. Never-existed → honest not-found.
+    const meta = await getGoneBusinessMeta(slug);
+    if (meta) await recordRedirect(`/business/${slug}`, businessRedirectTarget(meta.catId, meta.area), "business");
+    notFound();
+  }
   // Hawker stalls get a "back to centre" context line — resolve the centre name
   // server-side (null-safe: centre may be unpublished/missing).
   const centre = l.hawkerCentreId ? await getHawkerCentre(l.hawkerCentreId) : null;
