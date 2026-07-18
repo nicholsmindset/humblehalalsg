@@ -74,8 +74,8 @@ describe("quality gate (ingredientQualifies)", () => {
     expect(ingredientQualifies(killed)).toBe(false);
   });
 
-  it("authors a meaningful first batch (>= 12 indexable ingredients)", () => {
-    expect(indexableIngredients().length).toBeGreaterThanOrEqual(12);
+  it("authors a meaningful set of indexable ingredients (>= 25)", () => {
+    expect(indexableIngredients().length).toBeGreaterThanOrEqual(25);
   });
 });
 
