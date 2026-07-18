@@ -3,7 +3,8 @@ import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { postWordCount } from "@/lib/blog";
+import { postWordCount, getAnyPost } from "@/lib/blog";
+import { blogRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { allBlogPosts, getBlogPost, relatedBlogPosts, resolveBlogAuthor } from "@/lib/cms-blog";
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
@@ -63,7 +64,13 @@ function fmtDate(iso: string) {
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const p = await getBlogPost(slug);
-  if (!p) notFound();
+  if (!p) {
+    // Unpublished/removed post: self-heal a durable 301 so the next request 308s
+    // (in middleware) to its category hub. Never-authored → honest not-found.
+    const any = getAnyPost(slug);
+    if (any) await recordRedirect(`/blog/${slug}`, blogRedirectTarget(any.category), "blog");
+    notFound();
+  }
   const related = await relatedBlogPosts(p, 3);
   const cat = getCategory(p.category);
   const author = await resolveBlogAuthor(p);

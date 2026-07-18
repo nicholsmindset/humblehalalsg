@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isBlockedFoodListing } from "@/lib/listing-safety";
+import { redirectFor } from "@/lib/gone-redirect-map";
 
 /* Next.js 16: "proxy" is the renamed "middleware" file convention. Clerk's
    clerkMiddleware() runs here so auth() is populated downstream. Do NOT set a
@@ -39,6 +40,22 @@ function featureTikTokRedirect(req: NextRequest): NextResponse | null {
   return null;
 }
 
+// Content routes whose entities can go away (closed business, finished event,
+// unpublished post). Gone URLs 301 here — in MIDDLEWARE, because page-level
+// redirect()/notFound() degrade to a soft 200 under this app's streaming layout,
+// which is useless for SEO. Targets come from the `redirects` table (populated at
+// suspend/cancel time + self-healed by the routes) via a 60s-cached in-memory map,
+// so a live request costs only a Map.get.
+const REDIRECTABLE = /^\/(business|events|blog)\//;
+
+async function goneRedirect(req: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = req.nextUrl;
+  if (!REDIRECTABLE.test(pathname)) return null;
+  const to = await redirectFor(pathname);
+  if (to && to !== pathname) return NextResponse.redirect(new URL(to, req.url), 308);
+  return null;
+}
+
 // clerkMiddleware() runs a server-side handshake against the Clerk instance, which
 // needs a real backend (CLERK_SECRET_KEY). When it's absent — CI e2e, local dev
 // without keys — running it rejects every request with "Invalid host". Prod always
@@ -53,10 +70,17 @@ export default clerkEnabled
       if (blocked) return blocked;
       const redirect = featureTikTokRedirect(req);
       if (redirect) return redirect;
+      const gone = await goneRedirect(req);
+      if (gone) return gone;
       if (isProtected(req)) await auth.protect();
     })
-  : function proxy(req: NextRequest) {
-      return unsafeFoodListingResponse(req) ?? featureTikTokRedirect(req) ?? NextResponse.next();
+  : async function proxy(req: NextRequest) {
+      return (
+        unsafeFoodListingResponse(req) ??
+        featureTikTokRedirect(req) ??
+        (await goneRedirect(req)) ??
+        NextResponse.next()
+      );
     };
 
 export const config = {

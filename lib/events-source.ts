@@ -107,3 +107,20 @@ export const getEvents = cache(async (): Promise<EventItem[]> => {
   }
   return [];
 });
+
+/** Category + area of an event by slug (or id), IGNORING status + date — so a
+ *  finished or cancelled /events/<slug> can resolve a relevant 301 target. Null
+ *  when no such event ever existed → the route then 404s honestly. */
+export async function getGoneEventMeta(slug: string): Promise<{ catId: string; area: string } | null> {
+  if (!supabaseConfigured) return null;
+  const db = getSupabaseAdmin();
+  if (!db) return null;
+  try {
+    const { data } = await db.from("events").select("display").or(`slug.eq.${slug},id.eq.${slug}`).maybeSingle();
+    if (!data) return null;
+    const d = (data.display && typeof data.display === "object" ? data.display : {}) as Record<string, unknown>;
+    return { catId: str(d.catId, "community"), area: str(d.area) };
+  } catch {
+    return null;
+  }
+}

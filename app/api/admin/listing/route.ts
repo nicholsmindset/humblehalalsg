@@ -7,6 +7,7 @@ import { sanitizeAttributes } from "@/lib/attributes";
 import { sanitizePhotos } from "@/lib/photos";
 import { slugify } from "@/lib/slug";
 import { syncMediaProjection } from "@/lib/media-governance";
+import { recordRedirect, clearRedirect, businessRedirectTarget } from "@/lib/gone-redirects";
 
 /* Admin listing management — the takedown/correction surface the moderation
    queues lacked (they only act on staging rows and reports; nothing could
@@ -208,8 +209,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, deleted: true });
   }
 
-  const row = (await findBusiness(db, id, "id, slug, name, status")) as
-    | { id: string; slug: string; name: string; status: string }
+  const row = (await findBusiness(db, id, "id, slug, name, status, cat_id, area")) as
+    | { id: string; slug: string; name: string; status: string; cat_id: string | null; area: string | null }
     | null;
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
 
@@ -218,6 +219,14 @@ export async function POST(req: Request) {
 
   const { error } = await db.from("businesses").update({ status: nextStatus }).eq("id", row.id);
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+
+  // Record (suspend) / clear (restore) a durable 301 so the old /business/<slug>
+  // sends its equity to a relevant hub instead of 404ing while suspended.
+  if (action === "suspend") {
+    await recordRedirect(`/business/${row.slug}`, businessRedirectTarget(row.cat_id ?? undefined, row.area ?? undefined), "business");
+  } else {
+    await clearRedirect(`/business/${row.slug}`);
+  }
 
   await logAudit(db, {
     actor: gate.userId,
