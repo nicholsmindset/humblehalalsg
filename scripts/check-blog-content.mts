@@ -23,7 +23,7 @@ type PostEntry = {
   slug: string;
   entry: {
     title: string; status: string; dek: string; answer: string; author: string;
-    datePublished: string; category: string; image: string; imageAlt: string;
+    datePublished: string; category: string; image: string; imageUpload: string | null; imageAlt: string;
     sections: { links: { href: string }[] }[]; faq: unknown[]; related: string[];
   };
 };
@@ -48,7 +48,8 @@ for (const { slug, entry } of cms) {
     ["author", entry.author],
     ["datePublished", entry.datePublished],
     ["category", entry.category],
-    ["image", entry.image],
+    // Hero image is satisfied by EITHER an uploaded image or the URL/path field.
+    ["image", entry.image || entry.imageUpload],
     ["imageAlt", entry.imageAlt],
   ];
   for (const [k, v] of req) if (!v) errors.push(`${where}: missing required field "${k}"`);

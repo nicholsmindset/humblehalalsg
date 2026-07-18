@@ -11,9 +11,16 @@ export function AuthorBio({ author, name }: { author?: BlogAuthor; name?: string
   const role = author?.role || "Independently researched · MUIS-aware";
   const bio = author?.bio || FALLBACK_BIO;
   const links = author?.sameAs?.filter(Boolean) || [];
+  const avatar = author?.avatar;
   return (
     <div className="author-bio">
-      <span className="mono" aria-hidden="true">HH</span>
+      {avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="author-avatar" src={avatar} alt={displayName} width={48} height={48}
+          style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flex: "none" }} />
+      ) : (
+        <span className="mono" aria-hidden="true">HH</span>
+      )}
       <div>
         <div className="role">{role}</div>
         <h4>{displayName}</h4>

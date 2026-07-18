@@ -43,7 +43,10 @@ export async function cmsPosts(): Promise<BlogPost[]> {
       readMins: entry.readMins,
       category: entry.category as BlogCategorySlug,
       tags: [...entry.tags],
-      image: entry.image,
+      // Hero: an uploaded image wins, else the URL/path field, else the branded
+      // per-post OG card — so `image` is never empty (keeps the required type +
+      // CI validator + unconditional hero render all satisfied).
+      image: clean(entry.imageUpload) ?? clean(entry.image) ?? `/blog/${slug}/opengraph-image`,
       imageAlt: entry.imageAlt,
       imageCredit: clean(entry.imageCredit),
       sections: entry.sections.map((section) => ({
@@ -53,7 +56,7 @@ export async function cmsPosts(): Promise<BlogPost[]> {
         links: section.links.length ? section.links.map((link) => ({ label: link.label, href: link.href })) : undefined,
         socialUrl: clean(section.socialUrl),
         socialLabel: clean(section.socialLabel),
-        image: clean(section.image),
+        image: clean(section.imageUpload) ?? clean(section.image),
         imageAlt: clean(section.imageAlt),
         caption: clean(section.caption),
       })),
@@ -67,7 +70,7 @@ export async function cmsPosts(): Promise<BlogPost[]> {
       metaDescription: clean(entry.metaDescription),
       canonicalUrl: clean(entry.canonicalUrl),
       noindex: entry.noindex || undefined,
-      socialImage: clean(entry.socialImage),
+      socialImage: clean(entry.socialImageUpload) ?? clean(entry.socialImage),
     }));
 }
 
@@ -91,7 +94,7 @@ export async function getBlogAuthors(): Promise<BlogAuthor[]> {
     type: entry.type,
     role: clean(entry.role),
     bio: clean(entry.bio),
-    avatar: clean(entry.avatar),
+    avatar: clean(entry.avatarUpload) ?? clean(entry.avatar),
     url: clean(entry.url),
     sameAs: entry.sameAs.length ? [...entry.sameAs] : undefined,
   }));

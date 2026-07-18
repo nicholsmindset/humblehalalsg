@@ -18,6 +18,7 @@ async function cmsBrands(): Promise<BrandHalal[]> {
     return entries.map(({ slug, entry }) => ({
       slug,
       brand: entry.brand,
+      logo: entry.logo || undefined,
       category: entry.category,
       status: entry.status as HalalStatus,
       answer: entry.answer,

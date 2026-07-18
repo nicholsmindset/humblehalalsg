@@ -31,7 +31,13 @@ export default config({
         }),
         role: fields.text({ label: "Role / title" }),
         bio: fields.text({ label: "Bio", multiline: true }),
-        avatar: fields.text({ label: "Avatar image URL" }),
+        avatarUpload: fields.image({
+          label: "Avatar photo (upload)",
+          description: "Upload a headshot. Takes priority over the URL below.",
+          directory: "public/authors",
+          publicPath: "/authors/",
+        }),
+        avatar: fields.text({ label: "Avatar image URL (used only if no upload above)" }),
         url: fields.text({ label: "Profile / author page URL" }),
         sameAs: fields.array(fields.text({ label: "Link", ...required }), {
           label: "Social / professional links",
@@ -85,7 +91,13 @@ export default config({
           label: "Tags",
           itemLabel: (props) => props.value || "Tag",
         }),
-        image: fields.text({ label: "Hero image URL or /public path", ...required }),
+        imageUpload: fields.image({
+          label: "Hero image (upload)",
+          description: "Upload the hero image. Takes priority over the URL below; if neither is set, a branded card is used.",
+          directory: "public/blog",
+          publicPath: "/blog/",
+        }),
+        image: fields.text({ label: "Hero image URL or /public path (used only if no upload above)" }),
         imageAlt: fields.text({ label: "Hero image alt text", ...required }),
         imageCredit: fields.text({ label: "Image credit" }),
         sections: fields.array(
@@ -104,7 +116,13 @@ export default config({
             ),
             socialUrl: fields.url({ label: "TikTok video URL (optional)" }),
             socialLabel: fields.text({ label: "Social video caption" }),
-            image: fields.text({ label: "Section image URL or /public path" }),
+            imageUpload: fields.image({
+              label: "Section image (upload)",
+              description: "Upload a section image. Takes priority over the URL below.",
+              directory: "public/blog",
+              publicPath: "/blog/",
+            }),
+            image: fields.text({ label: "Section image URL or /public path (used only if no upload above)" }),
             imageAlt: fields.text({ label: "Section image alt text" }),
             caption: fields.text({ label: "Section image caption" }),
           }),
@@ -127,7 +145,13 @@ export default config({
         metaDescription: fields.text({ label: "SEO meta description override (optional)", multiline: true }),
         canonicalUrl: fields.text({ label: "Canonical URL override (optional)" }),
         noindex: fields.checkbox({ label: "Hide from search engines (noindex)", defaultValue: false }),
-        socialImage: fields.text({ label: "Social share image URL override (optional)" }),
+        socialImageUpload: fields.image({
+          label: "Social share image (upload, optional)",
+          description: "Custom OG/social card. Takes priority over the URL below and the hero image.",
+          directory: "public/blog",
+          publicPath: "/blog/",
+        }),
+        socialImage: fields.text({ label: "Social share image URL override (used only if no upload above)" }),
       },
     }),
     // "Is <brand> halal?" checker entries. A CMS entry with the same slug as a
@@ -140,6 +164,12 @@ export default config({
       format: { data: "json" },
       schema: {
         brand: fields.slug({ name: { label: "Brand name", ...required } }),
+        logo: fields.image({
+          label: "Brand logo (upload, optional)",
+          description: "Shown in the header of the /is-halal/<brand> page. Optional.",
+          directory: "public/brands",
+          publicPath: "/brands/",
+        }),
         category: fields.text({ label: "Category (e.g. Fast food, Bakery)", ...required }),
         status: fields.select({
           label: "Halal status",

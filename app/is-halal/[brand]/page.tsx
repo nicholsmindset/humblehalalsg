@@ -154,7 +154,7 @@ export default async function Page({ params }: { params: Promise<{ brand: string
           <div className="hcx-grid">
             <StatusCard b={b} />
             <aside className="hcx-side">
-              <BrandMonogram brand={b.brand} category={b.category} tone={m.tone} />
+              <BrandMonogram brand={b.brand} category={b.category} tone={m.tone} logo={b.logo} />
               <MethodPanel status={b.status} lastChecked={b.lastChecked} />
             </aside>
           </div>
