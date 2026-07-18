@@ -81,10 +81,13 @@
   min-height: 52px;
   padding: 10px;
   border-radius: 15px;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.13);
-  color: #fff;
+  /* These rows sit inside white .tools-rhythm-col cards, so use dark text on a
+     light tint (the previous white-on-transparent-white was invisible). */
+  background: var(--cream);
+  border: 1px solid var(--line);
+  color: var(--ink);
   text-decoration: none;
+  transition: background .15s, border-color .15s;
 }
 .tools-feature-row span {
   display: grid;
@@ -92,11 +95,11 @@
   width: 34px;
   height: 34px;
   border-radius: 11px;
-  background: rgba(255,255,255,.13);
-  color: var(--gold);
+  background: var(--emerald-50);
+  color: var(--gold-800);
 }
-.tools-feature-row strong { font-size: .94rem; }
-.tools-feature-row:hover { background: rgba(255,255,255,.16); }
+.tools-feature-row strong { font-size: .94rem; color: var(--ink); }
+.tools-feature-row:hover { background: var(--emerald-50); border-color: var(--emerald-100); }
 
 .tools-command {
   position: relative;
