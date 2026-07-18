@@ -1,5 +1,11 @@
 # Humble Halal — Content Calendar v2 (Cluster Expansion)
 
+> **⚠️ Superseded — do not execute from this doc.** It targets the retired `lib/blog.ts`
+> architecture (none of its Batch-1 slugs shipped). The live blog schedule is
+> `lib/content-calendar.ts::postSchedule` (human view: [content-calendar-final.md](./content-calendar-final.md)),
+> and the current strategy is [content-plan-v3.md](./content-plan-v3.md) +
+> [keyword-research-v3.md](./keyword-research-v3.md). Kept for historical cluster mapping only.
+
 *Derived from [keyword-research-v2.md](./keyword-research-v2.md) and the raw
 [`keywords/*.csv`](./keywords/). Supersedes the mapping in `../content-calendar-90day.md` for the
 new clusters. Each row → one `lib/blog.ts` post (answer-first TL;DR + FAQ built from real
