@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { mosqueBySlug, allMosques, mosqueSlug } from "@/lib/mosques";
-import { mosqueProfile, profiledMosqueSlugs } from "@/lib/mosque-content";
+import { mosqueProfile, profiledMosqueSlugs, mosqueFaqs } from "@/lib/mosque-content";
 import { getPrayerTimes } from "@/lib/prayer-times";
 import { getDirectory } from "@/lib/directory";
 import { locationIdForArea } from "@/lib/seo-pages";
@@ -79,18 +79,23 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const foodLocation = locationIdForArea(m.area);
 
   const path = `/mosques/${slug}`;
+  // Per-mosque image for schema/social: a real licensed photo (profile.image)
+  // when provided, else the branded OG card route — itself a 1200×630 per-mosque
+  // PNG — so schema/sitemap always carry a mosque-specific image with no assets.
+  const heroImage = p.image ?? `${path}/opengraph-image`;
+  const faqs = mosqueFaqs(p, m.name, m.area);
 
   return (
     <>
       <JsonLd
         data={[
-          mosqueJsonLd({ name: m.name, path, address: p.address ?? `${m.area}, Singapore`, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng, image: p.image, builtYear: p.builtYear, facilities: p.facilities, sameAs: p.sameAs }),
+          mosqueJsonLd({ name: m.name, path, address: p.address ?? `${m.area}, Singapore`, postalCode: p.postal, lat: m.coords.lat, lng: m.coords.lng, image: heroImage, builtYear: p.builtYear, facilities: p.facilities, sameAs: p.sameAs }),
           breadcrumbJsonLd([
             { name: "Home", path: "/" },
             { name: "Mosques", path: "/mosques" },
             { name: m.name, path },
           ]),
-          faqJsonLd(p.faqs),
+          faqJsonLd(faqs),
         ]}
       />
       <div className="screen-in hh-page">
@@ -108,6 +113,13 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               {p.heritage && <span className="tag">{p.heritage}</span>}
               {p.builtYear && <span className="tag">Built {p.builtYear}</span>}
             </div>
+            {/* On-page hero photo only when a real licensed image is provided
+                (profile.image). The OG-card fallback is for social/schema only. */}
+            {p.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.image} alt={`${m.name} in ${m.area}, Singapore`} width={720} height={360}
+                style={{ width: "100%", maxWidth: 720, height: "auto", marginTop: 18, borderRadius: 16, objectFit: "cover", aspectRatio: "2 / 1" }} />
+            )}
           </div>
         </section>
 
@@ -204,7 +216,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <section>
               <h2 style={{ fontSize: "1.3rem", margin: "0 0 12px" }}>Your questions, answered</h2>
               <div className="stack g12">
-                {p.faqs.map((f) => (
+                {faqs.map((f) => (
                   <details key={f.q} className="faq-item">
                     <summary style={{ fontWeight: 600 }}>{f.q}</summary>
                     <p className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>{f.a}</p>

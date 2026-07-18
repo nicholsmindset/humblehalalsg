@@ -48,6 +48,39 @@ function baseFaqs(name: string): { q: string; a: string }[] {
   ];
 }
 
+/* Matches the two legacy generic FAQs so mosqueFaqs() can drop them in favour of
+   the richer, data-grounded set below (kept in profiles for backwards compat). */
+function isGenericFaq(q: string): boolean {
+  return /^What are the prayer times at /i.test(q) || /hold Friday \(Jumu'ah\) prayers\?$/i.test(q);
+}
+
+/* Richer FAQ set grounded in the mosque's REAL area + nearest MRT (varies per
+   page, so it's not the near-duplicate 2-item block that shipped on 69 pages).
+   Only verifiable facts — no invented Jumu'ah session times. */
+function groundedFaqs(name: string, area: string, nearestMrt?: string): { q: string; a: string }[] {
+  const getThere = nearestMrt
+    ? `${name} is in ${area}, Singapore; the nearest MRT is ${nearestMrt}. This page has a live map and one-tap directions.`
+    : `${name} is in ${area}, Singapore. This page has a live map and one-tap directions to the mosque.`;
+  return [
+    {
+      q: `What are the prayer times at ${name} today?`,
+      a: `${name} follows the official MUIS prayer times for Singapore — Subuh, Zohor, Asar, Maghrib and Isyak are shown live on this page each day. For the exact iqamah (congregation) timing, arrive a few minutes early or check with the mosque.`,
+    },
+    {
+      q: `Does ${name} hold Friday (Jumu'ah) prayers?`,
+      a: `Yes. Like most Singapore mosques, ${name} holds Friday prayers around midday; larger mosques may run two sessions. Session times, khutbah language and whether a women's (Muslimah) space is available for Jumu'ah vary — confirm with the mosque or on the MuslimSG app.`,
+    },
+    {
+      q: `Where is ${name} and how do I get there?`,
+      a: getThere,
+    },
+    {
+      q: `Is there halal food near ${name}?`,
+      a: `Yes — this page lists halal restaurants and Muslim-owned eateries within walking distance of ${name}, each with a halal-confidence score and directions, so you can eat before or after prayers.`,
+    },
+  ];
+}
+
 const PROFILES: MosqueProfile[] = [
   {
     slug: "masjid-sultan",
@@ -372,4 +405,12 @@ export function mosqueProfile(slug: string): MosqueProfile | undefined {
 
 export function profiledMosqueSlugs(): string[] {
   return PROFILES.map((p) => p.slug);
+}
+
+/** FAQs for a mosque page: the profile's bespoke FAQs (e.g. visitor policy) plus
+ *  the richer, area/MRT-grounded base set — with the two legacy generic FAQs
+ *  filtered out so pages don't ship the old near-duplicate 2-item block. */
+export function mosqueFaqs(p: MosqueProfile, name: string, area: string): { q: string; a: string }[] {
+  const custom = p.faqs.filter((f) => !isGenericFaq(f.q));
+  return [...custom, ...groundedFaqs(name, area, p.nearestMrt)];
 }

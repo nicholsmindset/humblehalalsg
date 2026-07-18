@@ -15,7 +15,7 @@ import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
 import { indexableIngredients, ingredientSlug } from "@/lib/tools/ingredients";
 import { indexableHubs } from "@/lib/tools/ingredient-hubs";
-import { profiledMosqueSlugs } from "@/lib/mosque-content";
+import { profiledMosqueSlugs, mosqueProfile } from "@/lib/mosque-content";
 import { getHawkerCentres } from "@/lib/hawker";
 import { getServerFlags } from "@/lib/feature-flags";
 import { SITE } from "@/lib/seo";
@@ -248,11 +248,14 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
 
     case "mosques":
       // Only PROFILED mosques get an indexable detail page (thin-content gate).
+      // image = a real photo when provided, else the branded per-mosque OG card
+      // route (itself a 1200×630 PNG) so every mosque URL carries an image.
       return profiledMosqueSlugs().map((slug) => ({
         loc: `${base}/mosques/${slug}`,
         lastmod: now,
         changefreq: "weekly",
         priority: 0.6,
+        image: mosqueProfile(slug)?.image || `/mosques/${slug}/opengraph-image`,
       }));
 
     case "hawker": {
