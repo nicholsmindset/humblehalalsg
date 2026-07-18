@@ -383,7 +383,16 @@ export function mosqueJsonLd(m: {
   lat: number;
   lng: number;
   image?: string;
+  /** Founding year (from the profile's builtYear, e.g. "1826" or "1932") — the
+   *  leading 4-digit year is used for schema.org foundingDate. */
+  builtYear?: string;
+  /** Facilities → amenityFeature (LocationFeatureSpecification). */
+  facilities?: string[];
+  /** Authoritative references (MUIS directory, Google Maps place, Wikipedia). */
+  sameAs?: string[];
 }) {
+  const foundingYear = m.builtYear?.match(/\b(1[0-9]{3}|20[0-9]{2})\b/)?.[1];
+  const sameAs = (m.sameAs ?? []).filter(Boolean);
   return {
     "@context": "https://schema.org",
     "@type": "Mosque",
@@ -400,6 +409,11 @@ export function mosqueJsonLd(m: {
     geo: { "@type": "GeoCoordinates", latitude: m.lat, longitude: m.lng },
     hasMap: `https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}`,
     areaServed: { "@type": "Country", name: "Singapore" },
+    ...(foundingYear ? { foundingDate: foundingYear } : {}),
+    ...(m.facilities?.length
+      ? { amenityFeature: m.facilities.map((f) => ({ "@type": "LocationFeatureSpecification", name: f, value: true })) }
+      : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 }
 

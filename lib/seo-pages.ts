@@ -379,3 +379,22 @@ export function getSeoPageByLocation(locationId: string): SeoPage | undefined {
 export const SEO_LOCATION_IDS = PAGES.filter(
   (p) => (p.kind === "area" || p.kind === "venue") && p.locationId,
 ).map((p) => p.locationId as string);
+
+/* Area DISPLAY name → /halal-food/[location] id, built from the area pages that
+   actually exist (sparse areas fail the index gate and get no page). */
+const AREA_NAME_TO_LOCATION = new Map<string, string>();
+for (const p of PAGES) {
+  if (p.kind === "area" && p.locationId) {
+    if (p.areaName) AREA_NAME_TO_LOCATION.set(p.areaName.toLowerCase(), p.locationId);
+    for (const n of p.areaNames ?? []) AREA_NAME_TO_LOCATION.set(n.toLowerCase(), p.locationId);
+  }
+}
+
+/** Resolve an area's display name (e.g. "Kampong Glam") to its
+ *  /halal-food/[location] id ("kampong-glam"), or undefined when no such area
+ *  page exists. Case-insensitive. Callers should drop the link when undefined
+ *  rather than emit a 404 (fixes the old area.split(" ")[0] slug guess). */
+export function locationIdForArea(area: string | undefined): string | undefined {
+  if (!area) return undefined;
+  return AREA_NAME_TO_LOCATION.get(area.trim().toLowerCase());
+}

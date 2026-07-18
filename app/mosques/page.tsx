@@ -5,7 +5,7 @@ import type { Mosque } from "@/lib/types";
 import { mapsSearchUrl } from "@/lib/geo";
 import { mosqueSlug } from "@/lib/mosques";
 import { mosqueProfile } from "@/lib/mosque-content";
-import { pageMeta } from "@/lib/seo";
+import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = pageMeta({
@@ -36,7 +36,12 @@ export default function Page() {
     "@type": "ItemList",
     name: "Mosques in Singapore",
     numberOfItems: mosques.length,
-    itemListElement: mosques.map((m, i) => ({ "@type": "ListItem", position: i + 1, name: m.name })),
+    itemListElement: mosques.map((m, i) => {
+      const slug = mosqueSlug(m);
+      // Link items that have a real detail page (all profiled mosques).
+      const url = mosqueProfile(slug) ? `${SITE.url}/mosques/${slug}` : undefined;
+      return { "@type": "ListItem", position: i + 1, name: m.name, ...(url ? { url } : {}) };
+    }),
   };
 
   return (
