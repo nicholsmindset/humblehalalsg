@@ -44,14 +44,14 @@ function stickerSvg(name: string, label: string, theme: "light" | "dark"): strin
   const brandCol = theme === "dark" ? "#9fb0ac" : "#6b7a78";
   const dividerCol = theme === "dark" ? "#1d5b48" : "#E4E0D3";
   const font = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const l2y = 372;
+  const l2y = 382;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="${esc(label)} — ${esc(raw)} on Humble Halal">
   <rect x="8" y="8" width="584" height="584" rx="52" fill="${bg}" stroke="${ring}" stroke-width="4"/>
   <circle cx="300" cy="182" r="88" fill="${chipBg}"/>
   <path d="M328 138a56 56 0 1 0 22 76 62 62 0 0 1-22-76z" fill="none" stroke="${gold}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="300" y="300" text-anchor="middle" font-family="${font}" font-size="27" font-weight="800" letter-spacing="1.5" fill="${labelCol}">${esc(label.toUpperCase())}</text>
-  <text x="300" y="${l2 ? "344" : "352"}" text-anchor="middle" font-family="${font}" font-size="40" font-weight="800" fill="${nameCol}">${esc(l1)}</text>
+  <text x="300" y="${l2 ? "336" : "352"}" text-anchor="middle" font-family="${font}" font-size="40" font-weight="800" fill="${nameCol}">${esc(l1)}</text>
   ${l2 ? `<text x="300" y="${l2y}" text-anchor="middle" font-family="${font}" font-size="40" font-weight="800" fill="${nameCol}">${esc(l2)}</text>` : ""}
   <line x1="180" y1="${l2 ? "410" : "392"}" x2="420" y2="${l2 ? "410" : "392"}" stroke="${dividerCol}" stroke-width="2"/>
   <text x="300" y="${l2 ? "452" : "440"}" text-anchor="middle" font-family="${font}" font-size="19" font-weight="600" fill="${brandCol}">Listed &amp; verified on</text>

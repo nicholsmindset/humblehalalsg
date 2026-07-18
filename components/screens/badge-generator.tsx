@@ -26,6 +26,36 @@ export function BadgeGeneratorScreen() {
   const clean = slug.trim().toLowerCase();
   const valid = SLUG_RE.test(clean);
   const badgeUrl = `${SITE}/api/badge/${clean}${theme === "dark" ? "?theme=dark" : ""}`;
+  const stickerUrl = `/api/sticker/${clean}${theme === "dark" ? "?theme=dark" : ""}`;
+
+  // Rasterize the same-origin sticker SVG to a PNG in the browser so owners get a
+  // social-ready image without a server-side image pipeline. Same-origin → the
+  // canvas is not tainted, so toBlob() succeeds.
+  const downloadPng = async () => {
+    try {
+      const res = await fetch(stickerUrl);
+      if (!res.ok) return;
+      const svgText = await res.text();
+      const svgUrl = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml" }));
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1200; canvas.height = 1200;
+        const ctx = canvas.getContext("2d");
+        if (ctx) { ctx.drawImage(img, 0, 0, 1200, 1200); }
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob((png) => {
+          if (!png) return;
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(png);
+          a.download = `${clean}-humble-halal-verified.png`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }, "image/png");
+      };
+      img.src = svgUrl;
+    } catch { /* download blocked — the SVG link still works */ }
+  };
   const linkUrl = `${SITE}/business/${clean}?utm_source=badge&utm_medium=embed&utm_campaign=verified-badge`;
   const snippet = `<a href="${linkUrl}" target="_blank" rel="noopener">
   <img src="${badgeUrl}" alt="Verified Halal on Humble Halal" width="200" height="56" loading="lazy" />
@@ -90,6 +120,21 @@ export function BadgeGeneratorScreen() {
               <p className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>
                 Works on any website builder that accepts HTML (Wix, Squarespace, WordPress, Shopify, Linktree and more).
               </p>
+
+              <div className="field" style={{ marginTop: 22, borderTop: "1px solid var(--line)", paddingTop: 18 }}>
+                <label>Shareable sticker</label>
+                <p className="faint" style={{ fontSize: ".86rem", margin: "2px 0 12px" }}>
+                  A square sticker to print for your storefront or post on Instagram, WhatsApp and Facebook.
+                </p>
+                <div style={{ padding: 20, borderRadius: 12, background: theme === "dark" ? "#0a1f19" : "var(--wash,#f6f4ee)", display: "flex", justifyContent: "center" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={stickerUrl} alt="Your Humble Halal verified sticker preview" width={240} height={240} style={{ borderRadius: 16 }} />
+                </div>
+                <div className="flex g8 mt8" style={{ flexWrap: "wrap" }}>
+                  <button className="btn btn-primary" onClick={downloadPng}><Icon name="download" size={16} /> Download sticker (PNG)</button>
+                  <a className="btn btn-outline" href={`${stickerUrl}${stickerUrl.includes("?") ? "&" : "?"}download=1`} download><Icon name="doc" size={16} /> Download SVG</a>
+                </div>
+              </div>
             </>
           ) : (
             <p className="faint" style={{ marginTop: 8 }}>Enter your listing address above to preview and copy your badge.</p>
