@@ -704,14 +704,19 @@
 /* ── Tools hub revamp: prayer widget, continue card, rhythm, intents ──────── */
 .tools-hero-side { display:grid; gap:14px; align-content:start; min-width:0; }
 .tools-prayer-widget .tools-panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-.tools-ring-count { font-size:.86rem; font-weight:800; color:var(--ink); line-height:1.1; }
-.tools-ring-sub { font-size:.6rem; font-weight:600; color:var(--ink-faint); }
-.tools-next-line { font-size:.9rem; margin:10px 0 12px; color:var(--ink-soft); }
+/* These sit inside the dark emerald .tools-hero-panel, so text must be light —
+   the previous --ink/--ink-soft values rendered dark-on-dark (invisible chips). */
+.tools-ring-count { font-size:.86rem; font-weight:800; color:#fff; line-height:1.1; }
+.tools-ring-sub { font-size:.6rem; font-weight:600; color:rgba(255,255,255,.72); }
+.tools-next-line { font-size:.9rem; margin:10px 0 12px; color:rgba(255,255,255,.82); }
+.tools-next-line strong { color:#fff; }
 .tools-times-row { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
-.tools-time { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 2px; border-radius:10px; border:1px solid var(--line); font-size:.7rem; color:var(--ink-soft); min-width:0; }
-.tools-time strong { font-size:.74rem; color:var(--ink); white-space:nowrap; }
-.tools-time.on { background:var(--emerald-50); border-color:var(--emerald-300); }
+.tools-time { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 2px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); font-size:.7rem; color:rgba(255,255,255,.82); min-width:0; }
+.tools-time strong { font-size:.74rem; color:#fff; white-space:nowrap; }
+/* Active prayer: light chip pops on the dark panel — dark text for contrast. */
+.tools-time.on { background:var(--emerald-50); border-color:var(--emerald-50); }
 .tools-time.on span { color:var(--emerald); font-weight:700; }
+.tools-time.on strong { color:var(--ink); }
 
 .tools-continue-card { display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:14px; transition:border-color .14s, transform .14s; min-width:0; }
 .tools-continue-card:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
