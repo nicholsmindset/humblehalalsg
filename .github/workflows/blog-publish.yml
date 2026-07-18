@@ -57,6 +57,17 @@ jobs:
         run: |
           echo "Triggering production redeploy so the due post(s) go live."
           gh workflow run deploy.yml --ref master
+      - name: Ping IndexNow (best-effort)
+        if: ${{ steps.due.outputs.due == '1' || github.event.inputs.force == 'true' }}
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -n "$CRON_SECRET" ]; then
+            curl -fsS "https://www.humblehalal.com/api/cron/indexnow" \
+              -H "authorization: Bearer $CRON_SECRET" || echo "indexnow ping failed (non-fatal)"
+          else
+            echo "CRON_SECRET unset — skipping IndexNow ping"
+          fi
       - name: Nothing due
         if: ${{ steps.due.outputs.due != '1' && github.event.inputs.force != 'true' }}
         run: echo "No scheduled post is due today — no deploy triggered."

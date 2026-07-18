@@ -11,7 +11,13 @@
 > `lib/blog-image-prompt.ts`) — fal text-to-image with hard halal guardrails → Supabase `blog-photos`
 > → rewrites the entry `image:` + a governance manifest (`content/blog-image-manifest.json`). Kills the
 > duplicated Unsplash hotlinks. Run `npm run gen:blog-images -- --apply` once `FAL_KEY` + Supabase creds
-> are set (see `docs/seo/multichannel-runbook.md`). Phases 3–4 (distribution/OG, growth loops) below.
+> are set (see `docs/seo/multichannel-runbook.md`).
+>
+> **Shipped — Phase 3 (distribution + OG):** RSS feed (`/blog/feed.xml`, + `rel=alternate` discovery,
+> doubles as the Beehiiv RSS-to-email source), a shared OG card factory (`components/og/card.tsx` +
+> `/blog/[slug]/opengraph-image`), a finished weekly-digest cron with `beehiivBroadcast()`, and
+> IndexNow ping-on-publish (`lib/indexnow.ts` + `/api/cron/indexnow`, wired into `blog-publish.yml`).
+> Phase 4 (growth loops) below.
 
 
 Grounded in the current setup: Keystatic (GitHub storage, `content/posts/*` + `content/brands/*`),

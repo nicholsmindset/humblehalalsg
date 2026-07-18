@@ -46,6 +46,24 @@ generator cover the core win for now.
 Per-post SEO overrides (`metaTitle`/`metaDescription`/`canonicalUrl`/`noindex`/`socialImage`), Authors
 collection + `Person` schema, and the `check:content` CI validator. See `docs/seo/cms-improvements.md`.
 
-## Phases 3–4 — planned
-OG card factory + RSS/Atom feed + Beehiiv newsletter digest + IndexNow ping-on-publish (Phase 3);
-GSC-driven refresh workflow + social auto-posting outbox (Phase 4). See the plan for detail.
+## Phase 3 — Distribution + OG cards (shipped)
+
+- **RSS feed** at `/blog/feed.xml` (RSS 2.0, live posts only, hero enclosures). Discoverable via
+  `<link rel="alternate" type="application/rss+xml">` in every page head.
+  - **Newsletter (primary):** point **Beehiiv's RSS-to-email** automation at
+    `https://www.humblehalal.com/blog/feed.xml` — no code, sends each new post automatically.
+- **OG card factory:** shared `components/og/card.tsx`; `/blog/[slug]/opengraph-image` renders a
+  branded card. Posts default to their hero photo for social; pin the card (or any image) per-post via
+  the `socialImage` override. Reuse `OgCard` for is-halal/pSEO cards next.
+- **Newsletter digest (cron):** `app/api/cron/weekly-digest` assembles new guides (last 7 days) +
+  newest listings and calls `beehiivBroadcast()`. Direct-send is optional: set `BEEHIIV_BROADCAST_URL`
+  (a Beehiiv automation trigger / Zapier / custom sender) + `BEEHIIV_API_KEY`; else it simulates + logs.
+- **IndexNow ping-on-publish:** `lib/indexnow.ts` + `/api/cron/indexnow` submit the day's newly-live
+  URLs to Bing/Yandex. The daily `blog-publish.yml` curls it after deploy (needs `CRON_SECRET`). Set
+  `INDEXNOW_KEY` to activate (verified via `/indexnow-key.txt`); else it no-ops.
+
+**Env to activate:** `BEEHIIV_BROADCAST_URL` (+ `BEEHIIV_API_KEY`) for direct digest send, `INDEXNOW_KEY`
+for fast indexing, `CRON_SECRET` for the workflow ping. All degrade gracefully when unset.
+
+## Phase 4 — planned
+GSC-driven refresh workflow + social auto-posting outbox. See the plan for detail.
