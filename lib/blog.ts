@@ -2,7 +2,7 @@
    server HTML with BlogPosting + FAQPage schema. Each post leads with an
    answer-first TL;DR (AI-Overview unit) and links into the directory. */
 
-import { bimg, type BlogCategorySlug } from "./blog-categories";
+import { type BlogCategorySlug } from "./blog-categories";
 
 export interface BlogSection {
   h2: string;
@@ -2262,19 +2262,19 @@ const META: Record<string, BlogMeta> = {
   "halal-food-jewel-changi-airport": { category: "areas-malls", image: "/blog/halal-food-jewel-changi-airport.webp", imageAlt: "Halal local dishes served in front of the Rain Vortex waterfall at Jewel Changi Airport" },
   "halal-food-bugis-arab-street": { category: "areas-malls", image: "/blog/halal-food-bugis-arab-street.webp", imageAlt: "Halal street-food spread with Sultan Mosque and Kampong Glam shophouses behind in Singapore" },
   "halal-catering-singapore-guide": { category: "seasonal-events", image: "/blog/halal-catering-singapore-guide.webp", imageAlt: "Halal catering buffet with chafing dishes and satay set up at a Singapore event", leadVertical: "catering" },
-  "ramadan-singapore-2026-guide": { category: "seasonal-events", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and a meal for breaking fast during Ramadan" },
+  "ramadan-singapore-2026-guide": { category: "seasonal-events", image: "/blog/leg-ramadan-singapore-2026-guide.webp", imageAlt: "Ramadan Singapore 2026 — a Humble Halal guide" },
   "muslim-owned-businesses-singapore": { category: "community-business", image: "/blog/muslim-owned-businesses-singapore.webp", imageAlt: "Hijabi shopkeeper serving a customer at a Muslim-owned beauty and fashion store in Singapore" },
-  "malay-wedding-cost-singapore": { category: "community-business", image: bimg("1519741497674-611481863552"), imageAlt: "Elegantly set Malay wedding reception table with floral pelamin decor in Singapore", leadVertical: "weddings" },
-  "halal-food-johor-bahru-guide": { category: "muslim-travel", image: bimg("1504674900247-0877df9cc836"), imageAlt: "Halal spread at a Johor Bahru food court on a day trip from Singapore" },
-  "crossing-to-johor-bahru-checkpoints-transport": { category: "muslim-travel", image: bimg("1500835556837-99ac94a94552"), imageAlt: "The road crossing from Singapore to Johor Bahru" },
-  "umrah-from-singapore-guide": { category: "muslim-travel", image: bimg("1543007630-9710e4a00a20"), imageAlt: "Dates and preparations for an umrah pilgrimage from Singapore" },
-  "halal-mala-singapore": { category: "cuisines", image: bimg("1565299624946-b28f40a0ae38"), imageAlt: "Halal mala xiang guo with vegetables and sliced meat in Singapore" },
-  "halal-mookata-singapore": { category: "cuisines", image: bimg("1556909114-f6e7ad7d3136"), imageAlt: "Halal mookata Thai barbecue steamboat cooking at a table in Singapore" },
-  "halal-korean-bbq-singapore": { category: "cuisines", image: bimg("1565557623262-b51c2513a641"), imageAlt: "Halal Korean BBQ with marinated beef and banchan side dishes in Singapore" },
-  "halal-western-food-singapore": { category: "cuisines", image: bimg("1556909114-f6e7ad7d3136"), imageAlt: "Halal Western steak and sides plated at a Singapore restaurant" },
-  "is-it-halal-popular-chains-singapore": { category: "halal-questions", image: bimg("1504674900247-0877df9cc836"), imageAlt: "Checking whether popular food chains are halal in Singapore" },
-  "is-it-halal-bakeries-cafes-singapore": { category: "halal-questions", image: bimg("1565299624946-b28f40a0ae38"), imageAlt: "Checking whether popular bakeries and cafés are halal in Singapore" },
-  "aqiqah-singapore-guide": { category: "muslim-services", image: bimg("1519741497674-611481863552"), imageAlt: "A family kenduri table for an aqiqah celebration in Singapore" },
+  "malay-wedding-cost-singapore": { category: "community-business", image: "/blog/leg-malay-wedding-cost-singapore.webp", imageAlt: "Malay wedding costs in Singapore — a Humble Halal guide", leadVertical: "weddings" },
+  "halal-food-johor-bahru-guide": { category: "muslim-travel", image: "/blog/leg-halal-food-johor-bahru-guide.webp", imageAlt: "Halal food in Johor Bahru — a Humble Halal guide" },
+  "crossing-to-johor-bahru-checkpoints-transport": { category: "muslim-travel", image: "/blog/leg-crossing-to-johor-bahru-checkpoints-transport.webp", imageAlt: "Crossing to Johor Bahru — a Humble Halal guide" },
+  "umrah-from-singapore-guide": { category: "muslim-travel", image: "/blog/leg-umrah-from-singapore-guide.webp", imageAlt: "Umrah from Singapore — a Humble Halal guide" },
+  "halal-mala-singapore": { category: "cuisines", image: "/blog/leg-halal-mala-singapore.webp", imageAlt: "Halal mala in Singapore — a Humble Halal guide" },
+  "halal-mookata-singapore": { category: "cuisines", image: "/blog/leg-halal-mookata-singapore.webp", imageAlt: "Halal mookata in Singapore — a Humble Halal guide" },
+  "halal-korean-bbq-singapore": { category: "cuisines", image: "/blog/leg-halal-korean-bbq-singapore.webp", imageAlt: "Halal Korean BBQ in Singapore — a Humble Halal guide" },
+  "halal-western-food-singapore": { category: "cuisines", image: "/blog/leg-halal-western-food-singapore.webp", imageAlt: "Halal Western food in Singapore — a Humble Halal guide" },
+  "is-it-halal-popular-chains-singapore": { category: "halal-questions", image: "/blog/leg-is-it-halal-popular-chains-singapore.webp", imageAlt: "Are popular chains halal in Singapore — a Humble Halal guide" },
+  "is-it-halal-bakeries-cafes-singapore": { category: "halal-questions", image: "/blog/leg-is-it-halal-bakeries-cafes-singapore.webp", imageAlt: "Are bakeries & cafés halal in Singapore — a Humble Halal guide" },
+  "aqiqah-singapore-guide": { category: "muslim-services", image: "/blog/leg-aqiqah-singapore-guide.webp", imageAlt: "Aqiqah in Singapore — a Humble Halal guide" },
 };
 
 const builtPosts: BlogPost[] = rawPosts.map((p) => {
