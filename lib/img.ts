@@ -25,7 +25,7 @@ export function isUnoptimizedImageSrc(src?: string | null): boolean {
   // through /_next/image, which returns HTTP 402 while the Hobby optimizer
   // quota is exhausted — so a relative src is NOT "nothing to bill against";
   // it breaks like every other optimized image. Serve them directly.
-  if (src.startsWith("/blog/")) return true;
+  if (src.startsWith("/blog/") || src.startsWith("/mosques/")) return true;
   let host: string;
   try {
     host = new URL(src).hostname;
