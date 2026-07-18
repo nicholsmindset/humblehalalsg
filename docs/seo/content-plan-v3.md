@@ -50,7 +50,7 @@ tracker for the content roadmap — five workstreams, a "do-now" tranche and a p
 | WS-D/C | "What is Halal?" explainer — **CANCELLED (reverted)**: duplicates the already-published legacy post `what-is-halal-singapore`. See coverage correction below. | — | ❌ Reverted |
 | WS-B | Brand pages — batch 1 shipped (8 web-verified): PastaMania, Poulet, Soup Spoon, Namu Bulgogi (certified); Sushi Tei, Oriental Kopi (no-pork); IKEA (partial); Astons (not-cert). Each-a-Cup/Mixue held back — conflicting sources. | ~20k / KD 0–2 | 🟡 Batch 1 of ~3 done |
 | WS-A | Enriched Korean/Japanese/Western/Dessert cuisine *pSEO* pages (lookFor + considerations + 4 FAQ each) — distinct from the legacy blog roundups (pSEO owns the transactional head, blog owns the roundup) | "Optimise" rows | ✅ Batch 1 done |
-| WS-B | First 5 location pages scaffolded as VENUES (ION Orchard, Marina Bay Sands, Parkway Parade, Raffles City, The Star Vista) — render now, self-noindex until ≥3 listings tagged with each `match` area token are seeded | ~1,900 / KD 0 | 🟡 Code shipped; **awaiting listing seed** |
+| WS-B | First 5 location pages scaffolded as VENUES (ION Orchard, Marina Bay Sands, Parkway Parade, Raffles City, The Star Vista) — render now, self-noindex until ≥3 listings tagged with each `match` area token are seeded. Seed template ready. | ~1,900 / KD 0 | 🟡 Code + seed template shipped; **awaiting listing import** |
 | WS-C | Gap guides — most already exist as legacy posts. Queued the 4 genuine gaps as `postSchedule` rows for the drafter: halal **mooncake** (700), **Vietnamese** (150), **Peranakan** (150), **cake delivery** (400). | ~1,400 / KD 0–9 | ✅ Queued for drafter |
 
 > **⚠️ Coverage correction (important).** The `keyword-research-v3` gap analysis audited the CMS
@@ -94,6 +94,20 @@ feuds, personalities.)* Requires the `hawkerFinder` flag on. Tracked as tasks WS
 4. Ensure the `hawkerFinder` server flag is on; the route + `/sitemap/hawker.xml` pick up rows live.
 5. WS-A follow-up: add `blurb` (halal-stall highlights + nearest prayer room), and per-centre FAQ
    ("Is there halal food at {centre}?", "How to get there", "Prayer room nearby?").
+
+### Location-listing seeding runbook (unlocks the 5 scaffolded mall pages)
+The 5 mall pages render but stay `noindex` until each has ≥3 published `businesses` rows whose
+`area` matches the venue's `match` token in `lib/seo-pages.ts`. To seed:
+1. Fill [`keywords/v3-location-listings-seed-template.csv`](./keywords/v3-location-listings-seed-template.csv)
+   with **verified** halal outlets (import format = the 14 headers used by `scripts/build-import-csv.mjs`:
+   `name,category,area,address,postal,phone,website,description,price_level,halal,attributes,photo_url,lat,lng`).
+2. **`area` must exactly match the venue `match` token** — Orchard (ION), Marina Bay / Marina Square
+   (MBS), Marine Parade (Parkway Parade), City Hall (Raffles City), Buona Vista (Star Vista). Adjust
+   either the CSV or the `match` array so they line up with real `Listing.area` values.
+3. `halal` ∈ `muis-certified` | `muslim-owned` | `muslim-friendly` (blank = unknown). Only mark
+   `muis-certified` for outlets verified on the MUIS HalalSG register.
+4. Import via the listings import route, then `node scripts/geocode-listings.mjs` (fills lat/lng) and
+   `node scripts/gen-seo-counts.mjs` (refresh counts). Each mall page indexes once it clears 3 listings.
 
 ### Phase 2 — Scale the factories (weeks 5–10)
 - WS-B: remaining ~15 location pages (+listings), next ~30 brand pages, hawker centres (Maxwell, Wisma Geylang Serai).

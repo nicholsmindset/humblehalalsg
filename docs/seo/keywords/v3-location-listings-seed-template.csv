@@ -1,0 +1,12 @@
+name,category,area,address,postal,phone,website,description,price_level,halal,attributes,photo_url,lat,lng
+Poulet (ION Orchard),Restaurant,Orchard,,,,,"French rotisserie chicken — MUIS halal-certified chain. VERIFY the current ION outlet + valid certificate before import.",$$,muis-certified,"halal,dine-in",,,
+EXAMPLE — replace with a verified halal outlet at ION Orchard,Restaurant,Orchard,,,,,"Placeholder. Need >=3 real published listings with area=Orchard for /halal-food/ion-orchard to index.",,muis-certified,,,,
+EXAMPLE — replace with a verified halal outlet at Marina Bay Sands,Restaurant,Marina Bay,,,,,"Placeholder. area MUST match the venue match token (Marina Bay / Marina Square) set in lib/seo-pages.ts.",,muis-certified,,,,
+EXAMPLE — replace with a verified halal outlet at Marina Bay Sands,Cafe,Marina Bay,,,,,"Placeholder — need >=3 for /halal-food/marina-bay-sands to index.",,muslim-friendly,,,,
+Poulet (Parkway Parade),Restaurant,Marine Parade,,,,,"French rotisserie chicken — MUIS halal-certified chain. VERIFY the current Parkway Parade outlet + certificate.",$$,muis-certified,"halal,dine-in",,,
+EXAMPLE — replace with a verified halal outlet at Parkway Parade,Restaurant,Marine Parade,,,,,"Placeholder — need >=3 for /halal-food/parkway-parade to index.",,muslim-owned,,,,
+Poulet (Raffles City),Restaurant,City Hall,,,,,"French rotisserie chicken — MUIS halal-certified chain (Raffles City listed among outlets). VERIFY current certificate.",$$,muis-certified,"halal,dine-in",,,
+The Soup Spoon (Raffles City),Cafe,City Hall,,,,,"MUIS halal-certified soup chain (all outlets certified since 2019). VERIFY the current Raffles City outlet.",$,muis-certified,"halal,dine-in",,,
+EXAMPLE — replace with a verified halal outlet at Raffles City,Restaurant,City Hall,,,,,"Placeholder — need >=3 for /halal-food/raffles-city to index.",,muis-certified,,,,
+EXAMPLE — replace with a verified halal outlet at The Star Vista,Restaurant,Buona Vista,,,,,"Placeholder. area MUST match the venue match token (Buona Vista / Holland Village).",,muis-certified,,,,
+EXAMPLE — replace with a verified halal outlet at The Star Vista,Cafe,Buona Vista,,,,,"Placeholder — need >=3 for /halal-food/star-vista to index.",,muslim-friendly,,,,
