@@ -45,8 +45,13 @@ jobs:
             echo "ok=false" >> "$GITHUB_OUTPUT"
           else
             clean_token="$(printf '%s' "$VERCEL_TOKEN" | tr -d '[:space:]')"
-            if [[ ! "$clean_token" =~ ^vcp_[A-Za-z0-9]+$ ]]; then
-              echo "::error::VERCEL_TOKEN has an invalid format after whitespace normalization."
+            # Vercel tokens are typically a 24-char alphanumeric string (no fixed
+            # prefix); some are `vcp_...`. Accept both — just require a non-empty,
+            # whitespace-free token of a plausible length (the vercel CLI is the
+            # real authority on validity). The earlier `^vcp_...$` guard rejected
+            # valid prefix-less tokens and blocked every production deploy.
+            if [[ ! "$clean_token" =~ ^[A-Za-z0-9_-]{20,}$ ]]; then
+              echo "::error::VERCEL_TOKEN looks malformed (empty or contains unexpected characters after whitespace normalization). Re-add it in Settings → Secrets and variables → Actions."
               exit 1
             fi
             echo "::add-mask::$clean_token"
