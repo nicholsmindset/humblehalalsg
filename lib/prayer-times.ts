@@ -27,7 +27,7 @@ function parse(raw: string): { time: string; mins: number } {
   const [hStr, mStr] = hm.split(":");
   const h = Number(hStr) || 0;
   const m = Number(mStr) || 0;
-  const display = `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")}`; // 24h → 12h, no AM/PM
+  const display = `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`; // 24h → 12h with am/pm
   return { time: display, mins: h * 60 + m };
 }
 

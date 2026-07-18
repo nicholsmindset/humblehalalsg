@@ -706,7 +706,7 @@
 .tools-next-line { font-size:.9rem; margin:10px 0 12px; color:var(--ink-soft); }
 .tools-times-row { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px; }
 .tools-time { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 2px; border-radius:10px; border:1px solid var(--line); font-size:.7rem; color:var(--ink-soft); min-width:0; }
-.tools-time strong { font-size:.78rem; color:var(--ink); }
+.tools-time strong { font-size:.74rem; color:var(--ink); white-space:nowrap; }
 .tools-time.on { background:var(--emerald-50); border-color:var(--emerald-300); }
 .tools-time.on span { color:var(--emerald); font-weight:700; }
 
