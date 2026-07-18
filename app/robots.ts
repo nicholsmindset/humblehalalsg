@@ -10,6 +10,7 @@ import { SITEMAP_SEGMENTS } from "@/lib/sitemaps";
 const DISALLOW = [
   "/api/",                          // 132 API endpoints
   "/admin",                         // admin console
+  "/keystatic",                     // Keystatic CMS console
   "/owner",                         // business-owner console
   "/dashboard",                     // user dashboard
   "/login",                         // auth

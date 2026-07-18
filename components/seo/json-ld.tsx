@@ -115,7 +115,7 @@ export function listingJsonLd(l: Listing) {
     "@type": type,
     name: l.name,
     description: l.blurb,
-    image: l.image,
+    image: l.image ? absUrl(l.image) : undefined,
     url: `${SITE.url}/business/${l.slug}`,
     telephone: l.phone || undefined,
     priceRange: l.price,
@@ -177,7 +177,7 @@ export function eventJsonLd(e: EventItem) {
     "@type": "Event",
     name: e.title,
     description: e.blurb,
-    image: e.img,
+    image: e.img ? absUrl(e.img) : undefined,
     url: `${SITE.url}/events/${e.slug}`,
     startDate: e.dateISO,
     ...(endDate ? { endDate } : {}),
@@ -334,7 +334,7 @@ export function hotelJsonLd(h: Hotel) {
     "@type": "Hotel",
     name: h.name,
     ...(h.description ? { description: h.description.slice(0, 300) } : {}),
-    ...(h.image ? { image: h.image } : {}),
+    ...(h.image ? { image: absUrl(h.image) } : {}),
     url: `${SITE.url}/travel/hotel/${h.id}`,
     ...(h.address || h.city
       ? {

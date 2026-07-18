@@ -9,7 +9,13 @@ import { join } from "node:path";
  * banned-images module (imported by the audit/cleanup scripts) may name them. */
 import { BANNED_IMAGE_IDS } from "../../scripts/banned-images.mjs";
 
-const ALLOWED_FILES = new Set(["scripts/banned-images.mjs", "tests/unit/no-banned-images.test.ts"]);
+// Policy/audit modules may legitimately NAME the banned IDs (that's their job);
+// only these are exempt from the "must not appear" scan.
+const ALLOWED_FILES = new Set([
+  "scripts/banned-images.mjs",
+  "scripts/image-policy.mjs",
+  "tests/unit/no-banned-images.test.ts",
+]);
 
 const ROOTS = ["app", "components", "lib", "scripts"];
 const EXT = /\.(ts|tsx|js|jsx|mjs|cjs|json|md|css)$/;

@@ -7,6 +7,9 @@ import { pageMeta, SITE } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, faqJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
 
 export const revalidate = 3600;
+// The travel hubs are a finite, prerendered set — reject unknown slugs with a
+// real 404 instead of streaming a soft-200 not-found shell (which Google indexes).
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return allTravelHubs().map((h) => ({ city: h.slug }));
@@ -15,7 +18,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ city: string }> }): Promise<Metadata> {
   const { city } = await params;
   const h = getTravelHub(city);
-  if (!h) return pageMeta({ title: "Halal travel", path: `/travel/${city}` });
+  if (!h) return pageMeta({ title: "Halal travel", path: `/travel/${city}`, index: false });
   return pageMeta({ title: h.title, description: h.blurb, path: `/travel/${h.slug}` });
 }
 
