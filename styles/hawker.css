@@ -66,6 +66,14 @@
 .hk-trust-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; }
 .hk-trust-grid > * { min-width:0; }
 .hk-trust-tile { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:14px 10px; }
+/* Base tool-card icon box — used by app/hawker/page.tsx verify steps. Mirrored
+   from tools.css and kept here so /hawker keeps it now that tools.css is
+   route-scoped to app/tools/** (this is the only /hawker-external user). */
+.tool-card-ico {
+  flex: none; width: 46px; height: 46px; border-radius: 13px;
+  background: var(--emerald-50); color: var(--emerald);
+  display: grid; place-items: center;
+}
 .hk-trust-tile .tool-card-ico { width:38px; height:38px; }
 .hk-trust-tile strong { font-size:.82rem; }
 .hk-trust-tile span { font-size:.74rem; font-weight:700; display:inline-flex; align-items:center; gap:4px; }
