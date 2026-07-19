@@ -160,6 +160,19 @@ export default async function RootLayout({
     getAreas(),
     getServerFlags(),
   ]);
+  // Client-payload trim: the directory array is serialized into every route's
+  // HTML through DirectoryProvider (a client component). Strip the fields no
+  // client consumer reads off the context — seoTitle/seoDescription (used only
+  // server-side in per-page generateMetadata) and createdAt (server freshness
+  // hubs only). getDirectory() itself stays full, so server SEO/sitemap and the
+  // business detail page's own getListingBySlug fetch are unaffected.
+  const directoryClient = directory.map((l) => {
+    const c = { ...l };
+    delete c.seoTitle;
+    delete c.seoDescription;
+    delete c.createdAt;
+    return c;
+  });
   return (
     <html lang="en" className={fontVars}>
       <body>
@@ -168,7 +181,7 @@ export default async function RootLayout({
         <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#12525B" } }}>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
-            <DirectoryProvider listings={directory} categories={categories} areas={areas}>
+            <DirectoryProvider listings={directoryClient} categories={categories} areas={areas}>
               <EventsProvider events={events}>
                 <AppShell>{children}</AppShell>
               </EventsProvider>
