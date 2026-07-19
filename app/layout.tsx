@@ -17,10 +17,12 @@ import "../styles/moat.css";
 import "../styles/events.css";
 import "../styles/travel.css";
 import "../styles/tools.css";
-import "../styles/hawker.css";
+// hawker.css and blog.css are route-scoped in their own layouts
+// (app/hawker, app/blog) — kept off the global critical path. tools.css stays
+// global: it shares .qibla-*/.tool-card-ico classes with the travel + hawker
+// verticals, so scoping it needs a rendered visual check first (follow-up).
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
-import "../styles/blog.css";
 import "../styles/ads.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AppProviders } from "@/components/providers";
