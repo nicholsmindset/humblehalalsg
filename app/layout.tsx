@@ -16,11 +16,10 @@ import "../styles/screens2.css";
 import "../styles/moat.css";
 import "../styles/events.css";
 import "../styles/travel.css";
-import "../styles/tools.css";
-// hawker.css and blog.css are route-scoped in their own layouts
-// (app/hawker, app/blog) — kept off the global critical path. tools.css stays
-// global: it shares .qibla-*/.tool-card-ico classes with the travel + hawker
-// verticals, so scoping it needs a rendered visual check first (follow-up).
+// tools.css, hawker.css and blog.css are route-scoped in their own layouts
+// (app/tools, app/hawker, app/blog) — kept off the global critical path. The
+// handful of classes tools.css shared with the global chrome / travel vertical
+// resolve from their intended global sheets (moat.css / travel.css / hawker.css).
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
 import "../styles/ads.css";
