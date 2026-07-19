@@ -1230,10 +1230,14 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
   // rendered the FIRST listing for any bad/stale slug instead of a not-found
   // state (same bug class fixed on the events screens).
   // `initial` is the server-resolved listing (app/business/[slug]/page.tsx via
-  // getListingBySlug). It's the ONLY way hawker stalls reach here — they're
-  // excluded from getDirectory()/the client context on purpose, so without it a
-  // stall's own page would always fall to the not-found state below.
-  const item = dir.get(String(params.slug || params.id || "")) ?? initial;
+  // getListingBySlug, re-fetched per route by router.push navigation — never
+  // stale). Prefer it over the client directory context: the context array is
+  // trimmed to card/map fields for payload weight (detail-only fields like
+  // phone/address/web are dropped there), so the full `initial` is the complete
+  // record. Hawker stalls only ever arrive via `initial` (excluded from the
+  // context). The context is the fallback for the not-found path (bad/stale slug
+  // → `initial` undefined → context miss → the not-found state below).
+  const item = initial ?? dir.get(String(params.slug || params.id || ""));
   const saved = item ? state.saved.includes(item.id) : false;
   const [tab, setTab] = useState("overview");
   const [outletIdx, setOutletIdx] = useState(0);

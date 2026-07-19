@@ -32,6 +32,7 @@ import { GoogleTagManager } from "@/components/analytics/gtm";
 import { AdsenseScript } from "@/components/ads/adsense";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
+import type { Listing } from "@/lib/types";
 import { getCategories, getAreas } from "@/lib/catalog";
 import { EventsProvider } from "@/components/events-context";
 import { getEvents } from "@/lib/events-source";
@@ -162,16 +163,30 @@ export default async function RootLayout({
   ]);
   // Client-payload trim: the directory array is serialized into every route's
   // HTML through DirectoryProvider (a client component). Strip the fields no
-  // client consumer reads off the context — seoTitle/seoDescription (used only
-  // server-side in per-page generateMetadata) and createdAt (server freshness
-  // hubs only). getDirectory() itself stays full, so server SEO/sitemap and the
-  // business detail page's own getListingBySlug fetch are unaffected.
-  const directoryClient = directory.map((l) => {
-    const c = { ...l };
+  // client consumer reads off the context. getDirectory() itself stays FULL, so
+  // server SEO/sitemap/generateMetadata and the business detail page (which
+  // renders from its own server-resolved `initial`, not the context) are
+  // unaffected. Two groups, both audited to have zero directory-context readers
+  // outside the detail page:
+  //  • server-only meta: seoTitle, seoDescription, createdAt
+  //  • detail-only contact/profile fields: the detail screen now prefers its
+  //    full `initial` prop (DetailScreen in consumer.tsx), so these can leave
+  //    the card/map/search context payload entirely.
+  const directoryClient = directory.map((l): Listing => {
+    const c: Partial<Listing> = { ...l };
     delete c.seoTitle;
     delete c.seoDescription;
     delete c.createdAt;
-    return c;
+    delete c.phone;
+    delete c.wa;
+    delete c.ig;
+    delete c.web;
+    delete c.address;
+    delete c.postal;
+    delete c.stallNo;
+    delete c.hawkerCentreId;
+    delete c.plan;
+    return c as Listing;
   });
   return (
     <html lang="en" className={fontVars}>
