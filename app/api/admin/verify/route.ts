@@ -68,6 +68,24 @@ export async function POST(req: Request) {
 
   const patch = buildGrantPatch({ action, certNo, scheme, expiry });
 
+  // First-time certification vs renewal — read BEFORE the grant overwrites the
+  // prior state; feeds the public cert-changes log (lib/cert-changes.ts). A
+  // lapsed business keeps its muis_cert_no when the recheck cron flips it to
+  // 'pending', so lapsed → re-granted correctly reads as a renewal.
+  let wasCertifiedBefore = false;
+  if (action !== "revoke") {
+    try {
+      const { data: prior } = await db
+        .from("businesses")
+        .select("halal_tier, muis_cert_no")
+        .eq("id", businessId)
+        .maybeSingle();
+      wasCertifiedBefore = ["muis", "admin"].includes(String(prior?.halal_tier || "")) || !!prior?.muis_cert_no;
+    } catch {
+      /* detection is best-effort; defaults to cert_new */
+    }
+  }
+
   try {
     const { error } = await db.from("businesses").update(patch).eq("id", businessId);
     if (error) {
@@ -89,11 +107,13 @@ export async function POST(req: Request) {
     /* audit is best-effort */
   }
 
-  // Cert lifecycle for the freshness/recheck crons.
+  // Cert lifecycle for the freshness crons + the public cert-changes log
+  // (lib/cert-changes.ts): grant → cert_new (first certification) or
+  // cert_renewed (had certification before); revoke → flagged (never public).
   try {
     await db.from("verification_log").insert({
       business_id: businessId,
-      event: action === "revoke" ? "flagged" : "reverified",
+      event: action === "revoke" ? "flagged" : wasCertifiedBefore ? "cert_renewed" : "cert_new",
       detail: action === "muis" ? `cert ${certNo}${expiry ? ` · exp ${expiry}` : ""}` : action,
     });
   } catch {
