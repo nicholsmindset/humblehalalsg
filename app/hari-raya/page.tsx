@@ -10,6 +10,13 @@ export const metadata: Metadata = pageMeta({
     "When is Hari Raya 2026? Hari Raya Aidilfitri is expected around 20 March 2026. Your Singapore guide to Raya dates, bazaars, catering, baju and open houses.",
   path: "/hari-raya",
   absoluteTitle: true,
+  // hreflang pair with the Malay page (lib/ms-pages.ts) — both sides declare
+  // the same map, x-default → EN.
+  languages: {
+    "en-SG": "/hari-raya",
+    ms: "/ms/hari-raya",
+    "x-default": "/hari-raya",
+  },
 });
 
 const FAQ = [

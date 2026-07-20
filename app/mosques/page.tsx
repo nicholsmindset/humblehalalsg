@@ -14,6 +14,13 @@ export const metadata: Metadata = pageMeta({
     "Every masjid (mosque) in Singapore, grouped by region — with prayer times, Friday (Jumu'ah) info, qibla and directions. Find a masjid near you in Central, East, North-East, North or West.",
   path: "/mosques",
   absoluteTitle: true,
+  // hreflang pair with the Malay page (lib/ms-pages.ts) — both sides declare
+  // the same map, x-default → EN.
+  languages: {
+    "en-SG": "/mosques",
+    ms: "/ms/masjid-singapura",
+    "x-default": "/mosques",
+  },
 });
 
 const REGION_ORDER: Mosque["region"][] = ["Central", "East", "North-East", "North", "West"];

@@ -31,6 +31,64 @@ function parse(raw: string): { time: string; mins: number } {
   return { time: display, mins: h * 60 + m };
 }
 
+/** One day in a monthly MUIS-method timetable. All times are display strings
+    ("5:44 am"); a missing timing renders as "—" — never a fabricated 12:00 am. */
+export interface CalendarDay {
+  day: number; // day of month, 1-31
+  dateISO: string; // "2026-01-05"
+  hijri: string; // "16 Rajab 1447" (Aladhan English transliteration)
+  imsak: string;
+  subuh: string;
+  syuruk: string;
+  zohor: string;
+  asar: string;
+  maghrib: string;
+  isyak: string;
+}
+
+/** Display time or an honest em-dash when the API omitted the timing. */
+function fmt(raw: string | undefined): string {
+  return raw ? parse(raw).time : "—";
+}
+
+/** Full month of Singapore prayer times (MUIS method=11 via Aladhan
+    /v1/calendar). Cached for a day, like getPrayerTimes. Returns null on any
+    failure so pages can degrade to a "temporarily unavailable" state. */
+export async function getPrayerCalendar(year: number, month: number): Promise<CalendarDay[] | null> {
+  try {
+    const url = `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${SG.lat}&longitude=${SG.lng}&method=${SG.method}`;
+    const res = await fetch(url, { next: { revalidate: 86400 } }); // refresh daily
+    if (!res.ok) return null;
+    const json = await res.json();
+    const days = json?.data;
+    if (!Array.isArray(days) || days.length === 0) return null;
+    const rows: CalendarDay[] = [];
+    for (const d of days) {
+      const t = (d?.timings ?? {}) as Record<string, string>;
+      const g = d?.date?.gregorian;
+      const h = d?.date?.hijri;
+      const dayNum = Number(g?.day);
+      if (!dayNum) continue; // skip malformed rows rather than guess
+      const [dd, mm, yyyy] = String(g?.date || "").split("-"); // Aladhan: "DD-MM-YYYY"
+      rows.push({
+        day: dayNum,
+        dateISO: yyyy && mm && dd ? `${yyyy}-${mm}-${dd}` : "",
+        hijri: h ? `${h.day} ${h.month?.en || ""} ${h.year}`.trim() : "",
+        imsak: fmt(t.Imsak),
+        subuh: fmt(t.Fajr),
+        syuruk: fmt(t.Sunrise),
+        zohor: fmt(t.Dhuhr),
+        asar: fmt(t.Asr),
+        maghrib: fmt(t.Maghrib),
+        isyak: fmt(t.Isha),
+      });
+    }
+    return rows.length ? rows : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getPrayerTimes(): Promise<PrayerData | null> {
   try {
     const url = `https://api.aladhan.com/v1/timings?latitude=${SG.lat}&longitude=${SG.lng}&method=${SG.method}`;

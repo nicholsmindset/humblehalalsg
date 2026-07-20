@@ -12,7 +12,14 @@ import { certExpiryEmail } from "@/lib/emails/templates";
    days (or just expired) get an email nudge. The halal score itself stays
    single-sourced — the business-level pass above (and lib/halal-score's
    expiringSoon/expired handling) owns the confidence downgrade; this pass only
-   maintains the cert rows + alerts. */
+   maintains the cert rows + alerts.
+
+   Cert-changes log (lib/cert-changes.ts → public changelog pages): this cron
+   emits `cert_expired` (pass 1) and `cert_renewed` for out-of-band renewals
+   (pass 1c: a business we previously logged as lapsed is certified again with a
+   future expiry, but no cert_new/cert_renewed was logged by the admin routes).
+   `cert_new`/`cert_renewed` are primarily emitted where approval happens:
+   /api/admin/verify (grant) and /api/admin/cert (vault approve). */
 export const dynamic = "force-dynamic";
 
 const SOON_DAYS = 30;
@@ -73,6 +80,44 @@ export async function GET(req: Request) {
       }
     }
 
+    // ── 1c) Out-of-band renewal detection: a business whose LATEST lifecycle
+    // event is cert_expired but which is certified again with a future expiry
+    // was renewed via a path that didn't log it (e.g. a direct data update).
+    // Log cert_renewed so the public cert-changes log stays complete. ─────────
+    let renewals = 0;
+    try {
+      const { data: logRows } = await sb
+        .from("verification_log")
+        .select("business_id, event")
+        .in("event", ["cert_expired", "cert_new", "cert_renewed"])
+        .order("created_at", { ascending: false })
+        .limit(500);
+      const latest = new Map<string, string>(); // business_id → latest lifecycle event
+      for (const r of logRows || []) {
+        const id = String(r.business_id || "");
+        if (id && !latest.has(id)) latest.set(id, String(r.event));
+      }
+      const lapsedIds = [...latest.entries()].filter(([, e]) => e === "cert_expired").map(([id]) => id);
+      if (lapsedIds.length) {
+        const { data: renewed } = await sb
+          .from("businesses")
+          .select("id, muis_expiry")
+          .in("id", lapsedIds)
+          .in("halal_tier", ["muis", "admin"])
+          .gte("muis_expiry", today);
+        for (const b of renewed || []) {
+          await sb.from("verification_log").insert({
+            business_id: b.id,
+            event: "cert_renewed",
+            detail: `renewal detected on weekly re-check · exp ${b.muis_expiry}`,
+          });
+          renewals++;
+        }
+      }
+    } catch {
+      /* detection is best-effort — never blocks the expiry passes */
+    }
+
     // ── 2) Cert-vault lifecycle: flip approved certs past expiry → 'expired' ──
     const soon = new Date(Date.now() + SOON_DAYS * 864e5).toISOString().slice(0, 10);
     let certsExpired = 0;
@@ -120,9 +165,9 @@ export async function GET(req: Request) {
     await sb.from("cron_runs").insert({
       job: "recheck-certs",
       ok: true,
-      notes: `${flagged} flagged · ${verdictsFlagged} verdicts flagged for re-review · ${certsExpired} certs expired · ${emailed} owners emailed`,
+      notes: `${flagged} flagged · ${verdictsFlagged} verdicts flagged for re-review · ${renewals} renewals detected · ${certsExpired} certs expired · ${emailed} owners emailed`,
     });
-    return NextResponse.json({ ok: true, simulated: false, flagged, verdictsFlagged, certsExpired, emailed });
+    return NextResponse.json({ ok: true, simulated: false, flagged, verdictsFlagged, renewals, certsExpired, emailed });
   } catch {
     return NextResponse.json({ ok: true, simulated: true });
   }

@@ -154,8 +154,36 @@ export async function POST(req: Request) {
 
   let tier: string | undefined;
   let score: number | undefined;
+  // First-time certification vs renewal — decided BEFORE the grant overwrites
+  // the business's prior state; feeds the public cert-changes log below.
+  let wasCertifiedBefore = false;
 
   if (action === "approve") {
+    // Prior state: an existing muis/admin tier or a recorded MUIS cert no means
+    // this approval renews/replaces earlier certification (the weekly recheck
+    // cron flips lapsed tiers to 'pending' but keeps muis_cert_no, so a lapsed
+    // → re-approved business still counts as a renewal, not "newly certified").
+    try {
+      const { data: prior } = await db
+        .from("businesses")
+        .select("halal_tier, muis_cert_no")
+        .eq("id", cert.business_id)
+        .maybeSingle();
+      wasCertifiedBefore = ["muis", "admin"].includes(String(prior?.halal_tier || "")) || !!prior?.muis_cert_no;
+      if (!wasCertifiedBefore) {
+        // Also check the vault: any earlier approved/expired cert for this business.
+        const { count } = await db
+          .from("halal_certs")
+          .select("id", { count: "exact", head: true })
+          .eq("business_id", cert.business_id)
+          .neq("id", certId)
+          .in("status", ["approved", "expired"]);
+        wasCertifiedBefore = (count || 0) > 0;
+      }
+    } catch {
+      /* detection is best-effort; defaults to cert_new */
+    }
+
     // Copy cert meta onto the business + re-run the SAME grant path as verify so
     // the halal score/tier stays single-sourced (lib/verify-grant).
     const certNo = normalizeCertNo(cert.cert_no || undefined);
@@ -184,12 +212,16 @@ export async function POST(req: Request) {
     /* audit is best-effort */
   }
 
-  // Cert lifecycle for the freshness/recheck crons.
+  // Cert lifecycle for the freshness crons + the public cert-changes log
+  // (lib/cert-changes.ts): approve → cert_new (first certification) or
+  // cert_renewed (had certification before); reject → flagged (never public).
   try {
     await db.from("verification_log").insert({
       business_id: cert.business_id,
-      event: action === "approve" ? "reverified" : "flagged",
-      detail: action === "approve" ? `cert approved${cert.cert_no ? ` · ${cert.cert_no}` : ""}` : `cert rejected${reviewNote ? ` · ${reviewNote}` : ""}`,
+      event: action === "approve" ? (wasCertifiedBefore ? "cert_renewed" : "cert_new") : "flagged",
+      detail: action === "approve"
+        ? `cert approved${cert.cert_no ? ` · ${cert.cert_no}` : ""}${cert.expires_on ? ` · exp ${cert.expires_on}` : ""}`
+        : `cert rejected${reviewNote ? ` · ${reviewNote}` : ""}`,
     });
   } catch {
     /* best-effort */

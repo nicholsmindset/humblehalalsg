@@ -38,6 +38,12 @@ interface PageMetaInput {
   /** Override the canonical URL (absolute or root-relative). Defaults to `path`.
       Used by CMS per-post canonical overrides — leave unset for self-canonical. */
   canonical?: string;
+  /** hreflang alternates — language code → URL (root-relative or absolute;
+      absolutized against SITE.url like canonical). Used by the EN↔MS translation
+      pairs (lib/ms-pages). Both sides of a pair must declare the SAME map
+      (Google's hreflang reciprocity rule), including the page's own language
+      and an "x-default" entry. Untouched callers emit canonical-only, as before. */
+  languages?: Record<string, string>;
 }
 
 /** Build per-page Metadata with canonical + Open Graph + Twitter in one line. */
@@ -50,10 +56,18 @@ export function pageMeta({
   absoluteTitle = false,
   article,
   canonical: canonicalOverride,
+  languages,
 }: PageMetaInput): Metadata {
   // Absolute canonical/OG URL (robust even if metadataBase is ever absent).
   // A CMS override (absolute or root-relative) wins over the self-canonical path.
   const canonical = new URL(canonicalOverride || path, SITE.url).toString();
+  // hreflang map, absolutized the same way — only emitted when provided so every
+  // existing caller's <head> output is byte-identical.
+  const languageAlternates = languages
+    ? Object.fromEntries(
+        Object.entries(languages).map(([code, href]) => [code, new URL(href, SITE.url).toString()]),
+      )
+    : undefined;
   // Default to the branded site OG image (app/opengraph-image) when a page does
   // not supply its own. Because pageMeta defines openGraph, Next's file-based
   // opengraph-image convention is suppressed — so without this, pageMeta pages
@@ -64,7 +78,10 @@ export function pageMeta({
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      ...(languageAlternates ? { languages: languageAlternates } : {}),
+    },
     robots: index ? undefined : { index: false, follow: false },
     openGraph: {
       siteName: SITE.name,

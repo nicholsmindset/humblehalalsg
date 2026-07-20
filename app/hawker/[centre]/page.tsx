@@ -3,10 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getServerFlags } from "@/lib/feature-flags";
 import { getHawkerCentre, getStallsForCentre } from "@/lib/hawker";
+import { hawkerProfile } from "@/lib/hawker-content";
 import { pageMeta } from "@/lib/seo";
 import { mapsSearchUrl } from "@/lib/geo";
 import { Newsletter } from "@/components/newsletter";
-import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
 import { HawkerMap } from "@/components/hawker-map";
 import { HalalConfidenceBadge } from "@/components/halal-confidence-badge";
 import { scoreListing } from "@/lib/halal-score";
@@ -20,10 +21,15 @@ export async function generateMetadata({ params }: { params: Promise<{ centre: s
   const { centre } = await params;
   const c = await getHawkerCentre(centre);
   if (!c) return pageMeta({ title: "Hawker centre", path: `/hawker/${centre}`, index: false });
+  // Thin-content gate (mirrors mosques/[slug]): only centres with a hand-written
+  // profile in lib/hawker-content.ts are index-worthy; the rest stay noindex
+  // until they earn one.
+  const p = hawkerProfile(c.id);
   return pageMeta({
     title: `Halal stalls at ${c.name}`,
     description: `Halal and Muslim-owned stalls at ${c.name}${c.address ? `, ${c.address}` : ""}, Singapore — with trust signals and a Halal Confidence Score. Always confirm on site.`,
     path: `/hawker/${c.id}`,
+    index: !!p,
   });
 }
 
@@ -33,12 +39,14 @@ export default async function Page({ params }: { params: Promise<{ centre: strin
   const c = await getHawkerCentre(centre);
   if (!c) notFound();
   const stalls = await getStallsForCentre(c.id);
+  const profile = hawkerProfile(c.id);
 
   return (
     <>
       <JsonLd data={[
         breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Hawker Finder", path: "/hawker" }, { name: c.name, path: `/hawker/${c.id}` }]),
         { "@context": "https://schema.org", "@type": "ItemList", name: `Halal stalls at ${c.name}`, numberOfItems: stalls.length, itemListElement: stalls.map((s, i) => ({ "@type": "ListItem", position: i + 1, name: s.name })) },
+        ...(profile ? [faqJsonLd(profile.faqs)] : []),
       ]} />
       <div className="screen-in hh-page">
         <section className="seo-hero hh-pattern">
@@ -49,6 +57,9 @@ export default async function Page({ params }: { params: Promise<{ centre: strin
               <span style={{ color: "var(--ink)" }}>{c.name}</span>
             </nav>
             <h1 style={{ fontSize: "clamp(1.6rem,3.6vw,2.3rem)", maxWidth: 760 }}>Halal stalls at {c.name}</h1>
+            {profile && (
+              <p className="muted" style={{ maxWidth: 720, marginTop: 10, fontSize: "1.02rem", lineHeight: 1.65 }}>{profile.intro}</p>
+            )}
             <div className="prayer-card-meta" style={{ marginTop: 10 }}>
               {c.region && <span className="prayer-chip">{c.region}</span>}
               {stalls.length > 0 && <span className="prayer-card-type">{stalls.length} halal stall{stalls.length === 1 ? "" : "s"}</span>}
@@ -94,6 +105,42 @@ export default async function Page({ params }: { params: Promise<{ centre: strin
                 </Link>
               ))}
             </div>
+          )}
+
+          {profile && (profile.knownFor?.length || profile.tips?.length || profile.prayerNote) ? (
+            <section style={{ marginTop: 30 }}>
+              <h2 style={{ fontSize: "1.15rem", margin: 0 }}>Good to know at {c.name}</h2>
+              {profile.knownFor?.length ? (
+                <div className="flex g8 wrap" style={{ marginTop: 12 }}>
+                  {profile.knownFor.map((k) => <span key={k} className="tag">{k}</span>)}
+                </div>
+              ) : null}
+              {profile.tips?.length ? (
+                <ul className="muted" style={{ marginTop: 12, paddingLeft: 20, lineHeight: 1.7 }}>
+                  {profile.tips.map((t) => <li key={t}>{t}</li>)}
+                </ul>
+              ) : null}
+              {profile.prayerNote && (
+                <p className="muted" style={{ marginTop: 12, lineHeight: 1.7 }}>
+                  <strong>Prayer space nearby:</strong> {profile.prayerNote}{" "}
+                  <Link className="link-inline" href="/mosques">Find a mosque →</Link>
+                </p>
+              )}
+            </section>
+          ) : null}
+
+          {profile && (
+            <section style={{ marginTop: 30 }}>
+              <h2 style={{ fontSize: "1.15rem", margin: "0 0 12px" }}>Your questions, answered</h2>
+              <div className="stack g12">
+                {profile.faqs.map((f) => (
+                  <details key={f.q} className="faq-item">
+                    <summary style={{ fontWeight: 600 }}>{f.q}</summary>
+                    <p className="muted" style={{ marginTop: 8, lineHeight: 1.6 }}>{f.a}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
           )}
 
           <section className="hk-verify" style={{ marginTop: 30 }}>

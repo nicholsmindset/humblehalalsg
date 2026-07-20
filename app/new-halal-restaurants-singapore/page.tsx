@@ -3,7 +3,9 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
+import { certChanges } from "@/lib/cert-changes";
 import { certSuffix } from "@/lib/halal-score";
+import { HALALSG_BASE } from "@/lib/muis";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd, itemListJsonLd } from "@/components/seo/json-ld";
 import { Newsletter } from "@/components/newsletter";
 
@@ -35,12 +37,20 @@ const monthYear = (iso?: string) => {
     : d.toLocaleDateString("en-SG", { month: "long", year: "numeric" });
 };
 
+const certDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Singapore" });
+
 export default async function Page() {
   const all = await getDirectory();
   const fresh = all
     .filter((l) => (l.catId === "restaurants" || l.catId === "cafes") && l.createdAt)
     .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
     .slice(0, 12);
+
+  // Recently certified/renewed per our dated cert-changes log (weekly re-checks
+  // + admin verifications). Lapses live on /halal-certification-changes — this
+  // page is the "newly halal" surface. Graceful: no events yet → honest note.
+  const recentCerts = (await certChanges(60)).filter((c) => c.event === "cert_new" || c.event === "cert_renewed").slice(0, 8);
 
   return (
     <>
@@ -98,8 +108,42 @@ export default async function Page() {
             </p>
           )}
 
+          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 6px" }}>Recently MUIS-certified (per our records)</h2>
+          <p className="muted" style={{ marginBottom: 14, maxWidth: 680 }}>
+            Dated certification events from our weekly re-checks and verifications — businesses newly certified or
+            renewed per our records. Certification can change; always confirm on the official{" "}
+            <a className="link-inline" href={HALALSG_BASE} target="_blank" rel="noopener noreferrer">MUIS HalalSG register</a>.
+          </p>
+          {recentCerts.length ? (
+            <>
+              <ul style={{ display: "grid", gap: 12, padding: 0, margin: 0, listStyle: "none" }}>
+                {recentCerts.map((c) => (
+                  <li key={c.id} style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap", borderBottom: "1px solid var(--line, #ECE7DB)", paddingBottom: 12 }}>
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <Link href={`/business/${c.businessSlug}`} style={{ fontWeight: 700 }}>{c.businessName}</Link>
+                      <span className="muted" style={{ fontSize: ".92rem" }}>
+                        {c.area ? ` · ${c.area}` : ""} · {certDate(c.date)}
+                      </span>
+                    </div>
+                    <span className="hs-pill hs-yes">{c.event === "cert_new" ? "Newly certified" : "Renewed"}</span>
+                  </li>
+                ))}
+              </ul>
+              <p style={{ marginTop: 12 }}>
+                <Link className="link-inline" href="/halal-certification-changes">See the full certification changelog →</Link>
+              </p>
+            </>
+          ) : (
+            <p className="muted">
+              No certification events logged yet — we log changes as our weekly re-checks find them, so this section
+              fills in over time. See the{" "}
+              <Link href="/halal-certification-changes">halal certification changelog</Link> for how we track this.
+            </p>
+          )}
+
           <div className="hub-grid" style={{ marginTop: 28 }}>
             <Link href="/best-halal-restaurants-singapore" className="hub-link"><span>Best halal restaurants {SEO_YEAR}</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
+            <Link href="/halal-certification-changes" className="hub-link"><span>Certification changes log</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/halal-food-near-me" className="hub-link"><span>Halal food near me</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/add-listing" className="hub-link"><span>Add a new halal place</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
