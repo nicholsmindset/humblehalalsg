@@ -63,7 +63,7 @@ export default function Page() {
         </section>
 
         <div className="hh-wrap hh-section">
-          <div className="seo-prose" style={{ maxWidth: 720 }}>
+          <div className="seo-prose" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", marginBottom: 12 }}>Sijil halal MUIS, milik orang Islam, atau akuan sendiri?</h2>
             <p className="muted" style={{ lineHeight: 1.7 }}>
               Tidak semua yang kelihatan &ldquo;mesra Muslim&rdquo; itu sama. <strong>Sijil halal MUIS</strong> ialah
@@ -109,8 +109,8 @@ export default function Page() {
             </p>
           </div>
 
-          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Mula di sini</h2>
-          <div className="hub-grid">
+          <h2 style={{ fontSize: "1.4rem", margin: "32px auto 14px", maxWidth: 720 }}>Mula di sini</h2>
+          <div className="hub-grid" style={{ maxWidth: 720, marginInline: "auto" }}>
             <Link href="/explore" className="hub-link"><span>Terokai direktori halal</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/halal-food-near-me" className="hub-link"><span>Makanan halal berdekatan saya</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/hawker" className="hub-link"><span>Gerai hawker halal</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
@@ -119,7 +119,7 @@ export default function Page() {
             <Link href="/halal-food-singapore" className="hub-link"><span lang="en">Halal food guide in English</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
 
-          <section className="newsletter-card mt24" style={{ maxWidth: 640 }}>
+          <section className="newsletter-card mt24" style={{ maxWidth: 640, marginInline: "auto" }}>
             <span className="eyebrow" style={{ color: "var(--emerald)" }}>🍽 Panduan halal mingguan</span>
             <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Tempat makan halal baharu, setiap minggu</h2>
             <p className="muted" style={{ marginTop: 8 }}>
@@ -131,7 +131,7 @@ export default function Page() {
             </div>
           </section>
 
-          <div className="seo-prose mt24" style={{ maxWidth: 720 }}>
+          <div className="seo-prose mt24" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", margin: "8px 0 12px" }}>Soalan lazim</h2>
             {FAQ.map((f) => (
               <details key={f.q} className="faq-item" name="ms-makanan-faq">

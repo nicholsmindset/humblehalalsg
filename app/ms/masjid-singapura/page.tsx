@@ -65,7 +65,7 @@ export default function Page() {
         </section>
 
         <div className="hh-wrap hh-section">
-          <div className="seo-prose" style={{ maxWidth: 720 }}>
+          <div className="seo-prose" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", marginBottom: 12 }}>Masjid mengikut wilayah</h2>
             <p className="muted" style={{ lineHeight: 1.7 }}>
               Masjid-masjid di Singapura tersebar di setiap penjuru pulau, daripada masjid warisan di kawasan bandar
@@ -109,8 +109,8 @@ export default function Page() {
             </p>
           </div>
 
-          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Panduan berkaitan</h2>
-          <div className="hub-grid">
+          <h2 style={{ fontSize: "1.4rem", margin: "32px auto 14px", maxWidth: 720 }}>Panduan berkaitan</h2>
+          <div className="hub-grid" style={{ maxWidth: 720, marginInline: "auto" }}>
             <Link href="/waktu-solat-singapore" className="hub-link"><span>Waktu solat Singapura hari ini</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/tools/qibla" className="hub-link"><span>Penunjuk arah kiblat</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/prayer-rooms" className="hub-link"><span>Bilik solat &amp; musolla</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
@@ -119,7 +119,7 @@ export default function Page() {
             <Link href="/mosques" className="hub-link"><span lang="en">Full mosque directory in English</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
 
-          <section className="newsletter-card mt24" style={{ maxWidth: 640 }}>
+          <section className="newsletter-card mt24" style={{ maxWidth: 640, marginInline: "auto" }}>
             <span className="eyebrow" style={{ color: "var(--emerald)" }}>🕌 Panduan halal mingguan</span>
             <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Ikuti berita komuniti Muslim Singapura</h2>
             <p className="muted" style={{ marginTop: 8 }}>
@@ -131,7 +131,7 @@ export default function Page() {
             </div>
           </section>
 
-          <div className="seo-prose mt24" style={{ maxWidth: 720 }}>
+          <div className="seo-prose mt24" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", margin: "8px 0 12px" }}>Soalan lazim</h2>
             {FAQ.map((f) => (
               <details key={f.q} className="faq-item" name="ms-masjid-faq">
