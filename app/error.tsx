@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
 
 /* Route-segment error boundary — catches render errors below the root layout.
@@ -30,7 +31,7 @@ export default function Error({
         </p>
         <div className="flex g10 center" style={{ justifyContent: "center", marginTop: 20 }}>
           <button className="btn btn-primary" onClick={() => unstable_retry()}>Try again</button>
-          <a className="btn btn-outline" href="/">Back home</a>
+          <Link className="btn btn-outline" href="/">Back home</Link>
         </div>
       </div>
     </div>

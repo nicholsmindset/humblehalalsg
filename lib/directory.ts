@@ -138,7 +138,7 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return [] as Listing[];
-    const { data, error } = await sb.from("businesses").select(BUSINESS_COLS).eq("status", "published").limit(2000);
+    const { data, error } = await sb.from("businesses").select<string, Row>(BUSINESS_COLS).eq("status", "published").limit(2000);
     const fromDb = !error && data && data.length > 0;
     // Hawker stalls live in their own /hawker vertical (like mosques / prayer
     // rooms) — keep them out of the general /explore directory feed.
@@ -172,7 +172,7 @@ export async function getListingBySlug(slug: string): Promise<Listing | undefine
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return undefined;
-    const { data } = await sb.from("businesses").select(BUSINESS_COLS).eq("slug", slug).eq("status", "published").maybeSingle();
+    const { data } = await sb.from("businesses").select<string, Row>(BUSINESS_COLS).eq("slug", slug).eq("status", "published").maybeSingle();
     return data && !isBlockedFoodListing((data as Row).slug) ? rowToListing(data as Row) : undefined;
   } catch { return undefined; }
 }

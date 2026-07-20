@@ -24,6 +24,10 @@ export default function GlobalError({
           <h1 style={{ fontSize: "1.8rem", margin: "0 0 8px" }}>Something went wrong</h1>
           <p style={{ opacity: 0.7, margin: "0 0 20px" }}>An unexpected error occurred. Please try again.</p>
           <button onClick={() => unstable_retry()} style={{ background: "#12525B", color: "#fff", border: 0, borderRadius: 10, padding: "10px 18px", fontWeight: 600, cursor: "pointer", marginRight: 10 }}>Try again</button>
+          {/* Plain <a> on purpose: the root layout (and with it the app's client
+              runtime state) just crashed — recover via a full document load, not
+              client navigation. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/" style={{ color: "#12525B", fontWeight: 600 }}>Back home</a>
         </div>
       </body>
