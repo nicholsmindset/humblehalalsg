@@ -23,7 +23,7 @@ jobs:
         run: node scripts/sitemap-diff.mjs "${{ vars.SITE_URL || 'https://humblehalal.com' }}"
       - name: Post diff as issue
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@v6
         with:
           title: "🗺️ Sitemap changed — review new/removed URLs"
           content-filepath: ./sitemap-diff.md
