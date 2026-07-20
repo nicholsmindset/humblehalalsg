@@ -18,6 +18,21 @@ type Row = Record<string, unknown>;
 const str = (v: unknown) => (v == null ? "" : String(v));
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
 
+/* Exactly the columns rowToListing reads AND that exist in the schema (0001/
+   0002 + later alters). Deliberately not selected: stripe_customer_id,
+   contact_email, provenance, source, nea_licence_no, status (filter-only) —
+   this query runs on every request via the shared layout, so over-fetching is
+   both a payload and a data-exposure cost. CAUTION: rowToListing's fallback
+   keys (category_id, cuisine, rating, review_count, whatsapp, instagram) are
+   NOT real columns — unlike select("*"), naming a nonexistent column errors
+   the whole PostgREST query (→ empty directory site-wide), so never add a
+   column here without checking the migrations. */
+const BUSINESS_COLS =
+  "id, slug, name, area, cat_id, subcategory_id, plan, featured, owner_id, claimed_by, created_at, " +
+  "website, socials, description, price_level, photos, opening_hours, lat, lng, attributes, " +
+  "halal_tier, muis_cert_no, muis_expiry, last_verified_at, confirm_count, " +
+  "address, postal, phone, seo_title, seo_description, hawker_centre_id, stall_no";
+
 /** Map a Supabase `businesses` row → the app's Listing shape. Best-effort:
  *  unknown/missing columns degrade gracefully. Refine to match your seed. */
 export function rowToListing(r: Row): Listing {
@@ -123,7 +138,7 @@ export const getDirectory = cache(async (): Promise<Listing[]> => {
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return [] as Listing[];
-    const { data, error } = await sb.from("businesses").select("*").eq("status", "published").limit(2000);
+    const { data, error } = await sb.from("businesses").select(BUSINESS_COLS).eq("status", "published").limit(2000);
     const fromDb = !error && data && data.length > 0;
     // Hawker stalls live in their own /hawker vertical (like mosques / prayer
     // rooms) — keep them out of the general /explore directory feed.
@@ -157,7 +172,7 @@ export async function getListingBySlug(slug: string): Promise<Listing | undefine
   try {
     const sb = getSupabaseAdmin();
     if (!sb) return undefined;
-    const { data } = await sb.from("businesses").select("*").eq("slug", slug).eq("status", "published").maybeSingle();
+    const { data } = await sb.from("businesses").select(BUSINESS_COLS).eq("slug", slug).eq("status", "published").maybeSingle();
     return data && !isBlockedFoodListing((data as Row).slug) ? rowToListing(data as Row) : undefined;
   } catch { return undefined; }
 }
