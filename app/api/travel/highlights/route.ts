@@ -53,7 +53,9 @@ function fallbackHighlights(f: HotelHighlightFacts): Highlight[] {
 }
 
 export async function POST(req: Request) {
-  const rl = await rateLimit(req, "highlights", 30, 60);
+  // failClosed: LLM-spend route — a limiter (Upstash) outage must deny rather
+  // than allow unbounded AI cost (matches the sibling concierge routes).
+  const rl = await rateLimit(req, "highlights", 30, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
 
   let hotelId = "";

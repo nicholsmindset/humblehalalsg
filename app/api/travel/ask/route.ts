@@ -79,7 +79,9 @@ export async function GET(req: Request) {
   if (!(await getServerFlags()).aiConcierge) {
     return NextResponse.json({ ok: false, error: "concierge_disabled" }, { status: 403 });
   }
-  const rl = await rateLimit(req, "hotel-ask", 20, 60);
+  // failClosed: LLM-spend route — a limiter (Upstash) outage must deny rather
+  // than allow unbounded AI cost (matches the sibling concierge routes).
+  const rl = await rateLimit(req, "hotel-ask", 20, 60, { failClosed: true });
   if (!rl.ok) return tooMany(rl.retryAfter);
   const sp = new URL(req.url).searchParams;
   const hotelId = (sp.get("hotelId") || "").trim();
