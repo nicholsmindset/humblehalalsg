@@ -10,6 +10,13 @@ export const metadata: Metadata = pageMeta({
     "When is Ramadan 2026? Expected to begin around 18 February 2026. Your Singapore guide to fasting times, the Geylang Serai bazaar, iftar spots and Raya.",
   path: "/ramadan",
   absoluteTitle: true,
+  // hreflang pair with the Malay page (lib/ms-pages.ts) — both sides declare
+  // the same map, x-default → EN.
+  languages: {
+    "en-SG": "/ramadan",
+    ms: "/ms/ramadan",
+    "x-default": "/ramadan",
+  },
 });
 
 const FAQ = [

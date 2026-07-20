@@ -15,6 +15,13 @@ export const metadata: Metadata = pageMeta({
     "Where to find halal food in Singapore: MUIS-certified restaurants, Muslim-owned kitchens and hawker stalls — by neighbourhood, mall and cuisine, with halal-confidence scores.",
   path: "/halal-food-singapore",
   absoluteTitle: true,
+  // hreflang pair with the Malay page (lib/ms-pages.ts) — both sides declare
+  // the same map, x-default → EN.
+  languages: {
+    "en-SG": "/halal-food-singapore",
+    ms: "/ms/makanan-halal-singapura",
+    "x-default": "/halal-food-singapore",
+  },
 });
 
 const FAQ = [
