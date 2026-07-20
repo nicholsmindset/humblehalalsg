@@ -62,7 +62,7 @@ export default function Page() {
         </section>
 
         <div className="hh-wrap hh-section">
-          <div className="seo-prose" style={{ maxWidth: 720 }}>
+          <div className="seo-prose" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", marginBottom: 12 }}>Tarikh Hari Raya 2026</h2>
             <p className="muted" style={{ lineHeight: 1.7 }}>
               <strong>Hari Raya Aidilfitri</strong> (Hari Raya Puasa) dijangka pada sekitar <strong>20 Mac 2026</strong>,
@@ -113,8 +113,8 @@ export default function Page() {
             </p>
           </div>
 
-          <h2 style={{ fontSize: "1.4rem", margin: "32px 0 14px" }}>Bersiap untuk Raya</h2>
-          <div className="hub-grid">
+          <h2 style={{ fontSize: "1.4rem", margin: "32px auto 14px", maxWidth: 720 }}>Bersiap untuk Raya</h2>
+          <div className="hub-grid" style={{ maxWidth: 720, marginInline: "auto" }}>
             <Link href="/hari-raya-catering-singapore" className="hub-link"><span>Katering &amp; buffet Hari Raya</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/mosques" className="hub-link"><span>Masjid untuk solat sunat Raya</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/waktu-solat-singapore" className="hub-link"><span>Waktu solat Singapura</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
@@ -123,7 +123,7 @@ export default function Page() {
             <Link href="/hari-raya" className="hub-link"><span lang="en">Hari Raya guide in English</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
 
-          <section className="newsletter-card mt24" style={{ maxWidth: 640 }}>
+          <section className="newsletter-card mt24" style={{ maxWidth: 640, marginInline: "auto" }}>
             <span className="eyebrow" style={{ color: "var(--emerald)" }}>🌙 Percuma — Senarai semak Raya</span>
             <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Dapatkan senarai semak persiapan Hari Raya 2026</h2>
             <p className="muted" style={{ marginTop: 8 }}>
@@ -135,7 +135,7 @@ export default function Page() {
             </div>
           </section>
 
-          <div className="seo-prose mt24" style={{ maxWidth: 720 }}>
+          <div className="seo-prose mt24" style={{ maxWidth: 720, marginInline: "auto" }}>
             <h2 style={{ fontSize: "1.4rem", margin: "8px 0 12px" }}>Soalan lazim</h2>
             {FAQ.map((f) => (
               <details key={f.q} className="faq-item" name="ms-raya-faq">
