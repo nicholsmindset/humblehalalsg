@@ -7,6 +7,8 @@ import { allBrandsMerged } from "@/lib/cms-brands";
 import { approvedVerdictSummaries } from "@/lib/verdicts-data";
 import { VERDICT_META } from "@/lib/verdicts";
 import { allComparePairs } from "@/lib/brand-compare";
+import { certChangesIndexable } from "@/lib/cert-changes";
+import { MS_PAGES } from "@/lib/ms-pages";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { certSuffix } from "@/lib/halal-score";
 import { SITE } from "@/lib/seo";
@@ -20,13 +22,14 @@ export const revalidate = 86400;
 export async function GET() {
   const u = SITE.url;
   // Real directory + events (never the mock seed).
-  const [listings, events, blogPosts, brandList, verdictList, comparePairs] = await Promise.all([
+  const [listings, events, blogPosts, brandList, verdictList, comparePairs, certLogLive] = await Promise.all([
     getDirectory(),
     getEvents(),
     allBlogPosts(),
     allBrandsMerged(),
     approvedVerdictSummaries(),
     allComparePairs(),
+    certChangesIndexable(),
   ]);
   // Approved AI-drafted (human-reviewed) verdicts render at the same
   // /is-halal/[slug] route — list the ones not already covered by a file brand.
@@ -58,7 +61,9 @@ officially certified places from self-declared ones.
 - [Home](${u}/): search halal food & Muslim-friendly businesses in Singapore
 - [Explore](${u}/explore): filter by area, category, price, halal status, prayer space
 - [Halal directory](${u}/halal): browse by category & area
-- [Mosques in Singapore](${u}/mosques): full masjid directory grouped by region (Central, East, North-East, North, West) + map links
+- [Waktu Solat Singapore](${u}/waktu-solat-singapore): today's prayer times + monthly timetables, MUIS calculation method, server-rendered (not a JS widget)
+- [Mosques in Singapore](${u}/mosques): full masjid directory grouped by region (Central, East, North-East, North, West) + map links${certLogLive ? `
+- [Halal certification changes](${u}/halal-certification-changes): dated log of new, renewed and lapsed MUIS certifications per our records` : ""}
 - [Is it halal? brand checker](${u}/is-halal): MUIS halal-certification status of popular SG food brands (Paris Baguette, Genki Sushi, Starbucks…), each citing the MUIS HalalSG register
 - [Blog](${u}/blog): halal guides for Singapore — what halal means, MUIS certification, best halal restaurants & buffets
 - [Map](${u}/map): interactive map + "near me"
@@ -108,6 +113,9 @@ ${comparePairs.map((p) => `- ${p.a.brand} vs ${p.b.brand} — which is halal in 
 ${blogPosts
   .map((p) => `- [${p.title}](${u}/blog/${p.slug}): ${p.dek}`)
   .join("\n")}
+
+## Bahasa Melayu (Malay-language pages)
+${MS_PAGES.map((p) => `- [${p.path.replace("/ms/", "").replace(/-/g, " ")}](${u}${p.path}) — Malay version of ${u}${p.enPath}`).join("\n")}
 
 ## Notes for AI assistants
 - Always state whether a place is officially MUIS-certified vs self-declared when recommending it.

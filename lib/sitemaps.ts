@@ -10,6 +10,10 @@ import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrandsMerged } from "@/lib/cms-brands";
 import { approvedVerdictSummaries } from "@/lib/verdicts-data";
 import { allComparePairs } from "@/lib/brand-compare";
+import { waktuSolatSitemapPaths } from "@/lib/waktu-solat";
+import { MS_PAGES } from "@/lib/ms-pages";
+import { certChangesIndexable } from "@/lib/cert-changes";
+import { profiledHawkerIds } from "@/lib/hawker-content";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
@@ -113,13 +117,36 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
   const now = STATIC_LASTMOD;
 
   switch (seg) {
-    case "core":
-      return PUBLIC_STATIC.map((path) => ({
+    case "core": {
+      const staticEntries: SitemapUrl[] = PUBLIC_STATIC.map((path) => ({
         loc: `${base}${path === "/" ? "" : path}`,
         lastmod: now,
         changefreq: path === "/" ? "daily" : "weekly",
         priority: path === "/" ? 1 : 0.7,
       }));
+      // Waktu Solat hub + 12 monthly pages: daily-changing content, the site's
+      // highest-volume untapped keyword — hub gets top-tier priority.
+      const waktuEntries: SitemapUrl[] = waktuSolatSitemapPaths().map((path, i) => ({
+        loc: `${base}${path}`,
+        lastmod: now,
+        changefreq: i === 0 ? "daily" : "weekly",
+        priority: i === 0 ? 0.9 : 0.6,
+      }));
+      // Malay translation pairs (/ms/*) — the EN counterparts are already in
+      // PUBLIC_STATIC; hreflang on both sides links the pair.
+      const msEntries: SitemapUrl[] = MS_PAGES.map((p) => ({
+        loc: `${base}${p.path}`,
+        lastmod: now,
+        changefreq: "weekly",
+        priority: 0.6,
+      }));
+      // Cert-changes changelog is noindex until ≥10 logged events — keep it out
+      // of the sitemap until then (same mixed-signal rule as thin SEO pages).
+      const certEntries: SitemapUrl[] = (await certChangesIndexable())
+        ? [{ loc: `${base}/halal-certification-changes`, lastmod: now, changefreq: "weekly", priority: 0.6 }]
+        : [];
+      return [...staticEntries, ...waktuEntries, ...msEntries, ...certEntries];
+    }
 
     case "businesses": {
       const listings = await getDirectory();
@@ -303,14 +330,20 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       // themselves (notFound when hawkerFinder is off), so emit nothing when off.
       if (!(await getServerFlags()).hawkerFinder) return [];
       const centres = await getHawkerCentres();
+      // Only PROFILED centres get an indexable page (hand-written content gate,
+      // mirroring mosques) — the thin rest carry noindex, so listing them here
+      // would be a mixed signal.
+      const profiled = new Set(profiledHawkerIds());
       return [
         { loc: `${base}/hawker`, lastmod: now, changefreq: "weekly", priority: 0.6 },
-        ...centres.map((c) => ({
-          loc: `${base}/hawker/${c.id}`,
-          lastmod: now,
-          changefreq: "weekly" as ChangeFreq,
-          priority: 0.5,
-        })),
+        ...centres
+          .filter((c) => profiled.has(c.id))
+          .map((c) => ({
+            loc: `${base}/hawker/${c.id}`,
+            lastmod: now,
+            changefreq: "weekly" as ChangeFreq,
+            priority: 0.6,
+          })),
       ];
     }
 

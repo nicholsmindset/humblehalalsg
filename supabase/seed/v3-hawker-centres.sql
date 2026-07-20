@@ -8,14 +8,14 @@
 -- so re-running the seed never clobbers geocoded or hand-corrected values.
 insert into public.hawker_centres (id, name, address, region, nearest_mrt, lat, lng, source) values
   -- Halal-relevant flagships (profiled in lib/hawker-content.ts)
-  ('geylang-serai-market', 'Geylang Serai Market & Food Centre', '1 Geylang Serai, Singapore 402001', 'East', 'Paya Lebar', 1.31690, 103.89830, 'manual'),
-  ('haig-road-market-food-centre', 'Haig Road Market & Food Centre', '14 Haig Road, Singapore 430014', 'East', 'Paya Lebar', 1.31400, 103.89670, 'manual'),
-  ('adam-road-food-centre', 'Adam Road Food Centre', '2 Adam Road, Singapore 289876', 'Central', 'Botanic Gardens', 1.32430, 103.81420, 'manual'),
-  ('tekka-centre', 'Tekka Centre', '665 Buffalo Road, Singapore 210665', 'Central', 'Little India', 1.30630, 103.85060, 'manual'),
+  ('geylang-serai-market', 'Geylang Serai Market & Food Centre', '1 Geylang Serai, Singapore 402001', 'East', 'Paya Lebar', 1.31756, 103.89757, 'manual'),
+  ('haig-road-market-food-centre', 'Haig Road Market & Food Centre', '14 Haig Road, Singapore 430014', 'East', 'Paya Lebar', 1.31437, 103.89729, 'manual'),
+  ('adam-road-food-centre', 'Adam Road Food Centre', '2 Adam Road, Singapore 289876', 'Central', 'Botanic Gardens', 1.32360, 103.81402, 'manual'),
+  ('tekka-centre', 'Tekka Centre', '665 Buffalo Road, Singapore 210665', 'Central', 'Little India', 1.30610, 103.84964, 'manual'),
   ('bedok-interchange-hawker-centre', 'Bedok Interchange Hawker Centre', '208B New Upper Changi Road, Singapore 462208', 'East', 'Bedok', 1.32480, 103.92970, 'manual'),
   ('marsiling-mall-hawker-centre', 'Marsiling Mall Hawker Centre', '4 Woodlands Street 12, Singapore 738623', 'North', 'Marsiling', 1.43310, 103.77720, 'manual'),
   ('our-tampines-hub-hawker-centre', 'Our Tampines Hub Hawker Centre', '1 Tampines Walk, Singapore 528523', 'East', 'Tampines', 1.35330, 103.94040, 'manual'),
-  ('old-airport-road-food-centre', 'Old Airport Road Food Centre', '51 Old Airport Road, Singapore 390051', 'Central', 'Dakota', 1.30840, 103.88560, 'manual'),
+  ('old-airport-road-food-centre', 'Old Airport Road Food Centre', '51 Old Airport Road, Singapore 390051', 'Central', 'Dakota', 1.30820, 103.88530, 'manual'),
   -- The wider centre directory
   ('punggol-coast-hawker-centre', 'Punggol Coast Hawker Centre', null, 'North-East', 'Punggol Coast', 1.41480, 103.91000, 'manual'),
   ('bukit-canberra-hawker-centre', 'Bukit Canberra Hawker Centre', '21 Canberra Link', 'North', 'Canberra', 1.44530, 103.82440, 'manual'),
@@ -28,7 +28,7 @@ insert into public.hawker_centres (id, name, address, region, nearest_mrt, lat, 
   ('woodleigh-village-hawker-centre', 'Woodleigh Village Hawker Centre', '11 Bidadari Park Drive', 'North-East', 'Woodleigh', 1.33880, 103.87060, 'manual'),
   ('one-punggol-hawker-centre', 'One Punggol Hawker Centre', '1 Punggol Drive', 'North-East', 'Punggol', 1.40940, 103.90550, 'manual'),
   ('buangkok-hawker-centre', 'Buangkok Hawker Centre', '70 Compassvale Bow', 'North-East', 'Buangkok', 1.38290, 103.89310, 'manual'),
-  ('newton-food-centre', 'Newton Food Centre', '500 Clemenceau Avenue North, Singapore 229495', 'Central', 'Newton', 1.31180, 103.83890, 'manual'),
+  ('newton-food-centre', 'Newton Food Centre', '500 Clemenceau Avenue North, Singapore 229495', 'Central', 'Newton', 1.31283, 103.83919, 'manual'),
   ('bukit-timah-market-food-centre', 'Bukit Timah Market & Food Centre', '51 Upper Bukit Timah Road, Singapore 588215', 'Central', 'Beauty World', 1.34250, 103.77650, 'manual'),
   ('market-street-hawker-centre', 'Market Street Hawker Centre', '88 Market Street, CapitaSpring, Singapore 048948', 'Central', 'Telok Ayer', 1.28460, 103.85030, 'manual'),
   ('jurong-west-hawker-centre', 'Jurong West Hawker Centre', null, 'West', 'Pioneer', null, null, 'manual'),
