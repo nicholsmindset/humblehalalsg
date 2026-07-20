@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { STATUS_META } from "@/lib/halal-status";
 import { allBrandsMerged } from "@/lib/cms-brands";
+import { allComparePairs } from "@/lib/brand-compare";
 import { HALALSG_BASE } from "@/lib/muis";
 import { SITE } from "@/lib/seo";
 import { pageMeta } from "@/lib/seo";
@@ -34,6 +35,7 @@ const HUB_FAQ = [
 
 export default async function Page() {
   const brands = await allBrandsMerged();
+  const comparisons = await allComparePairs();
   // group by category for a scannable directory
   const byCat = new Map<string, typeof brands>();
   for (const b of brands) {
@@ -135,6 +137,18 @@ export default async function Page() {
               </div>
             </section>
           ))}
+          {comparisons.length ? (
+            <section style={{ marginBottom: 26 }}>
+              <h2 style={{ fontSize: "1.2rem", marginBottom: 12 }}>Popular halal comparisons</h2>
+              <div className="hub-grid">
+                {comparisons.map((p) => (
+                  <Link key={p.pairSlug} href={`/is-halal/compare/${p.pairSlug}`} className="hs-row">
+                    <span className="hs-row-name">{p.a.brand} vs {p.b.brand} — which is halal?</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <p className="faint" style={{ fontSize: ".84rem", marginTop: 8 }}>
             Statuses reflect publicly available information and are checked periodically — they can change.
             The authoritative source is always the{" "}

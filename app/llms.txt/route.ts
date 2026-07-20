@@ -4,6 +4,9 @@ import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPagePath } from "@/lib/seo-pages";
 import { STATUS_META } from "@/lib/halal-status";
 import { allBrandsMerged } from "@/lib/cms-brands";
+import { approvedVerdictSummaries } from "@/lib/verdicts-data";
+import { VERDICT_META } from "@/lib/verdicts";
+import { allComparePairs } from "@/lib/brand-compare";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { certSuffix } from "@/lib/halal-score";
 import { SITE } from "@/lib/seo";
@@ -11,11 +14,24 @@ import { SITE } from "@/lib/seo";
 // llms.txt — a concise, AI-crawler-friendly map of the site + key facts.
 // Spec: https://llmstxt.org
 export const dynamic = "force-static";
+// Daily ISR so newly-approved halal verdicts appear without a redeploy.
+export const revalidate = 86400;
 
 export async function GET() {
   const u = SITE.url;
   // Real directory + events (never the mock seed).
-  const [listings, events, blogPosts, brandList] = await Promise.all([getDirectory(), getEvents(), allBlogPosts(), allBrandsMerged()]);
+  const [listings, events, blogPosts, brandList, verdictList, comparePairs] = await Promise.all([
+    getDirectory(),
+    getEvents(),
+    allBlogPosts(),
+    allBrandsMerged(),
+    approvedVerdictSummaries(),
+    allComparePairs(),
+  ]);
+  // Approved AI-drafted (human-reviewed) verdicts render at the same
+  // /is-halal/[slug] route — list the ones not already covered by a file brand.
+  const brandSlugSet = new Set(brandList.map((b) => b.slug));
+  const extraVerdicts = verdictList.filter((v) => !brandSlugSet.has(v.slug));
   const areaCount = (name: string) => listings.filter((l) => l.area === name).length;
   const featured = (listings.filter((l) => l.featured).length
     ? listings.filter((l) => l.featured)
@@ -80,7 +96,13 @@ ${events
 ## Halal status of popular brands (verify on MUIS HalalSG)
 ${brandList
   .map((b) => `- Is ${b.brand} halal? ${STATUS_META[b.status].verdict} — ${STATUS_META[b.status].label}. [details](${u}/is-halal/${b.slug})`)
-  .join("\n")}
+  .join("\n")}${extraVerdicts.length ? "\n" + extraVerdicts
+  .map((v) => `- Is ${v.name} halal? ${v.verdict_label || VERDICT_META[v.verdict].label} (human-reviewed assessment). [details](${u}/is-halal/${v.slug})`)
+  .join("\n") : ""}
+${comparePairs.length ? `
+## Halal comparisons (head-to-head)
+${comparePairs.map((p) => `- ${p.a.brand} vs ${p.b.brand} — which is halal in Singapore? [comparison](${u}/is-halal/compare/${p.pairSlug})`).join("\n")}
+` : ""}
 
 ## Blog guides
 ${blogPosts

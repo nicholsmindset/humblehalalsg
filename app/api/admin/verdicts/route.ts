@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { revalidatePublic } from "@/lib/revalidate";
 import { verdictBlocksApproval } from "@/lib/verdicts";
+import { submitIndexNow } from "@/lib/indexnow";
+import { SITE } from "@/lib/seo";
 
 /* Admin halal-verdict review queue.
    GET  ?status=pending|approved|rejected  → verdicts for review
@@ -68,6 +70,9 @@ export async function POST(req: Request) {
 
     await logAudit(db, { actor: gate.userId, action: "Halal verdict approved", target: id, meta: { slug: v.slug, verdict: v.verdict } });
     revalidatePublic([`/is-halal/${v.slug}`, "/is-halal"]);
+    // Ping IndexNow so Bing & partners crawl the newly-published page within
+    // minutes instead of the next sitemap sweep. Fails soft (no key → no-op).
+    await submitIndexNow([`${SITE.url}/is-halal/${v.slug}`]);
     return NextResponse.json({ ok: true, status: "approved" });
   }
 

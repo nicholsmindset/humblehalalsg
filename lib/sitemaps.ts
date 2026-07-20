@@ -8,6 +8,8 @@ import { getEvents } from "@/lib/events-source";
 import { allSeoPages, seoPageIndexable, seoPagePath } from "@/lib/seo-pages";
 import { allEventSeoPages, eventSeoPath } from "@/lib/event-seo-pages";
 import { allBrandsMerged } from "@/lib/cms-brands";
+import { approvedVerdictSummaries } from "@/lib/verdicts-data";
+import { allComparePairs } from "@/lib/brand-compare";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
 import { allTravelHubs } from "@/lib/travel-hubs";
@@ -146,14 +148,36 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         }));
     }
 
-    case "brands":
-      return (await allBrandsMerged()).map((b) => ({
+    case "brands": {
+      const fileBrands = await allBrandsMerged();
+      const brandEntries: SitemapUrl[] = fileBrands.map((b) => ({
         loc: `${base}/is-halal/${b.slug}`,
         lastmod: now,
         changefreq: "monthly",
         priority: 0.6,
         image: b.logo || undefined,
       }));
+      // Approved AI-drafted verdicts render at the same /is-halal/[slug] route
+      // (generateStaticParams already merges them) but were missing here, so
+      // newly-approved pages never reached crawlers. Off-flag / no-DB → [].
+      const fileSlugSet = new Set(fileBrands.map((b) => b.slug));
+      const verdictEntries: SitemapUrl[] = (await approvedVerdictSummaries())
+        .filter((v) => !fileSlugSet.has(v.slug))
+        .map((v) => ({
+          loc: `${base}/is-halal/${v.slug}`,
+          lastmod: v.date_reviewed ? new Date(v.date_reviewed).toISOString() : now,
+          changefreq: "monthly",
+          priority: 0.6,
+        }));
+      // Curated head-to-head comparison pages (static pairs; both sides exist).
+      const compareEntries: SitemapUrl[] = (await allComparePairs()).map((p) => ({
+        loc: `${base}/is-halal/compare/${p.pairSlug}`,
+        lastmod: now,
+        changefreq: "monthly",
+        priority: 0.6,
+      }));
+      return [...brandEntries, ...verdictEntries, ...compareEntries];
+    }
 
     case "events": {
       const eventsList = await getEvents();

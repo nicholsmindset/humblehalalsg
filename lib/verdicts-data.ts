@@ -57,3 +57,31 @@ export async function approvedVerdictSlugs(): Promise<string[]> {
     return [];
   }
 }
+
+export interface VerdictSummary {
+  slug: string;
+  name: string;
+  verdict: Verdict;
+  verdict_label: string | null;
+  one_line_answer: string | null;
+  date_reviewed: string | null;
+}
+
+/** Light rows for approved verdicts — feeds the sitemap (slug + lastmod) and
+ * llms.txt (name + verdict line) so approved pages are actually crawlable.
+ * Same guards as above: off-flag / no-DB → []. */
+export async function approvedVerdictSummaries(): Promise<VerdictSummary[]> {
+  if (!(await getServerFlags()).halalVerdicts) return [];
+  const db = getSupabaseAdmin();
+  if (!db) return [];
+  try {
+    const { data } = await db
+      .from("halal_verdicts")
+      .select("slug,name,verdict,verdict_label,one_line_answer,date_reviewed")
+      .eq("status", "approved")
+      .limit(2000);
+    return (data as VerdictSummary[] | null) ?? [];
+  } catch {
+    return [];
+  }
+}

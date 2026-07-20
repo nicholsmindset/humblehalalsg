@@ -45,6 +45,34 @@ export async function GET(req: Request) {
       flagged++;
     }
 
+    // ── 1b) Verdict freshness: a lapsed MUIS certificate may invalidate an
+    // approved "is X halal?" verdict for the same brand name. Flag matching
+    // approved verdicts for human re-review (they STAY published — pulling a
+    // live, sitemapped page automatically on a possible data error would be
+    // worse; the admin review queue surfaces the note). ──────────────────────
+    let verdictsFlagged = 0;
+    if ((expired || []).length) {
+      const { verdictSlug } = await import("@/lib/verdicts");
+      const lapsedSlugs = [...new Set((expired || []).map((b) => verdictSlug(String(b.name || ""))).filter(Boolean))];
+      if (lapsedSlugs.length) {
+        const { data: staleVerdicts } = await sb
+          .from("halal_verdicts")
+          .select("id, slug")
+          .eq("status", "approved")
+          .in("slug", lapsedSlugs);
+        for (const sv of staleVerdicts || []) {
+          await sb
+            .from("halal_verdicts")
+            .update({
+              review_note: `auto (recheck-certs ${today}): a linked MUIS certificate lapsed — re-review this verdict`,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", sv.id);
+          verdictsFlagged++;
+        }
+      }
+    }
+
     // ── 2) Cert-vault lifecycle: flip approved certs past expiry → 'expired' ──
     const soon = new Date(Date.now() + SOON_DAYS * 864e5).toISOString().slice(0, 10);
     let certsExpired = 0;
@@ -92,9 +120,9 @@ export async function GET(req: Request) {
     await sb.from("cron_runs").insert({
       job: "recheck-certs",
       ok: true,
-      notes: `${flagged} flagged · ${certsExpired} certs expired · ${emailed} owners emailed`,
+      notes: `${flagged} flagged · ${verdictsFlagged} verdicts flagged for re-review · ${certsExpired} certs expired · ${emailed} owners emailed`,
     });
-    return NextResponse.json({ ok: true, simulated: false, flagged, certsExpired, emailed });
+    return NextResponse.json({ ok: true, simulated: false, flagged, verdictsFlagged, certsExpired, emailed });
   } catch {
     return NextResponse.json({ ok: true, simulated: true });
   }
