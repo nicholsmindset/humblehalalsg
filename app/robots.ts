@@ -33,6 +33,13 @@ const DISALLOW = [
   "/*?",                            // faceted / tracking query strings
 ];
 
+// Explicit allows that must win over "/*?" — the icon files Next serves with a
+// cache-busting ?hash (app/icon.svg, app/apple-icon) would otherwise be blocked
+// by the query-string disallow, so Google can't fetch the favicon for Search.
+// A longer, more-specific Allow beats "/*?" under Google's longest-match rule.
+// (/favicon.ico + the public/ PNGs are already query-less, but listed for clarity.)
+const ALLOW = ["/", "/favicon.ico", "/icon.svg", "/apple-icon"];
+
 // Answer-engine / AI crawlers we explicitly welcome to public content (GEO) —
 // being cited by AI search drives qualified referral traffic for a directory.
 const AI_BOTS = [
@@ -55,8 +62,8 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: DISALLOW },
-      ...AI_BOTS.map((ua) => ({ userAgent: ua, allow: "/", disallow: DISALLOW })),
+      { userAgent: "*", allow: ALLOW, disallow: DISALLOW },
+      ...AI_BOTS.map((ua) => ({ userAgent: ua, allow: ALLOW, disallow: DISALLOW })),
     ],
     sitemap: sitemaps,
     host: SITE.url,
