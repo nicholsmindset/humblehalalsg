@@ -41,11 +41,16 @@ Everything else is fast-follow. Estimated total effort for the blocking set: mos
 | F14 digest error-swallow | ✅ Moot | Cron deleted in `8e1382f` |
 | F8 OG image wiring | ✅ Fixed | `f635a65` — five routes now reach their per-entity cards |
 | F12 directions tracking | ✅ Fixed | `773c0f5` — all six untracked buttons instrumented |
-| F4 event lifecycle | ⏳ Migration written, NOT applied | `e38bee8` — `supabase/migrations/0079_events_end_date.sql` awaits approval + a reachable Supabase connection; ISR 3600→900 shipped. Query flip to `ends_at` ships after apply |
-| F6 deployment verification | ⛔ Blocked (access) | Needs Vercel dashboard: production commit + redeploy; not reachable from this environment |
-| F18 test rows in prod DB | ⛔ Blocked (access) | Supabase connector disconnected mid-session; delete 3 test/demo event rows when back |
-| F19 blocked slugs still published | ⛔ Blocked (access) | Same — flip 10 rows to `status='suspended'` when back |
-| F13, F15–F17, F20–F27, Gaps 1–10 | Open | Next tranche per §7 |
+| F4 event lifecycle | ✅ Fixed (0080 pending deploy) | `e38bee8` + `6b79be8` — **0079 APPLIED** (backfilled, ordered, indexed, in migration history); `getEvents()`/JSON-LD/creation/RSVP-guard all judge on `ends_at`; ISR 3600→900. **0080 (ends_at required on new rows) applies only AFTER this code deploys** |
+| F13 blog overclaims | ✅ Fixed | `48abc97` — glossary language in both passages |
+| F15 crm-sync churn | ✅ Fixed | `1328b89` — every 15 min; no-op runs no longer logged |
+| F16 mock-event fake success | ✅ Fixed | `731efa2` — mock seed unreachable in production RSVP/checkout/donate/promo |
+| F17 schema drift | ✅ Started | 0079/0081 applied via tracked history (`supabase_migrations` no longer empty); `0081` captures the out-of-band `events_status_check` widening. Full live↔repo diff remains open |
+| F18 test rows in prod DB | ✅ Cleaned | Deleted `test-b68d` + the ZZ QA event (no dependents); demo iftar → `rejected`, cancelled test event kept — both retain order/ticket history, neither is public. **events table now has zero published rows** (honest empty state) |
+| F19 blocked slugs still published | ✅ Fixed | 10 rows → `status='suspended'` — RLS now hides them from anon regardless of code path; code blocklist stays as belt-and-braces. Public counts unchanged (324) |
+| F26 .gitignore media | ✅ Fixed | `f8e5f23` |
+| F6 deployment verification | ⛔ Blocked (access) | Needs Vercel dashboard: production commit + **redeploy (now required — 0079 is live and the ends_at code flip must ship)** |
+| F20–F25, F27, Gaps 1–10 | Open | Next tranche per §7 (headline: Gap 1 provenance, Gap 3 status glossary, F3(b) MUIS cert backfill, geocode backfill) |
 
 ---
 
