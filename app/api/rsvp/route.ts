@@ -26,7 +26,9 @@ export async function POST(req: Request) {
     qty?: number;
   };
   const eventId = String(body.eventId || "");
-  const mockEv = getEvent(eventId);
+  // Mock-seed events exist for dev/demo only — in production an event that
+  // isn't in the DB must 404, never "simulated" success for a fake RSVP.
+  const mockEv = process.env.NODE_ENV === "production" ? undefined : getEvent(eventId);
   if (body.email && !EMAIL_RE.test(body.email)) {
     return NextResponse.json({ ok: false, reason: "bad_email" }, { status: 422 });
   }

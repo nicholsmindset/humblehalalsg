@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   const supa = getSupabaseAdmin();
   if (!supa) return NextResponse.json({ ok: false, reason: "not_configured", message: "Promo codes aren't available right now." });
 
-  let ev = getEvent(eventId);
+  // Mock seed is dev/demo only (F16): in production promos resolve DB events only.
+  let ev = process.env.NODE_ENV === "production" ? undefined : getEvent(eventId);
   if (!ev && isSafeEventRef(eventId)) {
     const { data: row } = await supa
       .from("events")
