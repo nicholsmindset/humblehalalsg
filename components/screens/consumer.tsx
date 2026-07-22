@@ -1129,7 +1129,10 @@ export function MapScreen() {
             </div>
           )}
           <div className="map-split-count flex between center">
-            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{userLoc ? " · nearest first" : ""}</span>
+            {/* The map plots only geocoded listings (l.coords), a subset of the
+                directory — say "mapped" so this number is never read as the
+                total place count (hero/explore count the full directory). */}
+            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{chips.mosque || chips.musollah ? "" : " mapped"}{userLoc ? " · nearest first" : ""}</span>
             {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: ".82rem" }}>Clear all</button>}
           </div>
         </div>
