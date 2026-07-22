@@ -341,7 +341,7 @@ export function TravelHotelScreen({ hotel, images, offers, roomGroups, reviews, 
                 <p className="halal-unverified" style={{ marginTop: 14 }}>Muslim-friendly facilities below are derived from the hotel&apos;s own information and not yet verified by our team.</p>
               )}
               {flags.length > 0 && (
-                <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={13} /> {l}</span>)}</div>
+                <div className="halal-flags lg" style={{ margin: "14px 0" }}>{flags.map((l) => <span key={l} className="halal-flag"><Icon name={hotel.verified ? "check" : "info"} size={13} /> {l}{hotel.verified ? "" : " (per hotel)"}</span>)}</div>
               )}
 
               {flags.length > 0 && (
