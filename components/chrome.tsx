@@ -33,7 +33,7 @@ export function CertifiedToggle({ compact }: { compact?: boolean }) {
       className={`cert-toggle ${on ? "on" : ""} ${compact ? "compact" : ""}`}
       onClick={() => { if (!on) track.filterUse("muis_certified"); toggleCertifiedOnly(); }}
       aria-pressed={!!on}
-      title="Show only MUIS-certified & verified places"
+      title="Show only MUIS-certified, MUIS-listed & admin-verified places"
     >
       <Icon name="shield-check" size={16} />
       {!compact && <span>{t("nav.certifiedOnly")}</span>}
@@ -361,7 +361,7 @@ export function Onboarding() {
             <span className="eyebrow">Step 2 of 2</span>
             <h2 style={{ fontSize: "1.4rem", marginTop: 8 }}>How strict should we be?</h2>
             <p className="muted" style={{ marginTop: 6 }}>
-              You can change this anytime with the “Certified only” switch.
+              You can change this anytime with the “Certified / listed” switch.
             </p>
             <div className="stack g10 mt16">
               <button
@@ -371,9 +371,9 @@ export function Onboarding() {
                 <div className="flex g12 center">
                   <Badge type="muis" />
                   <div style={{ textAlign: "left" }}>
-                    <div style={{ fontWeight: 700 }}>Certified only</div>
+                    <div style={{ fontWeight: 700 }}>Certified / listed only</div>
                     <div className="faint" style={{ fontSize: ".8rem" }}>
-                      Show only MUIS / verified places
+                      MUIS-certified, MUIS-listed or admin-verified
                     </div>
                   </div>
                 </div>

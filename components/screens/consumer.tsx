@@ -721,7 +721,7 @@ export function ExploreScreen() {
             <p className="muted" style={{ fontWeight: 600 }}>
               <span style={{ color: "var(--ink)" }}>{results.length}</span> place{results.length !== 1 ? "s" : ""}
               {filters.cat && <span> in {catCategories.find((c) => c.id === filters.cat)?.label}</span>}
-              {state.prefs && state.prefs.certifiedOnly && <span className="cert-active-note"><Icon name="shield-check" size={13} /> certified only</span>}
+              {state.prefs && state.prefs.certifiedOnly && <span className="cert-active-note"><Icon name="shield-check" size={13} /> certified / listed only</span>}
             </p>
           </div>
 
@@ -824,8 +824,8 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
       </Section>
       <Section title="Halal status">
         <div className="fp-opts">
-          <Opt k="halal" v="certified" label="Certified only" />
-          <Opt k="halal" v="muis" label="MUIS certified" />
+          <Opt k="halal" v="certified" label="Certified / listed only" />
+          <Opt k="halal" v="muis" label="MUIS certified / listed" />
         </div>
         <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
       </Section>
@@ -1123,8 +1123,8 @@ export function MapScreen() {
               </select>
               <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, padding: "7px 10px" }}>
                 <option value="">Any halal status</option>
-                <option value="certified">Certified / verified</option>
-                <option value="muis">MUIS certified</option>
+                <option value="certified">Certified / listed</option>
+                <option value="muis">MUIS certified / listed</option>
               </select>
             </div>
           )}

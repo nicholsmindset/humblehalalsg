@@ -38,7 +38,7 @@ const searchDirectory = tool({
     area: z.string().optional().describe("Singapore area/neighbourhood to filter by, if given"),
     prayerSpace: z.boolean().optional().describe("Only places with prayer space"),
     muslimOwned: z.boolean().optional().describe("Only Muslim-owned businesses"),
-    certifiedOnly: z.boolean().optional().describe("Only MUIS-certified / admin-verified places"),
+    certifiedOnly: z.boolean().optional().describe("Only MUIS-certified, MUIS-listed or admin-verified places"),
   }),
   execute: async ({ query, area, prayerSpace, muslimOwned, certifiedOnly }) => {
     const all = await getDirectory();

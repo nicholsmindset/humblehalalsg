@@ -330,7 +330,7 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     () =>
       setPrefs((p) => {
         const v = !p.certifiedOnly;
-        toast(v ? "Showing certified places only" : "Showing all places");
+        toast(v ? "Showing certified / listed places only" : "Showing all places");
         return { ...p, certifiedOnly: v };
       }),
     [toast],
