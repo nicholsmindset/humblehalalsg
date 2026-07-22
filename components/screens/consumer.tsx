@@ -13,6 +13,7 @@ import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
+import { statusDef } from "@/lib/status-glossary";
 import { timeAgo } from "@/lib/time";
 import { FreshnessActions } from "../freshness-actions";
 import { TikTokVideos } from "../tiktok-videos";
@@ -493,13 +494,15 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
 
 /* ---- Trust strip ---- */
 export function TrustStrip({ navigate }: { navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  // Definitions come from THE glossary (lib/status-glossary) so this legend
+  // can never drift from the badges/pills it explains.
   const rows: { type: BadgeKey; desc: string }[] = [
-    { type: "muis", desc: "Officially halal-certified by MUIS. We link to the HalalSG verification." },
-    { type: "admin", desc: "Documents checked and verified by the Humble Halal team." },
-    { type: "owned", desc: "Confirmed Muslim-owned business." },
-    { type: "friendly", desc: "Self-declared halal-friendly — not certified." },
-    { type: "nopork", desc: "Self-declared no pork, no lard — not certified." },
-    { type: "pending", desc: "Verification documents under review." },
+    { type: "muis", desc: `${statusDef("muis")} We link to the HalalSG verification.` },
+    { type: "admin", desc: statusDef("admin") },
+    { type: "owned", desc: statusDef("owned") },
+    { type: "friendly", desc: statusDef("friendly") },
+    { type: "nopork", desc: statusDef("nopork") },
+    { type: "pending", desc: statusDef("pending") },
   ];
   return (
     <section className="trust-strip">

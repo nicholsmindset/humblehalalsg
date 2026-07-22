@@ -10,6 +10,7 @@
 import type { Listing } from "@/lib/types";
 import { halalSgVerifyUrl } from "@/lib/muis";
 import { muisUnbacked } from "@/lib/halal-score";
+import { statusLabel } from "@/lib/status-glossary";
 import { Icon } from "./ui";
 
 interface Cell {
@@ -34,7 +35,7 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
     {
       key: "muis",
       icon: "shield-check",
-      label: "MUIS Certified",
+      label: statusLabel("muis"),
       state: muis ? "yes" : muisPending ? "pending" : "info",
       verdict: muis ? "Certified" : muisPending ? "Listed" : "Not enough info",
       tip: muis
@@ -47,7 +48,7 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
     {
       key: "admin",
       icon: "badge-check",
-      label: "Admin Verified",
+      label: statusLabel("admin"),
       state: admin ? "yes" : "info",
       verdict: admin ? "Verified" : "Not enough info",
       tip: admin
@@ -57,7 +58,7 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
     {
       key: "owned",
       icon: "store",
-      label: "Muslim-Owned",
+      label: statusLabel("owned"),
       state: owned ? "yes" : "info",
       verdict: owned ? "Yes" : "Not enough info",
       tip: owned ? "Confirmed Muslim-owned business." : "Ownership hasn't been verified.",
@@ -65,7 +66,7 @@ export function TrustAtAGlance({ item }: { item: Listing }) {
     {
       key: "friendly",
       icon: "heart",
-      label: "Halal-Friendly",
+      label: statusLabel("friendly"),
       state: friendly ? "yes" : "info",
       verdict: friendly ? "Self-declared" : "Not enough info",
       tip: friendly
