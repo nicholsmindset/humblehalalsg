@@ -19,6 +19,7 @@ export async function POST(req: Request) {
 
   let b: {
     title?: string; catId?: string; catLabel?: string; desc?: string; dateISO?: string;
+    endDateISO?: string; // last day of the event (defaults to dateISO — 0079)
     dateLabel?: string; timeLabel?: string; endTime?: string; venue?: string; area?: string;
     free?: boolean; price?: number; capacity?: number; tiers?: { name: string; price: number; perks?: string }[];
     prayerNearby?: boolean; halalCatering?: boolean; prayerSlotNote?: string;
