@@ -389,7 +389,10 @@ export function urlsetXml(urls: SitemapUrl[]): string {
 /** Serialise the sitemap index pointing at every segment child. */
 export function sitemapIndexXml(): string {
   const base = SITE.url;
-  const lastmod = new Date().toISOString();
+  // Stable lastmod (same pin as the evergreen child entries) — stamping "now"
+  // on every request told crawlers all 11 segments changed constantly, which
+  // contradicts the children and erodes lastmod trust. (Audit F24)
+  const lastmod = STATIC_LASTMOD;
   const body = SITEMAP_SEGMENTS.map(
     (s) => `  <sitemap>\n    <loc>${esc(`${base}/sitemap/${s}.xml`)}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </sitemap>`,
   ).join("\n");
