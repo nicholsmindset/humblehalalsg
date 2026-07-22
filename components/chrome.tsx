@@ -839,6 +839,9 @@ export function Footer() {
         <Link href="/cookies">{t("footer.legal.cookies")}</Link>
         <Link href="/accessibility">{t("footer.legal.accessibility")}</Link>
         <Link href="/disclaimer">{t("footer.legal.disclaimer")}</Link>
+        {/* The public correction record — every cert change our re-checks log,
+            dated. Footer-visible so the promise is checkable. (Audit Gap 9) */}
+        <Link href="/halal-certification-changes">{t("footer.legal.certChanges")}</Link>
       </nav>
       <div className="hh-wrap hh-footer-base">
         <span>{t("footer.base.copyright")}</span>

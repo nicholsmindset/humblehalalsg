@@ -29,6 +29,7 @@ type Key =
   | "footer.allCategories" | "footer.allGuides"
   | "footer.legal.terms" | "footer.legal.privacy" | "footer.legal.pdpa"
   | "footer.legal.cookies" | "footer.legal.accessibility" | "footer.legal.disclaimer"
+  | "footer.legal.certChanges"
   | "footer.base.copyright" | "footer.base.verify";
 
 const DICT: Record<Lang, Record<Key, string>> = {
@@ -97,6 +98,7 @@ const DICT: Record<Lang, Record<Key, string>> = {
     "footer.legal.cookies": "Cookies",
     "footer.legal.accessibility": "Accessibility",
     "footer.legal.disclaimer": "Halal disclaimer",
+    "footer.legal.certChanges": "Certification changes",
     "footer.base.copyright": "© 2026 Humble Halal. Built for the Singapore Muslim community.",
     "footer.base.verify": "Always verify certification on MUIS HalalSG.",
   },
@@ -165,6 +167,7 @@ const DICT: Record<Lang, Record<Key, string>> = {
     "footer.legal.cookies": "Kuki",
     "footer.legal.accessibility": "Kebolehcapaian",
     "footer.legal.disclaimer": "Penafian halal",
+    "footer.legal.certChanges": "Perubahan pensijilan",
     "footer.base.copyright": "© 2026 Humble Halal. Dibina untuk komuniti Muslim Singapura.",
     "footer.base.verify": "Sentiasa sahkan pensijilan di MUIS HalalSG.",
   },
