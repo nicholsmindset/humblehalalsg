@@ -95,6 +95,12 @@ export async function POST(req: Request) {
     taken: 0,
     status: "pending", // admin approves → published
     date_iso: b.dateISO || null,
+    // Last day of the event; defaults to the start date (single-day). Kept
+    // NOT NULL-ish by 0080 — expiry is judged on this, never on date_iso.
+    ends_at:
+      (typeof b.endDateISO === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.endDateISO) ? b.endDateISO : null) ||
+      b.dateISO ||
+      null,
     submitted_by: userId,
     source: "owner",
     display,

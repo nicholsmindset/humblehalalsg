@@ -23,10 +23,9 @@ alter table events
   add constraint events_ends_after_start
   check (ends_at is null or date_iso is null or ends_at >= date_iso);
 
--- Required going forward; NOT VALID skips validating pre-existing rows.
-alter table events
-  add constraint events_ends_at_required
-  check (ends_at is not null) not valid;
+-- NOTE: the "ends_at required on new rows" constraint lives in 0080 and is
+-- applied only AFTER the creation code that writes ends_at is deployed —
+-- applying it while the old deployment is live would break event creation.
 
 -- The public read path filters status + date and orders by date on every
 -- request; cover it.

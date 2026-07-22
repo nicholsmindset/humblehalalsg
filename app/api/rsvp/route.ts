@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const { data: row } = isSafeEventRef(eventId)
     ? await supa
         .from("events")
-        .select("id, capacity, taken, business_id, status, title, date_iso")
+        .select("id, capacity, taken, business_id, status, title, date_iso, ends_at")
         .or(`id.eq.${eventId},slug.eq.${eventId}`)
         .maybeSingle()
     : { data: null };
@@ -58,8 +58,10 @@ export async function POST(req: Request) {
   }
 
   // Past events can't be RSVP'd (listing filters them out, but a direct POST or
-  // stale tab could still hit this). Compared in Singapore time.
-  if (row.date_iso && String(row.date_iso) < todaySG()) {
+  // stale tab could still hit this). Judged on the event's LAST day (ends_at,
+  // 0079) so an ongoing multi-day event stays RSVP-able. Singapore time.
+  const lastDay = row.ends_at ?? row.date_iso;
+  if (lastDay && String(lastDay) < todaySG()) {
     return NextResponse.json({ ok: false, reason: "event_over" }, { status: 409 });
   }
 

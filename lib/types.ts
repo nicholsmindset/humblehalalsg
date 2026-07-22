@@ -194,6 +194,9 @@ export interface EventItem {
   dateLabel: string;
   timeLabel: string;
   dateISO: string;
+  /** Last day of the event (YYYY-MM-DD, = dateISO for single-day events).
+   *  Drives expiry: an event is listed through its own END day (0079). */
+  endsAt?: string;
   /** Optional event end time (HH:MM, 24h) — used for prayer-overlap detection. */
   endTime?: string;
   multiDay?: string;
