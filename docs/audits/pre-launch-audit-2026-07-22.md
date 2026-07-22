@@ -50,7 +50,9 @@ Everything else is fast-follow. Estimated total effort for the blocking set: mos
 | F19 blocked slugs still published | ✅ Fixed | 10 rows → `status='suspended'` — RLS now hides them from anon regardless of code path; code blocklist stays as belt-and-braces. Public counts unchanged (324) |
 | F26 .gitignore media | ✅ Fixed | `f8e5f23` |
 | F6 deployment verification | ⛔ Blocked (access) | Needs Vercel dashboard: production commit + **redeploy (now required — 0079 is live and the ends_at code flip must ship)** |
-| F20–F25, F27, Gaps 1–10 | Open | Next tranche per §7 (headline: Gap 1 provenance, Gap 3 status glossary, F3(b) MUIS cert backfill, geocode backfill) |
+| Gap 3 status glossary | ✅ Fixed | `1960423` — `lib/status-glossary.ts` is the one source for every trust label/definition (tiers, badges, trust-glance, legend, llms.txt); the driftbed Deno copy had zero importers and was deleted |
+| Gap 1 status provenance | ⏸ Proposal committed, apply DECLINED | `05c6a38` — migration 0082 ready for review; the live apply was declined this session, so the dependent write-path/display code is intentionally not written yet. Decision needed: apply 0082 (then I wire verify-grant, admin routes, recheck-certs stamping, VerificationCard display), run it yourselves, or drop |
+| F20–F25, F27, remaining gaps | Open | Next tranche per §7 (headline: F3(b) MUIS cert backfill, geocode backfill, Gap 4 social export, Gap 9 correction log). F20's SQL portion + 0080 also await DB access/approval |
 
 ---
 
