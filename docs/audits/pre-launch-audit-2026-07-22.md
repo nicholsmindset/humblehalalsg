@@ -28,6 +28,27 @@ Everything else is fast-follow. Estimated total effort for the blocking set: mos
 
 ---
 
+## 1a. Remediation log (Phase 3, 2026-07-22)
+
+| Finding | Status | Commit / note |
+|---|---|---|
+| F10 privacy-policy processor | ✅ Fixed | `e1d3a90` — Beehiiv named, MailerLite removed (incl. sub-processor bullet at `lib/legal-content.ts:69`) |
+| F1 + F2 card status labels | ✅ Fixed | `18cc5f1` — pill renders for every tier; Claim is never the only signal |
+| F3(a) filter wording | ✅ Fixed | `e7fb973` — "certified / listed" across explore, map, toggle, onboarding, EN+MS. F3(b) cert-number backfill remains open (data work) |
+| F9 hotel amenity chips | ✅ Fixed | `d7624bb` — unverified flags: info glyph + "(per hotel)" |
+| F5 count contradiction | ✅ Label fixed | `3fb545a` — map says "places mapped". Geocode backfill (169 rows) still open: `npm run geocode:listings` |
+| F11 newsletter single path | ✅ Code fixed | `8e1382f` — broadcast cron + helper deleted; RSS-to-email is the one path. **Manual:** Beehiiv dashboard RSS-to-email + welcome automation with real links |
+| F14 digest error-swallow | ✅ Moot | Cron deleted in `8e1382f` |
+| F8 OG image wiring | ✅ Fixed | `f635a65` — five routes now reach their per-entity cards |
+| F12 directions tracking | ✅ Fixed | `773c0f5` — all six untracked buttons instrumented |
+| F4 event lifecycle | ⏳ Migration written, NOT applied | `e38bee8` — `supabase/migrations/0079_events_end_date.sql` awaits approval + a reachable Supabase connection; ISR 3600→900 shipped. Query flip to `ends_at` ships after apply |
+| F6 deployment verification | ⛔ Blocked (access) | Needs Vercel dashboard: production commit + redeploy; not reachable from this environment |
+| F18 test rows in prod DB | ⛔ Blocked (access) | Supabase connector disconnected mid-session; delete 3 test/demo event rows when back |
+| F19 blocked slugs still published | ⛔ Blocked (access) | Same — flip 10 rows to `status='suspended'` when back |
+| F13, F15–F17, F20–F27, Gaps 1–10 | Open | Next tranche per §7 |
+
+---
+
 ## 2. Corrections to the brief (things that did not match the codebase)
 
 - There is no `places`/`listings` table; the directory table is **`businesses`**. Events live in **`events`**.
