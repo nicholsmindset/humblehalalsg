@@ -79,6 +79,9 @@ export function ingredientRedirects(): Redirect[] {
 
 export function seoRedirects(): Redirect[] {
   return [
+    // Bare /halal-food has no hub page (only /halal-food/[location]) — send it
+    // to the food hub instead of 404ing a guessable URL. (Audit F25)
+    { source: "/halal-food", destination: "/halal-food-near-me", statusCode: 301 as const },
     ...LEGACY_HALAL_REDIRECTS,
     ...ingredientRedirects(),
     // Non-food categories no longer use "halal" as a blanket business label.
