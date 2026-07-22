@@ -26,6 +26,6 @@
     { "path": "/api/cron/lead-retention", "schedule": "0 4 * * 2" },
     { "path": "/api/cron/hawker-sync", "schedule": "0 5 * * 3" },
     { "path": "/api/cron/verdict-drafts", "schedule": "20 3 * * *" },
-    { "path": "/api/cron/crm-sync", "schedule": "* * * * *" }
+    { "path": "/api/cron/crm-sync", "schedule": "*/15 * * * *" }
   ]
 }

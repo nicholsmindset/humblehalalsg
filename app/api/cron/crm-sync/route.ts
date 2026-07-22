@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   try {
     const result = await dispatchCrmOutbox(100);
     const db = getSupabaseAdmin();
-    if (db) {
+    // Log only runs that DID something (or failed) — the every-minute era
+    // wrote 9.5k consecutive "claimed 0" rows, drowning real ops signals.
+    const worthLogging = result.claimed > 0 || result.failed > 0;
+    if (db && worthLogging) {
       await db.from("cron_runs").insert({
         job: "crm-sync",
         ok: result.failed === 0,
