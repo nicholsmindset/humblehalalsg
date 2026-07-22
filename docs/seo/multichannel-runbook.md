@@ -55,15 +55,15 @@ collection + `Person` schema, and the `check:content` CI validator. See `docs/se
 - **OG card factory:** shared `components/og/card.tsx`; `/blog/[slug]/opengraph-image` renders a
   branded card. Posts default to their hero photo for social; pin the card (or any image) per-post via
   the `socialImage` override. Reuse `OgCard` for is-halal/pSEO cards next.
-- **Newsletter digest (cron):** `app/api/cron/weekly-digest` assembles new guides (last 7 days) +
-  newest listings and calls `beehiivBroadcast()`. Direct-send is optional: set `BEEHIIV_BROADCAST_URL`
-  (a Beehiiv automation trigger / Zapier / custom sender) + `BEEHIIV_API_KEY`; else it simulates + logs.
+- **Newsletter digest:** Beehiiv native RSS-to-email pointed at `/blog/feed.xml` is the ONE
+  publishing path (dashboard config, no code). The old `weekly-digest` cron + `beehiivBroadcast()`
+  webhook direct-send were removed 2026-07 — they never sent (`BEEHIIV_BROADCAST_URL` was never set).
 - **IndexNow ping-on-publish:** `lib/indexnow.ts` + `/api/cron/indexnow` submit the day's newly-live
   URLs to Bing/Yandex. The daily `blog-publish.yml` curls it after deploy (needs `CRON_SECRET`). Set
   `INDEXNOW_KEY` to activate (verified via `/indexnow-key.txt`); else it no-ops.
 
-**Env to activate:** `BEEHIIV_BROADCAST_URL` (+ `BEEHIIV_API_KEY`) for direct digest send, `INDEXNOW_KEY`
-for fast indexing, `CRON_SECRET` for the workflow ping. All degrade gracefully when unset.
+**Env to activate:** `INDEXNOW_KEY` for fast indexing, `CRON_SECRET` for the workflow ping.
+All degrade gracefully when unset.
 
 ## Phase 4 — Growth loops (shipped)
 

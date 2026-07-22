@@ -1,6 +1,6 @@
 import "server-only";
 
-/* Transactional email via Resend (owner alerts, freshness nudges, weekly digest).
+/* Transactional email via Resend (owner alerts, freshness nudges, tickets).
    Graceful: returns simulated without RESEND_API_KEY. Records to `email_log` when
    Supabase is configured. Beehiiv owns the marketing newsletter
    (app/api/subscribe). */

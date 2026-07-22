@@ -59,8 +59,9 @@ Finds listings not verified in 180+ days, queues them for re-verification, and e
 Recomputes `get_directory_stats()` and the `category_area_counts` view, busts the relevant ISR caches. **Why:** keeps homepage numbers honest and flips category×area pages to indexable the moment they hit 5 listings.
 
 ### B4. Newsletter / digest sender (weekly)
-**Route:** `/api/cron/weekly-digest`
-Assembles "newest verified listings + latest guide + this week's deals" and sends via Resend. **Why:** retention engine, runs itself.
+**Path:** Beehiiv native RSS-to-email pointed at `/blog/feed.xml` (dashboard config — the one
+publishing path; the old `/api/cron/weekly-digest` broadcast cron was removed 2026-07 having
+never sent). **Why:** retention engine, runs itself.
 
 ### B5. Owner lead/analytics alerts (daily)
 **Route:** `/api/cron/owner-alerts`
