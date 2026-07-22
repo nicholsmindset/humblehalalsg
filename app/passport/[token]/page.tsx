@@ -35,6 +35,8 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     title: `${row.display_name} — ${tier.label} on Humble Halal`,
     description: `${row.display_name} has ${row.total_points} Halal Passport points, visited ${row.visit_count} halal spots and written ${row.review_count} reviews.`,
     path: `/passport/${token}`,
+    // Share card is the point of this page — wire the per-passport OG route.
+    image: `/passport/${token}/opengraph-image`,
     index: false,
   });
 }

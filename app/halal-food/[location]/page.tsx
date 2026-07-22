@@ -38,6 +38,8 @@ export async function generateMetadata({
     title: p.title || p.h1,
     description: p.intro,
     path: seoPagePath(p),
+    // The OG card route lives at the FILE path, not the rewritten public path.
+    image: `/halal-food/${location}/opengraph-image`,
     absoluteTitle: true,
     index: indexable,
   });

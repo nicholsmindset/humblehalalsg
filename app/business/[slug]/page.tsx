@@ -61,7 +61,9 @@ export async function generateMetadata({
     title: l.seoTitle || joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
     description: l.seoDescription || `${l.blurb} ${descriptor} listing in ${l.area}, Singapore.${reviewLine}`,
     path: `/business/${l.slug}`,
-    image: l.image,
+    // Real photo when we have one; else the branded per-listing OG card (the
+    // dynamic route is otherwise shadowed by pageMeta's generic fallback).
+    image: l.image || `/business/${l.slug}/opengraph-image`,
   });
 }
 
