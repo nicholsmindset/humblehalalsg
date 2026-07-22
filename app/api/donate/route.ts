@@ -33,7 +33,8 @@ export async function POST(req: Request) {
   // the organiser opted into donations for a charity event.
   const supa = getSupabaseAdmin();
   const eventId = String(body.eventId || "");
-  let ev = getEvent(eventId);
+  // Mock seed is dev/demo only (F16): in production only DB events accept donations.
+  let ev = process.env.NODE_ENV === "production" ? undefined : getEvent(eventId);
   if (!ev && supa && isSafeEventRef(eventId)) {
     const { data: row } = await supa
       .from("events").select("*")

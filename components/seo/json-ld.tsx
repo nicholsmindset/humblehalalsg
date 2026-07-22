@@ -168,10 +168,17 @@ export function listingJsonLd(l: Listing) {
 }
 
 export function eventJsonLd(e: EventItem) {
-  // endDate: same-day events with a parseable end time (Google Events rich
-  // results want it). SGT offset — events are local to Singapore.
+  // endDate: the event's real last day (ends_at, 0079) — timestamped with the
+  // end time when parseable (Google Events rich results want it), date-only
+  // for multi-day events, omitted only when we know neither. SGT offset —
+  // events are local to Singapore.
   const endTime = e.endTime && /^\d{1,2}:\d{2}$/.test(e.endTime) ? e.endTime : "";
-  const endDate = e.dateISO && endTime ? `${e.dateISO}T${endTime.padStart(5, "0")}:00+08:00` : undefined;
+  const endBase = e.endsAt || e.dateISO;
+  const endDate = endBase && endTime
+    ? `${endBase}T${endTime.padStart(5, "0")}:00+08:00`
+    : e.endsAt && e.endsAt !== e.dateISO
+      ? e.endsAt
+      : undefined;
   return {
     "@context": "https://schema.org",
     "@type": "Event",

@@ -39,6 +39,8 @@ export async function generateMetadata({
     description: p.intro,
     // Canonical is the PUBLIC path (top-level for cuisine/cat via rewrite).
     path: seoPagePath(p),
+    // The OG card route lives at the FILE path, not the rewritten public path.
+    image: `/halal/${slug}/opengraph-image`,
     absoluteTitle: true,
     index: indexable,
   });

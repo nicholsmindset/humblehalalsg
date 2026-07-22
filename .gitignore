@@ -69,3 +69,12 @@ supabase/.temp/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# media binaries — social/video production assets never belong in the repo
+# (audit F26; keep the repo's 12MB footprint)
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.psd
+*.ai

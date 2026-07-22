@@ -5,9 +5,10 @@ import { JsonLd, breadcrumbJsonLd, eventListJsonLd } from "@/components/seo/json
 
 export const metadata = pageMeta({ title: "Halal-friendly events in Singapore", description: "Bazaars, classes, ta'lim and community gatherings hosted by Muslim-owned businesses across Singapore.", path: "/events" });
 
-// Hourly ISR so newly published events (and expired ones) surface without a
-// deploy; mutations also revalidate on-demand via revalidatePublic().
-export const revalidate = 3600;
+// 15-min ISR so newly published events (and expired ones) surface without a
+// deploy — hourly left a finished event (and its Event JSON-LD) live for up
+// to an hour past the SG date rollover. On-demand revalidation still applies.
+export const revalidate = 900;
 
 export default async function Page() {
   const events = await getEvents();

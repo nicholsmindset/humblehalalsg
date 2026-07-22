@@ -46,7 +46,7 @@ export async function generateMetadata({
     path: `/blog/${p.slug}`,
     canonical: p.canonicalUrl,
     index: !p.noindex,
-    image: p.socialImage || p.image,
+    image: p.socialImage || p.image || `/blog/${p.slug}/opengraph-image`,
     article: {
       publishedTime: p.datePublished,
       modifiedTime: p.dateModified,

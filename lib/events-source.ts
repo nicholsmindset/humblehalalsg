@@ -52,6 +52,7 @@ export function rowToEvent(r: Row): EventItem {
     dateLabel: str(d.dateLabel) || str(r.date_iso),
     timeLabel: str(d.timeLabel),
     dateISO: str(r.date_iso) || str(d.dateISO),
+    endsAt: r.ends_at ? str(r.ends_at) : undefined,
     multiDay: d.multiDay ? str(d.multiDay) : undefined,
     venue: str(d.venue),
     area: str(d.area),
@@ -81,10 +82,11 @@ export function rowToEvent(r: Row): EventItem {
 }
 
 /** Published UPCOMING events from Supabase (an event stays listed through its
- *  own day in Singapore time), or an empty array (clean empty state, never
- *  fabricated events) when Supabase is unconfigured or has no published rows.
- *  React-cache'd so layout + generateMetadata + page share one query per
- *  request (was 3 identical Supabase round-trips). */
+ *  own END day in Singapore time — ends_at, backfilled = date_iso for
+ *  single-day events, so multi-day events no longer vanish after day one),
+ *  or an empty array (clean empty state, never fabricated events) when
+ *  Supabase is unconfigured or has no published rows. React-cache'd so
+ *  layout + generateMetadata + page share one query per request. */
 export const getEvents = cache(async (): Promise<EventItem[]> => {
   if (!supabaseConfigured) return [];
   const db = getSupabaseAdmin();
@@ -94,7 +96,7 @@ export const getEvents = cache(async (): Promise<EventItem[]> => {
       .from("events")
       .select("*")
       .eq("status", "published")
-      .gte("date_iso", todaySG())
+      .gte("ends_at", todaySG())
       .order("date_iso", { ascending: true });
     if (data && data.length) {
       // Never surface seed/demo events publicly (e.g. the "…(Demo)" iftar seeded

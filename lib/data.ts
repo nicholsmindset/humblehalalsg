@@ -14,6 +14,7 @@ import type {
   VerifyInfo,
 } from "./types";
 import { eventCats, events, myTickets, spotsLeft } from "./events-data";
+import { statusLabel } from "./status-glossary";
 import { slugify } from "./slug";
 import { deriveWeekHours } from "./hours";
 import mosqueCoords from "./mosque-coords.json";
@@ -174,15 +175,16 @@ export const listings: Listing[] = [
 
 export const reviews: Review[] = [];
 
+// Labels come from THE glossary (lib/status-glossary) — audit Gap 3.
 export const badgeMeta: Record<BadgeKey, BadgeMetaEntry> = {
-  muis: { key: "muis", cls: "badge--muis", label: "MUIS Certified", icon: "shield-check", tier: "certified" },
-  admin: { key: "admin", cls: "badge--admin", label: "Admin Verified", icon: "badge-check", tier: "certified" },
-  owned: { key: "owned", cls: "badge--owned", label: "Muslim-Owned", icon: "crescent", tier: "verified" },
-  friendly: { key: "friendly", cls: "badge--friendly", label: "Halal-Friendly", icon: "info", tier: "declared" },
-  nopork: { key: "nopork", cls: "badge--nopork", label: "No Pork No Lard", icon: "info", tier: "declared" },
-  pending: { key: "pending", cls: "badge--pending", label: "Pending Verification", icon: "clock", tier: "pending" },
-  family: { key: "family", cls: "badge--owned", label: "Family Friendly", icon: "family", tier: "feature" },
-  prayer: { key: "prayer", cls: "badge--owned", label: "Prayer Space", icon: "mosque", tier: "feature" },
+  muis: { key: "muis", cls: "badge--muis", label: statusLabel("muis"), icon: "shield-check", tier: "certified" },
+  admin: { key: "admin", cls: "badge--admin", label: statusLabel("admin"), icon: "badge-check", tier: "certified" },
+  owned: { key: "owned", cls: "badge--owned", label: statusLabel("owned"), icon: "crescent", tier: "verified" },
+  friendly: { key: "friendly", cls: "badge--friendly", label: statusLabel("friendly"), icon: "info", tier: "declared" },
+  nopork: { key: "nopork", cls: "badge--nopork", label: statusLabel("nopork"), icon: "info", tier: "declared" },
+  pending: { key: "pending", cls: "badge--pending", label: statusLabel("pending"), icon: "clock", tier: "pending" },
+  family: { key: "family", cls: "badge--owned", label: statusLabel("family"), icon: "family", tier: "feature" },
+  prayer: { key: "prayer", cls: "badge--owned", label: statusLabel("prayer"), icon: "mosque", tier: "feature" },
 };
 
 // Owner dashboard analytics (last 30 days)

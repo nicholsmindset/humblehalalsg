@@ -30,7 +30,10 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
           <Icon name="pin" size={13} /> {hotel.city || ""}{hotel.country ? `, ${countryLabel(hotel.country)}` : ""}
         </div>
         {flags.length > 0 && (
-          <div className="halal-flags">{flags.map((l) => <span key={l} className="halal-flag"><Icon name="check" size={11} /> {l}</span>)}</div>
+          /* Verified overlay → green check. Auto-derived from the hotel's own
+             facility text → info glyph + "(per hotel)" so a flag never reads
+             as our verification when it is the provider's claim. */
+          <div className="halal-flags">{flags.map((l) => <span key={l} className="halal-flag"><Icon name={hotel.verified ? "check" : "info"} size={11} /> {l}{hotel.verified ? "" : " (per hotel)"}</span>)}</div>
         )}
         <div className="card-foot">
           {hotel.guestRating ? (

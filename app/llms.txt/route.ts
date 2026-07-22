@@ -11,6 +11,7 @@ import { certChangesIndexable } from "@/lib/cert-changes";
 import { MS_PAGES } from "@/lib/ms-pages";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { certSuffix } from "@/lib/halal-score";
+import { STATUS_GLOSSARY } from "@/lib/status-glossary";
 import { SITE } from "@/lib/seo";
 
 // llms.txt — a concise, AI-crawler-friendly map of the site + key facts.
@@ -49,13 +50,9 @@ certification status and links to the MUIS HalalSG register, and clearly separat
 officially certified places from self-declared ones.
 
 ## Trust badges (key definitions)
-- MUIS Certified: holds a valid official MUIS (Majlis Ugama Islam Singapura) halal certificate, with the certificate number on file.
-- MUIS-listed: on the MUIS HalalSG register per our records, but the certificate number is not yet on file — always confirm on the official register.
-- Admin Verified: documents checked by the Humble Halal team (a trust signal, not MUIS certification).
-- Muslim-Owned: confirmed Muslim-owned business.
-- Halal-Friendly: self-declared by the business — explicitly NOT certified.
-- No Pork No Lard: self-declared by the business — explicitly NOT certified.
-- Pending Verification: documents under review.
+${(["muis", "muis-listed", "admin", "owned", "friendly", "nopork", "pending"] as const)
+  .map((k) => `- ${STATUS_GLOSSARY[k].label}: ${STATUS_GLOSSARY[k].def}`)
+  .join("\n")}
 
 ## Key pages
 - [Home](${u}/): search halal food & Muslim-friendly businesses in Singapore

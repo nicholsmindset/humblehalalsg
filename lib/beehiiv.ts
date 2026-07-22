@@ -78,29 +78,8 @@ export async function beehiivSubscribe(p: {
   }
 }
 
-/* Send a digest/broadcast. The primary newsletter path is Beehiiv's native
-   RSS-to-email pointed at /blog/feed.xml (no code). This helper is the optional
-   direct-send: POST {subject, html, intent?} to a webhook the owner configures
-   (BEEHIIV_BROADCAST_URL — a Beehiiv automation trigger, Zapier, or a custom
-   sender). Fails soft/simulated when unset. Never throws. */
-export async function beehiivBroadcast(p: {
-  subject: string;
-  html: string;
-  intent?: string;
-}): Promise<BeehiivResult> {
-  const url = process.env.BEEHIIV_BROADCAST_URL;
-  if (!url) return { ok: true, simulated: true, configured: false };
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(process.env.BEEHIIV_API_KEY ? { Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}` } : {}),
-      },
-      body: JSON.stringify({ subject: p.subject, html: p.html, intent: p.intent || "general" }),
-    });
-    return { ok: res.ok, configured: true, status: res.status };
-  } catch {
-    return { ok: false, configured: true };
-  }
-}
+/* Publishing note: the ONE newsletter publishing path is Beehiiv's native
+   RSS-to-email pointed at /blog/feed.xml (dashboard config, no code). The old
+   beehiivBroadcast() webhook direct-send and its weekly-digest cron were
+   removed 2026-07 — they had never sent (BEEHIIV_BROADCAST_URL was never set)
+   and a second dormant path is how publishing forks. */

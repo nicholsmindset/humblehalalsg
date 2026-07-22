@@ -704,7 +704,7 @@ const rawPosts: RawPost[] = [
     tags: ["Fine dining", "Food guides"],
     sections: [
       { h2: "Halal, elevated",
-        body: ["Fine dining used to be the one gap halal diners in Singapore couldn’t quite fill. That has changed. There are now tasting menus, premium halal steakhouses and modern restaurants serving celebration-worthy meals that are fully halal — either MUIS-certified or Muslim-owned and pork-free.",
+        body: ["Fine dining used to be the one gap halal diners in Singapore couldn’t quite fill. That has changed. There are now tasting menus, premium halal steakhouses and modern restaurants serving celebration-worthy meals — MUIS-certified, or Muslim-owned and pork-free (self-declared halal; check each restaurant's status label).",
                "The appeal is simple: a special occasion without the mental maths. When the kitchen is certified, you can stop scanning the menu for hidden pitfalls and focus on the food, the company and the moment."] },
       { h2: "What makes fine dining halal",
         body: ["At the high end, the risks are subtler than a pork dish on the menu. The classic pitfalls are alcohol used in the kitchen and at the table — wine reductions, brandy flambé, sake and mirin in Japanese courses, and liqueur folded into desserts. A pork-free menu is not automatically an alcohol-free one.",
@@ -1890,7 +1890,7 @@ const rawPosts: RawPost[] = [
       },
     ],
     faq: [
-      { q: "Is mookata halal in Singapore?", a: "Many mookata outlets in Singapore are Muslim-owned or MUIS-certified and serve fully halal sets. Because traditional Thai mookata centres on pork, look for the MUIS certificate or the Muslim-Owned label and confirm the marinades and broth are halal." },
+      { q: "Is mookata halal in Singapore?", a: "Some mookata outlets in Singapore are MUIS-certified; others are Muslim-owned with self-declared halal sets. Because traditional Thai mookata centres on pork, look for the MUIS certificate or the Muslim-Owned label on each listing and confirm the marinades and broth are halal." },
       { q: "What is the difference between mookata and steamboat?", a: "Mookata combines both: a domed grill in the centre for barbecuing meats and a surrounding moat of broth that works like steamboat for vegetables and seafood. Plain steamboat only simmers ingredients in broth, with no grill." },
       { q: "What do you eat with halal mookata?", a: "Grill marinated chicken, beef and lamb on top while cooking prawns, squid, fishball, vegetables and glass noodles in the broth. Thai seafood dip (nam jim) and chilli sauce are the classic accompaniments." },
       { q: "Where can I find halal mookata near me?", a: "Halal mookata is available across Singapore in coffeeshops and dedicated restaurants. Use the Humble Halal directory to filter for halal outlets and open the map to find the closest one." },

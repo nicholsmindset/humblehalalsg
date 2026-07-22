@@ -340,13 +340,14 @@ export function ListingCard({
   // z-index + stopPropagation, so it claims rather than opening the detail page).
   // Halal-verification pill — shows the tier LABEL (not a 0–100 number): a bare
   // number next to "halal" reads like a grade ("42 = barely halal"), which
-  // undersells genuinely-halal-but-uncertified places. Shown only for earned
-  // tiers (muis / muis-listed / admin / community) and flagged listings; nothing
-  // for declared/pending, where the tier badge beside it ("Muslim-Owned" /
-  // "Halal-friendly") already carries the signal. Detail page keeps the reasons.
+  // undersells genuinely-halal-but-uncertified places. Rendered for EVERY tier:
+  // declared/pending used to be suppressed on the assumption that a badge beside
+  // it carried the signal, but a self-declared listing tagged Muslim-owned got
+  // badges=["owned"] — an ownership fact, not a halal status — leaving ~108 live
+  // cards with "Claim" as their only chip. Invariant: a card always names its
+  // halal status; "Claim" is never the only signal. Detail page keeps the reasons.
   const hsPill = (() => {
     const hs = scoreListing(item);
-    if (hs.tier === "declared" || hs.tier === "pending") return null;
     return (
       <span className="hs-pill" title={hs.blurb}>
         <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />

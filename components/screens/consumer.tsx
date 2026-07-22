@@ -13,6 +13,7 @@ import { haversineKm, formatKm, mapsSearchUrl, directionsUrl } from "@/lib/geo";
 import { telHref, waHref, webHref, igHref } from "@/lib/contact";
 import { openStatus, isOpenNow, DAY_LABELS, fmt12, sgTodayIdx } from "@/lib/hours";
 import { scoreListing, scoreTone, muisUnbacked } from "@/lib/halal-score";
+import { statusDef } from "@/lib/status-glossary";
 import { timeAgo } from "@/lib/time";
 import { FreshnessActions } from "../freshness-actions";
 import { TikTokVideos } from "../tiktok-videos";
@@ -493,13 +494,15 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
 
 /* ---- Trust strip ---- */
 export function TrustStrip({ navigate }: { navigate: (screen: string, params?: Record<string, unknown>) => void }) {
+  // Definitions come from THE glossary (lib/status-glossary) so this legend
+  // can never drift from the badges/pills it explains.
   const rows: { type: BadgeKey; desc: string }[] = [
-    { type: "muis", desc: "Officially halal-certified by MUIS. We link to the HalalSG verification." },
-    { type: "admin", desc: "Documents checked and verified by the Humble Halal team." },
-    { type: "owned", desc: "Confirmed Muslim-owned business." },
-    { type: "friendly", desc: "Self-declared halal-friendly — not certified." },
-    { type: "nopork", desc: "Self-declared no pork, no lard — not certified." },
-    { type: "pending", desc: "Verification documents under review." },
+    { type: "muis", desc: `${statusDef("muis")} We link to the HalalSG verification.` },
+    { type: "admin", desc: statusDef("admin") },
+    { type: "owned", desc: statusDef("owned") },
+    { type: "friendly", desc: statusDef("friendly") },
+    { type: "nopork", desc: statusDef("nopork") },
+    { type: "pending", desc: statusDef("pending") },
   ];
   return (
     <section className="trust-strip">
@@ -721,7 +724,7 @@ export function ExploreScreen() {
             <p className="muted" style={{ fontWeight: 600 }}>
               <span style={{ color: "var(--ink)" }}>{results.length}</span> place{results.length !== 1 ? "s" : ""}
               {filters.cat && <span> in {catCategories.find((c) => c.id === filters.cat)?.label}</span>}
-              {state.prefs && state.prefs.certifiedOnly && <span className="cert-active-note"><Icon name="shield-check" size={13} /> certified only</span>}
+              {state.prefs && state.prefs.certifiedOnly && <span className="cert-active-note"><Icon name="shield-check" size={13} /> certified / listed only</span>}
             </p>
           </div>
 
@@ -824,8 +827,8 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
       </Section>
       <Section title="Halal status">
         <div className="fp-opts">
-          <Opt k="halal" v="certified" label="Certified only" />
-          <Opt k="halal" v="muis" label="MUIS certified" />
+          <Opt k="halal" v="certified" label="Certified / listed only" />
+          <Opt k="halal" v="muis" label="MUIS certified / listed" />
         </div>
         <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
       </Section>
@@ -1123,13 +1126,16 @@ export function MapScreen() {
               </select>
               <select className="select" value={halal} onChange={(e) => setHalal(e.target.value)} aria-label="Halal status" style={{ flex: "1 1 30%", minWidth: 120, padding: "7px 10px" }}>
                 <option value="">Any halal status</option>
-                <option value="certified">Certified / verified</option>
-                <option value="muis">MUIS certified</option>
+                <option value="certified">Certified / listed</option>
+                <option value="muis">MUIS certified / listed</option>
               </select>
             </div>
           )}
           <div className="map-split-count flex between center">
-            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{userLoc ? " · nearest first" : ""}</span>
+            {/* The map plots only geocoded listings (l.coords), a subset of the
+                directory — say "mapped" so this number is never read as the
+                total place count (hero/explore count the full directory). */}
+            <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{chips.mosque || chips.musollah ? "" : " mapped"}{userLoc ? " · nearest first" : ""}</span>
             {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: ".82rem" }}>Clear all</button>}
           </div>
         </div>
@@ -1152,7 +1158,7 @@ export function MapScreen() {
                 </div>
                 <div className="mosque-cc-foot">
                   <span className="mosque-cc-next"><Icon name="clock" size={13} /> {nextPrayer.name} {nextPrayer.time}</span>
-                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${m.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${m.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", m.id, "mosque"); }}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
                 </div>
@@ -1176,7 +1182,7 @@ export function MapScreen() {
                 </div>
                 <div className="mosque-cc-foot">
                   <a className="link-inline" href="/prayer-rooms" onClick={(e) => e.stopPropagation()} style={{ fontSize: ".82rem" }}>Full directory →</a>
-                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", p.id, "prayer-room"); }}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
                 </div>
@@ -1632,7 +1638,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
                 <span className="muted" style={{ fontSize: ".84rem" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
               </div>
               {/* No fake map image — the Directions intent is the honest CTA. */}
-              <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Directions to this outlet</a>
+              <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={18} /> Directions to this outlet</a>
             </div>
           ) : (
           <div className="card" style={{ padding: 18 }}>
@@ -1682,11 +1688,11 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
         {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)}><Icon name="phone" size={17} /> Call</a>}
         {richContact && item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
         {richContact ? (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         ) : item.web ? (
           <a className="btn btn-primary btn-sm" href={webHref(item.web)} target="_blank" rel="noopener noreferrer"><Icon name="globe" size={17} /> Website</a>
         ) : (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         )}
       </div>
 
@@ -1912,7 +1918,7 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
             <div className="oc-foot">
               <span className="oc-cert"><Icon name="shield-check" size={13} /> MUIS · <span className="kbd-mono">{o.certNo}</span></span>
               <div className="flex g8">
-                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.name} ${o.address}`)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><Icon name="directions" size={15} /> Directions</a>
+                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.name} ${o.address}`)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", item.slug || item.id, item.catId); }}><Icon name="directions" size={15} /> Directions</a>
                 {item.phone && <a className="btn btn-ghost btn-sm" href={telHref(item.phone)} aria-label={`Call ${o.name}`} onClick={(e) => e.stopPropagation()}><Icon name="phone" size={15} /></a>}
               </div>
             </div>

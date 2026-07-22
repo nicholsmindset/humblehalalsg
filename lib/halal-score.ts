@@ -3,6 +3,7 @@
    recency/expiry, community confirmations and open reports. Pure + reusable
    on server and client; derived from the existing badge/verify enrichment. */
 import type { BadgeKey, Listing, VerifyInfo } from "./types";
+import { statusDef, statusLabel } from "./status-glossary";
 
 export type HalalTier =
   | "muis" // MUIS Certified — official, certificate on file
@@ -21,14 +22,16 @@ export interface HalalScore {
   reasons: string[];
 }
 
+// Labels + one-line definitions come from THE glossary (lib/status-glossary)
+// so tiers can never drift from badges, trust-glance, the legend or llms.txt.
 const TIER_META: Record<HalalTier, { label: string; base: number; blurb: string }> = {
-  muis: { label: "MUIS Certified", base: 90, blurb: "Officially halal-certified by MUIS." },
-  "muis-listed": { label: "MUIS-listed", base: 70, blurb: "On the MUIS HalalSG register per our records — shown as fully Certified once the certificate is on file." },
-  admin: { label: "Admin Verified", base: 78, blurb: "Documents checked by the Humble Halal team." },
-  community: { label: "Community Confirmed", base: 62, blurb: "Confirmed halal by the community — not officially certified." },
-  declared: { label: "Self-declared", base: 42, blurb: "Self-declared by the business — not certified." },
-  pending: { label: "Pending Verification", base: 34, blurb: "Verification documents under review." },
-  reported: { label: "Status changed", base: 26, blurb: "Halal status recently changed — re-confirm before visiting." },
+  muis: { label: statusLabel("muis"), base: 90, blurb: statusDef("muis") },
+  "muis-listed": { label: statusLabel("muis-listed"), base: 70, blurb: statusDef("muis-listed") },
+  admin: { label: statusLabel("admin"), base: 78, blurb: statusDef("admin") },
+  community: { label: statusLabel("community"), base: 62, blurb: statusDef("community") },
+  declared: { label: statusLabel("declared"), base: 42, blurb: statusDef("declared") },
+  pending: { label: statusLabel("pending"), base: 34, blurb: statusDef("pending") },
+  reported: { label: statusLabel("reported"), base: 26, blurb: statusDef("reported") },
 };
 
 interface ScoreInput {
