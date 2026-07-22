@@ -14,7 +14,7 @@ import { autoRouteLead, advanceLeadCascade } from "@/lib/lead-routing";
 
    Persists to the `leads` table when Supabase is configured; otherwise
    accepts gracefully in "simulated" mode so the funnel works in dev.
-   If a MailerLite key is set, the contact email is also captured. */
+   If Beehiiv keys are set, the contact email is also captured. */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SLUG_RE = /^[a-z0-9-]{1,80}$/;

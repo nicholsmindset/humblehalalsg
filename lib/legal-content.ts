@@ -66,7 +66,7 @@ export const legalDocs: Record<string, LegalDoc> = {
           "We use trusted service providers (data intermediaries) only to the extent needed to operate the service. Each receives only the data required for its purpose:",
         ],
         bullets: [
-          "MailerLite — newsletter delivery (email address).",
+          "Beehiiv — newsletter delivery (email address, plus the signup source so we know which page you subscribed from).",
           "Resend — transactional email such as booking, contact and alert emails (email address + message content).",
           "Stripe — payment processing for our own paid plans, advertising and event tickets (only if you make such a transaction).",
           "LiteAPI (Nuitée) — hotel and flight search, booking and payment as merchant of record (traveller, contact and passenger details).",
@@ -247,7 +247,7 @@ export const legalDocs: Record<string, LegalDoc> = {
       {
         h2: "Service providers",
         body: [
-          "We rely on third-party providers to operate the service, including Stripe (our paid plans), LiteAPI/Nuitée (travel bookings & payment), Resend and MailerLite (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
+          "We rely on third-party providers to operate the service, including Stripe (our paid plans), LiteAPI/Nuitée (travel bookings & payment), Resend and Beehiiv (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
         ],
       },
       {

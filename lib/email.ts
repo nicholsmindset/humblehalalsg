@@ -2,7 +2,7 @@ import "server-only";
 
 /* Transactional email via Resend (owner alerts, freshness nudges, weekly digest).
    Graceful: returns simulated without RESEND_API_KEY. Records to `email_log` when
-   Supabase is configured. MailerLite stays for the marketing newsletter
+   Supabase is configured. Beehiiv owns the marketing newsletter
    (app/api/subscribe). */
 
 const FROM = process.env.EMAIL_FROM || "Humble Halal <hello@humblehalal.com>";
