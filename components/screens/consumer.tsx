@@ -1155,7 +1155,7 @@ export function MapScreen() {
                 </div>
                 <div className="mosque-cc-foot">
                   <span className="mosque-cc-next"><Icon name="clock" size={13} /> {nextPrayer.name} {nextPrayer.time}</span>
-                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${m.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${m.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", m.id, "mosque"); }}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
                 </div>
@@ -1179,7 +1179,7 @@ export function MapScreen() {
                 </div>
                 <div className="mosque-cc-foot">
                   <a className="link-inline" href="/prayer-rooms" onClick={(e) => e.stopPropagation()} style={{ fontSize: ".82rem" }}>Full directory →</a>
-                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                  <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", p.id, "prayer-room"); }}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
                 </div>
@@ -1635,7 +1635,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
                 <span className="muted" style={{ fontSize: ".84rem" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
               </div>
               {/* No fake map image — the Directions intent is the honest CTA. */}
-              <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={18} /> Directions to this outlet</a>
+              <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={18} /> Directions to this outlet</a>
             </div>
           ) : (
           <div className="card" style={{ padding: 18 }}>
@@ -1685,11 +1685,11 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
         {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)}><Icon name="phone" size={17} /> Call</a>}
         {richContact && item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
         {richContact ? (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         ) : item.web ? (
           <a className="btn btn-primary btn-sm" href={webHref(item.web)} target="_blank" rel="noopener noreferrer"><Icon name="globe" size={17} /> Website</a>
         ) : (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer"><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         )}
       </div>
 
@@ -1915,7 +1915,7 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
             <div className="oc-foot">
               <span className="oc-cert"><Icon name="shield-check" size={13} /> MUIS · <span className="kbd-mono">{o.certNo}</span></span>
               <div className="flex g8">
-                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.name} ${o.address}`)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><Icon name="directions" size={15} /> Directions</a>
+                <a className="btn btn-soft btn-sm" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.name} ${o.address}`)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", item.slug || item.id, item.catId); }}><Icon name="directions" size={15} /> Directions</a>
                 {item.phone && <a className="btn btn-ghost btn-sm" href={telHref(item.phone)} aria-label={`Call ${o.name}`} onClick={(e) => e.stopPropagation()}><Icon name="phone" size={15} /></a>}
               </div>
             </div>
