@@ -52,7 +52,12 @@ Everything else is fast-follow. Estimated total effort for the blocking set: mos
 | F6 deployment verification | ⛔ Blocked (access) | Needs Vercel dashboard: production commit + **redeploy (now required — 0079 is live and the ends_at code flip must ship)** |
 | Gap 3 status glossary | ✅ Fixed | `1960423` — `lib/status-glossary.ts` is the one source for every trust label/definition (tiers, badges, trust-glance, legend, llms.txt); the driftbed Deno copy had zero importers and was deleted |
 | Gap 1 status provenance | ⏸ Proposal committed, apply DECLINED | `05c6a38` — migration 0082 ready for review; the live apply was declined this session, so the dependent write-path/display code is intentionally not written yet. Decision needed: apply 0082 (then I wire verify-grant, admin routes, recheck-certs stamping, VerificationCard display), run it yourselves, or drop |
-| F20–F25, F27, remaining gaps | Open | Next tranche per §7 (headline: F3(b) MUIS cert backfill, geocode backfill, Gap 4 social export, Gap 9 correction log). F20's SQL portion + 0080 also await DB access/approval |
+| Gap 4 social content export | ✅ Built | `0a330e2` — `GET /api/admin/export/social` (JSON/CSV): glossary status label, cert suffix, checked date, URL, OG image, event expiry. `status_source_url` explicit-null until 0082 |
+| Gap 2 (form side) | ✅ Fixed | `81418e7` — host-event wizard collects an optional last day (multi-day events creatable) |
+| Gap 9 correction log | ✅ Surfaced | `cdb07da` — the dated cert-change record is footer-visible (EN+MS). A broader corrections table can extend it later |
+| F24 sitemap index lastmod | ✅ Fixed | `cd99d77` |
+| F25 bare /halal-food 404 | ✅ Fixed | `7fc63c5` — 301 to the food hub |
+| F20–F23, F27, remaining gaps | Open | F20 SQL + 0080 + 0082 await DB access/approval; F3(b) MUIS cert backfill and geocode backfill are data programmes; Gap 6 server-side saves is the largest remaining feature |
 
 ---
 
