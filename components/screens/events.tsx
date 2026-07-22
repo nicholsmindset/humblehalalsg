@@ -1383,7 +1383,7 @@ export function CheckoutScreen() {
 
 /* ========================= HOST AN EVENT WIZARD ========================= */
 interface HostForm {
-  title: string; cat: string; desc: string; date: string; time: string; endTime: string;
+  title: string; cat: string; desc: string; date: string; endDate: string; time: string; endTime: string;
   venue: string; area: string; lat: number | null; lng: number | null; coverUrl: string;
   free: boolean; price: string; tierName: string; cap: string; feeMode: "pass" | "absorb";
   photos: number; prayer: boolean; halal: boolean; prayerNote: string;
@@ -1401,7 +1401,7 @@ export function HostEventScreen() {
   const { navigate, flags, toast } = useApp();
   const [step, setStep] = useState(0);
   const [d, setD] = useState<HostForm>({
-    title: "", cat: "", desc: "", date: "", time: "", endTime: "", venue: "", area: "",
+    title: "", cat: "", desc: "", date: "", endDate: "", time: "", endTime: "", venue: "", area: "",
     lat: null, lng: null, coverUrl: "",
     free: true, price: "", tierName: "Standard", cap: "", feeMode: "pass", photos: 0,
     prayer: false, halal: false, prayerNote: "", gender: "", seating: "", refundPolicy: "", donation: false,
@@ -1465,7 +1465,7 @@ export function HostEventScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: d.title, catId: d.cat, catLabel, desc: d.desc,
-          dateISO: d.date, dateLabel, timeLabel, endTime: d.endTime || undefined,
+          dateISO: d.date, endDateISO: d.endDate || undefined, dateLabel, timeLabel, endTime: d.endTime || undefined,
           venue: d.venue, area: d.area,
           venueCoords: d.lat != null && d.lng != null ? { lat: d.lat, lng: d.lng } : undefined,
           coverUrl: d.coverUrl || undefined,
@@ -1589,6 +1589,9 @@ export function HostEventScreen() {
                 <div className="field">
                   <label htmlFor="ev-date">Date</label>
                   <input id="ev-date" className="input" type="date" value={d.date} onChange={(e) => set("date", e.target.value)} />
+                  <label htmlFor="ev-end-date" style={{ marginTop: 8 }}>Last day (multi-day events)</label>
+                  <input id="ev-end-date" className="input" type="date" min={d.date || undefined} value={d.endDate} onChange={(e) => set("endDate", e.target.value)} />
+                  <span className="hint">Leave blank for a single-day event — listings stay up through the last day.</span>
                   {hijri && (
                     <span className="hint">
                       <Icon name="moon" size={13} /> {hijri}
