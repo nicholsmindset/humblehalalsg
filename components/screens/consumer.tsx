@@ -323,9 +323,9 @@ function HomeFeatureSection({ navigate }: { navigate: (screen: string, params?: 
     <section className="hh-wrap home-feature-section">
       <div className="home-feature-head">
         <span className="eyebrow">One home for halal Singapore</span>
-        <h2>Food. Weddings &amp; catering. Business.</h2>
+        <h2>Food. Weddings. Hawker. Business.</h2>
         <p className="muted">
-          Three hubs, one trust layer — every listing labelled MUIS Certified, Muslim-Owned or self-declared, with a
+          Four ways in, one trust layer — every listing labelled MUIS Certified, Muslim-Owned or self-declared, with a
           halal-confidence score.{" "}
           <button className="link-inline" onClick={() => navigate("verify")} style={{ font: "inherit" }}>How we verify</button>
         </p>
@@ -460,7 +460,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
             <div className="hero-search"><SearchBar value={q} onChange={setQ} onSubmit={doSearch} suggest placeholder={t("hero.search")} /></div>
             <p className="hero-trust">
               <Icon name="shield-check" size={15} />
-              <span><b>MUIS-certified</b> · team-verified · community-trusted</span>
+              <span>Every listing labelled <b>MUIS-certified</b>, Muslim-owned or self-declared — so you know how sure each halal claim is.</span>
               <span className="hero-trust-stat">{placeCount}+ places</span>
             </p>
             {quickChips}

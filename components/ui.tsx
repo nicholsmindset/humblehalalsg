@@ -349,7 +349,7 @@ export function ListingCard({
   const hsPill = (() => {
     const hs = scoreListing(item);
     return (
-      <span className="hs-pill" title={hs.blurb}>
+      <span className="hs-pill" title={hs.blurb} aria-label={`Halal confidence: ${hs.label}. ${hs.blurb}`}>
         <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
         {hs.label}
       </span>
