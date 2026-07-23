@@ -178,7 +178,10 @@ export const AIRPORTS: AirportRec[] = RAW.map(([iata, city, name, country]) => (
 
 const BY_IATA = new Map(AIRPORTS.map((a) => [a.iata, a]));
 
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+// Combining-diacritics range written as ASCII \u escapes (identical to the
+// literal U+0300–U+036F block) so the character class survives bundling and
+// non-UTF-8 script serving unchanged.
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // extra metro neighbours that aren't same-"city" in the dataset (≈ <120 km apart)
 const METRO_EXTRA: Record<string, string[]> = {

@@ -21,6 +21,27 @@
   cannot render meaningful static previews.
 - Clerk (12 files), Supabase (7), Leaflet maps (2) importers exist; expect
   provider/context issues in previews for those.
+- **APP SOURCE FIX (lib/airports.ts:184):** the diacritics-strip regex was
+  written with literal U+0300–U+036F combining chars (`/[̀-ͯ]/g`). esbuild
+  preserves regex literals verbatim, so the bundle carried raw UTF-8 bytes;
+  when a classic `<script src>` loads the bundle from a document WITHOUT a
+  utf-8 charset (validate's [BUNDLE_EXPORT] smoke test does exactly this), the
+  browser decodes them as Latin-1 and the character-class range reverses →
+  "Range out of order" → the whole IIFE throws → window.HumbleHalal never
+  populates → all 270 export as broken. Rewrote the range as ASCII escapes
+  `/[\\u0300-\\u036f]/g` (byte-identical match, encoding-immune). The real DS
+  pane loads previews from `<meta charset=utf-8>` HTML so it was never broken
+  there — but the ASCII form is strictly more robust. If a future edit
+  reintroduces literal combining chars, the smoke test will fail again.
+- **[FONT_MISSING] "Scheherazade New"** — ACCEPTED as system fallback. It is
+  only the *tertiary* fallback in the Arabic font stack (`var(--font-quran),
+  "Amiri", "Scheherazade New", serif`); Amiri (primary) IS shipped, so
+  Scheherazade is never reached. Not worth shipping a second Arabic face.
+- **[TOKENS_MISSING] 7 vars** (--emerald-800, --border, --green, --surface,
+  --green-pale, --shadow-sm, --muted) are referenced by blog.css/styles.css
+  but never defined in the app's own stylesheets (broken in the app too).
+  Defined in `.design-sync/build-css.mjs`'s FONT_BRIDGE :root, mapped to the
+  obvious palette equivalents, so the DS bundle is complete.
 - **Stub aliases** (`.design-sync/tsconfig.json` + `.design-sync/stubs/`,
   wired via `cfg.tsconfig` — the converter's esbuild paths plugin resolves
   them before node_modules): `next/link`→anchor, `next/image`→img,

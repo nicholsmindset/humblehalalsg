@@ -10,5 +10,10 @@
   "cssEntry": ".design-sync/.cache/entry.css",
   "extraFonts": [".design-sync/fonts/fonts.css"],
   "guidelinesGlob": ["docs/design/**/*.md"],
-  "extraEntries": ["./.design-sync/process-shim.ts", "./.design-sync/fixtures.tsx"]
+  "extraEntries": ["./.design-sync/process-shim.ts", "./.design-sync/fixtures.tsx"],
+  "dtsPropsFor": {
+    "Badge": "  /** Halal-status / ownership tier the pill renders. */\n  type: \"muis\" | \"admin\" | \"owned\" | \"friendly\" | \"nopork\" | \"pending\" | \"family\" | \"prayer\";\n  /** Larger pill for headers / detail pages. */\n  lg?: boolean;",
+    "StatCard": "  label: string;\n  value: string | number;\n  /** Signed period-over-period change; null/undefined hides the delta badge (never a fake 0%). */\n  delta?: number | null;\n  deltaLabel?: string;\n  hint?: string;\n  /** Icon name from the shared Icon set (e.g. \"store\", \"eye\", \"dollar\"). */\n  icon?: string;",
+    "ListingCard": "  /** Directory business record. Reads id/slug, name, cuisine, area, rating, reviews, badges, blurb, image, open, distance, featured, franchise/outletCount, claimed. */\n  item: {\n    id: string; slug?: string; name: string; cat?: string; cuisine: string; area: string;\n    rating: number; reviews: number; badges: string[]; blurb: string;\n    image?: string; img?: string; tone?: string; open: boolean; distance?: string;\n    featured?: boolean; franchise?: boolean; outletCount?: number; claimed?: boolean;\n    [key: string]: unknown;\n  };\n  variant?: \"standard\" | \"featured\" | \"row\";\n  /** Analytics hook fired when the card's main link opens. */\n  onOpen?: () => void;"
+  }
 }

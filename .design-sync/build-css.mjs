@@ -26,6 +26,19 @@ const FONT_BRIDGE = `:root {
   --font-libre: 'Libre Caslon Text';
   --font-newsreader: 'Newsreader';
   --font-quran: 'Amiri';
+
+  /* Design-system completion: these custom properties are referenced by
+     styles/blog.css and styles/styles.css but never defined in the app's
+     shipped stylesheets (they render as invalid/unset in the app too). Mapped
+     to their obvious palette equivalents so the DS bundle is self-consistent
+     and blog/coupon components render as intended. */
+  --emerald-800: #0A353B;   /* one step darker than --emerald-700 (#0D424A) */
+  --green: var(--emerald);
+  --green-pale: var(--emerald-50);
+  --surface: var(--white);
+  --border: var(--line);
+  --shadow-sm: var(--sh-sm);
+  --muted: var(--ink-soft);
 }
 `;
 
