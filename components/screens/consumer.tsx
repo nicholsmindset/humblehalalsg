@@ -706,7 +706,6 @@ export function ExploreScreen() {
                   <option value="newest">Newest</option>
                 </select>
               </div>
-              <CertifiedToggle compact />
             </div>
             <div className="viewtoggle">
               <button className={view === "list" ? "active" : ""} onClick={() => setView("list")}><Icon name="list" size={16} /> List</button>
@@ -832,6 +831,9 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
           <Opt k="halal" v="muis" label="MUIS certified / listed" />
         </div>
         <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
+        <div style={{ marginTop: 10 }}>
+          <CertifiedToggle />
+        </div>
       </Section>
       <Section title="Features">
         <div className="stack g8">
