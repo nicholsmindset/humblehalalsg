@@ -41,13 +41,13 @@
 .ota-seg { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--r-md); position: relative; min-width: 0; cursor: pointer; transition: background .12s; }
 .ota-seg:hover { background: var(--cream); }
 .ota-seg + .ota-seg::before { content: ""; position: absolute; left: -2px; top: 12px; bottom: 12px; width: 1px; background: var(--line); }
-.ota-seg .ota-seg-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); }
-.ota-seg .ota-seg-value { font-size: .98rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ota-seg .ota-seg-label { font-size: var(--fs-72); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); }
+.ota-seg .ota-seg-value { font-size: var(--fs-98); font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ota-seg .ota-seg-value.placeholder { color: var(--ink-faint); font-weight: 600; }
-.ota-seg input { border: none; background: none; padding: 0; font-size: .98rem; font-weight: 700; color: var(--ink); width: 100%; outline: none; }
+.ota-seg input { border: none; background: none; padding: 0; font-size: var(--fs-98); font-weight: 700; color: var(--ink); width: 100%; outline: none; }
 .ota-seg input::placeholder { color: var(--ink-faint); font-weight: 600; }
 .ota-search-go { flex: none; align-self: center; }
-.ota-search-go.btn { padding: 0 22px; height: 52px; border-radius: var(--r-md); font-size: 1rem; display: inline-flex; align-items: center; gap: 8px; }
+.ota-search-go.btn { padding: 0 22px; height: 52px; border-radius: var(--r-md); font-size: var(--fs-100); display: inline-flex; align-items: center; gap: 8px; }
 .ota-search-go.icon { width: 52px; padding: 0; justify-content: center; border-radius: 50%; }
 @media (max-width: 760px) {
   .ota-search-row { flex-direction: column; gap: 6px; }
@@ -61,7 +61,7 @@
    old near-transparent-white bg axe computed ~1.06:1. A dark backdrop gives the
    inactive label real contrast (~5.4:1) while the active .on tab stays white. */
 .ota-segtabs { display: inline-flex; gap: 2px; background: rgba(6,40,32,.72); border-radius: var(--r-pill); padding: 4px; margin-bottom: 12px; backdrop-filter: blur(6px); }
-.ota-segtab { border: 0; background: none; color: #eaf2ee; font-weight: 700; font-size: .9rem; padding: 8px 18px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s; }
+.ota-segtab { border: 0; background: none; color: #eaf2ee; font-weight: 700; font-size: var(--fs-90); padding: 8px 18px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s; }
 .ota-segtab.on { background: #fff; color: var(--emerald); }
 .ota-segtab .ai-spark { color: var(--gold); }
 .ota-segtab.on .ai-spark { color: var(--gold-800); }
@@ -70,16 +70,16 @@
 .ota-ai-row { display: flex; gap: 8px; align-items: center; padding: 8px; }
 .ota-ai-input { flex: 1; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 12px 16px; background: var(--cream); }
 .ota-ai-input .ai-spark { color: var(--gold); flex: none; }
-.ota-ai-input input { flex: 1; border: none; background: none; outline: none; font-size: 1rem; color: var(--ink); }
+.ota-ai-input input { flex: 1; border: none; background: none; outline: none; font-size: var(--fs-100); color: var(--ink); }
 .ota-ai-input input::placeholder { color: var(--ink-faint); }
 @media (max-width: 560px) { .ota-ai-row { flex-direction: column; } .ota-ai-input { width: 100%; } .ota-ai-row .btn { width: 100%; } }
 
 /* trip-type / option pills row (Round trip · One way · Non-stop) */
 .ota-optrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 4px 8px 10px; }
 .ota-pill-group { display: inline-flex; background: var(--cream-200); border-radius: var(--r-pill); padding: 4px; gap: 2px; }
-.ota-pill { border: 0; background: none; color: var(--ink-soft); font-weight: 700; font-size: .86rem; padding: 7px 16px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ota-pill { border: 0; background: none; color: var(--ink-soft); font-weight: 700; font-size: var(--fs-86); padding: 7px 16px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .ota-pill.on { background: var(--white); color: var(--emerald); box-shadow: var(--sh-sm); }
-.ota-check { display: inline-flex; align-items: center; gap: 7px; font-size: .88rem; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
+.ota-check { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-88); font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .ota-swap { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); display: grid; place-items: center; color: var(--emerald); box-shadow: var(--sh-sm); cursor: pointer; align-self: center; }
 .ota-swap:hover { background: var(--emerald-50); }
 
@@ -122,18 +122,18 @@
   .ota-cal-month:nth-child(2) { display: none; }
   .ota-cal-month { width: min(322px, calc(100vw - 56px)); }
 }
-.ota-cal-title { text-align: center; font-weight: 700; font-size: .96rem; margin-bottom: 8px; font-family: var(--serif); }
+.ota-cal-title { text-align: center; font-weight: 700; font-size: var(--fs-96); margin-bottom: 8px; font-family: var(--serif); }
 .ota-cal-dows { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
-.ota-cal-dows span { text-align: center; font-size: .68rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; }
+.ota-cal-dows span { text-align: center; font-size: var(--fs-68); font-weight: 700; color: var(--ink-faint); text-transform: uppercase; }
 .ota-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.ota-cal-cell { aspect-ratio: 1; border: 0; background: none; border-radius: var(--r-sm); font-size: .85rem; font-weight: 600; color: var(--ink); cursor: pointer; display: grid; place-items: center; position: relative; }
+.ota-cal-cell { aspect-ratio: 1; border: 0; background: none; border-radius: var(--r-sm); font-size: var(--fs-85); font-weight: 600; color: var(--ink); cursor: pointer; display: grid; place-items: center; position: relative; }
 .ota-cal-cell:hover:not(:disabled) { background: var(--emerald-50); }
 .ota-cal-cell:disabled { color: var(--line-strong); cursor: default; }
 .ota-cal-cell.in-range { background: var(--emerald-50); border-radius: 0; }
 .ota-cal-cell.start { background: var(--emerald); color: #fff; border-radius: var(--r-sm) 0 0 var(--r-sm); }
 .ota-cal-cell.end { background: var(--emerald); color: #fff; border-radius: 0 var(--r-sm) var(--r-sm) 0; }
 .ota-cal-cell.start.end { border-radius: var(--r-sm); }
-.ota-cal-hint { margin-top: 10px; font-size: .78rem; color: var(--ink-faint); text-align: center; }
+.ota-cal-hint { margin-top: 10px; font-size: var(--fs-78); color: var(--ink-faint); text-align: center; }
 
 /* ---------------------------------------------------------------
    OCCUPANCY STEPPER
@@ -141,8 +141,8 @@
 .ota-stepper { min-width: 240px; display: flex; flex-direction: column; gap: 4px; }
 .ota-step-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 2px; }
 .ota-step-row + .ota-step-row { border-top: 1px solid var(--line); }
-.ota-step-meta .ota-step-label { font-weight: 700; font-size: .95rem; color: var(--ink); }
-.ota-step-meta .ota-step-sub { font-size: .78rem; color: var(--ink-faint); }
+.ota-step-meta .ota-step-label { font-weight: 700; font-size: var(--fs-95); color: var(--ink); }
+.ota-step-meta .ota-step-sub { font-size: var(--fs-78); color: var(--ink-faint); }
 .ota-step-ctrl { display: inline-flex; align-items: center; gap: 12px; }
 .ota-step-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--emerald); background: var(--white); color: var(--emerald); display: grid; place-items: center; cursor: pointer; }
 .ota-step-btn:disabled { border-color: var(--line-strong); color: var(--line-strong); cursor: default; }
@@ -155,9 +155,9 @@
 .ota-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 @media (max-width: 760px) { .ota-features { grid-template-columns: 1fr; } }
 .ota-feature { display: flex; flex-direction: column; gap: 8px; padding: 22px; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); }
-.ota-feature .ota-feature-ico { width: 44px; height: 44px; border-radius: 12px; background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; }
-.ota-feature h3 { font-size: 1.08rem; }
-.ota-feature p { font-size: .9rem; color: var(--ink-soft); line-height: 1.55; }
+.ota-feature .ota-feature-ico { width: 44px; height: 44px; border-radius: var(--r-12); background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; }
+.ota-feature h3 { font-size: var(--fs-108); }
+.ota-feature p { font-size: var(--fs-90); color: var(--ink-soft); line-height: 1.55; }
 
 /* ---------------------------------------------------------------
    SMART HIGHLIGHTS (AI cards with emerald→gold gradient border)
@@ -165,24 +165,24 @@
 .ota-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .ota-highlight { position: relative; border-radius: var(--r-lg); padding: 1.5px; background: linear-gradient(120deg, var(--emerald), var(--gold)); box-shadow: var(--sh-sm); }
 .ota-highlight-inner { background: var(--white); border-radius: calc(var(--r-lg) - 2px); padding: 16px; height: 100%; display: flex; flex-direction: column; gap: 8px; }
-.ota-highlight .ota-hl-ico { width: 34px; height: 34px; border-radius: 9px; background: var(--gold-50); color: var(--gold-800); display: grid; place-items: center; }
-.ota-highlight h4 { font-size: .98rem; }
-.ota-highlight p { font-size: .85rem; color: var(--ink-soft); line-height: 1.5; }
+.ota-highlight .ota-hl-ico { width: 34px; height: 34px; border-radius: var(--r-9); background: var(--gold-50); color: var(--gold-800); display: grid; place-items: center; }
+.ota-highlight h4 { font-size: var(--fs-98); }
+.ota-highlight p { font-size: var(--fs-85); color: var(--ink-soft); line-height: 1.5; }
 .ota-highlights-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.ota-highlights-head h2 { font-size: 1.25rem; }
+.ota-highlights-head h2 { font-size: var(--fs-125); }
 .ota-highlights-head .ai-spark { color: var(--gold); }
 
 /* ---------------------------------------------------------------
    AI ANSWER CALLOUT (Ask-AI result framing)
 --------------------------------------------------------------- */
 .ota-ai-answer { display: flex; gap: 12px; padding: 16px 18px; background: var(--emerald-50); border: 1px solid var(--emerald-100); border-radius: var(--r-lg); margin-bottom: 18px; }
-.ota-ai-answer .ota-ai-ico { width: 32px; height: 32px; border-radius: 9px; background: var(--white); color: var(--emerald); display: grid; place-items: center; flex: none; box-shadow: var(--sh-sm); }
-.ota-ai-answer p { font-size: .95rem; line-height: 1.6; color: var(--ink); }
+.ota-ai-answer .ota-ai-ico { width: 32px; height: 32px; border-radius: var(--r-9); background: var(--white); color: var(--emerald); display: grid; place-items: center; flex: none; box-shadow: var(--sh-sm); }
+.ota-ai-answer p { font-size: var(--fs-95); line-height: 1.6; color: var(--ink); }
 
 /* ---------------------------------------------------------------
    IMAGE GALLERY — "show all pictures" overlay tile
 --------------------------------------------------------------- */
-.ota-gallery-more { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.94); color: var(--ink); font-weight: 700; font-size: .84rem; padding: 8px 14px; border-radius: var(--r-pill); border: 0; box-shadow: var(--sh-md); cursor: pointer; }
+.ota-gallery-more { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.94); color: var(--ink); font-weight: 700; font-size: var(--fs-84); padding: 8px 14px; border-radius: var(--r-pill); border: 0; box-shadow: var(--sh-md); cursor: pointer; }
 .ota-gallery-more:hover { background: #fff; }
 .travel-gallery { position: relative; }
 
@@ -211,20 +211,20 @@
 .ota-stack > * + * { margin-top: 40px; }
 .ota-recent { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-lg); min-width: 240px; cursor: pointer; transition: box-shadow .12s, transform .12s; }
 .ota-recent:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
-.ota-recent .ota-recent-ico { width: 42px; height: 42px; border-radius: 11px; background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; flex: none; }
-.ota-recent .ota-recent-main p:first-child { font-weight: 700; font-size: .92rem; color: var(--ink); }
-.ota-recent .ota-recent-main p { font-size: .8rem; color: var(--ink-soft); }
+.ota-recent .ota-recent-ico { width: 42px; height: 42px; border-radius: var(--r-11); background: var(--emerald-50); color: var(--emerald); display: grid; place-items: center; flex: none; }
+.ota-recent .ota-recent-main p:first-child { font-weight: 700; font-size: var(--fs-92); color: var(--ink); }
+.ota-recent .ota-recent-main p { font-size: var(--fs-80); color: var(--ink-soft); }
 
 /* ── unified /travel landing (Stays | Flights) ────────────────────────────── */
 .trv-trust { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: center; margin-top: 14px; }
-.trv-trust-pill { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); padding: 5px 11px; border-radius: var(--r-pill); }
+.trv-trust-pill { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-80); font-weight: 600; color: #fff; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); padding: 5px 11px; border-radius: var(--r-pill); }
 /* top-level vertical switcher — larger + centered, distinct from the Search/Ask-AI sub-tabs */
 .ota-segtabs--top { gap: 8px; margin-top: 18px; justify-content: center; }
-.ota-segtabs--top .ota-segtab { font-size: 1rem; padding: 11px 22px; }
+.ota-segtabs--top .ota-segtab { font-size: var(--fs-100); padding: 11px 22px; }
 /* embedded vertical: search card sits just below the shared hero */
 .trv-embedded > .hh-wrap, .flt-embedded > .hh-wrap { position: relative; margin-top: 18px; }
 /* plan-by-purpose cards (links built on .flt-benefit) */
 .trv-purpose { display: block; text-decoration: none; color: inherit; transition: box-shadow .12s, transform .12s; }
 .trv-purpose:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
-.trv-purpose-cta { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: .82rem; font-weight: 700; color: var(--emerald); }
-@media (max-width: 640px) { .trv-trust { gap: 6px 10px; } .trv-trust-pill { font-size: .74rem; padding: 4px 9px; } }
+.trv-purpose-cta { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: var(--fs-82); font-weight: 700; color: var(--emerald); }
+@media (max-width: 640px) { .trv-trust { gap: 6px 10px; } .trv-trust-pill { font-size: var(--fs-74); padding: 4px 9px; } }

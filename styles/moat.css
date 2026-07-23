@@ -14,14 +14,14 @@
     radial-gradient(closest-side, var(--white) 76%, transparent 78% 100%),
     conic-gradient(var(--tone) calc(var(--pct) * 1%), var(--line-strong) 0);
 }
-.halal-score .hs-ring strong { font-size: .92rem; font-weight: 800; color: var(--ink); font-family: var(--sans); }
-.halal-score .hs-tier { font-weight: 700; font-size: .95rem; color: var(--ink); }
+.halal-score .hs-ring strong { font-size: var(--fs-92); font-weight: 800; color: var(--ink); font-family: var(--sans); }
+.halal-score .hs-tier { font-weight: 700; font-size: var(--fs-95); color: var(--ink); }
 /* compact score pill on cards */
 .hs-pill {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 9px 4px 7px; border-radius: var(--r-pill);
   background: var(--emerald-50); color: var(--emerald); border: 1px solid var(--emerald-100);
-  font-size: .74rem; font-weight: 800; line-height: 1; white-space: nowrap;
+  font-size: var(--fs-74); font-weight: 800; line-height: 1; white-space: nowrap;
 }
 .hs-pill .hs-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 
@@ -38,11 +38,11 @@
 .hc-chip .hc-score {
   width: 34px; height: 34px; border-radius: 50%; flex: none;
   display: grid; place-items: center;
-  color: #fff; font-weight: 800; font-size: .9rem; font-family: var(--sans);
+  color: #fff; font-weight: 800; font-size: var(--fs-90); font-family: var(--sans);
 }
-.hc-chip .hc-label { font-weight: 700; font-size: .92rem; line-height: 1.1; }
+.hc-chip .hc-label { font-weight: 700; font-size: var(--fs-92); line-height: 1.1; }
 .hc-chip .hc-sub {
-  font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  font-size: var(--fs-68); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   color: var(--ink-faint); margin-left: 2px;
 }
 .hc-chip .hc-caret { color: var(--ink-faint); transition: transform .2s; flex: none; }
@@ -52,9 +52,9 @@
   background: var(--cream-100, var(--emerald-50)); border: 1px solid var(--line);
   animation: prayerdrop .2s ease;
 }
-.hc-panel .hc-blurb { font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
+.hc-panel .hc-blurb { font-size: var(--fs-92); color: var(--ink-soft); line-height: 1.5; }
 .hc-reasons { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 7px; }
-.hc-reasons li { display: flex; align-items: flex-start; gap: 8px; font-size: .88rem; color: var(--ink-soft); line-height: 1.45; }
+.hc-reasons li { display: flex; align-items: flex-start; gap: 8px; font-size: var(--fs-88); color: var(--ink-soft); line-height: 1.45; }
 .hc-reasons li svg { color: var(--emerald); flex: none; margin-top: 2px; }
 
 /* premium offers & promotions block (DetailOverview, offers_block gate) */
@@ -65,10 +65,10 @@
 }
 .offers-block .offers-head {
   display: flex; align-items: center; gap: 8px;
-  font-weight: 800; font-size: .95rem; color: var(--gold-800);
+  font-weight: 800; font-size: var(--fs-95); color: var(--gold-800);
 }
 .offers-block .offers-head svg { color: var(--gold-800); flex: none; }
-.offers-block .offers-body { margin-top: 8px; font-size: .92rem; color: var(--ink-soft); line-height: 1.5; }
+.offers-block .offers-body { margin-top: 8px; font-size: var(--fs-92); color: var(--ink-soft); line-height: 1.5; }
 
 /* ===================== PRAYER STRIP ===================== */
 .prayer-strip {
@@ -79,20 +79,20 @@
 @media (max-width: 860px){ .prayer-strip { top: var(--mobilebar-h); } }
 .prayer-strip-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; height:42px; }
 .prayer-lead { display:flex; align-items:center; gap:10px; background:none; border:none; color:inherit; cursor:pointer; padding:4px 0; }
-.prayer-ico { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.14); display:grid; place-items:center; color:var(--gold); flex:none; }
+.prayer-ico { width:26px; height:26px; border-radius: var(--r-8); background:rgba(255,255,255,.14); display:grid; place-items:center; color:var(--gold); flex:none; }
 .prayer-next { display:flex; flex-direction:column; line-height:1.05; text-align:left; }
 /* High-contrast next-prayer text on the emerald gradient (audit #9 — ≥4.5:1).
    Scoped to `.prayer-strip` so tools.css's global `.prayer-next strong{color:emerald}`
    (used on the tools page) can't override the header text to green-on-emerald. */
-.prayer-strip .prayer-next strong { font-size:.95rem; font-weight:800; color:#fff !important; text-shadow:0 1px 6px rgba(8,40,32,.5); }
-.prayer-strip .prayer-sub { font-size:.66rem; color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+.prayer-strip .prayer-next strong { font-size: var(--fs-95); font-weight:800; color:#fff !important; text-shadow:0 1px 6px rgba(8,40,32,.5); }
+.prayer-strip .prayer-sub { font-size: var(--fs-66); color:#fff; opacity:.92; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
 .prayer-caret { transition: transform .2s; color:#A9C8BD; }
 .prayer-caret.up { transform: rotate(180deg); }
 /* min-width:0 lets this flex item shrink below its content so the span's
    ellipsis engages — without it the default `min-width:auto` pins the button at
    intrinsic width, so a long label ("Find masjid near you") or mosque name
    overflows the 320px viewport by ~10px (intermittent mobile-guard failure). */
-.prayer-mosque { display:flex; align-items:center; gap:6px; min-width:0; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size:.82rem; cursor:pointer; transition: background .15s; max-width:72%; }
+.prayer-mosque { display:flex; align-items:center; gap:6px; min-width:0; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); color:inherit; border-radius:var(--r-pill); padding:6px 13px; font-size: var(--fs-82); cursor:pointer; transition: background .15s; max-width:72%; }
 .prayer-mosque:hover { background:rgba(255,255,255,.18); }
 .prayer-mosque span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .prayer-mosque strong { font-weight:700; }
@@ -107,39 +107,39 @@
 @media (max-width:560px){ .prayer-times { grid-template-columns:repeat(3,1fr); } }
 .prayer-cell { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-md); padding:10px 8px; text-align:center; }
 .prayer-cell.now { background:var(--gold); border-color:var(--gold); color:#3a2c08; box-shadow:0 4px 14px rgba(214,168,79,.35); }
-.pc-name { display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; opacity:.85; }
-.pc-time { display:block; font-family:var(--serif); font-weight:700; font-size:1.15rem; margin-top:3px; }
+.pc-name { display:block; font-size: var(--fs-72); font-weight:700; text-transform:uppercase; letter-spacing:.04em; opacity:.85; }
+.pc-time { display:block; font-family:var(--serif); font-weight:700; font-size: var(--fs-115); margin-top:3px; }
 .prayer-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; flex-wrap:wrap; }
-.prayer-foot .faint { color:#A9C8BD; font-size:.8rem; }
+.prayer-foot .faint { color:#A9C8BD; font-size: var(--fs-80); }
 .prayer-foot .btn-soft { background:rgba(255,255,255,.14); color:#fff; }
 .prayer-foot .btn-soft:hover { background:rgba(255,255,255,.22); }
 .prayer-foot .btn-ghost { color:#CFE0DA; }
 .prayer-foot .btn-ghost:hover { background:rgba(255,255,255,.1); color:#fff; }
 
 /* ===================== CERTIFIED-ONLY TOGGLE ===================== */
-.cert-toggle { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line-strong); background:var(--white); border-radius:var(--r-pill); padding:7px 12px; font-weight:600; font-size:.84rem; color:var(--ink-soft); cursor:pointer; transition:all .15s; white-space:nowrap; }
+.cert-toggle { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line-strong); background:var(--white); border-radius:var(--r-pill); padding:7px 12px; font-weight:600; font-size: var(--fs-84); color:var(--ink-soft); cursor:pointer; transition:all .15s; white-space:nowrap; }
 .cert-toggle:hover { border-color:var(--emerald-300); }
 .cert-toggle svg { color:var(--ink-faint); transition:color .15s; }
-.cert-switch { width:32px; height:18px; border-radius:999px; background:var(--line-strong); position:relative; transition:background .18s; flex:none; }
+.cert-switch { width:32px; height:18px; border-radius: var(--r-999); background:var(--line-strong); position:relative; transition:background .18s; flex:none; }
 .cert-knob { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:var(--sh-sm); transition:transform .18s; }
 .cert-toggle.on { border-color:var(--emerald); background:var(--emerald-50); color:var(--emerald); }
 .cert-toggle.on svg { color:var(--emerald); }
 .cert-toggle.on .cert-switch { background:var(--emerald); }
 .cert-toggle.on .cert-knob { transform:translateX(14px); }
 .cert-toggle.compact { padding:8px 10px; }
-.cert-active-note { display:inline-flex; align-items:center; gap:4px; margin-left:10px; color:var(--emerald); font-size:.8rem; font-weight:700; }
+.cert-active-note { display:inline-flex; align-items:center; gap:4px; margin-left:10px; color:var(--emerald); font-size: var(--fs-80); font-weight:700; }
 .cert-active-note svg { color:var(--emerald); }
 
 /* ===================== ONBOARDING ===================== */
 .modal.onboard { max-width: 440px; }
 .onboard-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-.onboard-head .mark { width:38px; height:38px; border-radius:11px; background:var(--emerald); color:var(--gold); display:grid; place-items:center; }
+.onboard-head .mark { width:38px; height:38px; border-radius: var(--r-11); background:var(--emerald); color:var(--gold); display:grid; place-items:center; }
 .onboard-feats { display:flex; flex-direction:column; gap:10px; margin-top:18px; }
-.onboard-feat { display:flex; align-items:center; gap:11px; font-weight:600; font-size:.92rem; }
+.onboard-feat { display:flex; align-items:center; gap:11px; font-weight:600; font-size: var(--fs-92); }
 .onboard-regions { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
-.onboard-chip.region { padding:7px 13px; font-size:.82rem; }
+.onboard-chip.region { padding:7px 13px; font-size: var(--fs-82); }
 .onboard-areas { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; max-height:220px; overflow-y:auto; padding-bottom:4px; align-content:flex-start; }
-.onboard-chip { border:1px solid var(--line-strong); background:var(--white); border-radius:var(--r-pill); padding:9px 15px; font-size:.88rem; font-weight:600; color:var(--ink-soft); cursor:pointer; transition:all .14s; }
+.onboard-chip { border:1px solid var(--line-strong); background:var(--white); border-radius:var(--r-pill); padding:9px 15px; font-size: var(--fs-88); font-weight:600; color:var(--ink-soft); cursor:pointer; transition:all .14s; }
 .onboard-chip:hover { border-color:var(--emerald-300); }
 .onboard-chip.on { background:var(--emerald); color:var(--cream); border-color:var(--emerald); }
 
@@ -149,17 +149,17 @@
 .verif-card.declared { background:var(--gold-50); border-color:var(--gold-100); }
 .verif-card.pending { background:#F4F2EC; border-color:var(--line-strong); }
 .verif-card-main { display:flex; gap:14px; padding:16px 18px; align-items:flex-start; }
-.verif-seal { width:46px; height:46px; border-radius:13px; background:var(--emerald); color:#fff; display:grid; place-items:center; flex:none; box-shadow:var(--sh-emerald); }
+.verif-seal { width:46px; height:46px; border-radius: var(--r-13); background:var(--emerald); color:#fff; display:grid; place-items:center; flex:none; box-shadow:var(--sh-emerald); }
 .verif-seal.warn { background:var(--gold); color:#3a2c08; box-shadow:0 8px 20px rgba(214,168,79,.3); }
 .verif-card.pending .verif-seal.warn { background:#CFC7B2; color:#5C5440; box-shadow:none; }
-.verif-fresh { display:inline-flex; align-items:center; gap:4px; background:var(--emerald); color:#fff; font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:999px; }
-.verif-expiring { display:inline-flex; align-items:center; gap:4px; background:var(--gold-100); color:var(--gold-800); font-size:.7rem; font-weight:700; padding:3px 9px; border-radius:999px; }
+.verif-fresh { display:inline-flex; align-items:center; gap:4px; background:var(--emerald); color:#fff; font-size: var(--fs-70); font-weight:700; padding:3px 9px; border-radius: var(--r-999); }
+.verif-expiring { display:inline-flex; align-items:center; gap:4px; background:var(--gold-100); color:var(--gold-800); font-size: var(--fs-70); font-weight:700; padding:3px 9px; border-radius: var(--r-999); }
 .verif-meta { display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; }
-.verif-metaitem { font-size:.84rem; }
-.verif-metaitem .faint { font-size:.78rem; }
-.verif-changed { display:inline-flex; align-items:center; gap:6px; margin-top:10px; color:var(--danger); background:var(--danger-50); font-size:.8rem; font-weight:700; padding:5px 10px; border-radius:8px; }
+.verif-metaitem { font-size: var(--fs-84); }
+.verif-metaitem .faint { font-size: var(--fs-78); }
+.verif-changed { display:inline-flex; align-items:center; gap:6px; margin-top:10px; color:var(--danger); background:var(--danger-50); font-size: var(--fs-80); font-weight:700; padding:5px 10px; border-radius: var(--r-8); }
 .verif-card-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 18px; border-top:1px solid rgba(0,0,0,.05); background:rgba(255,255,255,.5); flex-wrap:wrap; }
-.verif-confirm-count { font-size:.86rem; color:var(--ink-soft); display:inline-flex; align-items:center; gap:6px; }
+.verif-confirm-count { font-size: var(--fs-86); color:var(--ink-soft); display:inline-flex; align-items:center; gap:6px; }
 .verif-confirm-count svg { color:var(--emerald); }
 .verif-confirm-count strong { color:var(--ink); }
 
@@ -170,8 +170,8 @@
 @media (max-width:520px){ .prayer-card-grid { grid-template-columns:1fr; } }
 .pcg-item { display:flex; gap:10px; align-items:flex-start; }
 .pcg-item svg { color:var(--emerald); margin-top:2px; flex:none; }
-.pcg-item .faint { font-size:.76rem; }
-.pcg-item > div > div { font-size:.9rem; }
+.pcg-item .faint { font-size: var(--fs-76); }
+.pcg-item > div > div { font-size: var(--fs-90); }
 
 /* ===================== STICKY MOBILE CONTACT BAR ===================== */
 .detail-stickybar { position:fixed; left:0; right:0; bottom:var(--tab-h); z-index:55; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); border-top:1px solid var(--line); display:flex; gap:8px; padding:10px 14px; box-shadow:0 -6px 20px rgba(31,41,51,.07); }
@@ -191,21 +191,21 @@
 
 /* ── Halal Confidence ring (listing header, mock-up spec) ── */
 .hc-ring { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; flex: none; }
-.hc-ring-label { font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.1; text-align: center; max-width: 86px; }
+.hc-ring-label { font-size: var(--fs-68); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.1; text-align: center; max-width: 86px; }
 
 /* ── Trust at a glance — 4-row status checklist (mock-up spec) ── */
 .tg-card { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--white); box-shadow: var(--sh-sm); overflow: hidden; }
-.tg-head { display: flex; align-items: center; gap: 7px; padding: 10px 14px; font-weight: 800; font-size: .82rem; letter-spacing: .05em; text-transform: uppercase; color: var(--emerald); background: var(--emerald-50); border-bottom: 1px solid var(--line); }
-.tg-row { display: grid; grid-template-columns: 26px minmax(110px, auto) 1fr auto; gap: 10px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.tg-head { display: flex; align-items: center; gap: 7px; padding: 10px 14px; font-weight: 800; font-size: var(--fs-82); letter-spacing: .05em; text-transform: uppercase; color: var(--emerald); background: var(--emerald-50); border-bottom: 1px solid var(--line); }
+.tg-row { display: grid; grid-template-columns: 26px minmax(110px, auto) 1fr auto; gap: 10px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--fs-90); }
 .tg-row:last-child { border-bottom: 0; }
-.tg-state { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; align-self: center; font-weight: 800; font-size: .8rem; flex: none; }
+.tg-state { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; align-self: center; font-weight: 800; font-size: var(--fs-80); flex: none; }
 .tg-yes .tg-state { background: var(--emerald); color: #fff; }
 .tg-self .tg-state { background: var(--gold-100); color: var(--gold-700); }
 .tg-no .tg-state { background: var(--cream-200); color: var(--ink-faint); }
 .tg-label { font-weight: 700; color: var(--ink); }
 .tg-no .tg-label { color: var(--ink-soft); }
-.tg-sub { color: var(--ink-faint); font-size: .82rem; line-height: 1.4; }
-.tg-verdict { font-weight: 800; font-size: .78rem; white-space: nowrap; }
+.tg-sub { color: var(--ink-faint); font-size: var(--fs-82); line-height: 1.4; }
+.tg-verdict { font-weight: 800; font-size: var(--fs-78); white-space: nowrap; }
 .tg-yes .tg-verdict { color: var(--emerald); }
 .tg-self .tg-verdict { color: var(--gold-700); }
 .tg-no .tg-verdict { color: var(--ink-faint); }
@@ -217,15 +217,15 @@
 /* ── Help keep this accurate (community actions panel) ── */
 .tg-help { margin-top: 14px; padding: 14px; border-radius: var(--r-md); background: var(--emerald-50); border: 1px solid var(--emerald-100); }
 .tg-help-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
-.tg-help-head strong { font-size: .98rem; }
-.tg-help-head .muted { font-size: .84rem; }
+.tg-help-head strong { font-size: var(--fs-98); }
+.tg-help-head .muted { font-size: var(--fs-84); }
 
 /* ── Trust at a glance v2 — compact mini-card row (mock-up spec) ── */
 .tg2 { margin-top: 16px; }
 .tg2-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .tg2-head svg { color: var(--emerald); align-self: center; flex: none; }
-.tg2-head strong { font-size: 1rem; }
-.tg2-head .muted { font-size: .82rem; }
+.tg2-head strong { font-size: var(--fs-100); }
+.tg2-head .muted { font-size: var(--fs-82); }
 .tg2-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .tg2-cell {
   display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
@@ -239,23 +239,23 @@ a.tg2-cell:hover { border-color: var(--emerald-300); box-shadow: var(--sh-md); }
 .tg2-ico.tg2-yes { background: var(--emerald); color: #fff; }
 .tg2-ico.tg2-pending { background: var(--gold-100); color: var(--gold-700); }
 .tg2-ico.tg2-info { background: var(--cream-200); color: var(--ink-faint); }
-.tg2-label { font-weight: 700; font-size: .82rem; color: var(--ink); line-height: 1.2; }
-.tg2-verdict { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: .76rem; }
+.tg2-label { font-weight: 700; font-size: var(--fs-82); color: var(--ink); line-height: 1.2; }
+.tg2-verdict { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: var(--fs-76); }
 .tg2-v-yes { color: var(--emerald); }
 .tg2-v-pending { color: var(--gold-700); }
 .tg2-v-info { color: var(--ink-faint); font-weight: 600; }
-.tg2-i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid currentColor; display: inline-grid; place-items: center; font-size: .6rem; font-style: normal; font-weight: 800; line-height: 1; }
+.tg2-i { width: 13px; height: 13px; border-radius: 50%; border: 1px solid currentColor; display: inline-grid; place-items: center; font-size: var(--fs-60); font-style: normal; font-weight: 800; line-height: 1; }
 @media (max-width: 700px) { .tg2-row { grid-template-columns: 1fr 1fr; } }
 
 /* ── Listing header address line ── */
-.detail-addr { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; color: var(--ink-soft); font-size: .92rem; }
+.detail-addr { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; color: var(--ink-soft); font-size: var(--fs-92); }
 .detail-addr svg { color: var(--emerald); align-self: center; flex: none; }
-.detail-addr .link-inline { font-weight: 700; font-size: .86rem; }
+.detail-addr .link-inline { font-weight: 700; font-size: var(--fs-86); }
 
 /* ── Photo strip hero (mock-up) ── */
 .detail-photostrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; height: 220px; }
 .detail-photostrip .dps-cell { position: relative; border: 0; padding: 0; cursor: pointer; overflow: hidden; background: var(--cream-200); }
-.detail-photostrip .dps-more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff; border-radius: var(--r-pill); padding: 4px 10px; font-size: .78rem; font-weight: 700; }
+.detail-photostrip .dps-more { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.55); color: #fff; border-radius: var(--r-pill); padding: 4px 10px; font-size: var(--fs-78); font-weight: 700; }
 @media (max-width: 760px) { .detail-photostrip { grid-template-columns: 1fr 1fr; height: 180px; } .detail-photostrip .dps-cell:nth-child(n+3) { display: none; } }
 
 /* Desktop shows the score in the sidebar card — avoid a duplicate header ring. */

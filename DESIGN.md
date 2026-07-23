@@ -195,6 +195,11 @@ single CTA. If two things are fighting to be gold, one of them is wrong.
 **Character:** An editorial serif + humanist grotesk pairing that reads considered and trustworthy
 rather than techy or promotional. Distinctive and intentional — explicitly not Inter/Geist/Arial.
 
+**Tokens:** concrete sizes are exposed as `--fs-*` CSS custom properties (e.g. `--fs-90` = .9rem)
+in `styles/styles.css` — a value-preserving tokenization of the incumbent scale. The five named
+roles above are the intended ramp; consolidate the `--fs-*` steps toward them in a later
+visual-QA pass. Bespoke hero/display sizes stay as `clamp()` expressions.
+
 ### Hierarchy
 - **Display** (Spectral 600, clamp(2.2rem, 5vw, 4.2rem), line-height 1.12, letter-spacing -0.01em):
   hero and page titles.
@@ -299,6 +304,8 @@ reviews — never a fabricated 4.5.
 - **Do** keep the graduated badge hierarchy visually honest: `MUIS Certified` is solid and singular;
   self-declared tiers read as muted and clearly not-official. This mirrors PRODUCT.md's positioning
   and must never be blurred.
+- **Do** use the `--fs-*` type tokens and `--r-*` radius tokens instead of raw `rem`/`px`
+  literals; extend the token set intentionally rather than hand-typing a new value.
 - **Do** resolve brand color from the CSS custom properties in `styles/styles.css`, and keep AA
   contrast (the codebase already encodes hard-won AA fixes — e.g. gold text uses `saffron-800`,
   gold buttons use near-black text).
