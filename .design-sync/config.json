@@ -11,6 +11,10 @@
   "extraFonts": [".design-sync/fonts/fonts.css"],
   "guidelinesGlob": ["docs/design/**/*.md"],
   "extraEntries": ["./.design-sync/process-shim.ts", "./.design-sync/fixtures.tsx"],
+  "componentSrcMap": {
+    "LeafletMap": null,
+    "InsightsChart": null
+  },
   "dtsPropsFor": {
     "Badge": "  /** Halal-status / ownership tier the pill renders. */\n  type: \"muis\" | \"admin\" | \"owned\" | \"friendly\" | \"nopork\" | \"pending\" | \"family\" | \"prayer\";\n  /** Larger pill for headers / detail pages. */\n  lg?: boolean;",
     "StatCard": "  label: string;\n  value: string | number;\n  /** Signed period-over-period change; null/undefined hides the delta badge (never a fake 0%). */\n  delta?: number | null;\n  deltaLabel?: string;\n  hint?: string;\n  /** Icon name from the shared Icon set (e.g. \"store\", \"eye\", \"dollar\"). */\n  icon?: string;",
