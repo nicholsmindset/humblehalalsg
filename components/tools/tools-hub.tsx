@@ -66,6 +66,13 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
   const featured = [...live].sort((a, b) => toolScore(a) - toolScore(b)).slice(0, 4);
   const localCount = live.filter((t) => t.privateLocal).length;
 
+  // The search box + chips filter the Tool library, which sits BELOW the
+  // (deliberately unfiltered) featured and daily-rhythm sections — without a
+  // scroll, interacting with them looks like it does nothing. Same reveal the
+  // intent cards already use.
+  const revealCatalog = () =>
+    document.querySelector(".tools-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   return (
     <div className="tools-hub">
       <section className="tools-hero hh-pattern">
@@ -110,7 +117,12 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
           <Icon name="search" size={19} />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              // Reveal the results once per search (first keystroke), not on
+              // every character — smooth-scrolling mid-typing is jarring.
+              if (!query.trim() && e.target.value.trim()) revealCatalog();
+              setQuery(e.target.value);
+            }}
             placeholder="Search Quran, zakat, prayer times, qibla, ingredients..."
             aria-label="Search tools"
           />
@@ -121,18 +133,18 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
           )}
         </div>
         <div className="tools-category-pills" role="group" aria-label="Tool categories">
-          <button type="button" aria-pressed={category === "All"} className={category === "All" ? "on" : ""} onClick={() => setCategory("All")}>
+          <button type="button" aria-pressed={category === "All"} className={category === "All" ? "on" : ""} onClick={() => { setCategory("All"); revealCatalog(); }}>
             All <span>{live.length}</span>
           </button>
           {CATEGORY_ORDER.map((cat) => (
-            <button key={cat} type="button" aria-pressed={category === cat} className={category === cat ? "on" : ""} onClick={() => setCategory(cat)}>
+            <button key={cat} type="button" aria-pressed={category === cat} className={category === cat ? "on" : ""} onClick={() => { setCategory(cat); revealCatalog(); }}>
               {cat} <span>{live.filter((t) => t.category === cat).length}</span>
             </button>
           ))}
         </div>
         <div className="tools-quick-row" aria-label="Popular tool searches">
           {QUICK_PROMPTS.map((q) => (
-            <button key={q} type="button" onClick={() => setQuery(q)}>
+            <button key={q} type="button" onClick={() => { setQuery(q); revealCatalog(); }}>
               {q}
             </button>
           ))}
