@@ -8,9 +8,16 @@
   "tsconfig": ".design-sync/tsconfig.json",
   "buildCmd": "node .design-sync/build-css.mjs",
   "cssEntry": ".design-sync/.cache/entry.css",
-  "extraFonts": [".design-sync/fonts/fonts.css"],
-  "guidelinesGlob": ["docs/design/**/*.md"],
-  "extraEntries": ["./.design-sync/process-shim.ts", "./.design-sync/fixtures.tsx"],
+  "extraFonts": [
+    ".design-sync/fonts/fonts.css"
+  ],
+  "guidelinesGlob": [
+    "docs/design/**/*.md"
+  ],
+  "extraEntries": [
+    "./.design-sync/process-shim.ts",
+    "./.design-sync/fixtures.tsx"
+  ],
   "componentSrcMap": {
     "LeafletMap": null,
     "InsightsChart": null
@@ -18,6 +25,45 @@
   "dtsPropsFor": {
     "Badge": "  /** Halal-status / ownership tier the pill renders. */\n  type: \"muis\" | \"admin\" | \"owned\" | \"friendly\" | \"nopork\" | \"pending\" | \"family\" | \"prayer\";\n  /** Larger pill for headers / detail pages. */\n  lg?: boolean;",
     "StatCard": "  label: string;\n  value: string | number;\n  /** Signed period-over-period change; null/undefined hides the delta badge (never a fake 0%). */\n  delta?: number | null;\n  deltaLabel?: string;\n  hint?: string;\n  /** Icon name from the shared Icon set (e.g. \"store\", \"eye\", \"dollar\"). */\n  icon?: string;",
-    "ListingCard": "  /** Directory business record. Reads id/slug, name, cuisine, area, rating, reviews, badges, blurb, image, open, distance, featured, franchise/outletCount, claimed. */\n  item: {\n    id: string; slug?: string; name: string; cat?: string; cuisine: string; area: string;\n    rating: number; reviews: number; badges: string[]; blurb: string;\n    image?: string; img?: string; tone?: string; open: boolean; distance?: string;\n    featured?: boolean; franchise?: boolean; outletCount?: number; claimed?: boolean;\n    [key: string]: unknown;\n  };\n  variant?: \"standard\" | \"featured\" | \"row\";\n  /** Analytics hook fired when the card's main link opens. */\n  onOpen?: () => void;"
-  }
+    "ListingCard": "  /** Directory business record. Reads id/slug, name, cuisine, area, rating, reviews, badges, blurb, image, open, distance, featured, franchise/outletCount, claimed. */\n  item: {\n    id: string; slug?: string; name: string; cat?: string; cuisine: string; area: string;\n    rating: number; reviews: number; badges: string[]; blurb: string;\n    image?: string; img?: string; tone?: string; open: boolean; distance?: string;\n    featured?: boolean; franchise?: boolean; outletCount?: number; claimed?: boolean;\n    [key: string]: unknown;\n  };\n  variant?: \"standard\" | \"featured\" | \"row\";\n  /** Analytics hook fired when the card's main link opens. */\n  onOpen?: () => void;",
+    "Icon": "  /** Key into the shared 24x24 stroke-icon set (e.g. \"search\", \"starf\", \"mosque\", \"shield-check\"). Unknown names fall back to the \"info\" glyph; \"starf\" renders filled, \"google\" is a special multi-colour mark. */\n  name: string;\n  /** Width & height in px. Default 20. */\n  size?: number;\n  /** SVG stroke width (ignored for the filled \"starf\"). Default 1.9. */\n  strokeWidth?: number;\n  style?: CSSProperties;\n  className?: string;",
+    "Logo": "  /** Click handler; when set the logo becomes a keyboard-accessible role=\"button\". */\n  onClick?: () => void;\n  /** Render for dark backgrounds — the wordmark flips to white (crescent stays gold). */\n  light?: boolean;",
+    "Rating": "  /** Numeric score, shown to one decimal (value.toFixed(1)). */\n  value: number;\n  /** Review count. Exactly 0 renders the honest \"New\" state (never a fabricated score); undefined = unknown, count hidden. */\n  count?: number;\n  /** Show the \"(count)\" suffix. Default true. */\n  showCount?: boolean;",
+    "ImagePh": "  /** Alt text for the loaded image (no visible label is rendered). */\n  label?: string;\n  /** Placeholder ground tone: \"cream\" (default) | \"gold\" | \"emerald\". */\n  tone?: string;\n  /** CSS aspect-ratio applied to the box (e.g. \"4 / 3\"). */\n  ratio?: string;\n  /** Placeholder glyph name shown while empty/loading. Default \"camera\". */\n  icon?: string;\n  style?: CSSProperties;\n  className?: string;\n  /** Image source; when absent or broken the placeholder/fallback shows instead. */\n  src?: string;\n  /** next/image sizes attribute. Default \"(max-width: 768px) 100vw, 400px\". */\n  sizes?: string;\n  priority?: boolean;\n  /** Honest, business-specific empty state shown when src is absent or broken. */\n  fallback?: ReactNode;",
+    "BusinessMediaFallback": "  /** Business name; its first letter becomes the artwork's initial mark. */\n  name: string;\n  /** Category label shown in the sub-line (full mode only). */\n  category?: string;\n  /** Area label shown in the sub-line (full mode only). */\n  area?: string;\n  /** Collapse to the initial-mark tile only (hides copy). Default false. */\n  compact?: boolean;",
+    "CategoryButton": "  /** Category descriptor: an icon name + a display label. */\n  cat: { icon: string; label: string };\n  onClick?: () => void;",
+    "SectionHead": "  /** Section title (rendered as an <h2> in the Spectral serif). */\n  title: string;\n  /** Optional action-link text; the chevron + link only render when set. */\n  action?: string;\n  /** Handler for the action link (makes it a keyboard-accessible role=\"button\"). */\n  onAction?: () => void;",
+    "Toast": "  /** Confirmation message; an empty string renders the live region with no visible pill. */\n  msg: string;",
+    "Empty": "  /** Glyph name for the header chip. Default \"search\". */\n  icon?: string;\n  title?: string;\n  body?: string;\n  /** Optional CTA label; the button only renders when set. */\n  action?: string;\n  onAction?: () => void;",
+    "MobileHeader": "  /** Centered title text (Spectral serif). */\n  title?: string;\n  /** Back-button handler (button is always shown). */\n  onBack?: () => void;\n  /** Optional right-slot node (e.g. a share/overflow icon button). */\n  right?: ReactNode;",
+    "WizardSteps": "  steps: readonly string[];\n  step: number;",
+    "WizardFooter": "  children: ReactNode;",
+    "SearchBar": "  value: string;\n  onChange: (v: string) => void;\n  onSubmit?: (v: string) => void;\n  placeholder?: string;\n  autoFocus?: boolean;\n  suggest?: boolean;",
+    "Breadcrumbs": "  items: { name: string; screen?: string; params?: Record<string, unknown>; href?: string }[];",
+    "Stepper": "  label: string;\n  sub?: string;\n  value: number;\n  min?: number;   // default 0\n  max?: number;   // default 16\n  onChange: (v: number) => void;",
+    "ProgressRing": "  value: number;        // 0..1, clamped; non-finite -> empty track\n  size?: number;        // default 96\n  stroke?: number;      // default ~size/12; pass ~size/6 for a donut\n  tone?: \"emerald\" | \"gold\" | \"danger\";\n  children?: ReactNode; // center content\n  label?: string;       // exposes role=\"meter\" when set\n  className?: string;\n  style?: CSSProperties;",
+    "HelpCallout": "  feature: string;   // key into lib/help-content HELP[]",
+    "TrustAtAGlance": "  item: Listing;   // reads item.certBody, item.badges, item.verify?.certNo, item.name",
+    "CouponCard": "  coupon: PublicCoupon; // lib/coupons: id, business_id, business_name?, business_slug?, title, details, discount_type (\"percent\"|\"fixed\"|\"free_item\"|\"bundle\"), discount_value, reward_text, min_spend_cents, starts_at, ends_at, valid_days, redeem_start, redeem_end, total_limit, claimed_count, terms\n  compact?: boolean;",
+    "OwnerOfferCard": "  plan: string;\n  toast: (m: string) => void;\n  onUpgrade: () => void;",
+    "PlanBenefitsCard": "  businessId: string;\n  onUpgrade?: () => void;",
+    "GrowthServicesCard": "  onContact: () => void;",
+    "ProfileStrengthCard": "  input: StrengthInput; // { photosCount: number; descriptionLength: number; hasHours: boolean; hasContact: boolean; hasWebsite: boolean; verified: boolean }\n  onGoTab: (tab: string) => void;",
+    "RatingBadge": "  score: number;\n  count?: number;\n  word?: string;\n  lg?: boolean;",
+    "Stars": "  count: number;",
+    "Faq": "  items: QA[]; // lib/faq: { q: string; a: string }\n  title?: string;\n  eyebrow?: string;\n  columns?: 1 | 2; // 2 → responsive two-column grid",
+    "Newsletter": "  source?: string;\n  variant?: \"inline\" | \"card\";\n  collectName?: boolean;\n  cta?: string;\n  stage?: string;\n  consent?: boolean; // default true; false hides the PDPA line",
+    "WatchFor": "  items: string[];",
+    "PullQuote": "  text: string;\n  by?: string;",
+    "SectionDivider": "  // no props",
+    "BlogCard": "  /** CardPost = Pick<BlogPost, \"slug\"|\"title\"|\"dek\"|\"readMins\"|\"datePublished\"|\"image\"|\"imageAlt\"|\"category\"|\"tags\"> */\n  post: {\n    slug: string; title: string; dek: string; readMins: number; datePublished: string; // YYYY-MM-DD\n    image: string; imageAlt: string; category: BlogCategorySlug; tags: string[];\n  };\n  /** Use h2 on the index (SEO heading order); h3 inside grids/rails. */\n  headingLevel?: \"h2\" | \"h3\";\n  priority?: boolean;",
+    "AuthorBio": "  author?: BlogAuthor; // { id; name; type:\"Person\"|\"Organization\"; role?; bio?; avatar?; url?; sameAs?:string[] }\n  name?: string;",
+    "CategoryChips": "  activeSlug?: BlogCategorySlug;",
+    "ShareRow": "  url: string;\n  title: string;",
+    "HotelCard": "  hotel: Hotel; // see lib/halal-hotels — needs flags (8 booleans), halalScore, verified, verifiedBy, stars, guestRating, reviewCount, city, country, priceFrom, image",
+    "DestinationCard": "  c: TravelHub; // TravelCity + { h1: string; title: string }; card reads slug, umrah, name, country",
+    "HalalChip": "  hotel: Hotel; // reads flags, verified, halalScore\n  compact?: boolean;",
+    "Crumbs": "  trail: { label: string; href?: string }[];"
+  },
+  "readmeHeader": ".design-sync/conventions.md"
 }

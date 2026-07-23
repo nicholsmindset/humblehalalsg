@@ -21,6 +21,40 @@
   cannot render meaningful static previews.
 - Clerk (12 files), Supabase (7), Leaflet maps (2) importers exist; expect
   provider/context issues in previews for those.
+
+## Authored-preview learnings (fan-out waves A–D, 42 components)
+
+- **Context-reading components need `<PreviewShell>`** (from fixtures, on the
+  bundle): ListingCard, SearchBar, Breadcrumbs, HelpCallout — they call
+  `useApp()`/`useDirectory()`. Everything else authored so far is pure/props-
+  driven and must NOT be wrapped.
+- **`position:fixed` overlays clip in capture** (Toast): a transformed capture
+  ancestor becomes the containing block, so the pinned pill lands off-frame.
+  The Toast preview neutralizes it with a scoped `<style>` (static position).
+  Any future fixed/sticky overlay (modals, sticky bars, NotificationBell) will
+  hit this — render it in normal flow inside the preview.
+- **Mobile-only chrome hidden at capture viewport** (MobileHeader): `.mob-head`
+  is `display:none` above 861px and the capture viewport is 900px. The preview
+  forces it visible via a scoped `<style>`. Cleaner alternative if it recurs:
+  `cfg.overrides.<Name>.viewport = "390x780"`.
+- **Flag-gated components render null in preview** (HelpCallout, HalalChip's
+  flag path): `/api/flags` never resolves in-preview, so flags stay at
+  `DEFAULT_FLAGS` (all OFF). Use only always-on/no-flag features, or pass data
+  that doesn't depend on a flag.
+- **Fetch-only components can't show populated state**: PlanBenefitsCard fetches
+  `/api/owner/entitlements` with no data prop → only its loading skeleton
+  renders. Left as a FLOOR CARD (its `.d.ts` contract is still shipped via
+  dtsPropsFor). Same risk for any component whose only data path is a mount
+  fetch with no prop override.
+- **`next/image` is stubbed to `<img>`**; previews pass `image:""` and let the
+  component's own placeholder render, or use an inline SVG data-URI (AuthorBio
+  avatar) — no network in captures.
+- **Real component-CSS nit (not a sync bug, for the app owner):** AuthorBio's
+  two `.author-links` anchors render with no separator gap
+  ("instagram.comlinkedin.com") — missing gap in the component CSS.
+- **41 components have hand-written `dtsPropsFor`** (real API contracts) merged
+  from the wave learnings; the ~226 non-authored components keep the synth-entry
+  `[key: string]: unknown` fallback + JSDoc-derived `.prompt.md`.
 - **APP SOURCE FIX (lib/airports.ts:184):** the diacritics-strip regex was
   written with literal U+0300–U+036F combining chars (`/[̀-ͯ]/g`). esbuild
   preserves regex literals verbatim, so the bundle carried raw UTF-8 bytes;
