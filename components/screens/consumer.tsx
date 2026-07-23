@@ -171,8 +171,18 @@ export function HomeScreen() {
       {/* HERO */}
       <Hero variant={tw.hero} q={q} setQ={setQ} doSearch={doSearch} navigate={navigate} />
 
-      {/* 3-HUB ENTRY — route intent into the hubs right after the hero. */}
+      {/* 4-HUB ENTRY — route intent into the hubs right after the hero. */}
       <HomeFeatureSection navigate={navigate} />
+
+      {/* TRUST LEGEND — what each badge means, surfaced early to back the hero's
+          graduated-confidence claim before the browsing sections begin. */}
+      <section className="hh-wrap home-trust-slim">
+        <div className="hts-row">
+          <span className="hts-label"><Icon name="shield-check" size={16} /> Know what each badge means:</span>
+          <span className="hts-badges"><Badge type="muis" /><Badge type="admin" /><Badge type="owned" /><Badge type="friendly" /></span>
+          <button className="hts-link" onClick={() => navigate("verify")}>How we verify <Icon name="chevron" size={13} /></button>
+        </div>
+      </section>
 
       {/* FRESH FROM THE COMMUNITY — latest approved TikToks (self-hides when
           the tiktokUgc flag is off or nothing is approved yet). */}
@@ -232,15 +242,6 @@ export function HomeScreen() {
             <button className="btn btn-gold btn-lg" onClick={() => navigate("travel")}>Find a hotel</button>
             <button className="btn btn-lg htb-ghost" onClick={() => navigate("travel-flights")}>Search flights</button>
           </div>
-        </div>
-      </section>
-
-      {/* SLIM TRUST STRIP */}
-      <section className="hh-wrap home-trust-slim">
-        <div className="hts-row">
-          <span className="hts-label"><Icon name="shield-check" size={16} /> Know what each badge means:</span>
-          <span className="hts-badges"><Badge type="muis" /><Badge type="admin" /><Badge type="owned" /><Badge type="friendly" /></span>
-          <button className="hts-link" onClick={() => navigate("verify")}>How we verify <Icon name="chevron" size={13} /></button>
         </div>
       </section>
 
