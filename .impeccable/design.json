@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-23T00:00:00Z",
+  "title": "Design System: Humble Halal",
+  "extensions": {
+    "colorMeta": {
+      "teal": { "role": "primary", "displayName": "Deep Teal", "canonical": "#12525B", "tonalRamp": ["#0A363C", "#0D424A", "#12525B", "#17636D", "#3E8089", "#6FA0A8", "#A7C6CB", "#DCE9EA"] },
+      "saffron": { "role": "secondary", "displayName": "Saffron Terracotta", "canonical": "#C97D3F", "tonalRamp": ["#5C3312", "#7A461C", "#94551F", "#A96430", "#C97D3F", "#DDA06B", "#EFC79E", "#FBF2E9"] },
+      "porcelain": { "role": "neutral", "displayName": "Porcelain Cream", "canonical": "#F8F6F1", "tonalRamp": ["#3A3830", "#5C594E", "#807C6E", "#A6A192", "#C9C4B4", "#E4E0D3", "#F0EDE4", "#F8F6F1"] },
+      "ink": { "role": "neutral", "displayName": "Slate Ink", "canonical": "#1F2933", "tonalRamp": ["#1F2933", "#2E3945", "#3E4A57", "#4C5867", "#586471", "#626C78", "#8A93A0", "#C3C9D1"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero and page titles. Spectral 600, tight tracking." },
+      "body": { "displayName": "Body", "purpose": "All running text and UI. Hanken Grotesk, calm and legible on mobile." },
+      "label": { "displayName": "Label", "purpose": "Uppercase kickers and eyebrows. Wide 0.22em tracking." },
+      "quran": { "displayName": "Quran / Arabic", "purpose": "Arabic naskh via Amiri for Quran and du'a text." }
+    },
+    "shadows": [
+      { "name": "sm", "value": "0 1px 2px rgba(31,41,51,.05), 0 1px 3px rgba(31,41,51,.06)", "purpose": "Resting cards and buttons." },
+      { "name": "md", "value": "0 4px 14px rgba(31,41,51,.07), 0 2px 6px rgba(31,41,51,.05)", "purpose": "Raised panels." },
+      { "name": "lg", "value": "0 18px 40px rgba(31,41,51,.12), 0 6px 14px rgba(31,41,51,.06)", "purpose": "Hover cards, drawers, overlays." },
+      { "name": "teal", "value": "0 12px 28px rgba(18,82,91,.22)", "purpose": "Branded glow under a primary button on hover; mobile add-button." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state and drawer transitions." },
+      { "name": "duration-quick", "value": "0.15s", "purpose": "Hover/color transitions on links, chips, buttons." },
+      { "name": "duration-drawer", "value": "0.22s", "purpose": "Slide-in mobile nav drawer." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "380px" },
+      { "name": "mobile-max", "value": "640px" },
+      { "name": "desktop", "value": "861px" },
+      { "name": "container", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The trust-bearing primary action; teal fill, porcelain text, lifts with a branded glow on hover.",
+      "html": "<button class=\"ds-btn-primary\">Find halal food</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-weight: 600; font-size: .94rem; line-height: 1; padding: 11px 20px; border-radius: 999px; border: 1px solid transparent; background: var(--emerald, #12525B); color: var(--cream, #F8F6F1); box-shadow: 0 1px 2px rgba(31,41,51,.05), 0 1px 3px rgba(31,41,51,.06); cursor: pointer; transition: all .16s ease; } .ds-btn-primary:hover { background: var(--emerald-700, #0D424A); box-shadow: 0 12px 28px rgba(18,82,91,.22); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--emerald, #12525B); outline-offset: 3px; }"
+    },
+    {
+      "name": "Gold Button",
+      "kind": "button",
+      "refersTo": "button-gold",
+      "description": "Rare warm CTA; saffron fill with near-black text for AA contrast.",
+      "html": "<button class=\"ds-btn-gold\">List your business</button>",
+      "css": ".ds-btn-gold { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-weight: 600; font-size: .94rem; line-height: 1; padding: 11px 20px; border-radius: 999px; border: 1px solid transparent; background: var(--gold, #C97D3F); color: #2e2205; cursor: pointer; transition: all .16s ease; } .ds-btn-gold:hover { background: var(--gold-700, #A96430); transform: translateY(-1px); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Inline filter/selector; white pill at rest, teal fill when active with a saffron icon.",
+      "html": "<button class=\"ds-chip ds-chip--active\">Halal-certified</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: 999px; background: var(--white, #fff); border: 1px solid var(--line-strong, #DED7C7); font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-size: .86rem; font-weight: 600; color: var(--ink-soft, #586471); cursor: pointer; line-height: 1; transition: all .15s; } .ds-chip:hover { border-color: var(--emerald-300, #6FA0A8); color: var(--ink, #1F2933); } .ds-chip--active { background: var(--emerald, #12525B); color: var(--cream, #F8F6F1); border-color: var(--emerald, #12525B); }"
+    },
+    {
+      "name": "MUIS Certified Badge",
+      "kind": "custom",
+      "refersTo": "badge-muis",
+      "description": "The top, official tier of the graduated trust system: solid teal, unmistakable.",
+      "html": "<span class=\"ds-badge ds-badge--muis\"><svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg>MUIS Certified</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 8px; border-radius: 999px; font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-size: .74rem; font-weight: 700; line-height: 1; white-space: nowrap; border: 1px solid transparent; } .ds-badge--muis { background: var(--emerald, #12525B); color: #fff; box-shadow: 0 2px 6px rgba(18,82,91,.25); }"
+    },
+    {
+      "name": "Muslim-Owned Badge",
+      "kind": "custom",
+      "refersTo": "badge-owned",
+      "description": "Verified-adjacent tier: soft teal fill + teal text, clearly distinct from the certified tier.",
+      "html": "<span class=\"ds-badge ds-badge--owned\">Muslim-Owned</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 8px; border-radius: 999px; font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-size: .74rem; font-weight: 700; line-height: 1; white-space: nowrap; } .ds-badge--owned { background: var(--emerald-50, #EDF4F4); color: var(--emerald, #12525B); border: 1px solid var(--emerald-300, #6FA0A8); }"
+    },
+    {
+      "name": "Listing Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The core directory unit; flat on porcelain at rest, lifts on hover via shadow + translate.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-media\"></div><div class=\"ds-card-body\"><h3 class=\"ds-card-name\">Warong Nasi Pariaman</h3><p class=\"ds-card-meta\">Padang · North Bridge Road</p></div></article>",
+      "css": ".ds-card { background: var(--white, #fff); border-radius: 20px; border: 1px solid var(--line, #ECE7DB); box-shadow: 0 1px 2px rgba(31,41,51,.05), 0 1px 3px rgba(31,41,51,.06); overflow: hidden; cursor: pointer; transition: box-shadow .2s, transform .2s, border-color .2s; } .ds-card:hover { box-shadow: 0 18px 40px rgba(31,41,51,.12), 0 6px 14px rgba(31,41,51,.06); transform: translateY(-2px); border-color: var(--line-strong, #DED7C7); } .ds-card-media { aspect-ratio: 16/10; background: linear-gradient(140deg, var(--cream-200, #F0EDE4), var(--emerald-50, #EDF4F4)); } .ds-card-body { padding: 14px 15px 16px; display: flex; flex-direction: column; gap: 8px; } .ds-card-name { margin: 0; font-family: var(--font-spectral, 'Spectral', Georgia, serif); font-weight: 600; font-size: 1.12rem; letter-spacing: -.01em; color: var(--ink, #1F2933); } .ds-card-meta { margin: 0; font-family: var(--font-hanken, 'Hanken Grotesk', system-ui, sans-serif); font-size: .82rem; color: var(--ink-faint, #626C78); font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Trusted Guide",
+    "overview": "Humble Halal reads like a calm, editorial almanac for the Singapore Muslim community — a place whose whole job is to tell you the truth about halal status and let you decide with confidence. It is built on a warm porcelain ground, a grounded deep teal that carries trust, and a single saffron accent used sparingly for warmth and wayfinding. Headlines are Spectral serif over quiet Hanken Grotesk body text; a subtle girih lattice appears as texture, never ornament. The world was deliberately chosen (July 2026 revamp) to be distinct from generic AI-generated SaaS mockups.",
+    "keyCharacteristics": [
+      "Warm porcelain ground, never clinical white; every neutral is tinted, never pure gray/black.",
+      "Deep teal carries trust; saffron is a rare accent, not a second brand color.",
+      "Editorial serif (Spectral) for voice; grotesk (Hanken) for calm utility; Amiri for Arabic.",
+      "Honest, graduated trust badges are the signature component.",
+      "Mobile-first, decision-fast, WCAG-AA throughout."
+    ],
+    "rules": [
+      { "name": "The Tinted-Neutral Rule", "body": "No pure black, white, or gray touches the UI. Text is tinted slate, backgrounds are porcelain, shadows are teal-tinted rgba.", "section": "colors" },
+      { "name": "The One-Accent Rule", "body": "Saffron appears on ≤10% of any screen — an underline, a badge, a star, a single CTA. Its scarcity is the point.", "section": "colors" },
+      { "name": "The Serif-Headline Rule", "body": "Headlines (h1–h4) are always Spectral 600 with -0.01em tracking. Body and UI are always Hanken.", "section": "typography" },
+      { "name": "The Lift-On-Intent Rule", "body": "Cards sit flat at rest and rise to the lg shadow with a -2px translate only on hover/focus. Motion and shadow appear together, as feedback.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do ground every surface on porcelain (#F8F6F1) and keep all neutrals tinted.",
+      "Do reserve saffron for a single accent per view; teal carries trust and structure.",
+      "Do set headlines in Spectral 600 (-0.01em) and body/UI in Hanken.",
+      "Do keep the graduated badge hierarchy visually honest: MUIS Certified is solid and singular; self-declared tiers read as muted and clearly not-official.",
+      "Do resolve brand color from the CSS custom properties in styles/styles.css and keep AA contrast."
+    ],
+    "donts": [
+      "Don't reintroduce the generic AI-SaaS look the July 2026 revamp rejected: no Inter/system default headlines, no purple/blue gradients, no pure-white/pure-gray flatness.",
+      "Don't promote saffron into a co-primary or use bounce/elastic easing.",
+      "Don't hard-code brand hex values in new code, and don't trust the token names: --emerald holds teal (#12525B), --gold holds saffron.",
+      "Don't style a self-declared listing to look certified, or invent a rating/verdict."
+    ]
+  }
+}
