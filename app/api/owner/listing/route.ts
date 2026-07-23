@@ -32,6 +32,26 @@ export async function GET(req: Request) {
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
   const id = new URL(req.url).searchParams.get("id") || "";
+
+  // No id → list every business the caller owns/claims (the dashboard's
+  // "My listings"). This MUST run server-side: the browser client's
+  // authenticated role has no SELECT grant on phone (0068 column privileges),
+  // so the old client-side select failed wholesale and every owner saw
+  // "No listings yet". Ownership is the WHERE clause; service role only after
+  // the Clerk gate above.
+  if (!id) {
+    const { data, error } = await db
+      .from("businesses")
+      .select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at, status, photos, description, opening_hours, website, phone, socials")
+      .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`)
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error(`[owner/listing] list failed (user=${userId}):`, error.message);
+      return NextResponse.json({ ok: false, error: "load_failed" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, businesses: data || [] });
+  }
+
   const { row, owns } = await ownership(db, id, userId);
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!owns) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });

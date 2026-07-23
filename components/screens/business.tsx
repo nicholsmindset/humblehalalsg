@@ -651,9 +651,16 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
     window.history.replaceState(null, "", url.toString());
   };
   // The tab strip scrolls horizontally on mobile — deep-linked tabs (?tab=ads,
-  // ?tab=billing) can sit off-screen, so bring the active one into view.
+  // ?tab=billing) can sit off-screen, so center the active one INSIDE the
+  // strip. Never scrollIntoView here: it also scrolls the PAGE vertically
+  // (ignoring the sticky nav + prayer strip), which dragged the greeting and
+  // stat cards half-under the bars on every dashboard load.
   useEffect(() => {
-    document.querySelector(".dash-tabs button.on")?.scrollIntoView({ inline: "center", block: "nearest" });
+    const btn = document.querySelector<HTMLElement>(".dash-tabs button.on");
+    const strip = btn?.closest<HTMLElement>(".dash-tabs");
+    if (!btn || !strip) return;
+    const left = btn.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft;
+    strip.scrollTo({ left: left - (strip.clientWidth - btn.clientWidth) / 2 });
   }, [tab]);
   const demoListings = [dir.listings[0], dir.listings.find((l) => l.id === "l5") || dir.listings[6]];
 
@@ -667,14 +674,22 @@ export function OwnerDashboardScreen({ leadRoutingEnabled = false }: { leadRouti
 
   // Reload the owner's businesses (id-only refresh keeps card metadata current
   // after an inline edit). Returns the list so callers can chain.
+  // Server route, NOT a client-side Supabase select: the authenticated role has
+  // no SELECT grant on phone (0068), and `whatsapp` isn't a column at all — the
+  // old direct select errored wholesale, so every owner saw "No listings yet".
   const loadBiz = useCallback(async () => {
-    const sb = supabase;
-    if (!sb || !user) return [] as OwnerBiz[];
-    const { data: bd } = await sb.from("businesses").select("id, slug, name, area, cat_id, plan, featured, halal_tier, last_verified_at, status, photos, description, opening_hours, website, phone, whatsapp, socials").or(`owner_id.eq.${user.id},claimed_by.eq.${user.id}`);
-    const list = (bd as OwnerBiz[]) || [];
-    setBiz(list);
-    return list;
-  }, [supabase, user]);
+    if (!user) return [] as OwnerBiz[];
+    try {
+      const res = await fetch("/api/owner/listing");
+      const j = await res.json().catch(() => ({}));
+      const list = (j?.ok && Array.isArray(j.businesses) ? j.businesses : []) as OwnerBiz[];
+      setBiz(list);
+      return list;
+    } catch {
+      setBiz([]);
+      return [] as OwnerBiz[];
+    }
+  }, [user]);
 
   useEffect(() => {
     let alive = true;
