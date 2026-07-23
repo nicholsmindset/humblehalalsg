@@ -53,8 +53,25 @@
   two `.author-links` anchors render with no separator gap
   ("instagram.comlinkedin.com") — missing gap in the component CSS.
 - **41 components have hand-written `dtsPropsFor`** (real API contracts) merged
-  from the wave learnings; the ~226 non-authored components keep the synth-entry
+  from the wave learnings; the ~224 non-authored components keep the synth-entry
   `[key: string]: unknown` fallback + JSDoc-derived `.prompt.md`.
+
+## Known render warns (benign — recorded so a re-sync doesn't flag them new)
+- **Stars** — `[RENDER_THIN]`: it's an icon-only gold-star row (~15px tall, no
+  text). Confirmed rendering correctly (5/4/3 stars). `bad:false`. Benign.
+
+## Unauthored components that render a BLANK card (not floor-card fallback)
+These 4 render an empty container (so the typographic floor-card fallback
+doesn't trip) because they need live data / runtime / a provider the preview
+env can't supply. They are fully functional on `window.HumbleHalal` (importable
+by the design agent) — only their preview CARD is blank. Authorable on a
+re-sync if a data/prop path is added:
+- **AdSlot** — fetches `/api/ads/active`; also needs AppProvider (`useApp`).
+- **BookingsChart**, **TierChart** — recharts viz; need a real data array prop.
+- **MapView** — Leaflet map; needs coords + browser map runtime.
+- **NotificationBell** — needs app state/context to show anything.
+(Recovered from this list by authoring previews: HeroTrustPills — needs a dark
+hero ground; Carousel — needs children; Popover — overlay, `cardMode:single`.)
 - **APP SOURCE FIX (lib/airports.ts:184):** the diacritics-strip regex was
   written with literal U+0300–U+036F combining chars (`/[̀-ͯ]/g`). esbuild
   preserves regex literals verbatim, so the bundle carried raw UTF-8 bytes;

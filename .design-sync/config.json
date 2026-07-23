@@ -65,5 +65,11 @@
     "HalalChip": "  hotel: Hotel; // reads flags, verified, halalScore\n  compact?: boolean;",
     "Crumbs": "  trail: { label: string; href?: string }[];"
   },
-  "readmeHeader": ".design-sync/conventions.md"
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Popover": {
+      "cardMode": "single",
+      "primaryStory": "Open"
+    }
+  }
 }
