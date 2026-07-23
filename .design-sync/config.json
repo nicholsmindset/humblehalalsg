@@ -1,0 +1,12 @@
+{
+  "projectId": "2e1936c3-0904-4b75-a757-be267a3a909f",
+  "pkg": "humblehalalsg",
+  "entry": "./dist/index.js",
+  "globalName": "HumbleHalal",
+  "shape": "package",
+  "srcDir": "components",
+  "tsconfig": "./tsconfig.json",
+  "buildCmd": "node .design-sync/build-css.mjs",
+  "cssEntry": ".design-sync/.cache/entry.css",
+  "extraFonts": [".design-sync/fonts/fonts.css"]
+}
