@@ -21,3 +21,18 @@
   cannot render meaningful static previews.
 - Clerk (12 files), Supabase (7), Leaflet maps (2) importers exist; expect
   provider/context issues in previews for those.
+- **Stub aliases** (`.design-sync/tsconfig.json` + `.design-sync/stubs/`,
+  wired via `cfg.tsconfig` — the converter's esbuild paths plugin resolves
+  them before node_modules): `next/link`→anchor, `next/image`→img,
+  `next/navigation`→inert router hooks, `next/dynamic`→React.lazy,
+  `next/script`→null, `next/og`→throwing ImageResponse, `@clerk/nextjs`→
+  loaded-signed-out session. Without these, esbuild fails on node builtins
+  (`node:async_hooks` via Clerk server barrel; fs/stream/zlib via next/og's
+  gzip-size chain). The DS rendering environment has no Next runtime or
+  Clerk keys, so signed-out/anchor semantics are correct there, not a hack.
+  If a future component imports a new server-only module, add a stub +
+  paths entry rather than excluding the component.
+- `cfg.entry` is deliberately `./dist/index.js` (nonexistent): with soft
+  resolution it routes PKG_DIR to the repo root (the `--entry` package.json
+  walk) and then falls through to synth-entry mode. Without it the converter
+  looks for `node_modules/humblehalalsg` and crashes.

@@ -5,7 +5,7 @@
   "globalName": "HumbleHalal",
   "shape": "package",
   "srcDir": "components",
-  "tsconfig": "./tsconfig.json",
+  "tsconfig": ".design-sync/tsconfig.json",
   "buildCmd": "node .design-sync/build-css.mjs",
   "cssEntry": ".design-sync/.cache/entry.css",
   "extraFonts": [".design-sync/fonts/fonts.css"]
