@@ -26,7 +26,12 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
-  if (!Array.isArray(messages)) return Response.json({ error: "bad_request" }, { status: 400 });
+  if (!Array.isArray(messages) || messages.length === 0) return Response.json({ error: "bad_request" }, { status: 400 });
+  // Bound the payload handed to the paid LLM so a single request can't run up
+  // token cost or wedge the agent: cap the turn count and the total size
+  // (mirrors /api/concierge/chat — audit A6).
+  if (messages.length > 40) return Response.json({ error: "too_many_messages" }, { status: 413 });
+  if (JSON.stringify(messages).length > 24_000) return Response.json({ error: "payload_too_large" }, { status: 413 });
 
   const today = new Date().toISOString().slice(0, 10);
   const agent = buildTravelConcierge(today);
