@@ -33,6 +33,14 @@
   pane loads previews from `<meta charset=utf-8>` HTML so it was never broken
   there — but the ASCII form is strictly more robust. If a future edit
   reintroduces literal combining chars, the smoke test will fail again.
+- **Excluded LeafletMap + InsightsChart** (`componentSrcMap: null`): both are
+  `export default function` components consumed only via
+  `dynamic(() => import(...), {ssr:false})`. Synth-entry's `export * from`
+  does NOT re-export defaults, so they were discovered as component names but
+  never landed on window.HumbleHalal → [BUNDLE_EXPORT] flagged them. They are
+  ssr:false Leaflet/recharts wrappers that can't static-render anyway. If you
+  want them in the DS later, re-export them as named exports and add via
+  extraEntries. (Any future default-export-only component hits the same trap.)
 - **[FONT_MISSING] "Scheherazade New"** — ACCEPTED as system fallback. It is
   only the *tertiary* fallback in the Arabic font stack (`var(--font-quran),
   "Amiri", "Scheherazade New", serif`); Amiri (primary) IS shipped, so
