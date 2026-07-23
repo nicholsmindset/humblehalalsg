@@ -15,6 +15,8 @@
       "next/dynamic": ["./.design-sync/stubs/next-dynamic.tsx"],
       "next/script": ["./.design-sync/stubs/next-script.tsx"],
       "next/og": ["./.design-sync/stubs/next-og.ts"],
+      "server-only": ["./.design-sync/stubs/empty.ts"],
+      "client-only": ["./.design-sync/stubs/empty.ts"],
       "@clerk/nextjs/server": ["./.design-sync/stubs/clerk-server.ts"],
       "@clerk/nextjs": ["./.design-sync/stubs/clerk.tsx"],
       "@/lib/tools": ["./lib/tools.ts"],

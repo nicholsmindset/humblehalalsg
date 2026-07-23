@@ -23,6 +23,10 @@ export function useAuth() {
   } as const;
 }
 
+export function useSession() {
+  return { isLoaded: true, isSignedIn: false, session: null } as const;
+}
+
 export function useClerk() {
   return {
     openSignIn: () => {},

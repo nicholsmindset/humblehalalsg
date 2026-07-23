@@ -32,6 +32,29 @@
   Clerk keys, so signed-out/anchor semantics are correct there, not a hack.
   If a future component imports a new server-only module, add a stub +
   paths entry rather than excluding the component.
+- **`.d.ts` props fall back to `[key: string]: unknown` for ALL components.**
+  Root cause: synth-entry mode has no shipped `.d.ts`, and the DTS project's
+  `findTypesRoot` picks `lib/` (first existing candidate: build/ts, dist/types,
+  types, **lib**, dist) — a data/utility tree, not `components/`. The props
+  project only ever loads `.d.ts` files, never the `.tsx` sources, so nothing
+  resolves. This is documented-expected for synth-entry ("contracts will be
+  weaker"). Remedy: hand-write `cfg.dtsPropsFor.<Name>` for the components that
+  matter (done for the authored core set — the source is read during preview
+  authoring anyway). The ~230 non-authored components keep the `unknown`
+  fallback and rely on their `.prompt.md` (JSDoc-derived) for guidance.
+- **`process` shim** (`.design-sync/process-shim.ts`, FIRST in `extraEntries`):
+  the app's lib modules read `process.env.*` at module scope, but esbuild's
+  browser platform ships no `process`, so all 270 previews failed with
+  "process is not defined". The shim has zero imports and the converter emits
+  `export * from <extraEntry>` ahead of the main entry, so it evaluates first
+  in the IIFE and defines a global `process` (env → undefined for every key).
+  Order matters: process-shim MUST precede fixtures.tsx (which imports app
+  modules) in the extraEntries array.
+- **`.design-sync/fixtures.tsx`** (second `extraEntries` item): realistic
+  Listing/category/area seed data + a `PreviewShell` (AppProvider >
+  DirectoryProvider) so context-reading previews (ListingCard, SearchBar)
+  render in real context. Authored previews import from it via the bundle
+  global (it's an extraEntry, so on window.HumbleHalal).
 - `cfg.entry` is deliberately `./dist/index.js` (nonexistent): with soft
   resolution it routes PKG_DIR to the repo root (the `--entry` package.json
   walk) and then falls through to synth-entry mode. Without it the converter
