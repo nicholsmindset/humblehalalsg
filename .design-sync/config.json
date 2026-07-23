@@ -8,5 +8,6 @@
   "tsconfig": ".design-sync/tsconfig.json",
   "buildCmd": "node .design-sync/build-css.mjs",
   "cssEntry": ".design-sync/.cache/entry.css",
-  "extraFonts": [".design-sync/fonts/fonts.css"]
+  "extraFonts": [".design-sync/fonts/fonts.css"],
+  "guidelinesGlob": ["docs/design/**/*.md"]
 }
