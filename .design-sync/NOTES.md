@@ -72,15 +72,12 @@ JSDoc `.prompt.md`. A future re-sync can add contracts by reading the sources.
   text). Confirmed rendering correctly (5/4/3 stars). `bad:false`. Benign.
 
 ## Unauthored components that render a BLANK card (not floor-card fallback)
-These 4 render an empty container (so the typographic floor-card fallback
-doesn't trip) because they need live data / runtime / a provider the preview
-env can't supply. They are fully functional on `window.HumbleHalal` (importable
-by the design agent) — only their preview CARD is blank. Authorable on a
-re-sync if a data/prop path is added:
+These 2 render an empty container (so the typographic floor-card fallback
+doesn't trip) because they need live data / runtime the preview env can't
+supply. They are fully functional on window.HumbleHalal (importable by the
+design agent) — only their preview CARD is blank. Authorable on a re-sync:
 - **AdSlot** — fetches `/api/ads/active`; also needs AppProvider (`useApp`).
-- **BookingsChart**, **TierChart** — recharts viz; need a real data array prop.
 - **MapView** — Leaflet map; needs coords + browser map runtime.
-- **NotificationBell** — needs app state/context to show anything.
 (Recovered from this list by authoring previews: HeroTrustPills — needs a dark
 hero ground; Carousel — needs children; Popover — overlay, `cardMode:single`.)
 - **APP SOURCE FIX (lib/airports.ts:184):** the diacritics-strip regex was
