@@ -1,0 +1,26 @@
+{
+  // design-sync bundling tsconfig: the converter's esbuild paths plugin reads
+  // THIS file directly (no `extends` resolution), so the app's @/* alias is
+  // inlined here alongside browser-safe stubs for modules that need a Next
+  // runtime or Clerk keys the DS rendering environment doesn't have.
+  // ORDER MATTERS: the plugin iterates entries in insertion order, so exact
+  // keys must precede the "@/*" wildcard. "@/lib/tools" pins lib/tools.ts —
+  // the wildcard's extension probe would hit the lib/tools/ DIRECTORY first.
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "next/link": ["./.design-sync/stubs/next-link.tsx"],
+      "next/navigation": ["./.design-sync/stubs/next-navigation.ts"],
+      "next/image": ["./.design-sync/stubs/next-image.tsx"],
+      "next/dynamic": ["./.design-sync/stubs/next-dynamic.tsx"],
+      "next/script": ["./.design-sync/stubs/next-script.tsx"],
+      "next/og": ["./.design-sync/stubs/next-og.ts"],
+      "server-only": ["./.design-sync/stubs/empty.ts"],
+      "client-only": ["./.design-sync/stubs/empty.ts"],
+      "@clerk/nextjs/server": ["./.design-sync/stubs/clerk-server.ts"],
+      "@clerk/nextjs": ["./.design-sync/stubs/clerk.tsx"],
+      "@/lib/tools": ["./lib/tools.ts"],
+      "@/*": ["./*"]
+    }
+  }
+}

@@ -36,6 +36,17 @@
   --danger-50:      #F8ECEA;
   --warn:           #B9863B;
 
+  /* Aliases for tokens referenced by blog.css / coupon + deals styles that were
+     never declared (the referencing declarations were dropped as invalid, so
+     those elements rendered unstyled). Mapped to the palette equivalents. */
+  --emerald-800:    #0A353B; /* one step darker than --emerald-700 for gradient stops */
+  --green:          var(--emerald);
+  --green-pale:     var(--emerald-50);
+  --surface:        var(--white);
+  --border:         var(--line);
+  --shadow-sm:      var(--sh-sm);
+  --muted:          var(--ink-soft);
+
   /* Type (font families self-hosted via next/font, exposed as variables) */
   --serif: var(--font-spectral), 'Spectral', Georgia, serif;
   --sans:  var(--font-hanken), 'Hanken Grotesk', system-ui, sans-serif;
