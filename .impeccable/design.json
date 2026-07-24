@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-23T00:00:00Z",
+  "generatedAt": "2026-07-24T00:00:00Z",
   "title": "Design System: Humble Halal",
   "extensions": {
     "colorMeta": {
@@ -104,7 +104,8 @@
       "Do reserve saffron for a single accent per view; teal carries trust and structure.",
       "Do set headlines in Spectral 600 (-0.01em) and body/UI in Hanken.",
       "Do keep the graduated badge hierarchy visually honest: MUIS Certified is solid and singular; self-declared tiers read as muted and clearly not-official.",
-      "Do resolve brand color from the CSS custom properties in styles/styles.css and keep AA contrast."
+      "Do resolve brand color from the CSS custom properties in styles/styles.css and keep AA contrast.",
+      "Do use the --fs-* type tokens and --r-* radius tokens instead of raw rem/px literals; extend the token set intentionally rather than hand-typing a new value."
     ],
     "donts": [
       "Don't reintroduce the generic AI-SaaS look the July 2026 revamp rejected: no Inter/system default headlines, no purple/blue gradients, no pure-white/pure-gray flatness.",
