@@ -155,7 +155,7 @@ export function HomeScreen() {
               flexWrap: "wrap",
               padding: "9px 16px",
               textAlign: "center",
-              fontSize: ".9rem",
+              fontSize: "var(--fs-90)",
               lineHeight: 1.45,
             }}
           >
@@ -254,7 +254,7 @@ export function HomeScreen() {
           <div className="biz-cta-in">
             <div>
               <span className="eyebrow" style={{ color: "var(--gold)" }}>For business owners</span>
-              <h2 style={{ color: "#fff", fontSize: "1.9rem", marginTop: 10, maxWidth: 520 }}>List your business on Humble Halal</h2>
+              <h2 style={{ color: "#fff", fontSize: "var(--fs-190)", marginTop: 10, maxWidth: 520 }}>List your business on Humble Halal</h2>
               <p style={{ color: "#DCE9EA", marginTop: 10, maxWidth: 480 }}>
                 Get discovered by Singapore’s Muslim community, earn trust with clear halal labels, and turn searches into visits.
               </p>
@@ -770,7 +770,7 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   return (
     <aside className="filter-panel">
       <div className="flex between center" style={{ marginBottom: 4 }}>
-        <h3 style={{ fontSize: "1.15rem" }}>Filters</h3>
+        <h3 style={{ fontSize: "var(--fs-115)" }}>Filters</h3>
         <button className="btn btn-ghost btn-sm" onClick={onClear}>Clear all</button>
       </div>
       <Section title="Category">
@@ -791,7 +791,7 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
           <Opt k="halal" v="certified" label="Certified / listed only" />
           <Opt k="halal" v="muis" label="MUIS certified / listed" />
         </div>
-        <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
+        <p className="faint" style={{ fontSize: "var(--fs-76)", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
         <div style={{ marginTop: 10 }}>
           <CertifiedToggle />
         </div>
@@ -860,7 +860,7 @@ export function MapPreview({ results, navigate, mapParams }: {
         <button className="btn btn-primary btn-sm map-this" style={{ zIndex: 1000 }} onClick={() => navigate("map", mapParams)}><Icon name="map" size={15} /> Open full map</button>
       </div>
       {unmapped > 0 && (
-        <p className="faint" style={{ fontSize: ".78rem", padding: "6px 12px 0" }}>
+        <p className="faint" style={{ fontSize: "var(--fs-78)", padding: "6px 12px 0" }}>
           {unmapped} of {results.length} places don&apos;t have a map location yet — they&apos;re still in the list view.
         </p>
       )}
@@ -1100,7 +1100,7 @@ export function MapScreen() {
                 directory — say "mapped" so this number is never read as the
                 total place count (hero/explore count the full directory). */}
             <span><strong>{resultCount}</strong> {chips.mosque ? "mosque" : chips.musollah ? "prayer room" : "place"}{resultCount === 1 ? "" : "s"}{chips.mosque || chips.musollah ? "" : " mapped"}{userLoc ? " · nearest first" : ""}</span>
-            {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: ".82rem" }}>Clear all</button>}
+            {hasFilters && <button className="link-inline" onClick={clearAll} style={{ fontSize: "var(--fs-82)" }}>Clear all</button>}
           </div>
         </div>
 
@@ -1145,7 +1145,7 @@ export function MapScreen() {
                   </div>
                 </div>
                 <div className="mosque-cc-foot">
-                  <a className="link-inline" href="/prayer-rooms" onClick={(e) => e.stopPropagation()} style={{ fontSize: ".82rem" }}>Full directory →</a>
+                  <a className="link-inline" href="/prayer-rooms" onClick={(e) => e.stopPropagation()} style={{ fontSize: "var(--fs-82)" }}>Full directory →</a>
                   <a className="btn btn-soft btn-sm" href={mapsSearchUrl(`${p.name} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); track.leadAction("directions", p.id, "prayer-room"); }}>
                     <Icon name="directions" size={15} /> Directions
                   </a>
@@ -1357,11 +1357,11 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
               <div className="flex g8 center wrap" style={{ marginBottom: 8 }}>
                 <span className="tag">{item.hawkerCentreId ? "Hawker Stall" : item.cat}</span>
                 <span className="faint">·</span>
-                <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.cuisine}</span>
+                <span className="muted" style={{ fontWeight: 600, fontSize: "var(--fs-86)" }}>{item.cuisine}</span>
                 <span className="faint">·</span>
-                <span className="muted" style={{ fontWeight: 600, fontSize: ".86rem" }}>{item.price}</span>
+                <span className="muted" style={{ fontWeight: 600, fontSize: "var(--fs-86)" }}>{item.price}</span>
               </div>
-              <h1 style={{ fontSize: "2rem" }}>{item.name}</h1>
+              <h1 style={{ fontSize: "var(--fs-200)" }}>{item.name}</h1>
               {hawkerCentre && (
                 <p className="detail-addr" style={{ marginTop: 4 }}>
                   <Icon name="store" size={14} />
@@ -1394,7 +1394,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
           <div className="flex g14 center wrap" style={{ marginTop: 12 }}>
             <Rating value={item.rating} count={item.reviews} />
             <span className="faint">·</span>
-            <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: ".88rem" }}>
+            <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: "var(--fs-88)" }}>
               <span className={`status-dot ${openNow ? "open" : "closed"}`}></span>{hoursLabel}</span>
           </div>
 
@@ -1454,7 +1454,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
                 <span className="attn-ico"><Icon name="building" size={20} /></span>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>Is this your business?</div>
-                  <div className="muted" style={{ fontSize: ".9rem" }}>Claim your free listing to manage details, reply to reviews and add photos.</div>
+                  <div className="muted" style={{ fontSize: "var(--fs-90)" }}>Claim your free listing to manage details, reply to reviews and add photos.</div>
                 </div>
               </div>
               <button className="btn btn-primary btn-sm" onClick={() => { logLead("claim"); navigate("claim", { id: item.slug || item.id }); }}><Icon name="shield-check" size={15} /> Claim this listing</button>
@@ -1539,7 +1539,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
               so offer the weekly new-spots newsletter (source "listing" → foodie). */}
           <section className="newsletter-card" style={{ marginTop: 28 }}>
             <span className="eyebrow">🌙 HumbleHalal newsletter</span>
-            <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Love halal finds like this?</h2>
+            <h2 style={{ fontSize: "var(--fs-125)", marginTop: 8 }}>Love halal finds like this?</h2>
             <p className="muted" style={{ marginTop: 8 }}>
               We send the best new halal spots around {item.area} and across Singapore every week. Be first to know.
             </p>
@@ -1556,7 +1556,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
               halal" and unfairly undersells genuinely-halal uncertified places). */}
           <div className="card" style={{ padding: 18, marginBottom: 14 }}>
             <div className="flex between center" style={{ marginBottom: 8 }}>
-              <h3 style={{ fontSize: "1.02rem" }}>Halal verification</h3>
+              <h3 style={{ fontSize: "var(--fs-102)" }}>Halal verification</h3>
               <button className="btn-ghost-ico" title="A trust level from verification signals (MUIS status, documents, ownership) and community feedback — not a certification." aria-label="How halal verification works" onClick={() => navigate("verify")}>
                 <Icon name="info" size={15} />
               </button>
@@ -1564,7 +1564,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
             <div className="flex g14 center">
               <HalalConfidenceRing item={item} />
               <div style={{ minWidth: 0 }}>
-                <div className="muted" style={{ fontSize: ".84rem", lineHeight: 1.45 }}>
+                <div className="muted" style={{ fontSize: "var(--fs-84)", lineHeight: 1.45 }}>
                   Rated on verification signals &amp; community feedback.
                   {(item.verify?.confirms ?? 0) > 0 && <> Based on <strong>{item.verify!.confirms}</strong> community confirmation{item.verify!.confirms === 1 ? "" : "s"}.</>}
                 </div>
@@ -1574,8 +1574,8 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
 
           {item.franchise && item.outlets && outlet ? (
             <div className="card" style={{ padding: 18 }}>
-              <div className="flex between center"><h3 style={{ fontSize: "1.05rem" }}>Choose an outlet</h3>
-                <span className={outlet.open ? "status-open" : "status-closed"} style={{ fontSize: ".82rem" }}>{outlet.open ? "Open now" : "Closed"}</span></div>
+              <div className="flex between center"><h3 style={{ fontSize: "var(--fs-105)" }}>Choose an outlet</h3>
+                <span className={outlet.open ? "status-open" : "status-closed"} style={{ fontSize: "var(--fs-82)" }}>{outlet.open ? "Open now" : "Closed"}</span></div>
               <div className="outlet-select">
                 {item.outlets.map((o, i) => (
                   <button key={o.id} className={`outlet-opt ${i === outletIdx ? "on" : ""}`} onClick={() => setOutletIdx(i)}>
@@ -1591,23 +1591,23 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
               <hr className="divider" style={{ margin: "14px 0" }} />
               <div className="flex g8" style={{ alignItems: "flex-start" }}>
                 <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
-                <span className="muted" style={{ fontSize: ".88rem" }}>{outlet.address}</span>
+                <span className="muted" style={{ fontSize: "var(--fs-88)" }}>{outlet.address}</span>
               </div>
               <div className="flex g8 center" style={{ marginTop: 8 }}>
                 <Icon name="clock" size={18} style={{ color: "var(--emerald)", flex: "none" }} />
-                <span className="muted" style={{ fontSize: ".88rem" }}>{outlet.hours}</span>
+                <span className="muted" style={{ fontSize: "var(--fs-88)" }}>{outlet.hours}</span>
               </div>
               <div className="flex g8 center" style={{ marginTop: 8 }}>
                 <Icon name="shield-check" size={18} style={{ color: "var(--emerald)", flex: "none" }} />
-                <span className="muted" style={{ fontSize: ".84rem" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
+                <span className="muted" style={{ fontSize: "var(--fs-84)" }}>MUIS · <span className="kbd-mono" style={{ fontWeight: 700 }}>{outlet.certNo}</span></span>
               </div>
               {/* No fake map image — the Directions intent is the honest CTA. */}
               <a className="btn btn-primary btn-block mt12" href={mapsSearchUrl(`${item.name} ${outlet.area} Singapore`)} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={18} /> Directions to this outlet</a>
             </div>
           ) : (
           <div className="card" style={{ padding: 18 }}>
-            <div className="flex between center"><h3 style={{ fontSize: "1.05rem" }}>Hours &amp; location</h3>
-              <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: ".82rem" }}>{openNow ? "Open now" : "Closed"}</span></div>
+            <div className="flex between center"><h3 style={{ fontSize: "var(--fs-105)" }}>Hours &amp; location</h3>
+              <span className={openNow ? "status-open" : "status-closed"} style={{ fontSize: "var(--fs-82)" }}>{openNow ? "Open now" : "Closed"}</span></div>
             <div className="hours-list">
               {(item.hoursWeek || []).map((r, i) => (
                 <div key={i} className={`hours-row ${live && i === sgTodayIdx() ? "today" : ""}`}>
@@ -1621,7 +1621,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
                 <hr className="divider" style={{ margin: "14px 0" }} />
                 <div className="flex g8" style={{ alignItems: "flex-start" }}>
                   <Icon name="pin" size={18} style={{ color: "var(--emerald)", marginTop: 2, flex: "none" }} />
-                  <span className="muted" style={{ fontSize: ".88rem" }}>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
+                  <span className="muted" style={{ fontSize: "var(--fs-88)" }}>{item.address}{item.postal ? `, Singapore ${item.postal}` : ""}</span>
                 </div>
               </>
             )}
@@ -1690,7 +1690,7 @@ export function SavedScreen() {
       <section className="seo-hero hh-pattern">
         <div className="hh-wrap">
           <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)" }}>Your saved places</h1>
-          <p className="muted" style={{ marginTop: 8, fontSize: "1.05rem" }}>Tap the heart on any listing to keep it here — saved on this device.</p>
+          <p className="muted" style={{ marginTop: 8, fontSize: "var(--fs-105)" }}>Tap the heart on any listing to keep it here — saved on this device.</p>
         </div>
       </section>
       <div className="hh-wrap hh-section">
@@ -1722,7 +1722,7 @@ function HalalScoreBar({ item }: { item: Listing }) {
       </span>
       <div>
         <div className="hs-tier">{hs.label}</div>
-        <div className="faint" style={{ fontSize: ".74rem", fontWeight: 600 }}>Halal confidence score</div>
+        <div className="faint" style={{ fontSize: "var(--fs-74)", fontWeight: 600 }}>Halal confidence score</div>
       </div>
     </div>
   );
@@ -1791,7 +1791,7 @@ export function VerificationCard({ item, navigate, toast }: {
         <div className="verif-seal warn"><Icon name={pending ? "clock" : "info"} size={22} /></div>
         <div className="f1">
           <div style={{ fontWeight: 700 }}>{heading}</div>
-          <p className="muted" style={{ fontSize: ".88rem", marginTop: 4, lineHeight: 1.5 }}>
+          <p className="muted" style={{ fontSize: "var(--fs-88)", marginTop: 4, lineHeight: 1.5 }}>
             {body}
             <button className="link-inline" onClick={() => navigate("verify")} style={{ font: "inherit" }}>How we verify →</button>
           </p>
@@ -1827,7 +1827,7 @@ export function PrayerSpaceCard({ item }: { item: Listing }) {
   if (!p || !p.has) return null;
   return (
     <div className="prayer-card">
-      <div className="prayer-card-head"><span className="attn-ico"><Icon name="mosque" size={18} /></span><h3 style={{ fontSize: "1.1rem" }}>Prayer space available</h3></div>
+      <div className="prayer-card-head"><span className="attn-ico"><Icon name="mosque" size={18} /></span><h3 style={{ fontSize: "var(--fs-110)" }}>Prayer space available</h3></div>
       <div className="prayer-card-grid">
         <div className="pcg-item"><Icon name="user" size={15} /><div><span className="faint">Arrangement</span><div style={{ fontWeight: 600 }}>{p.gender}</div></div></div>
         <div className="pcg-item"><Icon name="check" size={15} /><div><span className="faint">Wudhu area</span><div style={{ fontWeight: 600 }}>{p.wudhu ? "Available" : "Not available"}</div></div></div>
@@ -1849,8 +1849,8 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
     <div className="detail-pane">
       <div className="flex between center wrap g10">
         <div>
-          <h3 style={{ fontSize: "1.2rem" }}>{item.outletCount} outlets across Singapore</h3>
-          <p className="muted" style={{ fontSize: ".9rem", marginTop: 4 }}>Every outlet is individually MUIS-certified. Pick one to see its hours and directions.</p>
+          <h3 style={{ fontSize: "var(--fs-120)" }}>{item.outletCount} outlets across Singapore</h3>
+          <p className="muted" style={{ fontSize: "var(--fs-90)", marginTop: 4 }}>Every outlet is individually MUIS-certified. Pick one to see its hours and directions.</p>
         </div>
         <span className="tag"><Icon name="shield-check" size={13} /> All outlets certified</span>
       </div>
@@ -1870,10 +1870,10 @@ export function LocationsPanel({ item, outletIdx, setOutletIdx, toast }: {
           <div key={o.id} className={`outlet-card ${i === outletIdx ? "on" : ""}`} onClick={() => setOutletIdx(i)}>
             <div className="oc-top">
               <div className="flex g8 center">
-                <span className="oo-name" style={{ fontSize: "1rem" }}>{o.name}</span>
+                <span className="oo-name" style={{ fontSize: "var(--fs-100)" }}>{o.name}</span>
                 {o.flagship && <span className="oo-flag">Flagship</span>}
               </div>
-              <span className={o.open ? "status-open" : "status-closed"} style={{ fontSize: ".8rem" }}>
+              <span className={o.open ? "status-open" : "status-closed"} style={{ fontSize: "var(--fs-80)" }}>
                 <span className={`status-dot ${o.open ? "open" : "closed"}`}></span>{o.open ? "Open" : "Closed"}
               </span>
             </div>
@@ -1920,7 +1920,7 @@ function OffersBlock({ businessId, slug, category }: { businessId: string; slug:
       {offer && <div className="offers-block">
         <div className="offers-head"><Icon name="trophy" size={16} /> <span>Offer</span></div>
         <p className="offers-body"><b>{offer.title}</b>{offer.details ? ` — ${offer.details}` : ""}{until ? ` (valid until ${until})` : ""}</p>
-        <p className="offers-body" style={{ fontSize: ".8rem", opacity: 0.8 }}>Mention Humble Halal or show this listing to staff to redeem.</p>
+        <p className="offers-body" style={{ fontSize: "var(--fs-80)", opacity: 0.8 }}>Mention Humble Halal or show this listing to staff to redeem.</p>
       </div>}
     </div>
   );
@@ -1929,7 +1929,7 @@ function OffersBlock({ businessId, slug, category }: { businessId: string; slug:
 export function DetailOverview({ item }: { item: Listing }) {
   return (
     <div className="detail-pane">
-      <p style={{ fontSize: "1.02rem", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb}{item.area ? ` A neighbourhood favourite in ${item.area}, known for warm service${item.cuisine ? ` and consistent quality across ${item.cuisine.toLowerCase()}` : ""}.` : ""}</p>
+      <p style={{ fontSize: "var(--fs-102)", color: "var(--ink-soft)", lineHeight: 1.6 }}>{item.blurb}{item.area ? ` A neighbourhood favourite in ${item.area}, known for warm service${item.cuisine ? ` and consistent quality across ${item.cuisine.toLowerCase()}` : ""}.` : ""}</p>
       {/* Offers & promotions — Premium-only (offers_block). Shows the REAL
           offer the owner set (managed in their dashboard); nothing when none. */}
       {canUse(item, "offers_block") && <OffersBlock businessId={item.id} slug={item.slug || item.id} category={item.catId} />}
@@ -1948,13 +1948,13 @@ export function DetailOverview({ item }: { item: Listing }) {
             : <span key={t} className="tag"><Icon name="check" size={13} /> {t}</span>;
         })}
       </div>
-      <h3 style={{ marginTop: 24, fontSize: "1.2rem" }}>Gallery</h3>
+      <h3 style={{ marginTop: 24, fontSize: "var(--fs-120)" }}>Gallery</h3>
       <div className="gallery-grid mt12">
         {item.photos?.length
           ? item.photos.slice(0, galleryMax(item)).map((p, pi) => (
               <figure key={p.url} style={{ margin: 0 }}>
                 <ImagePh label={p.caption || `photo ${pi + 1}`} tone={pi % 2 ? "gold" : "cream"} src={p.url} ratio="1" />
-                {p.caption && <figcaption className="faint" style={{ fontSize: ".78rem", marginTop: 4 }}>{p.caption}</figcaption>}
+                {p.caption && <figcaption className="faint" style={{ fontSize: "var(--fs-78)", marginTop: 4 }}>{p.caption}</figcaption>}
               </figure>
             ))
           : (
@@ -2127,12 +2127,12 @@ export function DetailReviews({ item }: { item: Listing }) {
             <>
               <div className="rs-num">{avgRating.toFixed(1)}</div>
               <div className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={16} style={{ color: i <= Math.round(avgRating) ? "var(--gold)" : "var(--line-strong)" }} />)}</div>
-              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>{shownCount} review{shownCount === 1 ? "" : "s"}</div>
+              <div className="faint" style={{ fontSize: "var(--fs-82)", marginTop: 4 }}>{shownCount} review{shownCount === 1 ? "" : "s"}</div>
             </>
           ) : (
             <>
-              <div className="rs-num" style={{ fontSize: "1.4rem" }}>New</div>
-              <div className="faint" style={{ fontSize: ".82rem", marginTop: 4 }}>No reviews yet — be the first</div>
+              <div className="rs-num" style={{ fontSize: "var(--fs-140)" }}>New</div>
+              <div className="faint" style={{ fontSize: "var(--fs-82)", marginTop: 4 }}>No reviews yet — be the first</div>
             </>
           )}
         </div>
@@ -2147,7 +2147,7 @@ export function DetailReviews({ item }: { item: Listing }) {
 
       <div className="flex between center wrap g10 mt16">
         <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}><Icon name="edit" size={17} /> Write a review</button>
-        <label className="flex g8 center faint" style={{ fontSize: ".84rem" }}>
+        <label className="flex g8 center faint" style={{ fontSize: "var(--fs-84)" }}>
           Sort
           <select className="select" style={{ width: "auto", padding: "7px 10px" }} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
             <option value="recent">Most recent</option>
@@ -2160,7 +2160,7 @@ export function DetailReviews({ item }: { item: Listing }) {
       {showForm && (
         <div className="review-form card mt12" style={{ padding: 16 }}>
           <div className="flex g8 center" style={{ marginBottom: 10 }}>
-            <span style={{ fontWeight: 700, fontSize: ".9rem" }}>Your rating</span>
+            <span style={{ fontWeight: 700, fontSize: "var(--fs-90)" }}>Your rating</span>
             <div className="star-pick" onMouseLeave={() => setHover(0)}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <button key={i} type="button" aria-label={`${i} star${i > 1 ? "s" : ""}`} className="star-btn"
@@ -2178,7 +2178,7 @@ export function DetailReviews({ item }: { item: Listing }) {
             <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? "Posting…" : "Post review"}</button>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
           </div>
-          <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Reviews are moderated. Be honest and respectful — confirm halal status on MUIS HalalSG.</p>
+          <p className="faint" style={{ fontSize: "var(--fs-76)", marginTop: 8 }}>Reviews are moderated. Be honest and respectful — confirm halal status on MUIS HalalSG.</p>
         </div>
       )}
 
@@ -2188,9 +2188,9 @@ export function DetailReviews({ item }: { item: Listing }) {
             <div className="flex g10 center">
               <span className="avatar">{r.avatar}</span>
               <div><div style={{ fontWeight: 700 }}>{r.name}</div>
-                <div className="flex g6 center"><span className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={12} style={{ color: i <= r.rating ? "var(--gold)" : "var(--line-strong)" }} />)}</span><span className="faint" style={{ fontSize: ".78rem" }}>{r.date}</span></div></div>
+                <div className="flex g6 center"><span className="rs-stars">{[1, 2, 3, 4, 5].map((i) => <Icon key={i} name="starf" size={12} style={{ color: i <= r.rating ? "var(--gold)" : "var(--line-strong)" }} />)}</span><span className="faint" style={{ fontSize: "var(--fs-78)" }}>{r.date}</span></div></div>
             </div>
-            <p className="muted" style={{ marginTop: 10, fontSize: ".92rem", lineHeight: 1.5 }}>{r.text}</p>
+            <p className="muted" style={{ marginTop: 10, fontSize: "var(--fs-92)", lineHeight: 1.5 }}>{r.text}</p>
             <button className={`btn btn-ghost btn-sm ${helped[r.id] ? "voted" : ""}`} style={{ marginTop: 8, paddingLeft: 0 }} onClick={() => markHelpful(r.id)} disabled={helped[r.id]}>
               <Icon name="heart" size={15} /> Helpful ({r.helpful})
             </button>
