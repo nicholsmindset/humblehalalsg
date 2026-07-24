@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { classifyChannel, buildFunnel, type Channel } from "@/lib/analytics-overview";
+import { isBlockedFoodListing } from "@/lib/listing-safety";
 
 type EventRow = {
   created_at: string;
@@ -96,13 +97,19 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [events, bizRes, valueRes] = await Promise.all([
+    const [allEvents, bizRes, valueRes] = await Promise.all([
       fetchAllEvents(admin, from, to),
       admin.from("businesses").select("slug,name,cat_id,area,plan"),
       admin.from("analytics_lead_values").select("action,value_cents"),
     ]);
     if (bizRes.error) throw new Error(bizRes.error.message);
     if (valueRes.error) throw new Error(valueRes.error.message);
+
+    // Halal-safety: never count or surface a listing that's been blocked after a
+    // halal-safety review (same guard the public /business route uses in proxy.ts).
+    // Dropping its events here removes it from vendor rows, opportunities, journeys
+    // and the aggregate funnel at once. Events not tied to a listing pass through.
+    const events = allEvents.filter((e) => !e.listing_slug || !isBlockedFoodListing(e.listing_slug));
 
     const businesses = new Map((bizRes.data as BizRow[] | null || []).map((b) => [b.slug, b]));
     const values = new Map((valueRes.data || []).map((v) => [String(v.action), Number(v.value_cents) || 0]));
