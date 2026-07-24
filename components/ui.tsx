@@ -349,7 +349,7 @@ export function ListingCard({
   const hsPill = (() => {
     const hs = scoreListing(item);
     return (
-      <span className="hs-pill" title={hs.blurb}>
+      <span className="hs-pill" title={hs.blurb} aria-label={`Halal confidence: ${hs.label}. ${hs.blurb}`}>
         <span className="hs-dot" style={{ background: scoreTone(hs.tier) }} />
         {hs.label}
       </span>
@@ -360,7 +360,7 @@ export function ListingCard({
       className="claim-chip"
       title="Own this business? Claim your free listing"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); track.leadAction("claim", item.slug || item.id, item.catId); navigate("claim", { id: item.slug || item.id }); }}
-      style={{ position: "relative", zIndex: 2, fontSize: ".72rem", fontWeight: 700, color: "var(--ink-soft)", background: "var(--cream-200)", border: "1px solid var(--line)", borderRadius: 999, padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}
+      style={{ position: "relative", zIndex: 2, fontSize: "var(--fs-72)", fontWeight: 700, color: "var(--ink-soft)", background: "var(--cream-200)", border: "1px solid var(--line)", borderRadius: 999, padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 3, cursor: "pointer" }}
     >
       <Icon name="building" size={11} /> Claim
     </button>
@@ -373,7 +373,7 @@ export function ListingCard({
         <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: 108, flex: "none" }} fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} compact />} />
         <div className="lc-body" style={{ flex: 1, padding: "12px 14px" }}>
           <div className="flex between center">
-            <span className="lc-name" style={{ fontSize: "1rem" }}>
+            <span className="lc-name" style={{ fontSize: "var(--fs-100)" }}>
               {item.name}
             </span>
             <Rating value={item.rating} count={item.reviews} showCount={false} />
@@ -449,7 +449,7 @@ export function ListingCard({
               ? joinParts([`${item.outletCount} locations`, item.distance ? `nearest ${item.distance}` : ""])
               : joinParts([item.area, item.distance])}
           </span>
-          <span className={item.open ? "status-open" : "status-closed"} style={{ fontSize: ".8rem" }}>
+          <span className={item.open ? "status-open" : "status-closed"} style={{ fontSize: "var(--fs-80)" }}>
             <span className={`status-dot ${item.open ? "open" : "closed"}`}></span>
             {item.open ? "Open" : "Closed"}
           </span>
@@ -878,7 +878,7 @@ export function Modal({
       >
         {title && (
           <div className="flex between center" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: "1.3rem" }}>{title}</h3>
+            <h3 style={{ fontSize: "var(--fs-130)" }}>{title}</h3>
             <button
               className="btn btn-ghost btn-sm"
               onClick={onClose}

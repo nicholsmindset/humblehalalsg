@@ -280,7 +280,7 @@ export function Onboarding() {
         {step === 0 && (
           <div className="screen-in">
             <span className="eyebrow">Assalamualaikum 👋</span>
-            <h2 style={{ fontSize: "1.6rem", marginTop: 8 }}>Welcome to Humble Halal</h2>
+            <h2 style={{ fontSize: "var(--fs-160)", marginTop: 8 }}>Welcome to Humble Halal</h2>
             <p className="muted" style={{ marginTop: 8 }}>
               Singapore’s trusted halal &amp; Muslim lifestyle guide. Let’s set it up for you in two
               quick steps.
@@ -313,7 +313,7 @@ export function Onboarding() {
         {step === 1 && (
           <div className="screen-in">
             <span className="eyebrow">Step 1 of 2</span>
-            <h2 style={{ fontSize: "1.4rem", marginTop: 8 }}>Where are you based?</h2>
+            <h2 style={{ fontSize: "var(--fs-140)", marginTop: 8 }}>Where are you based?</h2>
             <p className="muted" style={{ marginTop: 6 }}>
               We’ll surface halal spots and mosques near you first.
             </p>
@@ -359,7 +359,7 @@ export function Onboarding() {
         {step === 2 && (
           <div className="screen-in">
             <span className="eyebrow">Step 2 of 2</span>
-            <h2 style={{ fontSize: "1.4rem", marginTop: 8 }}>How strict should we be?</h2>
+            <h2 style={{ fontSize: "var(--fs-140)", marginTop: 8 }}>How strict should we be?</h2>
             <p className="muted" style={{ marginTop: 6 }}>
               You can change this anytime with the “Certified / listed” switch.
             </p>
@@ -372,7 +372,7 @@ export function Onboarding() {
                   <Badge type="muis" />
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontWeight: 700 }}>Certified / listed only</div>
-                    <div className="faint" style={{ fontSize: ".8rem" }}>
+                    <div className="faint" style={{ fontSize: "var(--fs-80)" }}>
                       MUIS-certified, MUIS-listed or admin-verified
                     </div>
                   </div>
@@ -387,7 +387,7 @@ export function Onboarding() {
                   <Badge type="friendly" />
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontWeight: 700 }}>Show everything</div>
-                    <div className="faint" style={{ fontSize: ".8rem" }}>
+                    <div className="faint" style={{ fontSize: "var(--fs-80)" }}>
                       Include self-declared, clearly labelled
                     </div>
                   </div>
@@ -467,7 +467,7 @@ export function TopNav() {
                   className="btn btn-ghost btn-sm"
                   onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
                 >
-                  <span className="avatar" style={{ width: 30, height: 30, fontSize: ".78rem" }}>
+                  <span className="avatar" style={{ width: 30, height: 30, fontSize: "var(--fs-78)" }}>
                     {(user.name || "U")[0]}
                   </span>{" "}
                   {user.name}

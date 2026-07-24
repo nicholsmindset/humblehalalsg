@@ -64,9 +64,9 @@
 .save-fab { min-width: 44px; min-height: 44px; }
 
 /* ---- Legible text: ≥12px floor (Lighthouse "legible font sizes") ---- */
-.hh-tab span { font-size: 0.78rem; } /* tab labels were ~10.5px */
-.eyebrow { font-size: 0.8rem; }       /* was ~11.5px */
-.badge { font-size: 0.75rem; }        /* was ~11.8px */
+.hh-tab span { font-size: var(--fs-78); } /* tab labels were ~10.5px */
+.eyebrow { font-size: var(--fs-80); }       /* was ~11.5px */
+.badge { font-size: var(--fs-75); }        /* was ~11.8px */
 
 /* ---- Safe-area insets (enabled by viewport-fit=cover) ---- */
 .detail-stickybar, .evt-stickybar { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
@@ -150,7 +150,7 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
    by design (icon-labels / non-essential), everything readable rises. */
 @media (max-width: 700px) {
   .eyebrow, .filter-count, .pop-badge, .badge,
-  .map-cc-dist, .map-mrt, .tbl th { font-size: .75rem; }
+  .map-cc-dist, .map-mrt, .tbl th { font-size: var(--fs-75); }
 }
 
 /* Owner dashboard tab strip scrolls horizontally — fade both edges so
@@ -214,7 +214,7 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
     display: inline-flex; align-items: center; min-height: 44px;
   }
   .eyebrow, .filter-count, .pop-badge, .badge,
-  .map-cc-dist, .map-mrt, .tbl th { font-size: .75rem; }
+  .map-cc-dist, .map-mrt, .tbl th { font-size: var(--fs-75); }
 
   /* Breadcrumb links (SEO hero, travel, article) rendered ~20px tall — make
      each a 44px hit row (they flex-wrap, so taller rows are fine). The
@@ -241,9 +241,9 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
   .newsletter-consent, .ota-seg-label, .dest-go, .dest-country,
   .halal-flag, .halal-chip, .frc-tag, .dest-tag, .trv-trust-pill,
   .standfirst-lbl, .save-pill, .secure-pill, .evt-cat, .blog-card-tag,
-  .article-kicker, .verified, .aa-beta { font-size: .75rem; }
+  .article-kicker, .verified, .aa-beta { font-size: var(--fs-75); }
   /* Logo subtitle "SINGAPORE" was 9.3px — smallest text on the site. */
-  .hh-logo .name small { font-size: .66rem; letter-spacing: .16em; }
+  .hh-logo .name small { font-size: var(--fs-66); letter-spacing: .16em; }
 }
 
 /* ---- iOS zoom-on-focus: Safari zooms the page when a focused text control
@@ -271,6 +271,6 @@ label:has(> input[type="radio"]) { min-height: 44px; display: inline-flex; align
   .cncg-input input,                   /* travel.css .92rem — concierge chat */
   .aa-form input,                      /* travel.css .92rem — Ask-AI (any context) */
   .field input, .field select, .field textarea { /* catch-all for bare .field controls */
-    font-size: 1rem; /* 16px */
+    font-size: var(--fs-100); /* 16px */
   }
 }
