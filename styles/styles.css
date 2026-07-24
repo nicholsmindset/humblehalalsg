@@ -133,7 +133,6 @@
   --r-24: 24px;
   --r-26: 26px;
   --r-32: 32px;
-  --r-999: 999px;
 
 
   /* Shadows */
@@ -495,7 +494,7 @@ input, select, textarea { font-family: inherit; font-size: var(--fs-100); color:
 }
 .business-media-fallback::before { left: -95px; bottom: -120px; }
 .business-media-fallback::after { right: -100px; top: -105px; }
-.bmf-orbit { position: absolute; inset: 10%; border: 1px solid rgba(255,255,255,.08); border-radius: var(--r-999); transform: rotate(-8deg); }
+.bmf-orbit { position: absolute; inset: 10%; border: 1px solid rgba(255,255,255,.08); border-radius: var(--r-pill); transform: rotate(-8deg); }
 .bmf-mark {
   position: relative; z-index: 1; width: clamp(48px, 8vw, 92px); height: clamp(48px, 8vw, 92px);
   flex: none; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.35); border-radius: 24%;
@@ -776,8 +775,8 @@ input, select, textarea { font-family: inherit; font-size: var(--fs-100); color:
 .collection-pick-row input { width: 16px; height: 16px; accent-color: var(--emerald); }
 
 /* ---- Language toggle ---- */
-.lang-toggle { display: inline-flex; background: rgba(255,255,255,.12); border-radius: var(--r-999); padding: 2px; flex: none; }
-.lang-toggle button { border: none; background: none; color: rgba(255,255,255,.72); font-weight: 700; font-size: var(--fs-76); padding: 4px 11px; border-radius: var(--r-999); cursor: pointer; transition: all .15s; }
+.lang-toggle { display: inline-flex; background: rgba(255,255,255,.12); border-radius: var(--r-pill); padding: 2px; flex: none; }
+.lang-toggle button { border: none; background: none; color: rgba(255,255,255,.72); font-weight: 700; font-size: var(--fs-76); padding: 4px 11px; border-radius: var(--r-pill); cursor: pointer; transition: all .15s; }
 .lang-toggle button.on { background: var(--cream); color: var(--emerald); }
 /* Light-header variant (replaces the old "Certified only" toggle in the nav). */
 .hh-topnav .lang-toggle, .hh-mobilebar .lang-toggle { background: var(--cream-200, #efe7d6); }
@@ -956,7 +955,7 @@ input, select, textarea { font-family: inherit; font-size: var(--fs-100); color:
 .hh-popcard-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .hh-popchip {
   font-style: normal; font-size: var(--fs-68); font-weight: 600; line-height: 1;
-  padding: 4px 7px; border-radius: var(--r-999); background: var(--sand-100, #f2ede3); color: var(--ink-70, #47525b);
+  padding: 4px 7px; border-radius: var(--r-pill); background: var(--sand-100, #f2ede3); color: var(--ink-70, #47525b);
 }
 .hh-popchip-halal { background: var(--emerald-50, #e7f1ee); color: var(--emerald, #12525B); }
 .hh-popchip-open { background: #e7f5e9; color: #1e7a34; }

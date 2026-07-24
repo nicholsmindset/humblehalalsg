@@ -493,45 +493,6 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
   );
 }
 
-/* ---- Trust strip ---- */
-export function TrustStrip({ navigate }: { navigate: (screen: string, params?: Record<string, unknown>) => void }) {
-  // Definitions come from THE glossary (lib/status-glossary) so this legend
-  // can never drift from the badges/pills it explains.
-  const rows: { type: BadgeKey; desc: string }[] = [
-    { type: "muis", desc: `${statusDef("muis")} We link to the HalalSG verification.` },
-    { type: "admin", desc: statusDef("admin") },
-    { type: "owned", desc: statusDef("owned") },
-    { type: "friendly", desc: statusDef("friendly") },
-    { type: "nopork", desc: statusDef("nopork") },
-    { type: "pending", desc: statusDef("pending") },
-  ];
-  return (
-    <section className="trust-strip">
-      <div className="hh-wrap">
-        <div className="flex between center wrap g12" style={{ marginBottom: 18 }}>
-          <div>
-            <span className="eyebrow">Know what you’re looking at</span>
-            <h2 style={{ fontSize: "1.6rem", marginTop: 8 }}>Our trust badges, explained</h2>
-          </div>
-          <button className="btn btn-outline" onClick={() => navigate("verify")}><Icon name="shield" size={18} /> How we verify</button>
-        </div>
-        <div className="trust-grid">
-          {rows.map((r) => (
-            <div key={r.type} className="trust-item">
-              <Badge type={r.type} lg />
-              <p className="muted" style={{ fontSize: ".86rem", marginTop: 8 }}>{r.desc}</p>
-            </div>
-          ))}
-        </div>
-        <p className="faint" style={{ fontSize: ".82rem", marginTop: 16 }}>
-          Humble Halal is a discovery platform, not a certifier. Always confirm certification on the official
-          <span style={{ color: "var(--emerald)", fontWeight: 600, cursor: "pointer" }} {...clickable(() => navigate("verify"), "MUIS HalalSG register")}> MUIS HalalSG</span> register.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 /* =============================================================
    EXPLORE / SEARCH
 ============================================================= */
