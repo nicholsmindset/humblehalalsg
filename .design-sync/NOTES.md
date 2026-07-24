@@ -56,6 +56,17 @@
   from the wave learnings; the ~224 non-authored components keep the synth-entry
   `[key: string]: unknown` fallback + JSDoc-derived `.prompt.md`.
 
+## Coverage-expansion wave (batchE, +13 components → 58 authored)
+Added: StatusCard, StatusExplainer, MethodPanel, SimilarChecks (halal-check
+verdict system), VerdictView (verdict), EventCard/EventBadges/EventDateChip/
+EventPriceTag (events), IngredientDetail (tools), HawkerFinder (hawker — renders
+a live Leaflet map fine), plus BookingsChart/TierChart (recharts) and the
+Carousel/Popover/HeroTrustPills recoveries. All graded good. None needed
+PreviewShell (event components read their data from props, not context).
+NOTE: batchE has no `dtsPropsFor` (the wave subagent hit a session limit before
+writing learnings); those 11 use the synth-entry `unknown` fallback .d.ts +
+JSDoc `.prompt.md`. A future re-sync can add contracts by reading the sources.
+
 ## Known render warns (benign — recorded so a re-sync doesn't flag them new)
 - **Stars** — `[RENDER_THIN]`: it's an icon-only gold-star row (~15px tall, no
   text). Confirmed rendering correctly (5/4/3 stars). `bad:false`. Benign.
