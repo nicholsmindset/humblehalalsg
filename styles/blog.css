@@ -99,6 +99,11 @@
 .author-bio h4 { font-family: var(--serif); font-weight: 700; font-size: 1.15rem; margin: 2px 0 0; }
 .author-bio p { font-family: var(--read); font-size: 1.02rem; line-height: 1.6; color: var(--ink-soft); margin: 8px 0 0; }
 .author-bio .verified { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 4px 11px; border-radius: 999px; background: var(--emerald); color: #fff; font-family: var(--sans); font-size: .72rem; font-weight: 700; }
+/* Social links row — was undefined, so the hostnames rendered with no gap
+   ("instagram.comlinkedin.com"). Lay them out with a gap. */
+.author-links { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; }
+.author-links a { font-family: var(--sans); font-size: .82rem; font-weight: 600; color: var(--emerald); text-decoration: none; }
+.author-links a:hover { text-decoration: underline; }
 
 /* Directory CTA (editorial) */
 .article-cta { margin: 32px 0 0; padding: 24px 26px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--white); }
