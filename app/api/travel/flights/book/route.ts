@@ -107,11 +107,20 @@ export async function POST(req: Request) {
       // submit / replay (bookFlight is idempotent upstream). Return the existing
       // booking and skip the duplicate confirmation email.
       if (insErr?.code === "23505") {
-        const { data: existing } = await db
-          .from("flight_bookings")
-          .select("id, status, booking_ref, pnr")
-          .eq("prebook_id", prebookId)
-          .maybeSingle();
+        // Scope the lookup to the CALLER (audit flightDupLeak-03): an unscoped
+        // prebook_id lookup would hand a booking's ref/PNR to a different
+        // logged-in user who replays someone else's prebook id. Anonymous
+        // callers (no userId) never get ledger refs back.
+        let existing: { id: string; status: string; booking_ref: string | null; pnr: string | null } | null = null;
+        if (userId) {
+          const { data } = await db
+            .from("flight_bookings")
+            .select("id, status, booking_ref, pnr")
+            .eq("prebook_id", prebookId)
+            .eq("user_id", userId)
+            .maybeSingle();
+          existing = data;
+        }
         return NextResponse.json({
           ok: true,
           status: existing?.status ?? status,
