@@ -72,11 +72,15 @@ async-payment events that can't be exercised while dark.
 - [ ] **paidHotels-01 / paidHotels-02.** Confirm the 0040 booking-idempotency
   unique indexes are applied in prod, and set `LITEAPI_ENV=prod` (currently a
   key-shaped value in `.env.local`, not `sandbox`|`prod`) with `LITEAPI_PROD_KEY`.
-- [ ] **flightConfirmingTerminal-02 / flightRetryEmail-01.** A booking whose
-  provider never confirms sits in `confirming` forever after 30 retries with no
-  terminal state and no traveller email — add a terminal `failed` state + notify.
-- [ ] **flightDupLeak-03.** The `/flights/book` 23505 path returns an existing
-  booking's ref to a *different* caller — scope the lookup to the caller.
+- [x] **flightConfirmingTerminal-02 / flightRetryEmail-01.** FIXED — the
+  flight-retry cron now runs a terminal sweep: a booking that exhausts 30
+  retries is atomically flipped to `failed`, the traveller is emailed (new
+  `bookingChargedNotConfirmedEmail` template — never claims "not charged", since
+  payment was captured) and the ops inbox gets an alert to process the refund.
+  `app/api/cron/flight-retry/route.ts`, `lib/emails/templates.ts`.
+- [x] **flightDupLeak-03.** FIXED — the `/flights/book` 23505 path now scopes
+  the existing-booking lookup to the caller (`user_id = auth().userId`);
+  anonymous callers never receive ledger refs back. `app/api/travel/flights/book/route.ts`.
 
 ## Cross-cutting
 - [ ] **Stripe TEST-mode assertion (ads-stripe-testmode-03).** Nothing warns if a
