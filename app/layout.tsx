@@ -116,31 +116,39 @@ const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
   display: "swap",
 });
+// Route-specific alternate serifs (blog/editorial + tweaks-panel swaps). preload:false
+// so they aren't <link rel=preload>'d on every route — they still load via CSS where a
+// page actually uses the variable, cutting font requests on the majority of pages.
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   variable: "--font-cormorant",
   display: "swap",
+  preload: false,
 });
 const libreCaslon = Libre_Caslon_Text({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-libre",
   display: "swap",
+  preload: false,
 });
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-newsreader",
   display: "swap",
+  preload: false,
 });
 
 // Quranic/Arabic naskh face — Arabic ayah text must never fall back to a Latin sans.
+// Only the Quran/tasbih/hadith tools use it, so don't preload it site-wide.
 const amiri = Amiri({
   subsets: ["arabic"],
   weight: ["400", "700"],
   variable: "--font-quran",
   display: "swap",
+  preload: false,
 });
 
 const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader, amiri]

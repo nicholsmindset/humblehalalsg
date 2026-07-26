@@ -40,6 +40,36 @@ function sessionId(): string {
   } catch { return ""; }
 }
 
+// Module-level cache + in-flight dedup so repeat mounts and client-side navigations
+// reuse one /api/ads/active call per placement instead of firing a Vercel edge request
+// on every mount. Concurrent AdSlots for the same slot share a single in-flight promise;
+// a short TTL keeps rotation reasonably fresh.
+type AdResult = { ad: Ad | null; placement: Placement | null };
+const AD_TTL = 5 * 60_000; // 5 min
+const adCache = new Map<string, { t: number; v: AdResult }>();
+const adInflight = new Map<string, Promise<AdResult>>();
+
+function fetchAd(slot: string): Promise<AdResult> {
+  const hit = adCache.get(slot);
+  if (hit && Date.now() - hit.t < AD_TTL) return Promise.resolve(hit.v);
+  const inflight = adInflight.get(slot);
+  if (inflight) return inflight;
+  const p = fetch(`/api/ads/active?placement=${encodeURIComponent(slot)}`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => {
+      const v: AdResult = { ad: (j?.ads?.[0] as Ad) ?? null, placement: (j?.placement as Placement) ?? null };
+      adCache.set(slot, { t: Date.now(), v });
+      adInflight.delete(slot);
+      return v;
+    })
+    .catch(() => {
+      adInflight.delete(slot);
+      return { ad: null, placement: null } as AdResult;
+    });
+  adInflight.set(slot, p);
+  return p;
+}
+
 export function AdSlot({ slot, className }: { slot: string; className?: string }) {
   const { navigate } = useApp();
   const [ad, setAd] = useState<Ad | null>(null);
@@ -50,15 +80,12 @@ export function AdSlot({ slot, className }: { slot: string; className?: string }
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/ads/active?placement=${encodeURIComponent(slot)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (!alive) return;
-        setAd((j?.ads?.[0] as Ad) ?? null);
-        setPlacement((j?.placement as Placement) ?? null);
-        setLoaded(true);
-      })
-      .catch(() => { if (alive) setLoaded(true); });
+    fetchAd(slot).then((v) => {
+      if (!alive) return;
+      setAd(v.ad);
+      setPlacement(v.placement);
+      setLoaded(true);
+    });
     return () => { alive = false; };
   }, [slot]);
 

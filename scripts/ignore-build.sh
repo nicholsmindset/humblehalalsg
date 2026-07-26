@@ -26,8 +26,11 @@ if [ "$DIFF_STATUS" -ne 0 ] || [ -z "$CHANGED_FILES" ]; then
   exit 1
 fi
 
-# Any line NOT matching a docs/non-source pattern means "build".
-NON_DOCS="$(echo "$CHANGED_FILES" | grep -Ev '\.md$|^docs/|^README|^CHANGELOG|^LICENSE' || true)"
+# Any line NOT matching a docs/non-source pattern means "build". Non-deploying
+# trees excluded: docs/markdown, .design-sync/ (design-system sync inputs — never
+# part of the app build) and .github/ (CI workflow config — doesn't affect the
+# deployed app). Everything else falls through to "build".
+NON_DOCS="$(echo "$CHANGED_FILES" | grep -Ev '\.md$|^docs/|^README|^CHANGELOG|^LICENSE|^\.design-sync/|^\.github/' || true)"
 
 if [ -n "$NON_DOCS" ]; then
   echo "ignore-build: source changes detected, building:"

@@ -159,9 +159,28 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   const [flags, setFlags] = useState<Flags>({ ...DEFAULT_FLAGS, ...serverFlags });
   useEffect(() => {
     let alive = true;
+    // Static routes bake a stale serverFlags prop, so we still refresh from /api/flags —
+    // but session-cache the result so it fires at most once per TTL instead of on every
+    // page view (each call is a Vercel edge request + function invocation, and this
+    // provider mounts on every route). Admin flag flips reach users within FLAGS_TTL or
+    // on a new tab/session.
+    const KEY = "hh:flags";
+    const FLAGS_TTL = 30 * 60_000; // 30 min
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      if (cached && cached.f && Date.now() - cached.t < FLAGS_TTL) {
+        setFlags({ ...DEFAULT_FLAGS, ...cached.f });
+        return; // fresh enough — skip the network this view
+      }
+    } catch { /* ignore unavailable/corrupt sessionStorage */ }
     fetch("/api/flags")
       .then((r) => r.json())
-      .then((d) => { if (alive && d?.ok && d.flags) setFlags({ ...DEFAULT_FLAGS, ...d.flags }); })
+      .then((d) => {
+        if (alive && d?.ok && d.flags) {
+          setFlags({ ...DEFAULT_FLAGS, ...d.flags });
+          try { sessionStorage.setItem(KEY, JSON.stringify({ t: Date.now(), f: d.flags })); } catch { /* quota/unavailable */ }
+        }
+      })
       .catch(() => { /* keep the seeded values */ });
     return () => { alive = false; };
   }, []);
