@@ -21,6 +21,16 @@ export interface PublicCoupon {
   terms: string | null;
 }
 
+export function couponDateInput(value: unknown): string | null {
+  const input = typeof value === "string" ? value.trim() : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+
+  const date = new Date(`${input}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== input
+    ? null
+    : date.toISOString();
+}
+
 export function couponValue(c: Pick<PublicCoupon, "discount_type" | "discount_value" | "reward_text">): string {
   if (c.discount_type === "percent") return `${c.discount_value || 0}% off`;
   if (c.discount_type === "fixed") return `$${((c.discount_value || 0) / 100).toFixed(2)} off`;

@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { revalidatePublic } from "@/lib/revalidate";
+import { couponDateInput } from "@/lib/coupons";
 
 export const dynamic = "force-dynamic";
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -45,8 +46,8 @@ function fields(body: Record<string, unknown>) {
     discount_value: ["percent", "fixed"].includes(discountType) ? discountValue : null,
     reward_text: String(body.rewardText || "").trim().slice(0, 100) || null,
     min_spend_cents: Math.max(0, Math.round(Number(body.minSpend || 0) * 100)),
-    starts_at: body.startsAt ? new Date(String(body.startsAt)).toISOString() : new Date().toISOString(),
-    ends_at: body.endsAt ? new Date(String(body.endsAt)).toISOString() : null,
+    starts_at: body.startsAt ? couponDateInput(body.startsAt) : new Date().toISOString(),
+    ends_at: body.endsAt ? couponDateInput(body.endsAt) ?? "" : null,
     valid_days: days.length ? [...new Set(days)] : [0,1,2,3,4,5,6],
     redeem_start: /^\d{2}:\d{2}$/.test(String(body.redeemStart || "")) ? body.redeemStart : null,
     redeem_end: /^\d{2}:\d{2}$/.test(String(body.redeemEnd || "")) ? body.redeemEnd : null,
@@ -58,11 +59,12 @@ function fields(body: Record<string, unknown>) {
 
 function validate(p: ReturnType<typeof fields>) {
   if (p.title.length < 3) return "title_required";
+  if (!p.starts_at || p.ends_at === "") return "bad_dates";
   if (/(https?:\/\/|www\.)/i.test(`${p.title} ${p.details || ""} ${p.terms || ""}`)) return "no_links";
   if (p.discount_type === "percent" && (!p.discount_value || p.discount_value > 100)) return "bad_discount";
   if (p.discount_type === "fixed" && (!p.discount_value || p.discount_value < 1)) return "bad_discount";
   if (["free_item", "bundle"].includes(p.discount_type) && !p.reward_text) return "reward_required";
-  if (p.ends_at && new Date(p.ends_at) <= new Date(p.starts_at)) return "bad_dates";
+  if (p.ends_at && p.ends_at <= p.starts_at) return "bad_dates";
   return null;
 }
 
