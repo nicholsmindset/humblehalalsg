@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { couponAvailability, couponValue } from "@/lib/coupons";
+import { couponAvailability, couponDateInput, couponValue } from "@/lib/coupons";
 
 describe("business coupons", () => {
   it("formats percentage and fixed-value discounts without ambiguity", () => {
@@ -16,5 +16,11 @@ describe("business coupons", () => {
     expect(couponAvailability({ total_limit: 100, claimed_count: 12 })).toBe(88);
     expect(couponAvailability({ total_limit: 10, claimed_count: 12 })).toBe(0);
     expect(couponAvailability({ total_limit: null, claimed_count: 999 })).toBeNull();
+  });
+
+  it("normalizes valid coupon dates and rejects malformed calendar dates", () => {
+    expect(couponDateInput("2026-08-09")).toBe("2026-08-09T00:00:00.000Z");
+    expect(couponDateInput("2026-02-30")).toBeNull();
+    expect(couponDateInput("not-a-date")).toBeNull();
   });
 });
