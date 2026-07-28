@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { aladhanDatePath } from "@/lib/tools/prayer-date";
 import { getPrayerTimesFor } from "@/lib/tools/prayer-times";
 import { PRAYER_METHODS, DEFAULT_METHOD } from "@/lib/tools/prayer-methods";
 
@@ -13,13 +14,19 @@ export async function GET(request: Request) {
   const lat = Number(sp.get("lat"));
   const lng = Number(sp.get("lng"));
   const method = Number(sp.get("method"));
+  const date = sp.get("date");
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
     return NextResponse.json({ ok: false, error: "invalid_coords" }, { status: 400 });
   }
+  if (date !== null && !aladhanDatePath(date)) {
+    return NextResponse.json({ ok: false, error: "invalid_date" }, { status: 400 });
+  }
   const m = PRAYER_METHODS.some((x) => x.id === method) ? method : DEFAULT_METHOD;
 
-  const data = await getPrayerTimesFor(lat, lng, m);
+  const data = date === null
+    ? await getPrayerTimesFor(lat, lng, m)
+    : await getPrayerTimesFor(lat, lng, m, date);
   if (!data) return NextResponse.json({ ok: false }, { headers: PRAYER_TIMES_FOR_LOCATION_HEADERS });
   return NextResponse.json({ ok: true, ...data }, { headers: PRAYER_TIMES_FOR_LOCATION_HEADERS });
 }

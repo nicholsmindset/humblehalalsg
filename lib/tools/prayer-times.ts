@@ -1,4 +1,5 @@
 import "server-only";
+import { aladhanDatePath } from "./prayer-date";
 import { PRAYER_METHODS } from "./prayer-methods";
 
 /* Global prayer times via the Aladhan API (free, keyless), cached for a day —
@@ -38,9 +39,13 @@ export async function getPrayerTimesFor(
   lat: number,
   lng: number,
   method: number,
+  dateISO?: string,
 ): Promise<PrayerTimesResult | null> {
   try {
-    const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=${method}`;
+    const datePath = dateISO === undefined ? null : aladhanDatePath(dateISO);
+    if (dateISO !== undefined && !datePath) return null;
+    const endpoint = datePath ? `timings/${datePath}` : "timings";
+    const url = `https://api.aladhan.com/v1/${endpoint}?latitude=${lat}&longitude=${lng}&method=${method}`;
     const res = await fetch(url, { next: { revalidate: 86400 } });
     if (!res.ok) return null;
     const json = await res.json();

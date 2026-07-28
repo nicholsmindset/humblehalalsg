@@ -5,6 +5,7 @@
    endpoint solely to look up times (Aladhan), never stored server-side. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui";
+import { localDateISO } from "@/lib/tools/prayer-date";
 import { PRAYER_METHODS, DEFAULT_METHOD } from "@/lib/tools/prayer-methods";
 
 const KEY = "hh_prayer_v1";
@@ -49,7 +50,13 @@ export function PrayerTimesTool() {
   const fetchTimes = useCallback(async (lat: number, lng: number, m: number) => {
     setStatus("loading");
     try {
-      const res = await fetch(`/api/tools/prayer-times?lat=${lat}&lng=${lng}&method=${m}`);
+      const query = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        method: String(m),
+        date: localDateISO(),
+      });
+      const res = await fetch(`/api/tools/prayer-times?${query}`);
       const json = await res.json();
       if (json?.ok) {
         setData(json as Result);
