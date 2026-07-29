@@ -115,6 +115,27 @@ export interface RunHotelSearchParams {
   constraints?: (keyof HotelFlags)[];
 }
 
+/** Bound public occupancy input before it reaches the paid rates API. */
+export function sanitizeOccupancies(value: unknown): { adults: number; children?: number[] }[] {
+  if (!Array.isArray(value) || value.length === 0) return [{ adults: 2 }];
+
+  return value.slice(0, 8).map((room) => {
+    const input = room && typeof room === "object" ? room as Record<string, unknown> : {};
+    const adultsRaw = Number(input.adults);
+    const adults = Number.isFinite(adultsRaw)
+      ? Math.min(9, Math.max(1, Math.round(adultsRaw)))
+      : 2;
+    const children = Array.isArray(input.children)
+      ? input.children.slice(0, 8).map((age) => {
+          const ageRaw = Number(age);
+          return Number.isFinite(ageRaw) ? Math.min(17, Math.max(0, Math.round(ageRaw))) : 0;
+        })
+      : [];
+
+    return { adults, ...(children.length ? { children } : {}) };
+  });
+}
+
 /** Parse + sanitize native LiteAPI rate filters from a request body. Shared by the
  *  search and ai-search routes so both narrow the rate query identically. Returns
  *  undefined when nothing valid is present (so the request stays clean). */
@@ -150,7 +171,7 @@ export async function runHotelSearch(
   // per room with the same adults/children block (matches the UI's request shape).
   const occupancies: { adults: number; children?: number[] }[] =
     params.occupancies && params.occupancies.length
-      ? params.occupancies
+      ? sanitizeOccupancies(params.occupancies)
       : Array.from({ length: roomCount }, () => ({
           adults,
           ...(children > 0 ? { children: Array.from({ length: children }, () => 8) } : {}),
