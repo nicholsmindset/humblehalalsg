@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runHotelSearch, parseRateFilters } from "@/lib/travel-data";
+import { runHotelSearch, parseRateFilters, sanitizeOccupancies } from "@/lib/travel-data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Hotel search → LiteAPI POST /hotels/rates, then left-join our Muslim-friendly
@@ -34,11 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Tell us where to search" }, { status: 422 });
   }
 
-  // Pass occupancies through unchanged so the LiteAPI request stays byte-identical
-  // to the prior route (child ages + per-room blocks preserved).
-  const occupancies = Array.isArray(body.occupancies) && body.occupancies.length
-    ? (body.occupancies as { adults: number; children?: number[] }[])
-    : [{ adults: 2 }];
+  const occupancies = sanitizeOccupancies(body.occupancies);
 
   // Stable per-session id (client-generated) keeps search→prebook prices consistent.
   const sessionId = String(body.sessionId || "").trim().slice(0, 64) || undefined;
