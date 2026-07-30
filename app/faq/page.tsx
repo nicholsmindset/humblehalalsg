@@ -5,8 +5,10 @@ import { HOME_FAQ, VERIFY_FAQ, TRAVEL_FAQ, BUSINESS_FAQ } from "@/lib/faq";
 import { HELP } from "@/lib/help-content";
 import { getServerFlags } from "@/lib/feature-flags";
 
-// Flag-gated content → evaluate per request so toggles reflect immediately.
-export const dynamic = "force-dynamic";
+// Flag-gated content — flags are already 30s-cached in-process, so per-request
+// rendering never reflected toggles "immediately" anyway. ISR every 5 min is
+// plenty for FAQ toggles and drops the full layout DB fan-out on every hit.
+export const revalidate = 300;
 
 export const metadata = pageMeta({ title: "Frequently asked questions — Humble Halal", description: "Answers about finding halal places in Singapore, our trust badges and verification, our features (Ask AI, TikTok, Halal Passport and more), and Muslim-friendly travel.", path: "/faq" });
 

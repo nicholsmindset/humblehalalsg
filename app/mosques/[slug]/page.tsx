@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { mosqueBySlug, allMosques, mosqueSlug } from "@/lib/mosques";
@@ -127,8 +128,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                 or profile.image). The OG-card fallback is for social/schema only. */}
             {photo && (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo} alt={overlay.imageAlt || `${m.name} in ${m.area}, Singapore`} width={720} height={360}
+                <Image src={photo} alt={overlay.imageAlt || `${m.name} in ${m.area}, Singapore`} width={720} height={360}
+                  priority sizes="(max-width: 768px) 100vw, 720px"
                   style={{ width: "100%", maxWidth: 720, height: "auto", marginTop: 18, borderRadius: 16, objectFit: "cover", aspectRatio: "2 / 1" }} />
                 {overlay.imageCredit && (
                   <span className="faint" style={{ display: "block", fontSize: ".72rem", marginTop: 4 }}>{overlay.imageCredit}</span>
