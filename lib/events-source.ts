@@ -16,8 +16,8 @@ import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 /** Today's date (YYYY-MM-DD) in Singapore time — events are local to SG, the
  *  server runs UTC, so a plain `new Date().toISOString()` would flip the day
  *  up to 8 hours early. en-CA gives the ISO date format directly. */
-export function todaySG(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+export function todaySG(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(now);
 }
 
 type Row = Record<string, unknown>;
