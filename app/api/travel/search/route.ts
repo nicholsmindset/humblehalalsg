@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { runHotelSearch, parseRateFilters, sanitizeOccupancies } from "@/lib/travel-data";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { isValidHotelStay } from "@/lib/hotel-dates";
 
 /* Hotel search → LiteAPI POST /hotels/rates, then left-join our Muslim-friendly
    overlay and re-rank by halal_score. Graceful: without a LiteAPI key it returns
    {ok,simulated,hotels:[]} so the UI still renders. Discovery only — no payment,
    so this is NOT behind the PAID_HOTELS_ENABLED switch. The actual search logic
    lives in lib/travel-data:runHotelSearch (shared with /api/travel/ai-search). */
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function POST(req: Request) {
   let body: Record<string, unknown> = {};
@@ -23,7 +22,7 @@ export async function POST(req: Request) {
 
   const checkin = String(body.checkin || "");
   const checkout = String(body.checkout || "");
-  if (!DATE_RE.test(checkin) || !DATE_RE.test(checkout) || checkout <= checkin) {
+  if (!isValidHotelStay(checkin, checkout)) {
     return NextResponse.json({ ok: false, error: "Pick valid check-in and check-out dates" }, { status: 422 });
   }
   const cityName = String(body.cityName || "").trim();
