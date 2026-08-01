@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizeCron } from "@/lib/cron";
+import { sgDateKey } from "@/lib/rotate";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* Daily ad-campaign lifecycle (audit streams-P1-2/P2-8). Two transitions the
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   const db = getSupabaseAdmin();
   if (!db) return NextResponse.json({ ok: true, simulated: true });
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = sgDateKey();
 
   const { data: started } = await db
     .from("ad_campaigns")
