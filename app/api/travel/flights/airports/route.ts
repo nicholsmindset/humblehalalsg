@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { liteapiConfigured, searchAirports } from "@/lib/liteapi";
 import { searchLocalAirports } from "@/lib/airports";
+import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Airport autocomplete. The bundled dataset (lib/airports.ts) is the reliable
    primary source — instant, key-less, and unaffected by LiteAPI sandbox limits.
@@ -9,6 +10,8 @@ import { searchLocalAirports } from "@/lib/airports";
 export async function GET(req: Request) {
   const q = (new URL(req.url).searchParams.get("q") || "").trim();
   if (q.length < 2) return NextResponse.json({ ok: true, airports: [] });
+  // Protect the optional live LiteAPI lookup from autocomplete quota abuse.
+  const rl = await rateLimit(req, "airport-search", 60, 60); if (!rl.ok) return tooMany(rl.retryAfter);
 
   const local = searchLocalAirports(q, 7);
   let live: typeof local = [];
