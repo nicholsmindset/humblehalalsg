@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { minRates, liteapiConfigured } from "@/lib/liteapi";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
+import { isValidHotelStay } from "@/lib/hotel-dates";
 
 /* Cheapest "from $X" rate per hotel for a date range — used to label city/hub
    cards. POST { hotelIds[], checkin, checkout, nationality, currency, adults }.
    Graceful without a key. */
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
-
 export async function POST(req: Request) {
   // Throttle: /hotels/min-rates is a paid premium endpoint. Cap per-IP bursts so a
   // card-heavy page (or abuse) can't fan out unbounded paid calls (results are
@@ -16,7 +15,9 @@ export async function POST(req: Request) {
   const hotelIds = Array.isArray(body.hotelIds) ? (body.hotelIds as unknown[]).map(String).filter(Boolean) : [];
   const checkin = String(body.checkin || "").trim();
   const checkout = String(body.checkout || "").trim();
-  if (!hotelIds.length || !DATE.test(checkin) || !DATE.test(checkout)) return NextResponse.json({ ok: false, error: "bad params" }, { status: 422 });
+  if (!hotelIds.length || !isValidHotelStay(checkin, checkout)) {
+    return NextResponse.json({ ok: false, error: "bad params" }, { status: 422 });
+  }
   if (!liteapiConfigured()) return NextResponse.json({ ok: true, simulated: true, rates: {} });
 
   try {
