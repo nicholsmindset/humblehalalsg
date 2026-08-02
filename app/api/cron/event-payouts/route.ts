@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email";
 import { emailForBusinessOwner } from "@/lib/emails/recipient";
 import { payoutSentEmail } from "@/lib/emails/templates";
 import { notify } from "@/lib/notify";
+import { sgDateKey } from "@/lib/rotate";
 
 /* Pay event organisers 24h after their event. At purchase we took a SEPARATE
    charge on the platform (funds held by Humble Halal); here we transfer the
@@ -21,7 +22,9 @@ export async function GET(req: Request) {
   const stripe = getStripe();
   if (!db || !stripe) return NextResponse.json({ ok: true, simulated: true });
 
-  const today = new Date().toISOString().slice(0, 10);
+  // payout_due is a Singapore event calendar date. Using UTC here would make
+  // payouts eligible a day early between midnight and 07:59 SGT.
+  const today = sgDateKey();
   const { data: rows } = await db
     .from("orders")
     .select("id, net_cents, currency, connected_account_id, business_id, event_id, stripe_payment_intent")
