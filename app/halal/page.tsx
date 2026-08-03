@@ -10,7 +10,7 @@ import { Newsletter } from "@/components/newsletter";
 export const metadata: Metadata = pageMeta({
   title: "Halal Directory Singapore — Restaurants by Area",
   description:
-    "Browse Singapore's halal & Muslim-owned directory by category and neighbourhood — restaurants, cafés, halal food in every mall and MRT area, weddings, travel and more.",
+    "Browse Singapore's halal & Muslim-owned directory by category and neighbourhood — restaurants, cafés, halal food in every mall and MRT area, weddings and more.",
   path: "/halal",
   absoluteTitle: true,
 });

@@ -78,7 +78,9 @@ export async function cmsPosts(): Promise<BlogPost[]> {
 export async function allBlogPosts(): Promise<BlogPost[]> {
   const merged = new Map(allLegacyPosts().map((post) => [post.slug, post]));
   for (const post of await cmsPosts()) merged.set(post.slug, post);
-  return [...merged.values()].sort((a, b) => b.datePublished.localeCompare(a.datePublished));
+  return [...merged.values()]
+    .filter((post) => post.category !== "muslim-travel")
+    .sort((a, b) => b.datePublished.localeCompare(a.datePublished));
 }
 
 export async function getBlogPost(slug: string): Promise<BlogPost | undefined> {

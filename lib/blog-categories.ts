@@ -93,16 +93,6 @@ export const BLOG_CATEGORIES: BlogCategory[] = [
     blurb: "Muslim-owned businesses & community stories.",
   },
   {
-    slug: "muslim-travel",
-    name: "Muslim Travel",
-    title: "Muslim & Halal Travel Guides from Singapore",
-    description:
-      "Where to go and how to plan it — halal food, prayer spaces and Muslim-friendly itineraries for JB, the region and beyond, plus umrah from Singapore.",
-    heroImage: "/blog/cat-muslim-travel.webp",
-    heroAlt: "Muslim Travel — guides from Humble Halal Singapore",
-    blurb: "Halal food, prayer & itineraries — JB, the region & umrah.",
-  },
-  {
     slug: "halal-questions",
     name: "Halal Questions",
     title: "Is It Halal? Quick Answers for Singapore",

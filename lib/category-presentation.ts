@@ -105,14 +105,6 @@ export const CATEGORY_PRESENTATION: Record<string, CategoryPresentation> = {
     singularNoun: "a Muslim-owned professional service provider",
     considerationsLabel: "Engagement considerations",
   },
-  travel: {
-    directoryLabel: "Umrah & Muslim-Friendly Travel",
-    slugBase: "muslim-friendly-travel",
-    singaporeSlug: "muslim-friendly-travel-singapore",
-    resultNoun: "Umrah & Muslim-friendly travel providers",
-    singularNoun: "an Umrah or Muslim-friendly travel provider",
-    considerationsLabel: "Booking considerations",
-  },
 };
 
 export function categoryDirectoryLabel(catId?: string, fallback = ""): string {
