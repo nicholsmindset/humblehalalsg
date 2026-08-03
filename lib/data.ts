@@ -32,7 +32,6 @@ export const categories: Category[] = [
   { id: "weddings", label: "Weddings", icon: "heart" },
   { id: "education", label: "Education", icon: "family" },
   { id: "professional", label: "Professional", icon: "building" },
-  { id: "travel", label: "Travel & Umrah", icon: "globe" },
   { id: "mosques", label: "Mosques Nearby", icon: "mosque" },
   { id: "family", label: "Family Friendly", icon: "family" },
 ];
@@ -300,9 +299,6 @@ const MORE: Spec[] = [
   { n: "Adil Law Chambers", c: "professional", a: "Bugis", cu: "Legal · Syariah", p: "$$$", b: ["owned"], bl: "Family, Syariah and conveyancing matters handled with care." },
   { n: "Takaful Advisory SG", c: "professional", a: "Tampines", cu: "Takaful · Insurance", p: "$$", b: ["owned", "friendly"], bl: "Shariah-compliant insurance and financial planning." },
   { n: "Studio Dakwah Creative", c: "professional", a: "Jurong", cu: "Marketing · Design", p: "$$", b: ["owned"], bl: "Branding, web and social media for Muslim-owned businesses." },
-  { n: "Andalus Travel & Umrah", c: "travel", a: "Geylang Serai", cu: "Umrah · Hajj", p: "$$$", b: ["muis", "owned", "family"], bl: "Trusted Umrah and Hajj packages with experienced mutawwif.", f: true },
-  { n: "Barakah Holidays", c: "travel", a: "Bugis", cu: "Muslim-friendly Travel", p: "$$", b: ["owned"], bl: "Halal-friendly tours with prayer-aware itineraries worldwide." },
-  { n: "Safar Tours SG", c: "travel", a: "Woodlands", cu: "Tours · Guides", p: "$$", b: ["owned", "friendly"], bl: "Curated halal travel and local heritage walks." },
 ];
 const catLabelOf = (id: string) => categories.find((c) => c.id === id)?.label || id;
 MORE.forEach((sp, i) => {
