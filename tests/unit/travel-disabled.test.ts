@@ -11,6 +11,11 @@ describe("travel launch shutdown", () => {
     "/api/admin/verify-hotel",
     "/api/cron/fare-alerts",
     "/api/cron/flight-retry",
+    "/blog/category/muslim-travel",
+    "/blog/halal-cruises-from-singapore",
+    "/blog/halal-food-johor-bahru-guide",
+    "/blog/crossing-to-johor-bahru-checkpoints-transport",
+    "/blog/umrah-from-singapore-guide",
   ])("returns 410 before the route can call a provider: %s", (path) => {
     const response = travelDisabledResponse(new NextRequest(`https://humblehalal.com${path}`));
     expect(response?.status).toBe(410);

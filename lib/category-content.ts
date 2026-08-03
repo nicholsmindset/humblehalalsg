@@ -245,26 +245,6 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       { q: "Can I find Shariah-compliant financial services?", a: "Yes — the Professional category includes takaful and Islamic financial planning. Confirm Shariah-compliance and licensing with each provider." },
     ],
   },
-  travel: {
-    h1: "Umrah Agencies & Muslim-Friendly Travel in Singapore",
-    intro:
-      "Plan Umrah or Muslim-friendly travel from Singapore — Umrah and Hajj agencies, Islamic tours and Muslim-friendly stays. Discover trusted, Muslim-owned travel providers, compare licensing, package details and reviews, and request quotes for your next pilgrimage or holiday.",
-    lookFor: [
-      "Licensed Umrah and Hajj agencies",
-      "Muslim-Owned and Admin Verified providers",
-      "Clear package inclusions and itineraries",
-      "Licensing, verification details and reviews",
-      "The option to request quotes",
-    ],
-    considerations: [
-      "For Umrah and Hajj, confirm the agency is licensed and check package inclusions carefully.",
-      "Compare itineraries, hotels and proximity to the Haramain.",
-      "Read recent traveller reviews before paying deposits.",
-    ],
-    faq: [
-      { q: "How do I choose an Umrah agency in Singapore?", a: "Compare licensed, Muslim-owned agencies by verification details and reviews, then request quotes to compare packages, hotels and itineraries." },
-    ],
-  },
 };
 
 /** Generic content for area-level pages (no specific category). */

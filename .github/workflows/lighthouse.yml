@@ -23,5 +23,5 @@ jobs:
           lhci autorun \
             --collect.url="$BASE/" \
             --collect.url="$BASE/explore" \
-            --collect.url="$BASE/travel" \
+            --collect.url="$BASE/halal" \
             --collect.url="$BASE/blog/what-is-halal-singapore"

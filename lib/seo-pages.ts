@@ -36,7 +36,7 @@ export interface SeoPage {
 // Categories that make sense as standalone landing pages (across all verticals).
 const SEO_CATS = [
   "restaurants", "cafes", "groceries", "beauty", "health", "fashion",
-  "services", "automotive", "weddings", "education", "professional", "travel",
+  "services", "automotive", "weddings", "education", "professional",
 ];
 
 /* ---- Districts/areas for SEO pages beyond the 6 curated UI `areas`.

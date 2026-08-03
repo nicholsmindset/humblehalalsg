@@ -141,5 +141,5 @@ export function getCategory(slug: string): BlogCategory | undefined {
 }
 
 export function allCategories(): BlogCategory[] {
-  return BLOG_CATEGORIES;
+  return BLOG_CATEGORIES.filter((category) => category.slug !== "muslim-travel");
 }
