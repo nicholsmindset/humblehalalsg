@@ -17,10 +17,8 @@ const DISALLOW = [
   "/sign-in",                       // auth
   "/checkout",                      // payment
   "/success",                       // post-checkout
-  "/travel/booking",                // hotel booking flow (+ /confirmation)
-  "/travel/flights/booking",        // flight booking flow
-  "/travel/flights/confirmation",   // flight confirmation
-  "/travel/trips",                  // personal trips
+  "/travel",                        // travel/hotel vertical is dormant for launch
+  "/api/travel",                    // prevent crawling disabled provider routes
   "/tickets/",                      // personal event tickets
   "/scorecard/",                    // tokenised scorecards
   "/passport/",                     // tokenised loyalty passes (landing /passport stays crawlable)

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { beehiivSubscribe } from "@/lib/beehiiv";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* beehiiv newsletter capture.
    Set BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID in env.
-   Without a key it succeeds in "simulated" mode so the UI works in dev. */
+   Missing configuration is simulated only outside production. */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -46,10 +47,27 @@ export async function POST(req: Request) {
     ...(origin ? { referringSite: origin } : {}),
   });
 
-  // simulated (no key) or a real success → OK; surface `already` for existing emails.
-  if (r.ok) {
+  // A real provider success is final. If Beehiiv is absent or rejects the
+  // request, durably queue it in our private database instead of pretending.
+  if (r.ok && !r.simulated) {
     return NextResponse.json({ ok: true, ...(r.already ? { already: true } : {}), ...(r.simulated ? { simulated: true } : {}) });
   }
+
+  const db = getSupabaseAdmin();
+  if (db) {
+    const { error } = await db.from("newsletter_signups").upsert({
+      email: email.toLowerCase(),
+      source: source.slice(0, 100),
+      name: name || null,
+      stage: stage || null,
+      referring_site: origin?.slice(0, 500) || null,
+      provider_status: "queued",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "email" });
+    if (!error) return NextResponse.json({ ok: true, queued: true });
+    console.error("[subscribe] fallback queue failed", { code: error.code });
+  }
+
   if (r.configured) {
     // Configured but beehiiv rejected — most often a bad API key / wrong publication
     // pairing (fails silently otherwise, like the platform_settings service-role bug).

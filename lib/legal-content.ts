@@ -23,7 +23,7 @@ const ADDRESS = "60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051"
 const PRIVACY_EMAIL = CONTACT_EMAILS.privacy;
 // "Last updated" shown on every legal page — bump this whenever any legal doc's
 // wording changes (it won't auto-update).
-const UPDATED = "13 June 2026";
+const UPDATED = "3 August 2026";
 const CAVEAT = "This is a plain-language summary written in good faith and tailored to how the platform actually works. It is not legal advice — please have it reviewed by a qualified lawyer before relying on it.";
 
 export const legalDocs: Record<string, LegalDoc> = {
@@ -55,21 +55,14 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Travel bookings",
-        body: [
-          "When you book a hotel or flight, the booking and payment are handled by our travel partner LiteAPI (Nuitée), which acts as the merchant of record. The traveller and contact details you enter (name, email, phone, and for flights the passenger/document details required by the airline) are passed to LiteAPI and on to the relevant hotel or airline to fulfil and confirm your booking.",
-        ],
-      },
-      {
         h2: "Who we share it with",
         body: [
           "We use trusted service providers (data intermediaries) only to the extent needed to operate the service. Each receives only the data required for its purpose:",
         ],
         bullets: [
           "Beehiiv — newsletter delivery (email address, plus the signup source so we know which page you subscribed from).",
-          "Resend — transactional email such as booking, contact and alert emails (email address + message content).",
+          "Resend — transactional email such as account and contact emails (email address + message content).",
           "Stripe — payment processing for our own paid plans, advertising and event tickets (only if you make such a transaction).",
-          "LiteAPI (Nuitée) — hotel and flight search, booking and payment as merchant of record (traveller, contact and passenger details).",
           "Supabase — database and storage (when account features are enabled).",
           "Vercel — website hosting.",
           "OneMap (Singapore Land Authority) — address lookup; OpenStreetMap — map tiles.",
@@ -105,7 +98,6 @@ export const legalDocs: Record<string, LegalDoc> = {
           "Newsletter subscribers — until you unsubscribe, then removed at the next clean-up.",
           "Quote requests, business suggestions, claims and contact messages — up to about 12 months after they are resolved.",
           "Reviews — kept while published; on account deletion we remove or anonymise them.",
-          "Booking records — kept as needed to support your trip and to meet tax/accounting obligations.",
         ],
       },
       {
@@ -138,9 +130,8 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
         bullets: [
           "Running the directory and your saved places.",
-          "Sending content and emails you asked for (newsletter, booking and contact emails, fare alerts).",
+          "Sending content and emails you asked for (newsletter, account and contact emails).",
           "Processing business submissions, claims, quote requests and contact messages.",
-          "Fulfilling hotel and flight bookings via our travel partner.",
           "Moderating reviews and keeping the platform safe and accurate.",
         ],
       },
@@ -236,18 +227,9 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
       },
       {
-        h2: "Hotel & flight bookings (travel)",
-        bullets: [
-          "Hotel and flight bookings are provided through our travel partner LiteAPI (Nuitée), which acts as the merchant of record and processes payment — Humble Halal is not the seller of the travel product.",
-          "Prices, availability, baggage, times and fare rules can change until a booking is confirmed; the details shown at booking apply.",
-          "Cancellations, changes and refunds follow the specific hotel's or airline's policy shown before you pay. You can manage and cancel eligible bookings in My Trips; refunds (where due) are handled by the travel partner under that policy.",
-          "Always confirm Muslim-friendly facilities, meal arrangements and any specific halal requirements directly with the hotel or airline — see our Halal Disclaimer.",
-        ],
-      },
-      {
         h2: "Service providers",
         body: [
-          "We rely on third-party providers to operate the service, including Stripe (our paid plans), LiteAPI/Nuitée (travel bookings & payment), Resend and Beehiiv (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
+          "We rely on third-party providers to operate the service, including Stripe (our paid plans), Resend and Beehiiv (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
         ],
       },
       {

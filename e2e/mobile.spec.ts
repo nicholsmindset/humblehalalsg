@@ -4,6 +4,10 @@ import {
   SCROLLER_ALLOWLIST, PRIMARY_CTA_SELECTOR,
 } from "./probes.mjs";
 
+// The matrix cold-starts dozens of routes in parallel. Allow time for the full
+// four-page axe sweep and never probe before late CSS/hydration has completed.
+test.describe.configure({ timeout: 60_000 });
+
 /* Mobile regression guard — runs on the mobile-320 / mobile-390 / tablet-768
    projects (see playwright.config.ts). Key-independent routes only, so it
    stays green in CI without Supabase/LiteAPI secrets.
@@ -21,7 +25,7 @@ import {
 const ALLOW = SCROLLER_ALLOWLIST.join(",");
 
 // Pre-accept consent + onboarding + newsletter popup so overlays don't
-// intercept the probes (same pattern as travel.spec.ts).
+// intercept the probes.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     try {
@@ -34,6 +38,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function settle(page: Page) {
+  await page.waitForLoadState("load");
   await page.evaluate(() => document.fonts.ready.then(() => undefined)).catch(() => {});
   await page.addStyleTag({ content: "*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}" }).catch(() => {});
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
@@ -72,17 +77,8 @@ const CHECKS: RouteCheck[] = [
   {
     name: "explore filter sheet", path: "/explore",
     action: async (page) => {
-      await page.getByRole("button", { name: /Filters/ }).first().click();
+      await page.getByRole("button", { name: "Filters", exact: true }).click();
       await page.locator(".filter-panel").waitFor();
-    },
-  },
-  { name: "travel stays", path: "/travel" },
-  { name: "flights", path: "/travel/flights" },
-  {
-    name: "flights date picker", path: "/travel/flights",
-    action: async (page) => {
-      await page.locator("#main-content").getByRole("button", { name: /Dates|Departure/ }).first().click();
-      await page.locator(".ota-popover").waitFor();
     },
   },
   { name: "events", path: "/events" },
@@ -121,10 +117,11 @@ for (const check of CHECKS) {
 // Axe WCAG pass — once per route on the 390px project only (results are
 // viewport-stable; running it 3× would just slow CI).
 test("axe critical violations", async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   test.skip(testInfo.project.name !== "mobile-390", "axe runs on mobile-390 only");
   const { default: AxeBuilder } = await import("@axe-core/playwright");
   const critical: string[] = [];
-  for (const path of ["/", "/explore", "/travel", "/travel/flights", "/tools", "/login"]) {
+  for (const path of ["/", "/explore", "/tools", "/login"]) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
     await page.locator("#main-content, main").first().waitFor();
     await settle(page);

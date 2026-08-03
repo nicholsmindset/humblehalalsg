@@ -138,12 +138,6 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
       ],
     },
     {
-      id: "travel", label: "Travel", icon: "plane", items: [
-        ["hotels", "Hotel verification", "bed"],
-        ["travel-rev", "Travel revenue", "plane"],
-      ],
-    },
-    {
       id: "system", label: "People & system", icon: "settings", items: [
         ["users", "Users & owners", "user"],
         ["audit", "Audit log", "list"],
@@ -224,7 +218,6 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='verdicts' && halalVerdictsEnabled && <AdminVerdicts toast={toast} />}
           {section==='enrichment' && listingEnrichmentEnabled && <AdminEnrichment toast={toast} />}
           {section==='tiktok' && tiktokUgcEnabled && <AdminTiktok toast={toast} />}
-          {section==='hotels' && <AdminHotelVerify toast={toast} />}
           {section==='reviews' && <AdminReviews toast={toast} />}
           {section==='reports' && <AdminReports toast={toast} navigate={navigate} />}
           {section==='users' && <AdminUsers toast={toast} />}
@@ -233,7 +226,6 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
           {section==='coupons' && <AdminCoupons toast={toast} />}
           {section==='monetization' && <AdminMonetization />}
           {section==='payments' && <AdminPayments />}
-          {section==='travel-rev' && <AdminTravelRevenue />}
           {section==='audit' && <AdminAudit />}
         </div>
       </div>
@@ -241,8 +233,9 @@ export function AdminScreen({ halalVerdictsEnabled = false, leadRoutingEnabled =
   );
 }
 
-const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "paidHotels", "paidFlights", "payNow", "paidLeads"];
-const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k));
+const HIDDEN_TRAVEL_FLAGS = new Set<FlagKey>(["paidHotels", "paidFlights"]);
+const PAYMENT_FLAG_KEYS: FlagKey[] = ["paidTickets", "paidAds", "paidPlans", "payNow", "paidLeads"];
+const FEATURE_FLAG_KEYS: FlagKey[] = (Object.keys(FLAG_COLUMN) as FlagKey[]).filter((k) => !PAYMENT_FLAG_KEYS.includes(k) && !HIDDEN_TRAVEL_FLAGS.has(k));
 
 /* Single flag row — reuses the cert-toggle/cert-switch/cert-knob switch markup
    used elsewhere in this file (Ramadan mode, Cert Vault, etc). `value` is the
@@ -511,25 +504,22 @@ export function AdminMonetization() {
 }
 
 /* ── Unified revenue P&L ─────────────────────────────────────────────────────
-   One view across every stream — subscriptions (MRR), event fees, ad orders and
-   travel commission — from our own ledger. Stripe/LiteAPI dashboards stay the
-   source of truth for payouts; this is the at-a-glance platform P&L. Graceful
+   One view across every live stream — subscriptions (MRR), event fees and ad
+   orders — from our own ledger. Stripe stays the source of truth for payouts. Graceful
    (zeroed) when the backend isn't configured. Data: /api/admin/revenue. */
 interface RevenueData {
   simulated?: boolean;
   flags: Record<string, boolean>;
   windowDays: number;
   mrrCents: number; activePlans: number; plansByTier: Record<string, number>;
-  windowSgdCents: { events: number; ads: number; travelApprox: number; total: number };
+  windowSgdCents: { events: number; ads: number; total: number };
   eventGmvCents: number;
-  travelByCurrency: { currency: string; commission: number; count: number }[];
-  trend: { month: string; events: number; ads: number; travel: number; total: number }[];
+  trend: { month: string; events: number; ads: number; total: number }[];
 }
 const STREAM_FLAG: [string, string, string][] = [
   ["paidPlans", "Directory plans", "Subscriptions"],
   ["paidAds", "Sponsored ads", "Ad orders"],
   ["paidTickets", "Event tickets", "Booking fees"],
-  ["paidHotels", "Travel — hotels", "Commission"],
 ];
 
 export function AdminRevenue() {
@@ -550,7 +540,6 @@ export function AdminRevenue() {
     { l: "Est. MRR", v: fmtSGD(d.mrrCents), hint: `${d.activePlans} active plan${d.activePlans === 1 ? "" : "s"}` },
     { l: `Event fees · ${d.windowDays}d`, v: fmtSGD(w.events), hint: `GMV ${fmtSGD(d.eventGmvCents)}` },
     { l: `Ad revenue · ${d.windowDays}d`, v: fmtSGD(w.ads) },
-    { l: `Travel · ${d.windowDays}d`, v: `≈ ${fmtSGD(w.travelApprox)}`, hint: "approx SGD" },
     { l: `Total · ${d.windowDays}d`, v: fmtSGD(w.total) },
     { l: "Annual run-rate", v: fmtSGD(runRateCents), hint: "est. MRR×12 + annualised" },
   ];
@@ -560,7 +549,7 @@ export function AdminRevenue() {
     <div className="stack g16" style={{ maxWidth: 920 }}>
       <div className="notice notice-warn">
         <Icon name="info" size={18} />
-        <span>Unified view from <strong>our</strong> ledger. Stripe holds authoritative MRR &amp; payouts; LiteAPI holds travel payouts. Travel commission is converted to an approximate SGD figure. {d.simulated && <em>Backend not configured — showing zeros.</em>}</span>
+        <span>Unified view from <strong>our</strong> ledger. Stripe holds authoritative MRR &amp; payouts. {d.simulated && <em>Backend not configured — showing zeros.</em>}</span>
       </div>
 
       <div className="admin-statgrid">
@@ -585,10 +574,10 @@ export function AdminRevenue() {
         </div>
       </div>
 
-      {/* Transactional revenue by month (events + ads + travel, realized). */}
+      {/* Transactional revenue by month (events + ads, realized). */}
       <div className="card" style={{ padding: 18 }}>
         <h3 style={{ fontSize: "1.05rem", marginBottom: 4 }}>Transactional revenue by month</h3>
-        <p className="faint" style={{ fontSize: ".82rem", marginBottom: 14 }}>Events + ads + travel (approx SGD). Subscriptions are point-in-time MRR, shown above.</p>
+        <p className="faint" style={{ fontSize: ".82rem", marginBottom: 14 }}>Events + ads. Subscriptions are point-in-time MRR, shown above.</p>
         {d.trend.length === 0 ? (
           <p className="muted" style={{ fontSize: ".88rem" }}>No transactions yet — figures populate once revenue streams go live.</p>
         ) : (
@@ -604,19 +593,6 @@ export function AdminRevenue() {
           </div>
         )}
       </div>
-
-      {/* Travel commission by currency (native — LiteAPI is authoritative). */}
-      {d.travelByCurrency.length > 0 && (
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div className="admin-tablehead"><h3 style={{ fontSize: "1.05rem" }}>Travel commission by currency</h3><span className="faint" style={{ fontSize: ".82rem" }}>Native currency · last {d.windowDays}d</span></div>
-          <div className="tbl-scroll"><table className="tbl">
-            <thead><tr><th>Currency</th><th>Bookings</th><th>Commission</th></tr></thead>
-            <tbody>{d.travelByCurrency.map((c) => (
-              <tr key={c.currency} className="rowhover"><td style={{ fontWeight: 700 }}>{c.currency}</td><td>{c.count}</td><td style={{ fontWeight: 700 }}>{c.currency} {c.commission.toLocaleString()}</td></tr>
-            ))}</tbody>
-          </table></div>
-        </div>
-      )}
 
       <div className="flex g8 wrap">
         <a className="btn btn-soft btn-sm" href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} /> Stripe (MRR &amp; payouts)</a>
@@ -640,9 +616,6 @@ const ROLLOUT_STAGES: { n: number; title: string; env: string; flags: string[]; 
   { n: 3, title: "Event tickets", env: "PAID_TICKETS_ENABLED", flags: ["paidTickets"],
     why: "Now holding buyers’ money and paying organisers via Stripe Connect 24h post-event — more moving parts.",
     prereqs: ["Stripe Connect enabled", "Organiser onboarding", "event-payouts cron live"] },
-  { n: 4, title: "Travel — hotels → flights", env: "PAID_HOTELS_ENABLED → PAID_FLIGHTS_ENABLED", flags: ["paidHotels", "paidFlights"],
-    why: "Highest ceiling, most dependencies. Enable hotels first; flights need Vercel Pro (10-min retry cron).",
-    prereqs: ["LiteAPI key + volume", "Hotels before flights", "Vercel Pro for live flights"] },
 ];
 
 export function AdminRollout() {

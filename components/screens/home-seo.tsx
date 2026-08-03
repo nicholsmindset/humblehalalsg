@@ -43,12 +43,11 @@ export function HomeSeoContent() {
           </p>
         </div>
         <div>
-          <h3 style={{ fontSize: "1.18rem", marginBottom: 8 }}>Prayer spaces, prayer times &amp; halal travel</h3>
+          <h3 style={{ fontSize: "1.18rem", marginBottom: 8 }}>Prayer spaces and prayer times</h3>
           <p className="muted">
             Many listings show prayer-space details — gender arrangement, wudhu facilities and whether mats are provided — and
-            the prayer-times strip shows the nearest mosque. Find <Link href="/mosques">mosques near you</Link>, daily{" "}
-            <Link href="/tools">prayer times and Deen tools</Link>, and when you travel, Muslim-friendly hotels and flights on{" "}
-            <Link href="/travel">Humble Halal Travel</Link>.
+            the prayer-times strip shows the nearest mosque. Find <Link href="/mosques">mosques near you</Link> and daily{" "}
+            <Link href="/tools">prayer times and Deen tools</Link>.
           </p>
         </div>
       </div>

@@ -11,10 +11,14 @@
 // execute during parse, guaranteeing consent defaults precede any GTM tag.
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const GTM_ENABLED = process.env.NEXT_PUBLIC_GTM_ENABLED === "1";
 const CONSENT_KEY = "hh_consent_v1";
 
 export function GoogleTagManager() {
-  if (!GTM_ID) return null;
+  // Explicit opt-in: the launch audit found placeholder Ads/TikTok IDs and
+  // duplicate marketing tags in the current container. Vercel Analytics remains
+  // active independently; re-enable GTM only after the container passes QA.
+  if (!GTM_ENABLED || !GTM_ID) return null;
 
   const consentDefault = `
     window.dataLayer = window.dataLayer || [];

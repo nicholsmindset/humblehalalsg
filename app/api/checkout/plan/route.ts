@@ -29,10 +29,17 @@ export async function POST(req: Request) {
   }
   // Stripe-session factory — rate-limit like /api/donate.
   const rl = await rateLimit(req, "checkout-plan", 12, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
-  const stripe = getStripe();
-  if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" });
-
   const { plan, yearly, founding } = (await req.json().catch(() => ({}))) as { plan?: string; yearly?: boolean; founding?: boolean };
+  if (!plan || !Object.hasOwn(PRICE_ENV, plan) || (yearly !== undefined && typeof yearly !== "boolean") || (founding !== undefined && typeof founding !== "boolean")) {
+    return NextResponse.json({ ok: false, reason: "invalid_plan" }, { status: 422 });
+  }
+
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ ok: false, reason: "not_signed_in" }, { status: 401 });
+
+  const stripe = getStripe();
+  if (!stripe) return NextResponse.json({ ok: false, reason: "stripe_not_configured" }, { status: 503 });
+
   let price = plan ? PRICE_ENV[plan]?.[yearly ? "yearly" : "monthly"] : undefined;
   if (founding) {
     if (plan !== "verified" || !PRICE_FOUNDING_Y) {
@@ -65,15 +72,13 @@ export async function POST(req: Request) {
     }
     price = PRICE_FOUNDING_Y;
   }
-  if (!price) return NextResponse.json({ ok: false, reason: "price_not_configured" });
+  if (!price) return NextResponse.json({ ok: false, reason: "price_not_configured" }, { status: 503 });
 
   // Link the signed-in owner's business + Stripe customer so fulfillment + the
   // billing portal work. A checkout WITHOUT a resolved business must never be
   // created: the webhook skips fulfillment on an empty business_id and the
   // billing portal can't find the customer, so the buyer would pay a recurring
   // subscription for nothing with no way to self-cancel. Fail closed instead.
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ ok: false, reason: "not_signed_in" }, { status: 401 });
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "unavailable" }, { status: 503 });
 
