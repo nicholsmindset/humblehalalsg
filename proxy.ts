@@ -24,6 +24,27 @@ const isProtected = createRouteMatcher(["/admin(.*)", "/owner(.*)"]);
 // platform_settings override) — enabling the feature for launch means setting
 // TIKTOK_UGC_ENABLED, which also lets the page itself render.
 const truthy = (v: string | undefined) => v === "1" || v === "true" || v === "on";
+
+// Travel/hotel booking is intentionally dormant for launch. Blocking at Proxy
+// prevents every page and handler from reaching LiteAPI, payment, weather, or AI
+// providers while keeping the implementation available for a later relaunch.
+const TRAVEL_PATH = /^\/travel(?:\/|$)/;
+const TRAVEL_API_PATH = /^\/api\/travel(?:\/|$)/;
+const TRAVEL_ADMIN_API_PATH = /^\/api\/admin\/(?:travel-(?:analytics|revenue|vouchers)|verify-hotel)(?:\/|$)/;
+const TRAVEL_CRON_PATH = /^\/api\/cron\/(?:fare-alerts|flight-retry)(?:\/|$)/;
+
+export function travelDisabledResponse(req: NextRequest): NextResponse | null {
+  const path = req.nextUrl.pathname;
+  if (!TRAVEL_PATH.test(path) && !TRAVEL_API_PATH.test(path) && !TRAVEL_ADMIN_API_PATH.test(path) && !TRAVEL_CRON_PATH.test(path)) {
+    return null;
+  }
+  const headers = { "Cache-Control": "public, max-age=0, s-maxage=86400" };
+  if (path.startsWith("/api/")) {
+    return NextResponse.json({ ok: false, error: "travel_unavailable" }, { status: 410, headers });
+  }
+  return new NextResponse("Travel and hotel booking are not currently available.", { status: 410, headers });
+}
+
 function unsafeFoodListingResponse(req: NextRequest): NextResponse | null {
   const match = req.nextUrl.pathname.match(/^\/business\/([^/]+)\/?$/);
   if (!match || !isBlockedFoodListing(decodeURIComponent(match[1]))) return null;
@@ -66,6 +87,8 @@ const clerkEnabled = !!process.env.CLERK_SECRET_KEY;
 
 export default clerkEnabled
   ? clerkMiddleware(async (auth, req) => {
+      const travelDisabled = travelDisabledResponse(req);
+      if (travelDisabled) return travelDisabled;
       const blocked = unsafeFoodListingResponse(req);
       if (blocked) return blocked;
       const redirect = featureTikTokRedirect(req);
@@ -76,6 +99,7 @@ export default clerkEnabled
     })
   : async function proxy(req: NextRequest) {
       return (
+        travelDisabledResponse(req) ??
         unsafeFoodListingResponse(req) ??
         featureTikTokRedirect(req) ??
         (await goneRedirect(req)) ??

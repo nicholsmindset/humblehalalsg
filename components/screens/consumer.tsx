@@ -220,21 +220,6 @@ export function HomeScreen() {
         </div>
       </section>
 
-      {/* HALAL TRAVEL BAND (emerald) */}
-      <section className="home-band-emerald hh-pattern">
-        <div className="hh-wrap home-travel-band">
-          <div className="htb-text">
-            <span className="eyebrow" style={{ color: "#cfe0da" }}>Halal travel</span>
-            <h2>Plan your whole trip — hotels &amp; flights</h2>
-            <p>Muslim-friendly stays and flights for Umrah, Hajj and everyday travel: prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers and qibla — all in one place.</p>
-          </div>
-          <div className="htb-cta">
-            <button className="btn btn-gold btn-lg" onClick={() => navigate("travel")}>Find a hotel</button>
-            <button className="btn btn-lg htb-ghost" onClick={() => navigate("travel-flights")}>Search flights</button>
-          </div>
-        </div>
-      </section>
-
       {/* SLIM TRUST STRIP */}
       <section className="hh-wrap home-trust-slim">
         <div className="hts-row">
@@ -274,8 +259,7 @@ export function HomeScreen() {
       {/* Long-form SEO content (collapsible) — targets the halal-food head cluster */}
       <HomeSeoContent />
 
-      {/* EMAIL CAPTURE — moved to the end of the journey so the two dark bands
-          (travel + business CTA) no longer stack against a third. */}
+      {/* EMAIL CAPTURE — placed at the end of the journey. */}
       <HomeNewsletterCapture />
 
       {/* FAQ — visible + FAQPage schema (emitted at the page level) */}
@@ -427,7 +411,6 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
       <button className="chip" onClick={() => { track.filterUse("near_me"); navigate("map"); }}><Icon name="near" size={16} /> {t("chip.nearMe")}</button>
       <button className="chip" onClick={() => { track.filterUse("open_now"); navigate("explore", { open: true }); }}>{t("chip.openNow")}</button>
       <button className="chip" onClick={() => { track.filterUse("prayer_space"); navigate("explore", { prayer: true }); }}><Icon name="mosque" size={15} /> {t("chip.prayer")}</button>
-      <button className="chip" onClick={() => { track.filterUse("hotels"); navigate("travel"); }}><Icon name="globe" size={15} /> Halal-friendly hotels</button>
       <button className="chip" onClick={() => { track.filterUse("mosques"); navigate("mosques"); }}><Icon name="crescent" size={15} /> Mosques</button>
     </div>
   );
@@ -468,7 +451,7 @@ export function Hero({ variant, q, setQ, doSearch, navigate }: {
           <div className="hero-collage" aria-hidden="true">
             <ImagePh label="nasi padang" tone="gold" src={HHData.collage[0]} style={{ gridArea: "a" }} icon="utensils" sizes="(max-width: 520px) 50vw, (max-width: 880px) 60vw, 300px" />
             <ImagePh label="kopi café" tone="emerald" src={HHData.collage[1]} style={{ gridArea: "b" }} icon="coffee" sizes="(max-width: 520px) 50vw, 220px" />
-            <ImagePh label="halal travel" tone="cream" src={HHData.collage[2]} style={{ gridArea: "c" }} icon="globe" sizes="220px" />
+            <ImagePh label="halal community" tone="cream" src={HHData.collage[2]} style={{ gridArea: "c" }} icon="crescent" sizes="220px" />
             <span className="hero-collage-stat"><b>{placeCount}+</b> places</span>
           </div>
         </div>

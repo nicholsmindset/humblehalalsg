@@ -12,10 +12,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { track } from "@/lib/analytics";
 import type { Listing } from "@/lib/types";
-import type { Hotel } from "@/lib/halal-hotels";
 import type { ConciergeUIMessage } from "@/lib/concierge-agent";
 import { ListingCard, Icon, ImagePh } from "../ui";
-import { RatingBadge } from "../ota";
 
 /* Safety net: the concierge is prompted to write plain prose, but LLMs still
    occasionally emit markdown. Strip the syntax to clean text (the result cards
@@ -72,7 +70,6 @@ const PROMPT_TIPS = [
 
 type Part = ConciergeUIMessage["parts"][number];
 type DirOut = Extract<Part, { type: "tool-searchDirectory"; state: "output-available" }>["output"];
-type HotelOut = Extract<Part, { type: "tool-searchHotels"; state: "output-available" }>["output"];
 
 function DirectoryResults({ out }: { out: DirOut }) {
   if (!out || !out.ok || !out.places.length) {
@@ -101,34 +98,11 @@ function DirectoryResults({ out }: { out: DirOut }) {
   );
 }
 
-function HotelResults({ out }: { out: HotelOut }) {
-  if (!out || !out.ok) return <p className="cncg-note">{out && "message" in out ? out.message : "No stays found."}</p>;
-  if (!out.hotels.length) return <p className="cncg-note">No Muslim-friendly stays found — try other dates or a nearby city.</p>;
-  return (
-    <div className="cncg-cards">
-      {out.hotels.map((h) => (
-        <Link key={h.id} href={h.bookUrl} className="cncg-card">
-          <div className="cncg-card-body">
-            <strong className="cncg-card-name">{h.name}</strong>
-            <div className="cncg-card-meta">{[h.city, h.stars ? `${h.stars}★` : null].filter(Boolean).join(" · ")}</div>
-            {h.flags.length > 0 && <div className="cncg-tags">{h.flags.slice(0, 3).map((f: string) => <span key={f} className="cncg-tag"><Icon name="check" size={11} /> {f}</span>)}</div>}
-            <div className="cncg-card-foot">
-              <span className="cncg-score" title="Muslim-friendly score">{h.halalScore}</span>
-              <span className="cncg-price">{h.price != null ? <>from <strong>{h.currency} {Math.round(h.price)}</strong></> : "View rates"}</span>
-            </div>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 /* ---------- Fallback: original single-shot keyword search ---------- */
 function SingleShotConcierge() {
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [results, setResults] = useState<Listing[]>([]);
-  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
   const [asked, setAsked] = useState(false);
 
@@ -148,16 +122,15 @@ function SingleShotConcierge() {
       if (r.status === 429) {
         const retry = Number(r.headers.get("Retry-After")) || 60;
         setAnswer(`You're asking quickly — please wait ~${retry}s and try again.`);
-        setResults([]); setHotels([]);
+        setResults([]);
         return;
       }
       const d = await r.json();
       setAnswer(typeof d.answer === "string" ? d.answer : null);
       setResults(Array.isArray(d.results) ? d.results : []);
-      setHotels(Array.isArray(d.hotels) ? d.hotels : []);
     } catch {
       setAnswer("Network hiccup — please check your connection and try again.");
-      setResults([]); setHotels([]);
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -191,23 +164,7 @@ function SingleShotConcierge() {
             {results.map((l) => <ListingCard key={l.id} item={l} onOpen={() => track.aiResultClick(l.slug || l.id, l.catId)} />)}
           </div>
         )}
-        {!loading && hotels.length > 0 && (
-          <div className="flex col g8" style={{ marginTop: 16 }}>
-            {hotels.map((h) => (
-              <a key={h.id} href={`/travel/hotel/${h.id}`} className="card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-                <span style={{ minWidth: 0 }}>
-                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</strong>
-                  <small className="faint">{[h.city, h.country].filter(Boolean).join(", ")}</small>
-                </span>
-                <span className="flex g8" style={{ alignItems: "center", flex: "none" }}>
-                  {h.guestRating ? <RatingBadge score={h.guestRating} count={h.reviewCount} /> : null}
-                  {h.priceFrom ? <span className="price" style={{ whiteSpace: "nowrap" }}>{h.priceFrom.currency} {Math.round(h.priceFrom.amount)}<small>/stay</small></span> : null}
-                </span>
-              </a>
-            ))}
-          </div>
-        )}
-        {!loading && asked && !answer && results.length === 0 && hotels.length === 0 && (
+        {!loading && asked && !answer && results.length === 0 && (
           <p className="faint" style={{ marginTop: 16 }}>No matching places yet — try a different area or cuisine.</p>
         )}
       </div>
@@ -261,9 +218,6 @@ function ChatConcierge({ onUnavailable }: { onUnavailable: () => void }) {
                 if (part.type === "tool-searchDirectory") return part.state === "output-available"
                   ? <DirectoryResults key={i} out={part.output} />
                   : <p key={i} className="cncg-note"><span className="cncg-dot" /> Searching the halal directory…</p>;
-                if (part.type === "tool-searchHotels") return part.state === "output-available"
-                  ? <HotelResults key={i} out={part.output} />
-                  : <p key={i} className="cncg-note"><span className="cncg-dot" /> Searching Muslim-friendly stays…</p>;
                 return null;
               })}
             </div>

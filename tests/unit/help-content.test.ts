@@ -4,7 +4,7 @@ import { FLAG_ENV } from "@/lib/flags";
 
 describe("help-content", () => {
   it("every entry has non-empty copy and a valid category", () => {
-    const cats = ["Getting started", "Features", "For businesses", "Travel", "Trust & verification"];
+    const cats = ["Getting started", "Features", "For businesses", "Trust & verification"];
     for (const h of HELP) {
       expect(h.key, "key").toBeTruthy();
       expect(h.label, `${h.key} label`).toBeTruthy();
@@ -33,8 +33,8 @@ describe("help-content", () => {
   });
 
   // Accuracy invariants — the copy must match how the feature actually works
-  // (audit found drift: passport omitted the business mechanic; semantic-search
-  // described a directory search that doesn't exist; cert-vault omitted the plan).
+  // (audit found drift: passport omitted the business mechanic and cert-vault
+  // omitted the plan requirement).
   it("passport help serves both diners and businesses and explains the QR stamp", () => {
     const p = helpByKey("passport")!;
     expect(p.audience).toEqual(expect.arrayContaining(["user", "business"]));
@@ -48,11 +48,9 @@ describe("help-content", () => {
     expect((c.how.join(" ") + c.faqs.map((f) => f.a).join(" "))).toMatch(/verified/i);
   });
 
-  it("semantic-search help is scoped to travel/hotels, not directory search", () => {
-    const s = helpByKey("semantic-search")!;
-    const text = (s.what + s.how.join(" ")).toLowerCase();
-    expect(text).toContain("hotel");
-    expect(text).not.toContain("explore or the map");
-    expect(s.faqCategory).toBe("Travel");
+  it("does not publish deferred travel or hotel help", () => {
+    expect(helpByKey("semantic-search")).toBeUndefined();
+    const text = HELP.map((h) => `${h.label} ${h.what} ${h.how.join(" ")} ${h.faqs.map((f) => `${f.q} ${f.a}`).join(" ")}`).join(" ").toLowerCase();
+    expect(text).not.toMatch(/\b(travel|hotel|flight)\b/);
   });
 });

@@ -1,14 +1,12 @@
 "use client";
 
-// First-party event tracker. Writes through the SECURITY DEFINER track_event()
-// RPC (the only write path the anon key has — see 0010_analytics.sql).
+// First-party event tracker. Writes through the rate-limited /api/analytics-event
+// boundary; the browser never receives direct access to the database write RPC.
 //
 // Graceful by design (matches the "Supabase last" project convention): when the
 // backend isn't configured, getSupabaseBrowser() returns null and every call is
 // a silent no-op, so the UI works identically in mock mode. Calls are
 // fire-and-forget and never throw into the UI.
-
-import { getSupabaseBrowser } from "./supabase/client";
 
 // --- GTM dataLayer bridge -------------------------------------------------
 // The site pushes platform-agnostic events into one dataLayer; Google Tag
@@ -160,12 +158,6 @@ type EventArgs = {
   p_placement?: string | null;
 };
 
-// Params added by 0045 — stripped and retried if the DB predates the migration
-// (PGRST202 = no matching function), so the deploy-before-migration window
-// still records the legacy shape instead of dropping events.
-const V2_KEYS = ["p_area", "p_device", "p_results_count"] as const;
-const V3_KEYS = ["p_placement"] as const;
-
 function device(): string {
   try {
     return window.matchMedia("(max-width: 768px)").matches ? "mobile" : "desktop";
@@ -175,8 +167,7 @@ function device(): string {
 }
 
 function emit(args: Partial<EventArgs> & { p_event_type: string }) {
-  const sb = getSupabaseBrowser();
-  if (!sb || typeof window === "undefined") return; // mock mode → no-op
+  if (typeof window === "undefined") return;
   const payload: EventArgs = {
     p_session_id: sessionId(),
     p_path: window.location.pathname,
@@ -184,25 +175,17 @@ function emit(args: Partial<EventArgs> & { p_event_type: string }) {
     p_device: device(),
     ...args,
   };
-  // fire-and-forget; swallow all errors so analytics never affects UX
-  void sb.rpc("track_event", payload).then(({ error }) => {
-    if (error?.code === "PGRST202") {
-      // First retry the 0045 shape (placement was added in 0073), then the
-      // original eight-argument shape for older preview databases.
-      const v2 = { ...payload };
-      for (const k of V3_KEYS) delete v2[k];
-      void sb.rpc("track_event", v2).then(({ error: v2Error }) => {
-        if (v2Error?.code !== "PGRST202") return;
-        const legacy = { ...v2 };
-        for (const k of V2_KEYS) delete legacy[k];
-        void sb.rpc("track_event", legacy).then(() => {});
-      });
-      return;
-    }
-    if (error && process.env.NODE_ENV === "development") {
-      console.debug("[analytics] track_event failed:", error.message);
-    }
-  });
+  // Fire-and-forget; analytics never affects navigation or product UX.
+  try {
+    void fetch("/api/analytics-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  } catch {
+    /* never break UX */
+  }
 }
 
 /** Optional listing metadata for richer GA4/Meta ViewContent params. */

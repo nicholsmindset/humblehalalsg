@@ -18,7 +18,7 @@ export async function GET() {
   const db = getSupabaseAdmin()!;
 
   const since30 = new Date(Date.now() - 30 * 864e5).toISOString();
-  const [pending, failed, delivered, latest, listings, claims, events, reports, support, prioritySupport, featuredMissing, featuredUnexpected, campaigns, hotelBookings, flightBookings, emails, recentEmails] = await Promise.all([
+  const [pending, failed, delivered, latest, listings, claims, events, reports, support, prioritySupport, featuredMissing, featuredUnexpected, campaigns, emails, recentEmails] = await Promise.all([
     db.from("crm_outbox").select("id", { count: "exact", head: true }).is("processed_at", null),
     db.from("crm_outbox").select("id", { count: "exact", head: true }).is("processed_at", null).not("last_error", "is", null),
     db.from("crm_outbox").select("id", { count: "exact", head: true }).not("processed_at", "is", null),
@@ -32,8 +32,6 @@ export async function GET() {
     db.from("businesses").select("id", { count: "exact", head: true }).in("plan", ["featured", "premium"]).eq("featured", false),
     db.from("businesses").select("id", { count: "exact", head: true }).in("plan", ["free", "verified"]).eq("featured", true),
     db.from("ad_campaigns").select("id", { count: "exact", head: true }).or("review_status.eq.pending,status.in.(draft,scheduled)"),
-    db.from("hotel_bookings").select("id", { count: "exact", head: true }).gte("created_at", since30),
-    db.from("flight_bookings").select("id", { count: "exact", head: true }).gte("created_at", since30),
     db.from("email_log").select("id", { count: "exact", head: true }).gte("sent_at", since30),
     db.from("email_log").select("id, template, sent_at").order("sent_at", { ascending: false }).limit(8),
   ]);
@@ -57,7 +55,6 @@ export async function GET() {
       },
       planTrust: { mismatches: (featuredMissing.count ?? 0) + (featuredUnexpected.count ?? 0) },
       sponsorships: { attention: campaigns.count ?? 0 },
-      travel: { hotelBookings30d: hotelBookings.count ?? 0, flightBookings30d: flightBookings.count ?? 0 },
       communications: {
         resendConfigured: !!process.env.RESEND_API_KEY,
         replyTo: process.env.EMAIL_REPLY_TO || "hello@humblehalal.com",

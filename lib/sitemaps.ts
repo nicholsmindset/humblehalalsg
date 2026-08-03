@@ -16,7 +16,6 @@ import { certChangesIndexable } from "@/lib/cert-changes";
 import { profiledHawkerIds } from "@/lib/hawker-content";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
-import { allTravelHubs } from "@/lib/travel-hubs";
 import { TOOLS } from "@/lib/tools";
 import { SURAHS } from "@/lib/tools/surahs";
 import { indexableIngredients, ingredientSlug } from "@/lib/tools/ingredients";
@@ -34,7 +33,6 @@ export const SITEMAP_SEGMENTS = [
   "brands",
   "events",
   "blog",
-  "travel",
   "tools",
   "weddings",
   "mosques",
@@ -76,8 +74,6 @@ const PUBLIC_STATIC = [
   "/best-halal-restaurants-singapore",
   "/new-halal-restaurants-singapore",
   "/is-halal",
-  "/travel",
-  "/travel/umrah",
   "/blog",
   "/events",
   "/deals",
@@ -243,14 +239,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       }));
       return [...blogEntries, ...blogCatEntries];
     }
-
-    case "travel":
-      return allTravelHubs().map((h) => ({
-        loc: `${base}/travel/${h.slug}`,
-        lastmod: now,
-        changefreq: "weekly",
-        priority: 0.7,
-      }));
 
     case "tools": {
       const toolEntries: SitemapUrl[] = TOOLS.filter((t) => t.live && !t.href).map((t) => ({

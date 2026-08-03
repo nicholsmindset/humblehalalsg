@@ -3,13 +3,12 @@ import "server-only";
    directory twin of lib/travel-agent. GROUNDED: the searchDirectory tool only
    returns real listings (slug-addressed) with their stated halal tier — the
    model recommends from tool results and never invents places or asserts
-   certification. Reuses the travel searchHotels tool for stay-shaped asks. */
+   certification. Travel tools are intentionally excluded for launch. */
 import { ToolLoopAgent, tool, type InferAgentUIMessage } from "ai";
 import { z } from "zod";
 import { AI_MODEL } from "@/lib/ai";
 import { getDirectory } from "@/lib/directory";
 import { scoreListing } from "@/lib/halal-score";
-import { searchHotels } from "@/lib/travel-agent/tools";
 import type { Listing } from "@/lib/types";
 
 const tierOf = (l: Listing): string =>
@@ -71,14 +70,13 @@ const searchDirectory = tool({
   },
 });
 
-const TOOLS = { searchDirectory, searchHotels };
+const TOOLS = { searchDirectory };
 
 const INSTRUCTIONS = [
-  "You are the Humble Halal concierge — a warm, practical assistant helping Muslims in Singapore find halal food, Muslim-owned services and Muslim-friendly stays.",
+  "You are the Humble Halal concierge — a warm, practical assistant helping Muslims in Singapore find halal food and Muslim-owned services.",
   "",
   "TOOLS — always use them; NEVER invent places, prices or halal status:",
   "- searchDirectory: anything in Singapore (food, groceries, beauty, services, weddings…).",
-  "- searchHotels: hotels/stays for travel (Umrah, holidays) — anywhere in the world.",
   "",
   "HOW TO HELP:",
   "- Search first, then write a SHORT, friendly summary (1-3 sentences) of the best matches, naming them in the sentence. The UI already renders a card for every result — with its name, link, area and halal tier — so do NOT re-list the results.",

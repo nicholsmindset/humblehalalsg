@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Icon } from "../ui";
-import { HOME_FAQ, VERIFY_FAQ, TRAVEL_FAQ, BUSINESS_FAQ, type QA } from "@/lib/faq";
+import { HOME_FAQ, VERIFY_FAQ, BUSINESS_FAQ, type QA } from "@/lib/faq";
 import { HELP, type FaqCategory } from "@/lib/help-content";
 import type { Flags } from "@/lib/flags";
 import { CONTACT_EMAILS } from "@/lib/contact";
@@ -25,9 +25,8 @@ function Crumb({ trail }: { trail: { label: string; href?: string }[] }) {
 /* ── About ────────────────────────────────────────────────────────────────── */
 const PILLARS: [string, string, string][] = [
   ["search", "A trusted halal directory", "Find MUIS-certified, Muslim-owned and Muslim-friendly places across Singapore — with clear, honest trust badges so you always know what's verified and what's self-declared."],
-  ["plane", "Halal travel, done right", "Search Muslim-friendly hotels and flights worldwide — prayer rooms, halal dining nearby, alcohol-free options, Muslim-meal flags, prayer-aware layovers and qibla — for Umrah, Hajj and everyday travel."],
   ["shield-check", "Transparency over hype", "We're a discovery platform, not a certifier. Facts come from each business's own information and, where marked, a human review by our team — never an AI guess. MUIS HalalSG remains the certifying authority."],
-  ["heart", "Built with the community", "Suggestions, reports and reviews from Muslim travellers and diners keep the directory accurate and useful. Built for the Singapore Muslim community, and for Muslims travelling the world."],
+  ["heart", "Built with the community", "Suggestions, reports and reviews from Muslim diners and business owners keep the directory accurate and useful for Singapore's Muslim community."],
 ];
 
 export function AboutScreen() {
@@ -37,8 +36,8 @@ export function AboutScreen() {
       <section className="travel-hero hh-pattern">
         <div className="hh-wrap">
           <span className="eyebrow" style={{ color: "#cfe0da" }}>About Humble Halal</span>
-          <h1>Helping Muslims discover, dine and travel with confidence</h1>
-          <p className="sub">Humble Halal is Singapore's halal &amp; Muslim-owned directory — and a Muslim-first travel platform for hotels and flights. We bring the facts that matter together in one trusted place, so you can choose with confidence.</p>
+          <h1>Helping Muslims discover and dine with confidence</h1>
+          <p className="sub">Humble Halal is Singapore&apos;s halal and Muslim-owned directory. We bring the facts that matter together in one trusted place, so you can choose with confidence.</p>
         </div>
       </section>
 
@@ -51,17 +50,16 @@ export function AboutScreen() {
 
         <section className="about-block" style={{ marginTop: 44 }}>
           <h2>Our promise: facts and human verification — never AI guesswork</h2>
-          <p>We never let an algorithm declare a business, hotel or flight “halal”. Halal status is a matter of trust and scholarship, so we defer to <a href="https://www.muis.gov.sg/" target="_blank" rel="noopener noreferrer">MUIS</a> and the official <strong>HalalSG</strong> register, and we show exactly where each piece of information comes from. A <strong>Verified</strong> badge means our team reviewed the details; everything else is the business's or hotel's own declaration for you to confirm. Always check certification on MUIS HalalSG before you rely on it.</p>
+          <p>We never let an algorithm declare a business “halal”. Halal status is a matter of trust and scholarship, so we defer to <a href="https://www.muis.gov.sg/" target="_blank" rel="noopener noreferrer">MUIS</a> and the official <strong>HalalSG</strong> register, and we show exactly where each piece of information comes from. A <strong>Verified</strong> badge means our team reviewed the details; everything else is the business&apos;s own declaration for you to confirm. Always check certification on MUIS HalalSG before you rely on it.</p>
         </section>
 
         <section className="about-block" style={{ marginTop: 32 }}>
           <h2>Who we are</h2>
-          <p>Humble Halal is operated by <strong>ONN GROUP LLP</strong>, based at 60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051. We're an independent platform built for the Singapore Muslim community and for Muslim travellers everywhere.</p>
+          <p>Humble Halal is operated by <strong>ONN GROUP LLP</strong>, based at 60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051. We&apos;re an independent platform built for the Singapore Muslim community.</p>
         </section>
 
         <div className="flex g10 wrap" style={{ marginTop: 32 }}>
           <Link className="btn btn-primary" href="/explore">Explore halal places</Link>
-          <Link className="btn btn-soft" href="/travel">Plan halal travel</Link>
           <Link className="btn btn-outline" href="/contact">Contact us</Link>
         </div>
       </div>
@@ -310,7 +308,7 @@ function slugCat(c: string): string {
   return c.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-const FAQ_ORDER: FaqCategory[] = ["Getting started", "Features", "For businesses", "Travel", "Trust & verification"];
+const FAQ_ORDER: FaqCategory[] = ["Getting started", "Features", "For businesses", "Trust & verification"];
 
 /* Nested, flag-aware FAQ. Category-level (legacy) Q&As plus a per-feature
    sub-group for every ENABLED feature (from lib/help-content), so the FAQ never
@@ -320,7 +318,6 @@ export function FaqScreen({ flags }: { flags: Flags }) {
     "Getting started": [...HOME_FAQ],
     "Features": [],
     "For businesses": [...BUSINESS_FAQ],
-    "Travel": [...TRAVEL_FAQ],
     "Trust & verification": [...VERIFY_FAQ],
   };
 
@@ -340,7 +337,7 @@ export function FaqScreen({ flags }: { flags: Flags }) {
       <Crumb trail={[{ label: "Home", href: "/" }, { label: "FAQ" }]} />
       <div className="hh-wrap hh-section" style={{ maxWidth: 900 }}>
         <h1 style={{ fontSize: "1.9rem", marginBottom: 6 }}>Frequently asked questions</h1>
-        <p className="muted" style={{ marginBottom: 18 }}>How Humble Halal works — finding halal places, our trust badges, features and travel. Still stuck? <Link href="/contact">Contact us</Link>.</p>
+        <p className="muted" style={{ marginBottom: 18 }}>How Humble Halal works — finding halal places, our trust badges and features. Still stuck? <Link href="/contact">Contact us</Link>.</p>
 
         <nav className="faq-jump" aria-label="FAQ categories">
           {categories.map((c) => (

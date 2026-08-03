@@ -417,7 +417,6 @@ export function TopNav() {
     { id: "explore", label: t("nav.explore") },
     ...(flags?.hawkerFinder ? [{ id: "hawker", label: "Hawker" }] : []),
     ...(flags?.aiConcierge ? [{ id: "ask", label: "Ask AI" }] : []),
-    { id: "travel", label: "Travel" },
     { id: "events", label: t("nav.events") },
     { id: "tools", label: "Tools" },
     { id: "pricing", label: t("nav.pricing") },
@@ -508,12 +507,10 @@ export function MobileBar() {
     navigate(screen);
   };
 
-  // Mobile primary nav — keep parity with desktop TopNav (audit #2: Ask AI,
-  // Travel and Tools were missing from the drawer).
+  // Mobile primary nav — keep parity with desktop TopNav.
   const links: [string, string, string][] = [
     ["explore", t("nav.explore"), "search"],
     ...(flags?.aiConcierge ? ([["ask", "Ask AI", "sparkles"]] as [string, string, string][]) : []),
-    ["travel", "Travel", "globe"],
     ["events", t("nav.events"), "calendar"],
     ["tools", "Tools", "grid"],
     ["blog", "Blog", "doc"],
@@ -717,9 +714,6 @@ export function Footer() {
         [t("footer.link.deals"), "deals"],
         [t("nav.events"), "events"],
         [t("footer.link.map"), "map"],
-        [t("footer.link.travel"), "travel"],
-        [t("footer.link.flights"), "travel-flights"],
-        [t("footer.link.trips"), "travel-trips"],
       ],
     ],
     [

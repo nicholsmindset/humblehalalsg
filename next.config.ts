@@ -120,6 +120,6 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   tunnelRoute: "/monitoring",
   silent: true,
-  disableLogger: true,
+  webpack: { treeshake: { removeDebugLogging: true } },
   sourcemaps: { disable: true },
 });

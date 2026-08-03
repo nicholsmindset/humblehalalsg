@@ -6,7 +6,7 @@ import type { FlagKey } from "./flags";
    never assert certification beyond the MUIS/admin-verified distinction. */
 
 export type FaqCategory =
-  | "Getting started" | "Features" | "For businesses" | "Travel" | "Trust & verification";
+  | "Getting started" | "Features" | "For businesses" | "Trust & verification";
 
 export interface HelpFeature {
   key: string;
@@ -24,14 +24,14 @@ export interface HelpFeature {
 export const HELP: HelpFeature[] = [
   {
     key: "ask-ai", label: "Ask AI", flag: "aiConcierge", audience: ["public"],
-    what: "A halal-aware assistant that answers questions and finds places, prayer spaces and Muslim-friendly travel for you.",
+    what: "A halal-aware assistant that answers questions and finds places and prayer spaces for you.",
     how: [
       "Open Ask AI from the top nav (or /ask).",
       "Type a question in plain English — e.g. “halal buffet near Bugis with a prayer room”.",
       "It answers using our verified listings and links you straight to them.",
     ],
     faqs: [
-      { q: "What can Ask AI do?", a: "It answers halal-lifestyle questions and recommends places from our directory — by cuisine, area, prayer space, family-friendliness and more — and can help plan Muslim-friendly travel." },
+      { q: "What can Ask AI do?", a: "It answers halal-lifestyle questions and recommends places from our directory — by cuisine, area, prayer space, family-friendliness and more." },
       { q: "Is Ask AI a substitute for checking halal status?", a: "No. It surfaces our recorded halal status and links to the listing, but you should always confirm certification on the official MUIS HalalSG register." },
     ],
     faqCategory: "Features",
@@ -94,19 +94,6 @@ export const HELP: HelpFeature[] = [
       { q: "Are hawker stalls halal-certified?", a: "Some are MUIS-certified; many are Muslim-owned or self-declared and clearly labelled as such. Always confirm on site — the Halal Confidence Score reflects the strength of the signals, not a certification." },
     ],
     faqCategory: "Features",
-  },
-  {
-    key: "semantic-search", label: "Semantic hotel search", flag: "semanticSearch", audience: ["public"],
-    what: "On Travel, describe your ideal halal-friendly stay in your own words and get matching hotels — not just keyword filters.",
-    how: [
-      "Open Travel and use the “describe your ideal stay” search.",
-      "Type naturally — e.g. “quiet family hotel near a mosque with halal breakfast”.",
-      "Hotels are ranked by how well they match your description, alongside the usual filters.",
-    ],
-    faqs: [
-      { q: "Where does this work?", a: "On the Travel section for hotel search. Describe what you want and we match hotels by meaning, not just exact keywords." },
-    ],
-    faqCategory: "Travel",
   },
   {
     key: "cert-vault", label: "Halal certificate", flag: "certVault", audience: ["business"], halalSensitive: true,

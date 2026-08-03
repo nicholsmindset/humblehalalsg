@@ -15,7 +15,6 @@ type CrmHealth = {
     queue: { total: number; listings: number; claims: number; events: number; reports: number; support: number; prioritySupport: number };
     planTrust: { mismatches: number };
     sponsorships: { attention: number };
-    travel: { hotelBookings30d: number; flightBookings30d: number };
     communications: { resendConfigured: boolean; replyTo: string; sent30d: number; recent: Array<{ id: string; template: string; sentAt: string }> };
   };
 };
@@ -132,7 +131,7 @@ function CrmHealthPanel({ health, refresh }: { health: CrmHealth | null; refresh
   );
 }
 
-type Module = "work" | "events" | "sponsors" | "travel" | "communications" | "revenue";
+type Module = "work" | "events" | "sponsors" | "communications" | "revenue";
 function OperationsHub({ health, onNavigate }: { health: CrmHealth | null; onNavigate: (section: string) => void }) {
   const [module, setModule] = useState<Module>("work");
   const ops = health?.operations;
@@ -141,7 +140,6 @@ function OperationsHub({ health, onNavigate }: { health: CrmHealth | null; onNav
     { id: "work" as const, label: "Work queue", value: q?.total ?? 0, icon: "inbox" },
     { id: "events" as const, label: "Events", value: q?.events ?? 0, icon: "calendar" },
     { id: "sponsors" as const, label: "Sponsorships & ads", value: ops?.sponsorships.attention ?? 0, icon: "megaphone" },
-    { id: "travel" as const, label: "Travel & hotels", value: (ops?.travel.hotelBookings30d ?? 0) + (ops?.travel.flightBookings30d ?? 0), icon: "globe" },
     { id: "communications" as const, label: "Communications", value: ops?.communications.sent30d ?? 0, icon: "mail" },
     { id: "revenue" as const, label: "Revenue", value: "P&L", icon: "dollar" },
   ];
@@ -152,9 +150,8 @@ function OperationsHub({ health, onNavigate }: { health: CrmHealth | null; onNav
     {module === "work" && <div><div className="admin-statgrid">{[["Listings",q?.listings],["Claims",q?.claims],["Events",q?.events],["Reports",q?.reports],["Support",q?.support],["Plan mismatches",ops?.planTrust.mismatches]].map(([label,value]) => <div className="stat" key={String(label)}><div className="v">{value ?? 0}</div><div className="l">{label}</div></div>)}</div><div className="flex g8 wrap" style={{ marginTop: 14 }}>{link("approvals", "Review listings")}{link("claims", "Review claims")}{link("events", "Review events")}{link("reports", "Review reports")}<span className={`pill-tag ${(q?.prioritySupport ?? 0) > 0 ? "amber" : "green"}`}>{q?.prioritySupport ?? 0} priority support</span></div></div>}
     {module === "events" && <div className="flex between center wrap g12"><div><strong>{q?.events ?? 0} events awaiting approval</strong><p className="muted" style={{ marginTop: 4 }}>Open a pending event to edit every field and its cover image before publishing.</p></div>{link("events", "Open event operations")}</div>}
     {module === "sponsors" && <div className="flex between center wrap g12"><div><strong>{ops?.sponsorships.attention ?? 0} campaigns need attention</strong><p className="muted" style={{ marginTop: 4 }}>Manage sponsor creative, placements, schedules, review status and performance.</p></div>{link("featured", "Open sponsorships & ads")}</div>}
-    {module === "travel" && <div><div className="admin-statgrid"><div className="stat"><div className="v">{ops?.travel.hotelBookings30d ?? 0}</div><div className="l">Hotel bookings · 30d</div></div><div className="stat"><div className="v">{ops?.travel.flightBookings30d ?? 0}</div><div className="l">Flight bookings · 30d</div></div></div><div className="flex g8" style={{ marginTop: 14 }}>{link("hotels", "Hotel verification")}{link("travel-rev", "Travel revenue")}</div></div>}
     {module === "communications" && <div><div className="flex g8 center wrap"><span className={`pill-tag ${ops?.communications.resendConfigured ? "green" : "amber"}`}>Resend {ops?.communications.resendConfigured ? "connected" : "setup needed"}</span><span className="muted">Reply-to: {ops?.communications.replyTo || "hello@humblehalal.com"}</span></div><p style={{ marginTop: 10 }}><strong>{ops?.communications.sent30d ?? 0}</strong> transactional emails logged in the last 30 days.</p><div className="stack g6" style={{ marginTop: 10 }}>{(ops?.communications.recent || []).slice(0, 5).map((item) => <div className="flex between center" key={item.id}><span>{item.template}</span><span className="faint">{ago(item.sentAt)}</span></div>)}</div></div>}
-    {module === "revenue" && <div className="flex between center wrap g12"><div><strong>Unified revenue P&amp;L</strong><p className="muted" style={{ marginTop: 4 }}>Subscriptions, event fees, sponsored ads and approximate travel commission are reconciled in one view.</p></div>{link("revenue", "Open revenue dashboard")}</div>}
+    {module === "revenue" && <div className="flex between center wrap g12"><div><strong>Unified revenue P&amp;L</strong><p className="muted" style={{ marginTop: 4 }}>Subscriptions, event fees and sponsored ads are reconciled in one view.</p></div>{link("revenue", "Open revenue dashboard")}</div>}
   </div>;
 }
 
