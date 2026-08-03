@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
    Admin-only; writes with the service role (ad_placements has no public write policy). */
 
 const FILL_MODES = ["off", "direct_only", "adsense_only", "direct_then_adsense"] as const;
+const DORMANT_PLACEMENT_KEYS = new Set(["travel_promo"]);
 
 async function audit(
   db: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
@@ -36,7 +37,9 @@ export async function GET() {
       booked[c.placement_key] = (booked[c.placement_key] || 0) + 1;
     }
   }
-  const rows = (placements || []).map((p) => ({ ...p, booked: booked[p.key] || 0 }));
+  const rows = (placements || [])
+    .filter((p) => !DORMANT_PLACEMENT_KEYS.has(p.key))
+    .map((p) => ({ ...p, booked: booked[p.key] || 0 }));
   return NextResponse.json({ ok: true, placements: rows });
 }
 
@@ -50,6 +53,9 @@ export async function PATCH(req: Request) {
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 }); }
   const key = String(b.key || "").trim();
   if (!key) return NextResponse.json({ ok: false, error: "key required" }, { status: 422 });
+  if (DORMANT_PLACEMENT_KEYS.has(key)) {
+    return NextResponse.json({ ok: false, error: "travel_unavailable" }, { status: 410 });
+  }
 
   const patch: Record<string, unknown> = {};
   if (typeof b.active === "boolean") patch.active = b.active;

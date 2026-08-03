@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { travelDisabledResponse } from "@/proxy";
+import { categories, listings } from "@/lib/data";
 
 describe("travel launch shutdown", () => {
   it.each([
@@ -24,5 +25,10 @@ describe("travel launch shutdown", () => {
   it("does not block unrelated directory and AI routes", () => {
     expect(travelDisabledResponse(new NextRequest("https://humblehalal.com/explore"))).toBeNull();
     expect(travelDisabledResponse(new NextRequest("https://humblehalal.com/api/concierge"))).toBeNull();
+  });
+
+  it("omits travel from the built-in directory fallback", () => {
+    expect(categories.some((category) => category.id === "travel")).toBe(false);
+    expect(listings.some((listing) => listing.catId === "travel")).toBe(false);
   });
 });
