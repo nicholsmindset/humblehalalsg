@@ -32,10 +32,11 @@ const TRAVEL_PATH = /^\/travel(?:\/|$)/;
 const TRAVEL_API_PATH = /^\/api\/travel(?:\/|$)/;
 const TRAVEL_ADMIN_API_PATH = /^\/api\/admin\/(?:travel-(?:analytics|revenue|vouchers)|verify-hotel)(?:\/|$)/;
 const TRAVEL_CRON_PATH = /^\/api\/cron\/(?:fare-alerts|flight-retry)(?:\/|$)/;
+const TRAVEL_CONTENT_PATH = /^\/blog\/(?:category\/muslim-travel|(?:halal-cruises-from-singapore|halal-food-johor-bahru-guide|crossing-to-johor-bahru-checkpoints-transport|umrah-from-singapore-guide))(?:\/|$)/;
 
 export function travelDisabledResponse(req: NextRequest): NextResponse | null {
   const path = req.nextUrl.pathname;
-  if (!TRAVEL_PATH.test(path) && !TRAVEL_API_PATH.test(path) && !TRAVEL_ADMIN_API_PATH.test(path) && !TRAVEL_CRON_PATH.test(path)) {
+  if (!TRAVEL_PATH.test(path) && !TRAVEL_API_PATH.test(path) && !TRAVEL_ADMIN_API_PATH.test(path) && !TRAVEL_CRON_PATH.test(path) && !TRAVEL_CONTENT_PATH.test(path)) {
     return null;
   }
   const headers = { "Cache-Control": "public, max-age=0, s-maxage=86400" };
