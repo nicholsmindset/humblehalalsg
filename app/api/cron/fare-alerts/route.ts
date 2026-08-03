@@ -5,6 +5,7 @@ import { liteapiConfigured, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries } from "@/lib/flights";
 import { sendEmail } from "@/lib/email";
 import { fareAlertEmail } from "@/lib/emails/templates";
+import { sgDateKey } from "@/lib/rotate";
 
 /* Re-check active fare watches and email the traveller when the cheapest fare for
    their route+date drops below the last seen price (≥3% to avoid noise). Expired
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
   const db = getSupabaseAdmin();
   if (!db || !liteapiConfigured()) return NextResponse.json({ ok: true, simulated: true });
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = sgDateKey();
   const { data: rows } = await db
     .from("fare_watches")
     .select("id, email, origin, destination, depart_date, currency, last_price, notify_count")
