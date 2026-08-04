@@ -16,7 +16,7 @@ export function timeAgo(input?: string | number | Date | null): string {
   if (day === 1) return "yesterday";
   if (day < 30) return `${day} days ago`;
   const mo = Math.floor(day / 30);
-  if (mo < 12) return `${mo} month${mo === 1 ? "" : "s"} ago`;
+  if (day < 365) return `${mo} month${mo === 1 ? "" : "s"} ago`;
   const yr = Math.floor(day / 365);
   return `${yr} year${yr === 1 ? "" : "s"} ago`;
 }
