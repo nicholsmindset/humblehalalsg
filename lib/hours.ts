@@ -48,7 +48,7 @@ function inRange(mins: number, r: HoursRange): boolean {
   const o = toMin(r.open);
   const c = toMin(r.close);
   if (c > o) return mins >= o && mins < c; // same-day
-  return mins >= o || mins < c; // overnight
+  return mins >= o; // overnight tail is checked against yesterday's range
 }
 
 export function isOpenNow(week: WeekHours | undefined, date: Date = new Date()): boolean {
@@ -71,7 +71,12 @@ export function openStatus(
   const { day, mins } = sgParts(date);
   if (isOpenNow(week, date)) {
     const today = week[day];
-    const close = today && toMin(today.close) > mins ? today.close : today?.close;
+    const yesterday = week[(day + 6) % 7];
+    const isYesterdayOvernight =
+      yesterday &&
+      toMin(yesterday.close) <= toMin(yesterday.open) &&
+      mins < toMin(yesterday.close);
+    const close = isYesterdayOvernight ? yesterday.close : today?.close;
     return { open: true, label: close ? `Open · closes ${fmt12(close)}` : "Open now" };
   }
   // find next opening within 7 days
