@@ -29,12 +29,23 @@ function stamp(dateISO: string, hm: string): string {
   return `${dateISO.replace(/-/g, "")}T${h}${m}00`;
 }
 
+function nextDay(dateISO: string): string {
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function esc(s: string): string {
   return s.replace(/[\\;,]/g, (c) => "\\" + c).replace(/\n/g, "\\n");
 }
 
 export function buildIcs(ev: EventItem): string {
   const { start, end } = parseTimes(ev.timeLabel);
+  const endDate = ev.endsAt && ev.endsAt > ev.dateISO
+    ? ev.endsAt
+    : end <= start
+      ? nextDay(ev.dateISO)
+      : ev.dateISO;
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -43,7 +54,7 @@ export function buildIcs(ev: EventItem): string {
     "BEGIN:VEVENT",
     `UID:${ev.id}@humblehalal.com`,
     `DTSTART:${stamp(ev.dateISO, start)}`,
-    `DTEND:${stamp(ev.dateISO, end)}`,
+    `DTEND:${stamp(endDate, end)}`,
     `SUMMARY:${esc(ev.title)}`,
     `DESCRIPTION:${esc(ev.blurb)}`,
     `LOCATION:${esc(ev.venue + ", " + ev.area)}`,
