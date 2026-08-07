@@ -9,3 +9,15 @@ export function isValidIsoDate(value: string): boolean {
 export function isValidHotelStay(checkin: string, checkout: string): boolean {
   return isValidIsoDate(checkin) && isValidIsoDate(checkout) && checkout > checkin;
 }
+
+export function validHotelStayOrFallback(
+  checkin: unknown,
+  checkout: unknown,
+  fallback: { checkin: string; checkout: string },
+): { checkin: string; checkout: string } {
+  return typeof checkin === "string" &&
+    typeof checkout === "string" &&
+    isValidHotelStay(checkin, checkout)
+    ? { checkin, checkout }
+    : fallback;
+}
