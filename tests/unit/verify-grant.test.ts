@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isExpiringSoon, tierAndScore, buildGrantPatch } from "@/lib/verify-grant";
+import { isCertificateExpired, isExpiringSoon, tierAndScore, buildGrantPatch } from "@/lib/verify-grant";
 import { halalScore } from "@/lib/halal-score";
 
 /* A halal grant (manual verify OR approving an uploaded cert) must translate to
@@ -15,6 +15,21 @@ describe("isExpiringSoon", () => {
     expect(isExpiringSoon(far)).toBe(false);
     expect(isExpiringSoon(null)).toBe(false);
     expect(isExpiringSoon("not-a-date")).toBe(false);
+  });
+});
+
+describe("isCertificateExpired", () => {
+  const now = new Date("2026-08-05T16:30:00Z"); // 6 Aug in Singapore
+
+  it("uses the Singapore calendar date and allows expiry through its final day", () => {
+    expect(isCertificateExpired("2026-08-05", now)).toBe(true);
+    expect(isCertificateExpired("2026-08-06", now)).toBe(false);
+    expect(isCertificateExpired("2026-08-07", now)).toBe(false);
+  });
+
+  it("does not treat missing or malformed values as expired", () => {
+    expect(isCertificateExpired(null, now)).toBe(false);
+    expect(isCertificateExpired("not-a-date", now)).toBe(false);
   });
 });
 

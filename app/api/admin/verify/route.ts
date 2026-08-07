@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin, supabaseConfigured } from "@/lib/supabase/server";
 import { normalizeCertNo } from "@/lib/muis";
-import { buildGrantPatch, isExpiringSoon, tierAndScore, type GrantAction } from "@/lib/verify-grant";
+import { buildGrantPatch, isCertificateExpired, isExpiringSoon, tierAndScore, type GrantAction } from "@/lib/verify-grant";
 import { revalidatePublic } from "@/lib/revalidate";
 
 /* Admin halal-verification intake.
@@ -47,6 +47,9 @@ export async function POST(req: Request) {
   const certNo = normalizeCertNo(body.certNo);
   const expiry = String(body.expiry || "").trim() || null;
   const scheme = String(body.scheme || "").trim() || null;
+  if (action === "muis" && isCertificateExpired(expiry)) {
+    return NextResponse.json({ ok: false, error: "cert_expired", detail: `Certificate expired on ${expiry}. Enter a current certificate.` }, { status: 409 });
+  }
   // Expiry within ~90 days lowers the score and flags re-verification.
   const { tier, score } = tierAndScore(action, certNo, isExpiringSoon(expiry));
 

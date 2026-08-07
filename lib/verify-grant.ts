@@ -10,6 +10,13 @@ import { halalScore } from "@/lib/halal-score";
 
 export type GrantAction = "muis" | "admin" | "revoke";
 
+/** True when a YYYY-MM-DD certificate expiry is before today's Singapore date. */
+export function isCertificateExpired(expiry: string | null | undefined, now: Date = new Date()): boolean {
+  if (!expiry || !/^\d{4}-\d{2}-\d{2}$/.test(expiry) || Number.isNaN(Date.parse(`${expiry}T00:00:00Z`))) return false;
+  const todaySgt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(now);
+  return expiry < todaySgt;
+}
+
 /** True when an expiry date is within ~90 days (lowers the score, flags re-verify). */
 export function isExpiringSoon(expiry: string | null | undefined): boolean {
   if (!expiry) return false;
