@@ -473,6 +473,37 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 /* ---- Listing card ---- */
 .listing { display: flex; flex-direction: column; }
 .listing .lc-media { aspect-ratio: 16/10; }
+/* Listing cards are too narrow for the detail hero's side-by-side fallback.
+   Stack the artwork so long names stay readable instead of collapsing into a
+   letter-wide column beside the monogram. */
+.listing .business-media-fallback {
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 48px;
+  text-align: center;
+}
+.listing .business-media-fallback .bmf-mark {
+  width: clamp(44px, 17%, 56px);
+  height: clamp(44px, 17%, 56px);
+  border-radius: 14px;
+  font-size: clamp(1.25rem, 4.5vw, 1.7rem);
+}
+.listing .business-media-fallback .bmf-copy {
+  width: 100%;
+  align-items: center;
+}
+.listing .business-media-fallback .bmf-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(.9rem, 4vw, 1.08rem);
+  line-height: 1.1;
+  overflow-wrap: normal;
+  word-break: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.listing .business-media-fallback .bmf-copy small { display: none; }
+.listing .business-media-fallback .bmf-copy em { display: none; }
 .listing .lc-body { padding: 14px 15px 16px; display: flex; flex-direction: column; gap: 8px; }
 .listing .lc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .listing .lc-name { font-family: var(--serif); font-weight: 600; font-size: 1.12rem; letter-spacing: -.01em; }
