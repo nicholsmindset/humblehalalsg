@@ -4,6 +4,7 @@ import { getServerFlags } from "@/lib/feature-flags";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { liteapiConfigured, searchAirports, searchFlights } from "@/lib/liteapi";
 import { normalizeItineraries, type FlightItinerary } from "@/lib/flights";
+import { normalizeFlightDates, singaporeDate } from "@/lib/flight-dates";
 
 /* Phase 2 — AI "Search + Advise" for flights. One LLM call turns natural language
    into a structured FlightIntent + a warm sentence, then we resolve city→IATA via
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
   if (query.length < 2) return NextResponse.json({ ok: false, error: "Tell us where you'd like to fly." }, { status: 422 });
 
   const { aiObject, aiConfigured, AI_MODEL_FAST } = await import("@/lib/ai");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = singaporeDate();
 
   let originText: string | null = null;
   let destText: string | null = null;
@@ -146,9 +147,9 @@ export async function POST(req: Request) {
         : "Tell me your departure city and destination and I'll find flights for you.";
   }
 
-  // Default the outbound date if the user didn't give one.
-  if (!date) date = new Date(Date.now() + 21 * 864e5).toISOString().slice(0, 10);
-  if (tripType === "round" && !returnDate) returnDate = new Date(Date.parse(date) + 7 * 864e5).toISOString().slice(0, 10);
+  // LLM output is untrusted: reject impossible/past dates and inverted trips
+  // before they become a paid provider request.
+  ({ date, returnDate } = normalizeFlightDates(date, returnDate, tripType, today));
 
   const params: Params = {
     origin: originText,
