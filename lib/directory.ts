@@ -23,7 +23,20 @@ const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
 export function rowToListing(r: Row): Listing {
   const catId = str(r.cat_id || r.category_id) || "restaurants";
   const tags: string[] = Array.isArray(r.attributes) ? (r.attributes as string[]) : [];
-  const tier = str(r.halal_tier);
+  const storedTier = str(r.halal_tier);
+  const certNo = str(r.muis_cert_no);
+  const statusSourceUrl = str(r.status_source_url);
+  const checkedAt = str(r.status_checked_at);
+  const expiry = str(r.muis_expiry);
+  const checkedTime = checkedAt ? Date.parse(checkedAt) : Number.NaN;
+  const checkedRecently = Number.isFinite(checkedTime) && Date.now() - checkedTime <= 90 * 24 * 60 * 60 * 1000;
+  const notExpired = !expiry || expiry >= new Date().toISOString().slice(0, 10);
+  // Fail closed: a spreadsheet/import tag is not certification evidence. A
+  // MUIS badge requires a current official-register check tied to a certificate
+  // number. Unsupported legacy claims remain discoverable only as Pending
+  // Verification and never enter certified filters/counts.
+  const currentMuisEvidence = storedTier === "muis" && !!certNo && !!statusSourceUrl && checkedRecently && notExpired;
+  const tier = storedTier === "muis" && !currentMuisEvidence ? "pending" : storedTier;
   const badges: BadgeKey[] = [];
   if (tier === "muis") badges.push("muis");
   else if (tier === "admin") badges.push("admin");
@@ -86,9 +99,9 @@ export function rowToListing(r: Row): Listing {
     createdAt: str(r.created_at) || undefined,
     certBody: tier === "muis" ? "MUIS" : tier === "admin" ? "Humble Halal" : null,
     verify: {
-      certNo: str(r.muis_cert_no) || null,
+      certNo: certNo || null,
       verified: r.last_verified_at ? str(r.last_verified_at) : null,
-      expires: r.muis_expiry ? str(r.muis_expiry) : null,
+      expires: expiry || null,
       confirms: num(r.confirm_count, 0),
       renewed: false,
     },
