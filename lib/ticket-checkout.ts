@@ -21,9 +21,9 @@ export function capacityGate(args: { capacity: number; taken: number | null | un
   return { ok: true };
 }
 
-/** Clamp a requested ticket quantity to 1–20 (garbage → 1). */
+/** Normalize a requested ticket quantity to a whole number from 1–20 (garbage → 1). */
 export function clampTicketQty(raw: unknown): number {
-  return Math.max(1, Math.min(20, Number(raw) || 1));
+  return Math.max(1, Math.min(20, Math.trunc(Number(raw) || 1)));
 }
 
 export interface StripeLineItem {
