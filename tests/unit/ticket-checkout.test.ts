@@ -42,6 +42,11 @@ describe("clampTicketQty", () => {
     expect(clampTicketQty("abc")).toBe(1);
     expect(clampTicketQty(undefined)).toBe(1);
   });
+
+  it("normalizes fractional quantities to whole tickets", () => {
+    expect(clampTicketQty(2.9)).toBe(2);
+    expect(clampTicketQty("19.8")).toBe(19);
+  });
 });
 
 describe("buildTicketLineItems", () => {
