@@ -1,8 +1,24 @@
 # Humble Halal — Transactional Email Copy
 
-Voice: **warm, lightly Islamic**. Every email opens `Assalamualaikum {firstName},` and closes (in the branded footer) with *"With salaam, The Humble Halal team."* Sent via **Resend** (`lib/email.ts`), rendered through the shared branded wrapper (`lib/emails/layout.ts`), copy in `lib/emails/templates.ts`. Auth emails are owned by **Clerk**; newsletter/marketing by **beehiiv** — not here.
+Voice: **warm, lightly Islamic**. Every email opens `Assalamualaikum {firstName},` and closes (in the branded footer) with *"With salaam, The Humble Halal team."* Sent via **Resend** (`lib/email.ts`) and rendered through the shared branded wrapper (`lib/emails/layout.ts`). Transactional copy lives in `lib/emails/templates.ts`; newsletter resource-delivery copy lives in `lib/emails/newsletter.ts`. Auth emails are owned by **Clerk**. Beehiiv owns newsletter subscribers and future broadcasts, while Resend delivers the immediate source-specific resource promised by each signup form.
 
 > To tweak wording, edit the template in `lib/emails/templates.ts` (this doc mirrors it).
+
+## Newsletter form resource delivery
+
+Trigger: successful `POST /api/subscribe`. Beehiiv stores the subscriber and source/intent/stage fields. If Beehiiv is temporarily unavailable, the private fallback queue stores the signup. Resend sends the requested resource after either outcome; Beehiiv's publication-wide welcome email stays disabled to prevent duplicates.
+
+- **Food discovery** (home, popup, blog, directory, restaurant and general forms): Ultimate Halal Food Guide by MRT PDF.
+- **Certification/status** (`cert-changes`, `is-halal*`): certification-change welcome and live change log.
+- **Hawker** (`hawker*`): halal hawker welcome and hawker hub.
+- **Guides and events** (`guides`, `events`): guide library or upcoming events.
+- **Travel** (`travel`): inline halal-friendly travel checklist and Travel hub.
+- **Seasonal** (`ramadan`, `hari-raya`): Ramadan Planner PDF or inline Hari Raya checklist.
+- **Business owners and advertising**: listing starter kit or current advertising formats/rates.
+- **Prayer and tools** (`waktu-solat-hub`, `tool:*`): prayer guide or matching Zakat, Faraid, halal-stock and ingredient resource.
+- **Malay pages** (`ms-*`): Malay-language food, mosque, Ramadan or Hari Raya delivery.
+
+Existing subscribers still receive a newly requested resource when they submit a different form later.
 
 ---
 

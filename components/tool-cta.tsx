@@ -6,9 +6,9 @@ import { Newsletter } from "./newsletter";
 // Slug-matched copy. Falls back to the generic weekly-guide pitch.
 const HOOKS: Record<string, { title: string; blurb: string; cta: string }> = {
   zakat: {
-    title: "Get the printable Zakat 2026 worksheet",
-    blurb: "Plus a weekly halal guide — nisab updates, Ramadan reminders and MUIS-verified food finds across Singapore.",
-    cta: "Email me the worksheet",
+    title: "Get the Zakat calculation checklist",
+    blurb: "A practical four-step checklist, plus the calculator and our weekly halal guide for Singapore.",
+    cta: "Email me the checklist",
   },
   inheritance: {
     title: "Get the plain-English Faraid guide",
@@ -16,9 +16,9 @@ const HOOKS: Record<string, { title: string; blurb: string; cta: string }> = {
     cta: "Email me the guide",
   },
   "halal-stocks": {
-    title: "Get the halal stock watchlist",
-    blurb: "Screened tickers and a weekly halal-living digest for Singapore — food, finance, events and deals.",
-    cta: "Send me the watchlist",
+    title: "Get the halal stock-screening checklist",
+    blurb: "Four practical screening checks, plus our weekly halal-living guide for Singapore.",
+    cta: "Send me the checklist",
   },
   ramadan: {
     title: "Get the Ramadan 2026 Planner",
@@ -26,8 +26,8 @@ const HOOKS: Record<string, { title: string; blurb: string; cta: string }> = {
     cta: "Send me the planner",
   },
   "prayer-times": {
-    title: "Get the 2026 prayer-times guide",
-    blurb: "Annual salah times plus a weekly halal guide — new MUIS-verified spots, mosque events and deals.",
+    title: "Keep Singapore prayer times close",
+    blurb: "Get the live prayer-times guide, plus weekly mosque, event and halal-food updates.",
     cta: "Email me the guide",
   },
   "ingredient-checker": {

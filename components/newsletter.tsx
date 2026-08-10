@@ -29,12 +29,13 @@ export function Newsletter({
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const [tsToken, setTsToken] = useState("");
+  const isMalay = source.startsWith("ms-");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setStatus("error");
-      setMsg("Please enter a valid email");
+      setMsg(isMalay ? "Sila masukkan alamat e-mel yang sah" : "Please enter a valid email");
       return;
     }
     setStatus("loading");
@@ -48,16 +49,18 @@ export function Newsletter({
       if (data.ok) {
         if (!data.already) track.newsletterSignup(source, email);
         setStatus("done");
-        setMsg(data.already ? "You're already on the list — jazakallah!" : "You're in! Check your inbox.");
+        setMsg(data.already
+          ? (isMalay ? "Anda sudah berada dalam senarai — jazakallah!" : "You're already on the list — jazakallah!")
+          : (isMalay ? "Pendaftaran berjaya! Semak peti masuk anda." : "You're in! Check your inbox."));
         setEmail("");
         setName("");
       } else {
         setStatus("error");
-        setMsg(data.error || "Something went wrong");
+        setMsg(data.error || (isMalay ? "Sesuatu telah berlaku — sila cuba lagi" : "Something went wrong"));
       }
     } catch {
       setStatus("error");
-      setMsg("Network error — please try again");
+      setMsg(isMalay ? "Ralat rangkaian — sila cuba lagi" : "Network error — please try again");
     }
   };
 
@@ -107,7 +110,7 @@ export function Newsletter({
               style={{ fontSize: 16 }}
             />
             <button className="btn btn-primary" type="submit" disabled={status === "loading"}>
-              {status === "loading" ? "Joining…" : cta}
+              {status === "loading" ? (isMalay ? "Mendaftar…" : "Joining…") : cta}
             </button>
           </div>
           <Turnstile onToken={setTsToken} />
@@ -118,8 +121,11 @@ export function Newsletter({
           )}
           {consent && (
             <p className="newsletter-consent" style={{ marginTop: 8, fontSize: ".72rem", lineHeight: 1.4, color: "var(--ink-faint)" }}>
-              By subscribing you agree to receive marketing emails from HumbleHalal and accept our{" "}
-              <a href="/privacy">Privacy Policy</a>. We&apos;ll confirm your email first. Unsubscribe anytime.
+              {isMalay ? (
+                <>Dengan melanggan, anda bersetuju menerima e-mel pemasaran Humble Halal dan menerima <a href="/privacy">Dasar Privasi</a> kami. Sumber yang diminta akan dihantar sekarang. Berhenti melanggan pada bila-bila masa.</>
+              ) : (
+                <>By subscribing you agree to receive marketing emails from HumbleHalal and accept our <a href="/privacy">Privacy Policy</a>. We&apos;ll email your requested resource right away. Unsubscribe anytime.</>
+              )}
             </p>
           )}
         </form>

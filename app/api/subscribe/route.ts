@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { beehiivSubscribe } from "@/lib/beehiiv";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email";
+import { newsletterSignupEmail } from "@/lib/emails/newsletter";
 
 /* beehiiv newsletter capture.
    Set BEEHIIV_API_KEY and BEEHIIV_PUBLICATION_ID in env.
@@ -20,7 +22,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     email = String(body?.email || "").trim();
-    if (body?.source) source = String(body.source);
+    if (body?.source) source = String(body.source).trim().slice(0, 80);
     if (body?.name) name = String(body.name).trim().slice(0, 80);
     // Optional owner-funnel lifecycle stage: lead | listed | claimed.
     if (body?.stage) stage = String(body.stage).trim().slice(0, 40);
@@ -43,13 +45,31 @@ export async function POST(req: Request) {
     source,
     ...(stage ? { stage } : {}),
     ...(name ? { name } : {}),
-    sendWelcome: true,
+    // Resend delivers the exact resource promised by the form below. Disable
+    // Beehiiv's publication-wide welcome so subscribers do not get duplicates.
+    sendWelcome: false,
     ...(origin ? { referringSite: origin } : {}),
   });
+
+  const deliverResource = () => {
+    const welcome = newsletterSignupEmail({ source, ...(name ? { name } : {}) });
+    after(async () => {
+      const sent = await sendEmail({
+        to: email,
+        subject: welcome.subject,
+        html: welcome.html,
+        template: welcome.template,
+      });
+      if (!sent.ok) console.error("[subscribe] resource delivery failed", { template: welcome.template });
+    });
+  };
 
   // A real provider success is final. If Beehiiv is absent or rejects the
   // request, durably queue it in our private database instead of pretending.
   if (r.ok && !r.simulated) {
+    // Send on every explicit request: an existing subscriber may request a
+    // different guide from another form later.
+    deliverResource();
     return NextResponse.json({ ok: true, ...(r.already ? { already: true } : {}), ...(r.simulated ? { simulated: true } : {}) });
   }
 
@@ -64,7 +84,10 @@ export async function POST(req: Request) {
       provider_status: "queued",
       updated_at: new Date().toISOString(),
     }, { onConflict: "email" });
-    if (!error) return NextResponse.json({ ok: true, queued: true });
+    if (!error) {
+      deliverResource();
+      return NextResponse.json({ ok: true, queued: true });
+    }
     console.error("[subscribe] fallback queue failed", { code: error.code });
   }
 

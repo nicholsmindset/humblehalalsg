@@ -160,7 +160,7 @@ export function AdvertiseScreen() {
           <div className="newsletter-card" style={{ textAlign: "center", maxWidth: 560, margin: "0 auto" }}>
             <h2 style={{ fontSize: "1.5rem" }}>Let’s build your campaign</h2>
             <p className="muted" style={{ marginTop: 8 }}>
-              Leave your email and we’ll send the media kit, audience data and current rates.
+              Leave your email and we’ll send the current advertising formats and starting rates.
             </p>
             <div style={{ marginTop: 16, textAlign: "left" }}>
               <Newsletter source="advertise" />
