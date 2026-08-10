@@ -438,8 +438,8 @@ export function TravelScreen({
           <span className="eyebrow"><Icon name="crescent" size={13} /> Halal travel</span>
           <h2 style={{ fontSize: "1.25rem", marginTop: 8 }}>Planning a halal-friendly trip?</h2>
           <p className="muted" style={{ marginTop: 8 }}>
-            Get our free Halal Travel Checklist + city prayer-space guides, and we&apos;ll alert you
-            when watched hotels drop in price.
+            Get our free Halal Travel Checklist, plus useful travel and prayer-space updates
+            in the weekly Humble Halal guide.
           </p>
           <div style={{ marginTop: 14 }}>
             <Newsletter source="travel" collectName cta="Send me the checklist" />

@@ -1,9 +1,10 @@
 import "server-only";
 
-/* Transactional email via Resend (owner alerts, freshness nudges, tickets).
+/* Transactional and requested-resource email via Resend (owner alerts,
+   freshness nudges, tickets, newsletter form delivery).
    Graceful: returns simulated without RESEND_API_KEY. Records to `email_log` when
-   Supabase is configured. Beehiiv owns the marketing newsletter
-   (app/api/subscribe). */
+   Supabase is configured. Beehiiv owns the marketing subscriber list and
+   broadcasts; /api/subscribe uses Resend for immediate resource delivery. */
 
 const FROM = process.env.EMAIL_FROM || "Humble Halal <hello@humblehalal.com>";
 const REPLY_TO = process.env.EMAIL_REPLY_TO || "hello@humblehalal.com";
