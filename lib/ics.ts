@@ -36,7 +36,7 @@ function nextDay(dateISO: string): string {
 }
 
 function esc(s: string): string {
-  return s.replace(/[\\;,]/g, (c) => "\\" + c).replace(/\n/g, "\\n");
+  return s.replace(/[\\;,]/g, (c) => "\\" + c).replace(/\r\n|\r|\n/g, "\\n");
 }
 
 export function buildIcs(ev: EventItem): string {
