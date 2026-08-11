@@ -28,10 +28,18 @@ type Body = {
 };
 
 /** Read a cookie value from the raw Cookie header. */
-function cookie(name: string, header: string | null): string | undefined {
+export function cookie(name: string, header: string | null): string | undefined {
   if (!header) return undefined;
   const m = header.match(new RegExp("(?:^|; )" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"));
-  return m ? decodeURIComponent(m[1]) : undefined;
+  if (!m) return undefined;
+
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    // Cookie headers are client-controlled. Ignore malformed percent-encoding
+    // instead of failing an otherwise valid conversion request.
+    return undefined;
+  }
 }
 
 function clientIp(req: Request): string | undefined {
