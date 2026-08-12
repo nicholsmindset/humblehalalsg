@@ -53,4 +53,15 @@ describe("buildIcs", () => {
     expect(ics).toContain("DTSTART:20260801T190000");
     expect(ics).toContain("DTEND:20260803T210000");
   });
+
+  it("escapes every newline style inside text properties", () => {
+    const ics = buildIcs(event({
+      title: "First\r\nSecond\rThird\nFourth",
+      blurb: "Details\rATTENDEE:mailto:unexpected@example.com",
+    }));
+
+    expect(ics).toContain("SUMMARY:First\\nSecond\\nThird\\nFourth\r\n");
+    expect(ics).toContain("DESCRIPTION:Details\\nATTENDEE:mailto:unexpected@example.com\r\n");
+    expect(ics).not.toContain("\rATTENDEE:");
+  });
 });
