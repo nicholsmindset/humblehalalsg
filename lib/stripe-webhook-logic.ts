@@ -50,6 +50,15 @@ export interface TicketOrderMoney {
   feeMode: "pass" | "absorb";
 }
 
+function nonNegativeInteger(raw: string | number | null | undefined, fallback = 0): number {
+  const value = typeof raw === "number"
+    ? raw
+    : typeof raw === "string" && /^\d+$/.test(raw)
+      ? Number(raw)
+      : Number.NaN;
+  return Number.isSafeInteger(value) && value >= 0 ? value : fallback;
+}
+
 /** Derive the order's money split from Checkout Session metadata + amount_total.
  *  Mirrors the ticket branch exactly so the recorded order matches what the
  *  buyer was charged (a bug here mis-pays the organiser or mis-records revenue). */
@@ -57,12 +66,14 @@ export function resolveTicketOrderMoney(
   m: Record<string, string | undefined>,
   amountTotalCents: number | null | undefined,
 ): TicketOrderMoney {
-  const qty = Math.max(1, parseInt(m.qty || "1", 10));
-  const subtotalCents = parseInt(m.subtotalCents || "0", 10);
-  const feeCents = parseInt(m.feeCents || "0", 10);
-  const netCents = m.netCents != null && m.netCents !== "" ? parseInt(m.netCents, 10) : subtotalCents;
-  const totalCents = amountTotalCents ?? subtotalCents + feeCents;
-  const discountCents = parseInt(m.discountCents || "0", 10) || 0;
+  const qty = Math.max(1, nonNegativeInteger(m.qty, 1));
+  const subtotalCents = nonNegativeInteger(m.subtotalCents);
+  const feeCents = nonNegativeInteger(m.feeCents);
+  const netCents = m.netCents != null && m.netCents !== ""
+    ? nonNegativeInteger(m.netCents, subtotalCents)
+    : subtotalCents;
+  const totalCents = nonNegativeInteger(amountTotalCents, subtotalCents + feeCents);
+  const discountCents = nonNegativeInteger(m.discountCents);
   const feeMode = m.feeMode === "absorb" ? "absorb" : "pass";
   return { qty, subtotalCents, feeCents, netCents, totalCents, discountCents, feeMode };
 }

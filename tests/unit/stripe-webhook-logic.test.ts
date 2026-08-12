@@ -86,6 +86,37 @@ describe("resolveTicketOrderMoney", () => {
     expect(m.feeMode).toBe("pass");
     expect(m.qty).toBe(1);
   });
+
+  it("rejects malformed and negative metadata instead of returning unsafe money values", () => {
+    const money = resolveTicketOrderMoney(
+      {
+        qty: "2tickets",
+        subtotalCents: "4000oops",
+        feeCents: "-300",
+        netCents: "not-a-number",
+        discountCents: "-100",
+      },
+      Number.NaN,
+    );
+
+    expect(money).toEqual({
+      qty: 1,
+      subtotalCents: 0,
+      feeCents: 0,
+      netCents: 0,
+      totalCents: 0,
+      discountCents: 0,
+      feeMode: "pass",
+    });
+  });
+
+  it("rejects values outside JavaScript's safe integer range", () => {
+    const money = resolveTicketOrderMoney(
+      { subtotalCents: "9007199254740992", feeCents: "1", netCents: "9007199254740992" },
+      9007199254740992,
+    );
+    expect(money).toMatchObject({ subtotalCents: 0, feeCents: 1, netCents: 0, totalCents: 1 });
+  });
 });
 
 describe("ticketPayoutStatus", () => {
