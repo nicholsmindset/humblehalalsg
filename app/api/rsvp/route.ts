@@ -9,6 +9,7 @@ import { auth } from "@clerk/nextjs/server";
 import { sendEmail } from "@/lib/email";
 import { rsvpConfirmationEmail } from "@/lib/emails/templates";
 import { notify } from "@/lib/notify";
+import { clampTicketQty } from "@/lib/ticket-checkout";
 
 /* Free RSVP — the launch path. DB-backed when the event exists in Supabase;
    otherwise returns simulated:true so the client keeps the local mock ticket
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, reason: "bad_email" }, { status: 422 });
   }
 
-  const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
+  const qty = clampTicketQty(body.qty, 10);
   // The emailed reference IS the ticket qr_ref (lib/ticket-ref) — it used to be
   // a decorative random number stored nowhere, so door check-in never matched.
   const ref = makeOrderRef("RSVP");

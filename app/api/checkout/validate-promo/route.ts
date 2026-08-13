@@ -5,6 +5,7 @@ import { rowToEvent } from "@/lib/events-source";
 import { isSafeEventRef } from "@/lib/event-ref";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { validatePromoCode, PROMO_MESSAGES } from "@/lib/promo";
+import { clampTicketQty } from "@/lib/ticket-checkout";
 
 /* Live promo-code preview for the checkout screen. Advisory only — the ticket
    route re-validates and recomputes the discount at session creation, so a
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as { eventId?: string; code?: string; tier?: string; qty?: number };
   const eventId = String(body.eventId || "");
-  const qty = Math.max(1, Math.min(20, Number(body.qty) || 1));
+  const qty = clampTicketQty(body.qty);
 
   const supa = getSupabaseAdmin();
   if (!supa) return NextResponse.json({ ok: false, reason: "not_configured", message: "Promo codes aren't available right now." });
