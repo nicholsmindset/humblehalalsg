@@ -594,8 +594,8 @@ body[data-accent="vibrant"] .tag { background:var(--gold-50); color:var(--gold-8
 .tiktok-facade-txt { font-weight: 800; font-size: .95rem; }
 .tiktok-facade-note { font-size: .72rem; opacity: .75; }
 .tiktok-cap { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
-.tiktok-cap-txt { font-size: .85rem; color: var(--ink, #23271f); line-height: 1.35; }
-.tiktok-cap-handle { font-size: .8rem; font-weight: 700; color: var(--emerald, #12525B); display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.tiktok-cap-txt { min-height: 24px; font-size: .85rem; color: var(--ink, #23271f); line-height: 1.35; display: flex; align-items: center; }
+.tiktok-cap-handle { min-height: 24px; font-size: .8rem; font-weight: 700; color: var(--emerald, #12525B); display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
 .tiktok-cap-handle:hover { text-decoration: underline; }
 /* Submission CTA tile — same silhouette as a video card (grid stretches it to
    the row height); dashed = "this slot is yours". */

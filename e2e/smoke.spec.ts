@@ -16,8 +16,8 @@ test("business detail has real contact actions", async ({ page }) => {
   // Integration test: needs a seeded Supabase directory (a real business with a
   // phone + coordinates). Skipped when the backend isn't wired into CI.
   test.skip(!process.env.NEXT_PUBLIC_SUPABASE_URL, "requires a seeded Supabase directory");
-  await page.goto("/business/warung-bumbu-rempah");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Warung Bumbu Rempah");
+  await page.goto("/business/atrium-restaurant");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Atrium Restaurant");
   await expect(page.getByRole("link", { name: /Call/i }).first()).toHaveAttribute("href", /^tel:/);
   await expect(page.getByRole("link", { name: /Directions/i }).first()).toHaveAttribute("href", /google\.com\/maps/);
 });
