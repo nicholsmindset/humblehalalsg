@@ -120,14 +120,18 @@ export function NewsletterPopup() {
             <Icon name="x" size={18} />
           </button>
         </div>
-        <h2 style={{ fontSize: "1.5rem", marginTop: 6 }}>Never miss a new halal spot</h2>
+        <h2 style={{ fontSize: "1.5rem", marginTop: 6 }}>Plan your halal weekend in 10 minutes</h2>
         <p className="muted" style={{ marginTop: 8 }}>
-          Join HumbleHalal — MUIS-verified food finds, mosque events &amp; deals across Singapore,
-          every week. Subscribe and we&apos;ll send you the <strong>Ultimate Halal Food Guide by MRT
-          Station</strong> (free).
+          Get the free reusable worksheet for choosing one meal, placing prayer into your route and
+          adding one meaningful stop. We&apos;ll also send one useful Friday email.
         </p>
         <div style={{ marginTop: 16 }}>
-          <Newsletter source="popup" collectName cta="Send me the guide" />
+          <Newsletter
+            source="weekend-planner:popup"
+            cta="Email me the planner"
+            successHref="/guides/halal-weekend-planner-singapore.pdf"
+            successCta="Open the planner now"
+          />
         </div>
       </div>
     </div>

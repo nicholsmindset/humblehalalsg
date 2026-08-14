@@ -81,6 +81,11 @@ export function seoRedirects(): Redirect[] {
   return [
     ...LEGACY_HALAL_REDIRECTS,
     ...ingredientRedirects(),
+    // Retire time-sensitive and unverified PDF assets without breaking links
+    // already shared in old emails or indexed elsewhere.
+    { source: "/guides/ultimate-halal-food-guide-mrt.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
+    { source: "/guides/halal-brand-cheat-sheet.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
+    { source: "/guides/ramadan-2026-planner.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
     // Consolidate the older generic blog guide into the live, catalog-backed
     // ranking page. Both targeted the same "best halal restaurants Singapore"
     // intent; keeping one canonical destination prevents them competing in

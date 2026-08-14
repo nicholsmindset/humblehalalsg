@@ -27,28 +27,30 @@ function wrap(
   };
 }
 
-function foodGuide(name?: string | null): NewsletterSignupEmail {
+const WEEKEND_PLANNER_URL = `${U}/guides/halal-weekend-planner-singapore.pdf`;
+
+function weekendPlanner(name?: string | null): NewsletterSignupEmail {
   return wrap(
-    "newsletter-food-guide",
-    "Your Ultimate Halal Food Guide by MRT is here",
-    "Your free halal food guide",
+    "newsletter-weekend-planner",
+    "Your 10-Minute Halal Weekend Planner",
+    "Your weekend plan starts here",
     greet(name) +
-      p("Jazakallah khair for joining Humble Halal. Your guide groups halal and Muslim-owned places by their nearest MRT station, with clear labels for MUIS-certified and self-declared listings.") +
-      p("You’ll also receive our weekly email with newly verified places, prayer-space updates, community events and useful Singapore guides."),
-    { label: "Download the MRT food guide", url: `${U}/guides/ultimate-halal-food-guide-mrt.pdf` },
-    "Always verify current certification on the official MUIS HalalSG register before visiting.",
+      p("Jazakallah khair for joining Humble Halal. Your four-page planner helps you choose one area, one main meal, one prayer stop and one meaningful activity—without turning the weekend into a research project.") +
+      p("Use the printable worksheet now. Then, each Friday, we’ll send one short email with current Singapore finds and ideas to help you fill it."),
+    { label: "Open the 10-Minute Weekend Planner", url: WEEKEND_PLANNER_URL },
+    "Humble Halal is a discovery platform, not a certifier. Always verify current details before visiting.",
   );
 }
 
 function guideHub(name?: string | null): NewsletterSignupEmail {
   return wrap(
-    "newsletter-guides",
-    "Your Humble Halal guide library",
-    "Your free halal guides",
+    "newsletter-weekend-planner",
+    "Your 10-Minute Halal Weekend Planner",
+    "Your reusable weekend planner",
     greet(name) +
-      p("You can download the Ultimate Halal Food Guide by MRT, Ramadan Planner and Halal Brand Status Cheat-Sheet from one place.") +
-      p("We’ll email you when useful new or updated guides are released."),
-    { label: "Open the free guide library", url: `${U}/guides` },
+      p("Your planner gives you a simple method, a printable worksheet and a quick halal-status check you can reuse year-round.") +
+      p("We’ll also send one useful Friday email with current Singapore finds and planning ideas."),
+    { label: "Open the 10-Minute Weekend Planner", url: WEEKEND_PLANNER_URL },
   );
 }
 
@@ -111,14 +113,14 @@ function travelEmail(name?: string | null): NewsletterSignupEmail {
 
 function ramadanEmail(name?: string | null): NewsletterSignupEmail {
   return wrap(
-    "newsletter-ramadan-planner",
-    "Your Ramadan 2026 Planner is ready",
-    "Your 30-day Ramadan companion",
+    "newsletter-weekend-planner",
+    "Your year-round Halal Weekend Planner",
+    "Keep planning simply, beyond the season",
     greet(name) +
-      p("Your planner includes Singapore sahur and iftar times, a 30-day fasting tracker, zakat references and practical Ramadan reminders.") +
-      p("May it help you plan a calmer, more intentional month, insyaAllah."),
-    { label: "Download the Ramadan Planner", url: `${U}/guides/ramadan-2026-planner.pdf` },
-    "Prayer times use the Singapore/MUIS method; confirm current timings with MUIS.",
+      p("Ramadan changes each year, so we now keep seasonal information on the live site. This reusable planner helps you plan one meal, one prayer stop and one meaningful activity in ten minutes.") +
+      p("We’ll send timely Ramadan resources again when the season returns, insyaAllah."),
+    { label: "Open the 10-Minute Weekend Planner", url: WEEKEND_PLANNER_URL },
+    "Always confirm current prayer times and halal details using official sources.",
   );
 }
 
@@ -243,7 +245,7 @@ function toolEmail(slug: string, name?: string | null): NewsletterSignupEmail {
       "Check labels with more confidence",
       greet(name) +
         p("Search unfamiliar ingredient names or E-numbers, then confirm the finished product’s certification and manufacturing context. A single ingredient result does not certify the whole product.") +
-        p("We’ve also included our Halal Brand Status Cheat-Sheet in the free guide library."),
+        p("For current certification details, use the official MUIS HalalSG search and check the exact outlet."),
       { label: "Open the ingredient checker", url: `${U}/tools/ingredient-checker` },
     );
   }
@@ -260,14 +262,14 @@ function toolEmail(slug: string, name?: string | null): NewsletterSignupEmail {
 
 function malayFood(name?: string | null): NewsletterSignupEmail {
   return wrap(
-    "newsletter-ms-food",
-    "Panduan makanan halal anda sudah tersedia",
-    "Tempat makan halal baharu, setiap minggu",
+    "newsletter-ms-weekend-planner",
+    "Perancang hujung minggu halal 10 minit anda",
+    "Rancang hujung minggu dengan lebih mudah",
     greet(name, "sahabat") +
-      p("Terima kasih kerana menyertai Humble Halal. Muat turun panduan percuma yang menyusun tempat makan halal dan milik Muslim mengikut stesen MRT terdekat.") +
-      p("Anda juga akan menerima e-mel mingguan tentang restoran baharu, gerai hawker, program komuniti dan panduan berguna di Singapura."),
-    { label: "Muat turun panduan makanan MRT", url: `${U}/guides/ultimate-halal-food-guide-mrt.pdf` },
-    "Sentiasa semak status pensijilan terkini melalui daftar rasmi MUIS HalalSG.",
+      p("Perancang empat halaman ini membantu anda memilih satu kawasan, satu hidangan utama, satu tempat solat dan satu aktiviti bermakna.") +
+      p("Anda juga akan menerima satu e-mel ringkas setiap Jumaat dengan idea semasa di Singapura."),
+    { label: "Buka perancang hujung minggu", url: WEEKEND_PLANNER_URL },
+    "Sentiasa semak butiran dan status pensijilan semasa sebelum berkunjung.",
   );
 }
 
@@ -285,14 +287,14 @@ function malayMosque(name?: string | null): NewsletterSignupEmail {
 
 function malayRamadan(name?: string | null): NewsletterSignupEmail {
   return wrap(
-    "newsletter-ms-ramadan",
-    "Perancang Ramadan 2026 anda sudah tersedia",
-    "Teman perancangan Ramadan 30 hari",
+    "newsletter-ms-weekend-planner",
+    "Perancang hujung minggu halal anda",
+    "Panduan yang boleh digunakan sepanjang tahun",
     greet(name, "sahabat") +
-      p("Perancang ini merangkumi waktu sahur dan iftar Singapura, penjejak puasa 30 hari, rujukan zakat dan peringatan praktikal Ramadan.") +
-      p("Semoga ia membantu anda merancang bulan yang lebih tenang dan bermakna, insya-Allah."),
-    { label: "Muat turun Perancang Ramadan", url: `${U}/guides/ramadan-2026-planner.pdf` },
-    "Sila sahkan waktu solat semasa melalui sumber rasmi MUIS.",
+      p("Maklumat Ramadan berubah setiap tahun, jadi panduan bermusim kini disimpan di laman langsung kami. Perancang ini membantu anda memilih makanan, tempat solat dan aktiviti dalam sepuluh minit.") +
+      p("Kami akan menghantar sumber Ramadan yang tepat pada masanya apabila musimnya tiba, insya-Allah."),
+    { label: "Buka perancang hujung minggu", url: WEEKEND_PLANNER_URL },
+    "Sila sahkan waktu solat dan butiran halal semasa melalui sumber rasmi.",
   );
 }
 
@@ -332,5 +334,5 @@ export function newsletterSignupEmail(o: { source?: string | null; name?: string
   if (source === "hawker" || source === "hawker-centre") return hawkerEmail(o.name);
   if (source === "cert-changes" || source.startsWith("is-halal")) return certificationEmail(o.name);
   if (source.startsWith("tool:")) return toolEmail(source.slice(5), o.name);
-  return foodGuide(o.name);
+  return weekendPlanner(o.name);
 }

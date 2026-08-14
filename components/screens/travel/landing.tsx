@@ -442,7 +442,7 @@ export function TravelScreen({
             in the weekly Humble Halal guide.
           </p>
           <div style={{ marginTop: 14 }}>
-            <Newsletter source="travel" collectName cta="Send me the checklist" />
+            <Newsletter source="travel" cta="Send me the checklist" />
           </div>
         </section>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Icon } from "./ui";
 import { track } from "@/lib/analytics";
 import { Turnstile } from "./turnstile";
@@ -12,6 +12,9 @@ export function Newsletter({
   cta = "Subscribe",
   stage,
   consent = true,
+  successHref,
+  successCta,
+  successMessage,
 }: {
   source?: string;
   variant?: "inline" | "card";
@@ -23,12 +26,19 @@ export function Newsletter({
   stage?: string;
   /** Show the PDPA consent + privacy line under the form (default true). */
   consent?: boolean;
+  /** Optional immediate-access link shown after a successful signup. */
+  successHref?: string;
+  /** Label for the immediate-access link. */
+  successCta?: string;
+  /** Override the default post-submit confirmation. */
+  successMessage?: string;
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const [tsToken, setTsToken] = useState("");
+  const started = useRef(false);
   const isMalay = source.startsWith("ms-");
 
   const submit = async (e: React.FormEvent) => {
@@ -36,6 +46,7 @@ export function Newsletter({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setStatus("error");
       setMsg(isMalay ? "Sila masukkan alamat e-mel yang sah" : "Please enter a valid email");
+      track.newsletterFormError(source, "invalid_email");
       return;
     }
     setStatus("loading");
@@ -49,27 +60,34 @@ export function Newsletter({
       if (data.ok) {
         if (!data.already) track.newsletterSignup(source, email);
         setStatus("done");
-        setMsg(data.already
+        setMsg(successMessage || (data.already
           ? (isMalay ? "Anda sudah berada dalam senarai — jazakallah!" : "You're already on the list — jazakallah!")
-          : (isMalay ? "Pendaftaran berjaya! Semak peti masuk anda." : "You're in! Check your inbox."));
+          : (isMalay ? "Pendaftaran berjaya! Semak peti masuk anda." : "You're in! Check your inbox.")));
         setEmail("");
         setName("");
       } else {
         setStatus("error");
         setMsg(data.error || (isMalay ? "Sesuatu telah berlaku — sila cuba lagi" : "Something went wrong"));
+        track.newsletterFormError(source, data.error || "provider_error");
       }
     } catch {
       setStatus("error");
       setMsg(isMalay ? "Ralat rangkaian — sila cuba lagi" : "Network error — please try again");
+      track.newsletterFormError(source, "network_error");
     }
   };
 
   return (
     <div className={`newsletter newsletter-${variant}`}>
       {status === "done" ? (
-        <p className="newsletter-done" role="status">
-          <Icon name="check" size={16} /> {msg}
-        </p>
+        <div className="newsletter-done" role="status">
+          <p><Icon name="check" size={16} /> {msg}</p>
+          {successHref && (
+            <a className="btn btn-primary" href={successHref} style={{ marginTop: 12 }}>
+              {successCta || (isMalay ? "Buka panduan" : "Open the planner")}
+            </a>
+          )}
+        </div>
       ) : (
         <form onSubmit={submit} className="newsletter-form" noValidate>
           {collectName && (
@@ -101,6 +119,11 @@ export function Newsletter({
               autoComplete="email"
               placeholder="you@email.com"
               value={email}
+              onFocus={() => {
+                if (started.current) return;
+                started.current = true;
+                track.newsletterFormStart(source);
+              }}
               onChange={(e) => {
                 setEmail(e.target.value);
                 if (status === "error") setStatus("idle");

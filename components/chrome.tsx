@@ -783,7 +783,12 @@ export function Footer() {
             </div>
             <div className="hh-footer-newsletter">
               <h2 className="hh-footer-title">{t("footer.newsletter")}</h2>
-              <Newsletter source="footer" />
+              <Newsletter
+                source="weekend-planner:footer"
+                cta="Get the planner"
+                successHref="/guides/halal-weekend-planner-singapore.pdf"
+                successCta="Open the planner now"
+              />
             </div>
             <div className="hh-footer-badges" aria-label="Trust badges">
               <Badge type="muis" />
