@@ -133,3 +133,54 @@ test("axe critical violations", async ({ page }, testInfo) => {
   }
   expect(critical, `Critical axe violations:\n${critical.join("\n")}`).toEqual([]);
 });
+
+test("explore filter sheet behaves as a modal and restores focus", async ({ page }) => {
+  await page.goto("/explore", { waitUntil: "domcontentloaded" });
+  await settle(page);
+  const trigger = page.getByRole("button", { name: /Filters/ }).first();
+  await trigger.click();
+
+  const dialog = page.getByRole("dialog", { name: "Filters" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Close filters" })).toBeFocused();
+  await expect(page.locator(".hh-app")).toHaveAttribute("inert", "");
+  await expect(page.locator(".hh-tabbar")).toBeHidden();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page.locator(".hh-app")).not.toHaveAttribute("inert", "");
+});
+
+test("mobile menu moves focus, closes with Escape, and restores focus", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await settle(page);
+  const trigger = page.getByRole("button", { name: "Open menu", exact: true });
+  await trigger.click();
+
+  const dialog = page.getByRole("dialog", { name: /Humble Halal/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Close menu" })).toBeFocused();
+  await expect(page.locator("#main-content")).toHaveAttribute("inert", "");
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page.locator("#main-content")).not.toHaveAttribute("inert", "");
+});
+
+test("listing keeps trust status and primary mobile actions immediately available", async ({ page }, testInfo) => {
+  await page.goto("/business/warung-bumbu-rempah", { waitUntil: "domcontentloaded" });
+  await page.locator("#main-content, main").first().waitFor();
+  await settle(page);
+  // The real directory intentionally has no fabricated local fallback. CI and
+  // local runs without a seeded Supabase therefore cannot render a business
+  // fixture; deployed/seeded runs continue to exercise this assertion.
+  if (await page.getByRole("heading", { name: "This page wandered off" }).isVisible()) {
+    testInfo.skip(true, "requires a seeded directory listing");
+  }
+  await expect(page.getByRole("region", { name: "Halal trust status at a glance" })).toBeVisible();
+  const actions = page.locator(".detail-stickybar");
+  await expect(actions).toBeVisible();
+  await expect(actions.getByRole("link", { name: /directions/i })).toBeVisible();
+});

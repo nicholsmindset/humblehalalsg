@@ -68,6 +68,7 @@ export function rowToEvent(r: Row): EventItem {
     featured: bool(d.featured),
     attendees: num(d.attendees, taken),
     soldOut: capacity > 0 && taken >= capacity,
+    updatedAt: str(r.updated_at) || undefined,
     endTime: d.endTime ? str(d.endTime) : undefined,
     venueCoords: coords,
     genderArrangement: gender,

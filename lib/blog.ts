@@ -2034,18 +2034,20 @@ const rawPosts: RawPost[] = [
   {
     slug: "is-it-halal-popular-chains-singapore",
     title: "Is It Halal? Popular Food Chains in Singapore, Checked (2026)",
-    dek: "Is MOS Burger halal? Genki Sushi? Yoshinoya? A plain-English roundup of Singapore's most-searched chains — and how to verify each one yourself.",
+    dek: "Direct answers for MOS Burger, Genki Sushi, Yoshinoya, Sukiya and Pepper Lunch in Singapore, based on the status records maintained in our halal checker.",
     answer:
-      "Some popular chains in Singapore are MUIS-certified halal (including several outlets of well-known Japanese and fast-food brands), while others are not, and status can differ by outlet. Always confirm using the official MUIS HalalSG register or the certificate displayed in-store rather than a “no pork” sign. Below we cover the chains Singaporeans search for most and how to check each one.",
+      "As last checked in July 2026: Yoshinoya, Sukiya and Pepper Lunch have MUIS-certified Singapore outlets; MOS Burger and Genki Sushi are not MUIS halal-certified. The latter two describe their menus as no pork/no lard, which is not certification. Certification is renewable and premises-specific, so confirm the exact outlet on MUIS HalalSG before ordering.",
     datePublished: "2026-07-18",
+    dateModified: "2026-08-14",
     author: AUTHOR,
     readMins: 8,
     tags: ["Is it halal", "Brands", "Halal basics"],
     sections: [
       {
-        h2: "How to check any chain yourself",
+        h2: "What we checked — and when",
         body: [
-          "Before the specifics, the method: a chain is only officially halal if it holds a valid MUIS halal certificate for that outlet. Certification can vary between branches of the same brand, and menus change, so the reliable check is the MUIS HalalSG register or the certificate on display — never just a “no pork, no lard” sign, which is self-declared.",
+          "This roundup uses the same status records as the Humble Halal brand checker, last checked in July 2026 against the MUIS HalalSG register and publicly available business information. We distinguish official MUIS certification from a business's own no-pork/no-lard statement, and we link each chain to its full status page.",
+          "A chain-level summary is not a substitute for checking the premises you will visit. MUIS certification is renewable and tied to named premises, so use the official register or the current certificate displayed at that outlet before ordering.",
         ],
         links: [
           { label: "Is it halal? brand checker", href: "/is-halal" },
@@ -2058,41 +2060,70 @@ const rawPosts: RawPost[] = [
         ],
       },
       {
-        h2: "Japanese chains people ask about",
+        h2: "MOS Burger — not MUIS halal-certified",
         body: [
-          "Japanese food is the most-searched halal-check category in Singapore. Brands like MOS Burger, Genki Sushi, Sukiya and Yoshinoya come up constantly. Several have MUIS-certified outlets, but because certification and menus vary, verify the specific outlet before you order.",
-        ],
-        bullets: [
-          "MOS Burger, Genki Sushi, Sukiya, Yoshinoya, Pepper Lunch — frequently searched",
-          "Some outlets are certified; confirm the branch you're at",
-          "Our brand checker tracks halal status where available",
-        ],
-      },
-      {
-        h2: "Fast food & casual chains",
-        body: [
-          "Beyond Japanese, the other big cluster is Western fast food and casual dining — the “is it halal” questions around burger, pizza, chicken and grill chains. Some are certified island-wide, some at selected outlets, and some not at all.",
-        ],
-        bullets: [
-          "Burger, pizza, fried-chicken and grill chains vary widely",
-          "A brand can be certified in one country and not another",
-          "Check the Singapore outlet's certificate, not overseas status",
-        ],
-      },
-      {
-        h2: "When a chain isn't certified",
-        body: [
-          "If a chain has no MUIS certification for its Singapore outlets, treat it as not halal even if it avoids pork — cross-contamination, non-halal meat and alcohol in sauces are all possible. Use the directory to find a certified alternative for the same craving.",
+          "The Humble Halal status record lists MOS Burger Singapore as not MUIS halal-certified. Menu information indicates no pork or lard is used, but that is a business claim rather than official certification, and cross-handling has not been verified. Check the latest status on HalalSG if certification is important to you.",
         ],
         links: [
-          { label: "Browse MUIS-certified & Muslim-owned places", href: "/halal" },
-          { label: "Is it halal? brand checker", href: "/is-halal" },
+          { label: "Full MOS Burger halal-status check", href: "/is-halal/mos-burger" },
+        ],
+      },
+      {
+        h2: "Genki Sushi — no pork/no lard, but not certified",
+        body: [
+          "Genki Sushi Singapore is recorded as not MUIS halal-certified. The chain states that its menu uses no pork and no lard, but some sauces contain mirin and it does not guarantee against cross-contamination. That makes the no-pork claim materially different from MUIS certification.",
+        ],
+        links: [
+          { label: "Full Genki Sushi halal-status check", href: "/is-halal/genki-sushi" },
+        ],
+      },
+      {
+        h2: "Yoshinoya — MUIS halal-certified",
+        body: [
+          "Yoshinoya Singapore is recorded as MUIS halal-certified since December 2024, covering its outlets islandwide at the time of the July 2026 check. Because certificates are renewable and premises-specific, confirm the current certificate for the outlet you plan to visit.",
+        ],
+        links: [
+          { label: "Full Yoshinoya halal-status check", href: "/is-halal/yoshinoya" },
+        ],
+      },
+      {
+        h2: "Sukiya — MUIS halal-certified",
+        body: [
+          "Sukiya's Singapore outlets are recorded as MUIS halal-certified since May 2023. The status covers its gyudon, sides and the operation of the certified premises; confirm the branch's current listing on HalalSG before you travel.",
+        ],
+        links: [
+          { label: "Full Sukiya halal-status check", href: "/is-halal/sukiya" },
+        ],
+      },
+      {
+        h2: "Pepper Lunch — MUIS halal-certified",
+        body: [
+          "Pepper Lunch's Singapore restaurants and express outlets are recorded as MUIS halal-certified since February 2021. That status was last checked for this guide in July 2026; confirm the specific premises on the official register because certification can be renewed, lapse or change.",
+        ],
+        links: [
+          { label: "Full Pepper Lunch halal-status check", href: "/is-halal/pepper-lunch" },
+        ],
+      },
+      {
+        h2: "The practical rule for any chain",
+        body: [
+          "Start with the direct answer on the brand page, then check the exact outlet on HalalSG. Treat no-pork/no-lard as a limited self-declaration rather than certification, and do not transfer an overseas halal certificate to a Singapore branch.",
+        ],
+        bullets: [
+          "Certified: confirm the exact premises and current validity on MUIS HalalSG",
+          "No pork/no lard: ask about alcohol, meat sourcing and shared handling",
+          "Overseas certification: it does not automatically cover Singapore outlets",
+        ],
+        links: [
+          { label: "Search all brand checks", href: "/is-halal" },
+          { label: "Browse MUIS-certified directory entries", href: "/muis-halal-certified-directory" },
         ],
       },
     ],
     faq: [
-      { q: "Is MOS Burger halal in Singapore?", a: "MOS Burger has had MUIS-certified outlets in Singapore, but certification can vary by branch and over time. Confirm the specific outlet on the MUIS HalalSG register or check the certificate displayed in-store before ordering." },
-      { q: "Is Genki Sushi halal?", a: "Some Genki Sushi outlets in Singapore have been MUIS-certified, but status can differ by location. Verify the branch you plan to visit on the official MUIS register or via the displayed certificate rather than assuming." },
+      { q: "Is MOS Burger halal in Singapore?", a: "As last checked in July 2026, MOS Burger Singapore was not MUIS halal-certified. Its menu is described as no pork/no lard, but that is self-declared and cross-handling is unverified. Check the latest status on MUIS HalalSG." },
+      { q: "Is Genki Sushi halal?", a: "As last checked in July 2026, Genki Sushi Singapore was not MUIS halal-certified. It states that it uses no pork or lard, but some sauces contain mirin and cross-contamination is not guaranteed against." },
+      { q: "Are Yoshinoya, Sukiya and Pepper Lunch halal in Singapore?", a: "Their Singapore operations were recorded as MUIS halal-certified when this guide's source records were last checked in July 2026. Certification is renewable and premises-specific, so confirm the branch you will visit on HalalSG." },
       { q: "How can I tell if a chain is really halal?", a: "Check for a valid MUIS halal certificate for that specific outlet, using the MUIS HalalSG register or the certificate on display. A “no pork, no lard” sign is self-declared and does not mean the outlet is certified." },
       { q: "Does halal status differ between outlets of the same chain?", a: "Yes. A brand can have some MUIS-certified outlets and others that are not, and certification can change. Always check the specific branch you are visiting." },
     ],
@@ -2289,7 +2320,6 @@ const builtPosts: BlogPost[] = rawPosts.map((p) => {
 const PUBLISHED_SLUGS = new Set<string>([
   "what-is-halal-singapore",
   "how-to-check-muis-halal-certification",
-  "best-halal-restaurants-singapore-2026",
   "halal-buffet-guide-singapore",
   "best-halal-cafes-singapore",
   "halal-high-tea-singapore",

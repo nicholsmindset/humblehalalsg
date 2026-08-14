@@ -81,6 +81,15 @@ export function seoRedirects(): Redirect[] {
   return [
     ...LEGACY_HALAL_REDIRECTS,
     ...ingredientRedirects(),
+    // Consolidate the older generic blog guide into the live, catalog-backed
+    // ranking page. Both targeted the same "best halal restaurants Singapore"
+    // intent; keeping one canonical destination prevents them competing in
+    // search and ensures readers see current directory data.
+    {
+      source: "/blog/best-halal-restaurants-singapore-2026",
+      destination: "/best-halal-restaurants-singapore",
+      statusCode: 301 as const,
+    },
     // Non-food categories no longer use "halal" as a blanket business label.
     // Both previously canonical and legacy-nested URLs go straight to the new
     // wording so there are no redirect chains.

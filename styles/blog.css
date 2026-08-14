@@ -33,7 +33,7 @@
 .article-title { font-family: var(--serif); font-weight: 700; font-size: clamp(2.1rem, 5vw, 3.3rem); line-height: 1.08; letter-spacing: -.015em; color: var(--ink); margin: 16px auto 0; max-width: 760px; text-wrap: balance; }
 .article-dek { font-family: var(--read); font-style: italic; font-weight: 400; font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.45; color: var(--ink-soft); margin: 18px auto 0; max-width: 620px; text-wrap: balance; }
 .article-byline { font-family: var(--sans); font-size: .86rem; font-weight: 600; color: var(--ink-soft); letter-spacing: .01em; display: inline-flex; align-items: center; gap: 10px; margin: 26px auto 0; padding: 14px 0; border-top: 1px solid var(--gold-100); border-bottom: 1px solid var(--gold-100); flex-wrap: wrap; justify-content: center; }
-.article-byline .mono { width: 30px; height: 30px; border-radius: 50%; background: var(--emerald); color: var(--gold); display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: .85rem; }
+.article-byline .mono { width: 30px; height: 30px; border-radius: 50%; background: var(--emerald); color: #fff; display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: .85rem; }
 .article-byline .sep { color: var(--line-strong); }
 
 /* Hero image */
@@ -84,10 +84,11 @@
 
 /* Newsletter ribbon (mid-article) */
 .article-ribbon { margin: 52px 0; background: var(--emerald); color: var(--cream); border-radius: var(--r-lg); padding: 26px 28px; }
-.article-ribbon .eyebrow { font-family: var(--sans); font-size: .7rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+.article-ribbon .eyebrow { font-family: var(--sans); font-size: .7rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #fff; }
 .article-ribbon strong { font-family: var(--serif); font-weight: 700; font-size: 1.35rem; color: #fff; display: block; margin: 8px 0 4px; }
 .article-ribbon p { font-family: var(--sans); font-size: .92rem; line-height: 1.5; color: rgba(255,255,255,.82); margin: 0 0 14px; }
 .article-ribbon .newsletter input { background: #fff; }
+.article-ribbon .newsletter-consent { color: #fff !important; }
 
 /* FAQ heading */
 .article-faq-h { font-family: var(--serif); font-weight: 700; font-size: 1.5rem; margin: 56px 0 16px; }

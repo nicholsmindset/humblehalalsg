@@ -91,6 +91,8 @@ export interface Listing {
   /** ISO timestamp the listing row was created (drives the "new openings"
    *  freshness hub). Absent for mock/seed data. */
   createdAt?: string;
+  /** Source-record update timestamp. Omitted when the database cannot prove it. */
+  updatedAt?: string;
   /** Subscription tier (PlanKey: free | verified | featured | premium). Drives
    *  feature-gating via lib/plans. Optional — defaults to "free" when absent. */
   plan?: string;
@@ -217,6 +219,8 @@ export interface EventItem {
   featured: boolean;
   attendees: number;
   soldOut?: boolean;
+  /** Source-record update timestamp. Omitted when the database cannot prove it. */
+  updatedAt?: string;
   // ── Islamic / Muslim-first layer ──────────────────────────────────────────
   /** Attendee gender arrangement (mixed/segregated/sisters/brothers). */
   genderArrangement?: GenderArrangement;

@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/seo";
-import { SITEMAP_SEGMENTS } from "@/lib/sitemaps";
 
 /* Keep crawlers off app plumbing, private consoles, transactional flows and
    short-link redirects so crawl budget is spent on indexable content. Trailing
@@ -38,32 +37,11 @@ const DISALLOW = [
 // (/favicon.ico + the public/ PNGs are already query-less, but listed for clarity.)
 const ALLOW = ["/", "/favicon.ico", "/icon.svg", "/apple-icon"];
 
-// Answer-engine / AI crawlers we explicitly welcome to public content (GEO) —
-// being cited by AI search drives qualified referral traffic for a directory.
-const AI_BOTS = [
-  "GPTBot",
-  "OAI-SearchBot",
-  "ChatGPT-User",
-  "PerplexityBot",
-  "Perplexity-User",
-  "ClaudeBot",
-  "Claude-Web",
-  "Google-Extended",
-  "Applebot-Extended",
-];
-
 export default function robots(): MetadataRoute.Robots {
-  const sitemaps = [
-    `${SITE.url}/sitemap.xml`,
-    ...SITEMAP_SEGMENTS.map((s) => `${SITE.url}/sitemap/${s}.xml`),
-  ];
-
   return {
-    rules: [
-      { userAgent: "*", allow: ALLOW, disallow: DISALLOW },
-      ...AI_BOTS.map((ua) => ({ userAgent: ua, allow: ALLOW, disallow: DISALLOW })),
-    ],
-    sitemap: sitemaps,
-    host: SITE.url,
+    // The wildcard rule welcomes search and answer-engine crawlers. Repeating
+    // this same rule for every named bot only bloats the generated file.
+    rules: { userAgent: "*", allow: ALLOW, disallow: DISALLOW },
+    sitemap: `${SITE.url}/sitemap.xml`,
   };
 }

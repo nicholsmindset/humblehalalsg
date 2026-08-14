@@ -66,6 +66,15 @@
   .cookie-banner {
     bottom: calc(var(--tab-h, 68px) + 12px + env(safe-area-inset-bottom, 0px));
   }
+  html[data-blocking-overlay] .cookie-banner,
+  html[data-blocking-overlay] .hh-tabbar {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html:has(.cookie-banner) .detail-stickybar {
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 /* ---- Safe-area: pad page bottom for notch / home-indicator devices so

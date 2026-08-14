@@ -165,7 +165,7 @@ export function clickable(onActivate: () => void, label?: string) {
 
 export function Logo({ onClick, light }: { onClick?: () => void; light?: boolean }) {
   return (
-    <div className="hh-logo" {...(onClick ? clickable(onClick, "Humble Halal — home") : {})}>
+    <div className="hh-logo" {...(onClick ? clickable(onClick, "Humble Halal Singapore — home") : {})}>
       <div className="mark">
         <Icon name="crescent" size={19} />
       </div>
@@ -328,7 +328,7 @@ export function ListingCard({
   const cardLink = (
     <ScreenLink
       screen="detail"
-      params={{ id: item.id }}
+      params={{ id: item.slug || item.id }}
       className="card-stretch"
       intent
       onClick={() => { trackRecent(item.id); onOpen?.(); }}
@@ -370,7 +370,7 @@ export function ListingCard({
     return (
       <div className="card card-hover" style={{ display: "flex", borderRadius: "var(--r-md)" }}>
         {cardLink}
-        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: 108, flex: "none" }} fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} compact />} />
+        <ImagePh label={`${item.name}${item.cuisine ? ` — ${item.cuisine}` : ""}`} tone={item.tone} src={item.image} style={{ width: 108, flex: "none" }} fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} compact />} />
         <div className="lc-body" style={{ flex: 1, padding: "12px 14px" }}>
           <div className="flex between center">
             <span className="lc-name" style={{ fontSize: "1rem" }}>
@@ -397,7 +397,7 @@ export function ListingCard({
     <div className={`card card-hover listing ${variant === "featured" ? "listing-feat" : ""}`}>
       {cardLink}
       <div className="lc-media" style={{ position: "relative" }}>
-        <ImagePh label={item.img} tone={item.tone} src={item.image} style={{ width: "100%", height: "100%" }} icon="utensils" fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} />} />
+        <ImagePh label={`${item.name}${item.cuisine ? ` — ${item.cuisine}` : ""}`} tone={item.tone} src={item.image} style={{ width: "100%", height: "100%" }} icon="utensils" fallback={<BusinessMediaFallback name={item.name} category={item.cat} area={item.area} />} />
         <button
           className="save-fab"
           aria-pressed={saved}
@@ -785,8 +785,13 @@ export function PromoCode({ amount, currency, onApply }: { amount: number | null
 /* ---------------------------------------------------------------
    DIALOG A11Y HOOK — focus trap, Esc-to-close, focus restore
 --------------------------------------------------------------- */
-export function useDialog(ref: React.RefObject<HTMLElement | null>, onClose?: () => void) {
+export function useDialog(
+  ref: React.RefObject<HTMLElement | null>,
+  onClose?: () => void,
+  active: boolean = true,
+) {
   useEffect(() => {
+    if (!active) return;
     const node = ref.current;
     const prev = document.activeElement as HTMLElement | null;
     const sel =
@@ -795,7 +800,8 @@ export function useDialog(ref: React.RefObject<HTMLElement | null>, onClose?: ()
       Array.from(node?.querySelectorAll<HTMLElement>(sel) || []).filter(
         (el) => el.offsetParent !== null,
       );
-    focusables()[0]?.focus();
+    const initial = node?.querySelector<HTMLElement>("[data-dialog-initial-focus]");
+    (initial || focusables()[0])?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose?.();
@@ -819,7 +825,7 @@ export function useDialog(ref: React.RefObject<HTMLElement | null>, onClose?: ()
       document.removeEventListener("keydown", onKey);
       prev?.focus?.();
     };
-  }, [ref, onClose]);
+  }, [ref, onClose, active]);
 }
 
 /* ---------------------------------------------------------------

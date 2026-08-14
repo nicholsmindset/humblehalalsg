@@ -174,7 +174,7 @@
 .pcg-item > div > div { font-size:.9rem; }
 
 /* ===================== STICKY MOBILE CONTACT BAR ===================== */
-.detail-stickybar { position:fixed; left:0; right:0; bottom:var(--tab-h); z-index:55; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); border-top:1px solid var(--line); display:flex; gap:8px; padding:10px 14px; box-shadow:0 -6px 20px rgba(31,41,51,.07); }
+.detail-stickybar { position:fixed; left:0; right:0; bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); z-index:55; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); border-top:1px solid var(--line); display:flex; gap:8px; padding:10px 14px; box-shadow:0 -6px 20px rgba(31,41,51,.07); }
 @media (min-width:861px){ .detail-stickybar { display:none; } }
 .detail-stickybar .btn { flex:1; }
 @media (max-width:860px){ .detail-screen.hh-page { padding-bottom: calc(var(--tab-h) + 80px); } }

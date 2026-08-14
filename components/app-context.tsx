@@ -395,8 +395,6 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     const r = document.documentElement;
     const fontMap: Record<string, string> = {
       Spectral: "var(--font-spectral), Georgia, serif",
-      Cormorant: "var(--font-cormorant), Georgia, serif",
-      "Libre Caslon": "var(--font-libre), Georgia, serif",
       Newsreader: "var(--font-newsreader), Georgia, serif",
     };
     r.style.setProperty("--serif", fontMap[tweaks.heading] || fontMap.Spectral);

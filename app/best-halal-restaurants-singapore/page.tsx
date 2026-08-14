@@ -3,7 +3,7 @@ import Link from "next/link";
 import { pageMeta } from "@/lib/seo";
 import { SEO_YEAR } from "@/lib/seo-pages";
 import { getDirectory } from "@/lib/directory";
-import { certSuffix } from "@/lib/halal-score";
+import { certSuffix, scoreListing } from "@/lib/halal-score";
 import { JsonLd, faqJsonLd, breadcrumbJsonLd, itemListJsonLd } from "@/components/seo/json-ld";
 import { Newsletter } from "@/components/newsletter";
 
@@ -16,25 +16,30 @@ export const revalidate = 86400;
 export const metadata: Metadata = pageMeta({
   title: `Best Halal Restaurants Singapore (${SEO_YEAR}) — Ranked`,
   description:
-    "The best halal restaurants in Singapore, ranked by community reviews and halal-confidence — MUIS-certified and Muslim-owned spots for every budget, updated monthly.",
+    "Compare halal restaurants in Singapore using published community reviews and clearly labelled certification evidence from the Humble Halal directory.",
   path: "/best-halal-restaurants-singapore",
   absoluteTitle: true,
 });
 
 const FAQ = [
-  { q: "What are the best halal restaurants in Singapore?", a: "The top-rated halal restaurants in Singapore span nasi padang institutions, halal Japanese and Korean kitchens, steakhouses and café brunch spots. This page ranks them by community rating and halal-confidence score, updated monthly." },
-  { q: "Are all restaurants on this list MUIS-certified?", a: "Not all — the list mixes MUIS-certified restaurants with verified Muslim-owned kitchens. Each entry is labelled clearly, and every listing links to its evidence. Always confirm certification on the MUIS HalalSG register." },
-  { q: "How is this ranking decided?", a: "Rankings combine community review scores with each restaurant's halal-confidence score (MUIS-certified places rank above self-declared ones at equal ratings). Sponsored placement never affects this ranking." },
+  { q: "What are the best halal restaurants in Singapore?", a: "There is no single best restaurant for every diner. When enough published reviews are available, this page orders restaurants by community rating, review volume and verification evidence. Until then, it shows a clearly labelled directory shortlist rather than claiming an unsupported ranking." },
+  { q: "Are all restaurants on this list MUIS-certified?", a: "Not necessarily. Every entry shows the status recorded in the directory: MUIS Certified, MUIS-listed, Admin Verified, Muslim-Owned or self-declared. Always confirm an official certification claim for the exact outlet on the MUIS HalalSG register." },
+  { q: "How is this ranking decided?", a: "Published community rating comes first, followed by review count and the listing's verification tier as tie-breakers. Listings without reviews are not described as community-ranked, and sponsored placement never affects the order." },
 ];
 
 export default async function Page() {
   const all = await getDirectory();
   const eatery = all.filter((l) => l.catId === "restaurants" || l.catId === "cafes");
   const rated = eatery.filter((l) => l.rating > 0 && l.reviews > 0).sort(
-    (a, b) => b.rating - a.rating || b.reviews - a.reviews,
+    (a, b) => b.rating - a.rating || b.reviews - a.reviews || scoreListing(b).score - scoreListing(a).score,
   );
-  // Honest fallback while reviews are young: MUIS-certified places first.
-  const ranked = (rated.length >= 5 ? rated : eatery.filter((l) => l.certified)).slice(0, 15);
+  const hasReviewRanking = rated.length >= 5;
+  // Honest fallback while reviews are young: show a verification-led shortlist,
+  // but never label unrated businesses as the community's "best".
+  const ranked = (hasReviewRanking
+    ? rated
+    : eatery.filter((l) => l.certified).sort((a, b) => scoreListing(b).score - scoreListing(a).score || a.name.localeCompare(b.name))
+  ).slice(0, 15);
 
   return (
     <>
@@ -59,17 +64,26 @@ export default async function Page() {
               <span>›</span>
               <span style={{ color: "var(--ink)" }}>Best halal restaurants</span>
             </nav>
-            <span className="eyebrow">Editor's picks</span>
+            <span className="eyebrow">Directory guide · reviewed 14 August 2026</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Best Halal Restaurants in Singapore ({SEO_YEAR})</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
-              <strong>The best halal restaurants in Singapore, ranked by real community reviews and halal-confidence</strong> —
-              from MUIS-certified fine dining to beloved Muslim-owned neighbourhood kitchens. Every entry is labelled with its
-              certification status; sponsored placement never affects this ranking.
+              {hasReviewRanking ? (
+                <><strong>Restaurants ranked from published community reviews</strong>, with review volume and verification tier used as tie-breakers.</>
+              ) : (
+                <><strong>A verification-led directory shortlist while community reviews are still growing.</strong> These entries are not presented as a popularity ranking.</>
+              )}{" "}
+              Every status is shown as recorded in the directory; sponsored placement never affects the order.
             </p>
           </div>
         </section>
 
         <div className="hh-wrap hh-section">
+          <aside className="notice" style={{ marginBottom: 22 }}>
+            <strong>{hasReviewRanking ? "How the ranking works" : "Why this is a shortlist"}</strong>{" "}
+            {hasReviewRanking
+              ? "Community rating is the primary signal, followed by review count and verification tier. Ratings and certification are different signals: a certificate establishes halal status, not food quality."
+              : "Fewer than five eateries currently have published community reviews, so we show catalog entries with the strongest recorded verification evidence. Check each listing and the official HalalSG register before visiting."}
+          </aside>
           {ranked.length ? (
             <ol style={{ display: "grid", gap: 14, padding: 0, margin: 0, listStyle: "none" }}>
               {ranked.map((l, i) => (

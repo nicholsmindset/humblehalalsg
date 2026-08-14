@@ -2,7 +2,8 @@
 
 /* Humble Halal — Consumer screens: Home, Explore, Map, Detail
    (ported from screens-consumer.jsx). */
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HHData, SG_CENTER } from "@/lib/data";
@@ -25,7 +26,7 @@ import { halalSgVerifyUrl } from "@/lib/muis";
 import { shareOrCopy } from "@/lib/share";
 import { track, type LeadAction } from "@/lib/analytics";
 import { useApp } from "../app-context";
-import { Badge, BusinessMediaFallback, clickable, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock } from "../ui";
+import { Badge, BusinessMediaFallback, clickable, Empty, Icon, ImagePh, ListingCard, Rating, SearchBar, SectionHead, useBodyScrollLock, useDialog } from "../ui";
 import { CategoryButton, MobileHeader } from "../ui";
 import { SponsoredSlot } from "../sponsored-slot";
 import { CertifiedToggle } from "../chrome";
@@ -41,6 +42,7 @@ import { verticalForCatId } from "@/lib/lead-verticals";
 import { useLegacySurfaceVisible } from "@/components/lead-capture/lead-inline";
 import { CouponCard } from "@/components/coupon-card";
 import type { PublicCoupon } from "@/lib/coupons";
+import { businessSeoLinks } from "@/lib/seo-pages";
 
 const unsplashPhoto = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=82`;
@@ -210,7 +212,14 @@ export function HomeScreen() {
             // id "geylang" in the catalog, and the "Geylang" fallback also lowercases
             // to "geylang"), which collided as React keys. Names are unique here.
             <button key={a.name} className="area-card card card-hover" onClick={() => navigate("explore", { area: a.name })}>
-              <ImagePh label={a.name.toLowerCase() + " street"} tone={a.tone} src={a.image} style={{ position: "absolute", inset: 0 }} icon="building" />
+              <ImagePh
+                label={a.name.toLowerCase() + " street"}
+                tone={a.tone}
+                src={a.image}
+                style={{ position: "absolute", inset: 0 }}
+                icon="building"
+                sizes="(max-width: 760px) 50vw, (max-width: 1180px) 33vw, 380px"
+              />
               <div className="area-ov">
                 <span className="area-name">{a.name}</span>
                 {a.count > 0 && <span className="area-count">{a.count} {a.count === 1 ? "place" : "places"}</span>}
@@ -535,6 +544,14 @@ export function ExploreScreen() {
   const router = useRouter();
   const [q, setQ] = useState((params.q as string) || "");
   const [showFilters, setShowFilters] = useState(false);
+  const filterTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeFilters = useCallback(() => {
+    setShowFilters(false);
+    // The sheet makes `.hh-app` inert. Restore focus after the closing render
+    // has removed inert; focusing during the dialog cleanup is ignored by
+    // browsers while the trigger still sits inside an inert subtree.
+    requestAnimationFrame(() => filterTriggerRef.current?.focus());
+  }, []);
   const [view, setView] = useState("list");
   const [sort, setSort] = useState((params.sort as string) || "featured");
   const [filters, setFilters] = useState<ExploreFilters>({
@@ -676,7 +693,13 @@ export function ExploreScreen() {
           <SearchBar value={q} onChange={setQ} onSubmit={setQ} placeholder="Search restaurants, cafés, services…" suggest />
           <div className="flex between center explore-toolbar" style={{ marginTop: 12, gap: 10 }}>
             <div className="flex g8 center">
-              <button className={`chip ${showFilters ? "active" : ""}`} onClick={() => setShowFilters((s) => !s)}>
+              <button
+                ref={filterTriggerRef}
+                className={`chip ${showFilters ? "active" : ""}`}
+                onClick={() => setShowFilters((s) => !s)}
+                aria-expanded={showFilters}
+                aria-controls="explore-filters"
+              >
                 <Icon name="filter" size={16} /> Filters {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
               </button>
               <div className="sortwrap">
@@ -700,7 +723,7 @@ export function ExploreScreen() {
 
       <div className="hh-wrap explore-body">
         {/* Filter panel (desktop sidebar / mobile drawer) */}
-        {showFilters && <FilterPanel filters={filters} setF={setF} onClose={() => setShowFilters(false)} onClear={() => setFilters({ cat: "", area: "", price: "", halal: "", owned: false, prayer: false, family: false, delivery: false, open: false })} />}
+        {showFilters && <FilterPanel filters={filters} setF={setF} onClose={closeFilters} onClear={() => setFilters({ cat: "", area: "", price: "", halal: "", owned: false, prayer: false, family: false, delivery: false, open: false })} />}
 
         <div className="explore-results">
           <div className="flex between center" style={{ marginBottom: 16 }}>
@@ -759,6 +782,23 @@ const FILTER_EVENT_KEY: Record<"owned" | "prayer" | "family" | "delivery" | "ope
   owned: "muslim_owned", prayer: "prayer_space", family: "family_friendly", delivery: "delivery", open: "open_now",
 };
 
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>;
+}
+
+function FilterOption({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return <button className={`fp-opt ${active ? "on" : ""}`} aria-pressed={active} onClick={onClick}>{label}</button>;
+}
+
+function FilterToggle({ active, label, icon, onClick }: { active: boolean; label: string; icon: string; onClick: () => void }) {
+  return (
+    <button className={`fp-toggle ${active ? "on" : ""}`} aria-pressed={active} onClick={onClick}>
+      <span className="flex g8 center"><Icon name={icon} size={17} /> {label}</span>
+      <span className="switch" aria-hidden="true" />
+    </button>
+  );
+}
+
 export function FilterPanel({ filters, setF, onClose, onClear }: {
   filters: ExploreFilters;
   setF: <K extends keyof ExploreFilters>(k: K, v: ExploreFilters[K]) => void;
@@ -766,6 +806,7 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
   onClear: () => void;
 }) {
   const { categories: catCategories, areas: catAreas } = useCatalog();
+  const panelRef = useRef<HTMLElement>(null);
   // ≤860px the panel is a fixed full-screen sheet (screens.css) — freeze the
   // page behind it. On desktop it's an inline aside, so no lock.
   const [isSheet, setIsSheet] = useState(false);
@@ -777,60 +818,81 @@ export function FilterPanel({ filters, setF, onClose, onClear }: {
     return () => mq.removeEventListener("change", update);
   }, []);
   useBodyScrollLock(isSheet);
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="fp-section"><div className="fp-title">{title}</div>{children}</div>
+  const closeSheet = useCallback(() => onClose(), [onClose]);
+  useDialog(panelRef, closeSheet, isSheet);
+  useEffect(() => {
+    if (!isSheet) return;
+    document.documentElement.setAttribute("data-blocking-overlay", "");
+    const app = document.querySelector<HTMLElement>(".hh-app");
+    if (app) app.inert = true;
+    return () => {
+      document.documentElement.removeAttribute("data-blocking-overlay");
+      if (app) app.inert = false;
+    };
+  }, [isSheet]);
+  const option = (k: "cat" | "area" | "price" | "halal", v: string, label: string) => (
+    <FilterOption key={`${k}-${v}`} active={filters[k] === v} label={label} onClick={() => setF(k, filters[k] === v ? "" : v)} />
   );
-  const Opt = ({ k, v, label }: { k: "cat" | "area" | "price" | "halal"; v: string; label: string }) => (
-    <button className={`fp-opt ${filters[k] === v ? "on" : ""}`} onClick={() => setF(k, filters[k] === v ? "" : v)}>{label}</button>
+  const toggle = (k: "owned" | "prayer" | "family" | "delivery" | "open", label: string, icon: string) => (
+    <FilterToggle key={k} active={filters[k]} label={label} icon={icon} onClick={() => { if (!filters[k]) track.filterUse(FILTER_EVENT_KEY[k]); setF(k, !filters[k]); }} />
   );
-  const Toggle = ({ k, label, icon }: { k: "owned" | "prayer" | "family" | "delivery" | "open"; label: string; icon: string }) => (
-    <button className={`fp-toggle ${filters[k] ? "on" : ""}`} onClick={() => { if (!filters[k]) track.filterUse(FILTER_EVENT_KEY[k]); setF(k, !filters[k]); }}>
-      <span className="flex g8 center"><Icon name={icon} size={17} /> {label}</span>
-      <span className="switch" />
-    </button>
-  );
-  return (
-    <aside className="filter-panel">
+  const panel = (
+    <aside
+      id="explore-filters"
+      className="filter-panel"
+      ref={panelRef}
+      role={isSheet ? "dialog" : undefined}
+      aria-modal={isSheet ? "true" : undefined}
+      aria-labelledby="explore-filters-title"
+    >
       <div className="flex between center" style={{ marginBottom: 4 }}>
-        <h3 style={{ fontSize: "1.15rem" }}>Filters</h3>
-        <button className="btn btn-ghost btn-sm" onClick={onClear}>Clear all</button>
+        <h2 id="explore-filters-title" style={{ fontSize: "1.15rem" }}>Filters</h2>
+        <div className="flex g8 center">
+          <button className="btn btn-ghost btn-sm" onClick={onClear}>Clear all</button>
+          {isSheet && (
+            <button className="btn btn-ghost btn-sm fp-close" onClick={onClose} aria-label="Close filters" data-dialog-initial-focus>
+              <Icon name="x" size={20} />
+            </button>
+          )}
+        </div>
       </div>
-      <Section title="Category">
+      <FilterSection title="Category">
         <div className="fp-opts">
-          {catCategories.slice(0, 6).map((c) => <Opt key={c.id} k="cat" v={c.id} label={c.label} />)}
+          {catCategories.slice(0, 6).map((c) => option("cat", c.id, c.label))}
         </div>
-      </Section>
-      <Section title="Area">
+      </FilterSection>
+      <FilterSection title="Area">
         <div className="fp-opts">
-          {catAreas.map((a) => <Opt key={a.id} k="area" v={a.name.toLowerCase()} label={a.name} />)}
+          {catAreas.map((a) => option("area", a.name.toLowerCase(), a.name))}
         </div>
-      </Section>
-      <Section title="Price">
-        <div className="fp-opts">{["$", "$$", "$$$"].map((p) => <Opt key={p} k="price" v={p} label={p} />)}</div>
-      </Section>
-      <Section title="Halal status">
+      </FilterSection>
+      <FilterSection title="Price">
+        <div className="fp-opts">{["$", "$$", "$$$"].map((p) => option("price", p, p))}</div>
+      </FilterSection>
+      <FilterSection title="Halal status">
         <div className="fp-opts">
-          <Opt k="halal" v="certified" label="Certified / listed only" />
-          <Opt k="halal" v="muis" label="MUIS certified / listed" />
+          {option("halal", "certified", "Certified / listed only")}
+          {option("halal", "muis", "MUIS certified / listed")}
         </div>
         <p className="faint" style={{ fontSize: ".76rem", marginTop: 8 }}>Self-declared listings are clearly labelled “not certified”.</p>
-      </Section>
-      <Section title="Features">
+      </FilterSection>
+      <FilterSection title="Features">
         <div className="stack g8">
-          <Toggle k="owned" label="Muslim-owned" icon="crescent" />
-          <Toggle k="prayer" label="Prayer space" icon="mosque" />
-          <Toggle k="family" label="Family friendly" icon="family" />
-          <Toggle k="delivery" label="Delivery" icon="directions" />
-          <Toggle k="open" label="Open now" icon="clock" />
+          {toggle("owned", "Muslim-owned", "crescent")}
+          {toggle("prayer", "Prayer space", "mosque")}
+          {toggle("family", "Family friendly", "family")}
+          {toggle("delivery", "Delivery", "directions")}
+          {toggle("open", "Open now", "clock")}
         </div>
         <p className="hint" style={{ marginTop: 8 }}>
           &ldquo;Prayer space&rdquo; shows halal places with a prayer room. For standalone{" "}
           <a className="link-inline" href="/prayer-rooms">musollahs in malls, MRT &amp; more →</a>
         </p>
-      </Section>
+      </FilterSection>
       <button className="btn btn-primary btn-block fp-apply" onClick={onClose}>Show results</button>
     </aside>
   );
+  return isSheet ? createPortal(<div className="filter-panel-veil">{panel}</div>, document.body) : panel;
 }
 
 /* ---- Map preview (inside explore) ---- */
@@ -1529,7 +1591,7 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
             const related = dir.listings
               .filter((l) => l.id !== item.id && (l.area === item.area || l.catId === item.catId))
               .slice(0, 3);
-            const areaSlug = item.area.toLowerCase().split(" ")[0];
+            const seoLinks = businessSeoLinks(item);
             return (
               <div className="related-places">
                 {related.length > 0 && (
@@ -1542,14 +1604,15 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
                     </div>
                   </>
                 )}
-                <div className="area-links">
-                  <a className="chip" href={`/halal-food/${areaSlug}`} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: `halal-food-in-${areaSlug}` }); }}>
-                    Halal Food in {item.area} <Icon name="arrow" size={14} />
-                  </a>
-                  <a className="chip" href={`/halal/halal-${item.catId}-in-${areaSlug}`} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: `halal-${item.catId}-in-${areaSlug}` }); }}>
-                    Halal {item.cat} in {item.area} <Icon name="arrow" size={14} />
-                  </a>
-                </div>
+                {seoLinks.length > 0 && (
+                  <div className="area-links">
+                    {seoLinks.map((link) => (
+                      <a key={link.href} className="chip" href={link.href} onClick={(e) => { e.preventDefault(); navigate("seo", { slug: link.slug }); }}>
+                        {link.label} <Icon name="arrow" size={14} />
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1668,14 +1731,14 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
           Verified+ (contact_buttons); free listings keep Call / Website so the
           bar is never empty. */}
       <div className="detail-stickybar">
-        {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)}><Icon name="phone" size={17} /> Call</a>}
-        {richContact && item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={17} /> WhatsApp</a>}
+        {item.phone && <a className="btn btn-outline btn-sm" href={telHref(item.phone)} aria-label={`Call ${item.name}`} onClick={() => logLead("call")}><Icon name="phone" size={17} /> Call</a>}
+        {richContact && item.wa && <a className="btn btn-soft btn-sm" href={waHref(item.wa, `Hi ${item.name}, I found you on Humble Halal`)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${item.name}`} onClick={() => logLead("whatsapp")}><Icon name="whatsapp" size={17} /> WhatsApp</a>}
         {richContact ? (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" aria-label={`Get directions to ${item.name}`} onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         ) : item.web ? (
-          <a className="btn btn-primary btn-sm" href={webHref(item.web)} target="_blank" rel="noopener noreferrer"><Icon name="globe" size={17} /> Website</a>
+          <a className="btn btn-primary btn-sm" href={webHref(item.web)} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${item.name} website`} onClick={() => logLead("website")}><Icon name="globe" size={17} /> Website</a>
         ) : (
-          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
+          <a className="btn btn-primary btn-sm" href={dirHref} target="_blank" rel="noopener noreferrer" aria-label={`Get directions to ${item.name}`} onClick={() => logLead("directions")}><Icon name="directions" size={17} /> Directions</a>
         )}
       </div>
 

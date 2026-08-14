@@ -698,13 +698,11 @@ input, select, textarea { font-family: inherit; font-size: 1rem; color: var(--in
 .steps .bar { height: 2px; background: var(--line-strong); flex: 1; margin: 0 8px; border-radius: 2px; }
 .steps .bar.done { background: var(--emerald); }
 
-/* fade-in for screen transitions — base state is visible so content never
-   disappears if the animation clock is throttled/frozen (e.g. unfocused iframe) */
+/* Route content must participate in layout immediately. Animating a transform
+   on this page-sized wrapper can leave its compositor animation frozen until
+   hydration on slow/mobile loads; the footer then jumps thousands of pixels
+   and the hero's LCP is reported seconds late. Keep route entry deterministic. */
 .screen-in { opacity: 1; }
-@media (prefers-reduced-motion: no-preference) {
-  .screen-in { animation: screenin .3s ease both; }
-}
-@keyframes screenin { from { transform: translateY(7px); } to { transform: none; } }
 
 /* ---- Owner payouts ---- */
 .payout-steps { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }

@@ -356,7 +356,7 @@ export function HHTweaks() {
         <TweakSelect
           label="Heading font"
           value={tweaks.heading}
-          options={["Spectral", "Cormorant", "Libre Caslon", "Newsreader"]}
+          options={["Spectral", "Newsreader"]}
           onChange={(v) => setTweak("heading", v)}
         />
         <TweakSlider

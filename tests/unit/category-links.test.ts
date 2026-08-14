@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { allSeoPages } from "../../lib/seo-pages";
 import { categories } from "../../lib/data";
+import { businessMetaText } from "../../lib/business-seo";
+import { businessSeoLinks } from "../../lib/seo-pages";
+import type { Listing } from "../../lib/types";
 import {
   CATEGORY_PRESENTATION,
   categoryDirectoryLabel,
@@ -64,5 +67,32 @@ describe("category SEO links — label ↔ slug integrity", () => {
     expect(categoryPageTerminology("restaurants").resultNoun).toBe("halal restaurants");
     expect(categoryPageTerminology("cafes").resultNoun).toBe("halal cafés");
     expect(categoryPageTerminology("groceries").resultNoun).toBe("halal grocers");
+  });
+});
+
+describe("business-page SEO links", () => {
+  const listing = {
+    id: "uuid-1", slug: "wanderlost-lounge", name: "Wanderlost Lounge",
+    cat: "Cafés", catId: "cafes", cuisine: "Rooftop Café", area: "Tanjong Pagar",
+    price: "$$", rating: 4.7, reviews: 20, badges: ["friendly"],
+    blurb: "A rooftop café serving alcohol-free drinks.", img: "", tone: "emerald",
+    open: true, distance: "", prayer: false, delivery: false, featured: false,
+    hours: "", phone: "", wa: "", ig: "", web: "", address: "", tags: [],
+  } as Listing;
+
+  it("uses full multiword slugs and only links to existing SEO pages", () => {
+    expect(businessSeoLinks(listing)).toEqual([{
+      href: "/halal-food/tanjong-pagar", slug: "halal-food-in-tanjong-pagar",
+      label: "Halal Food in Tanjong Pagar",
+    }]);
+    expect(businessSeoLinks({ ...listing, area: "Shenton Way" })).toEqual([]);
+  });
+
+  it("does not put blank location delimiters in fallback metadata", () => {
+    const meta = businessMetaText({ ...listing, area: "", cuisine: "", blurb: "", reviews: 0 }, "Muslim-friendly");
+    expect(meta.description).toContain("in Singapore");
+    expect(meta.description).not.toMatch(/in\s*,|,\s*,|—\s*,/);
+    expect(meta.title.length).toBeLessThanOrEqual(60);
+    expect(meta.description.length).toBeLessThanOrEqual(160);
   });
 });
