@@ -1366,6 +1366,8 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
 
   // High-ticket service verticals get a "Request a quote" lead CTA (preselects the vertical).
   const quoteVertical = verticalForCatId(item.catId)?.label;
+  const seoLinks = businessSeoLinks(item);
+  const areaSeoLink = seoLinks.find((link) => link.label.startsWith("Halal Food in "));
 
   const dirHref = item.coords
     ? directionsUrl(item.coords)
@@ -1420,12 +1422,12 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
           items={[
             { name: "Home", screen: "home", href: "/" },
             { name: "Explore", screen: "explore", href: "/explore" },
-            {
+            ...(areaSeoLink ? [{
               name: item.area,
               screen: "seo",
-              params: { slug: `halal-food-in-${item.area.toLowerCase().split(" ")[0]}` },
-              href: `/halal-food/${item.area.toLowerCase().split(" ")[0]}`,
-            },
+              params: { slug: areaSeoLink.slug },
+              href: areaSeoLink.href,
+            }] : []),
             { name: item.name },
           ]}
         />
@@ -1591,7 +1593,6 @@ export function DetailScreen({ initial, hawkerCentre }: { initial?: Listing; haw
             const related = dir.listings
               .filter((l) => l.id !== item.id && (l.area === item.area || l.catId === item.catId))
               .slice(0, 3);
-            const seoLinks = businessSeoLinks(item);
             return (
               <div className="related-places">
                 {related.length > 0 && (
