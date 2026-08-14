@@ -1,9 +1,9 @@
 "use client";
 
 /* Site-wide newsletter capture popup.
-   Triggers once per visitor (localStorage): exit-intent on desktop, or 50% scroll
-   / 30s dwell on touch. Suppressed on conversion/admin paths and after dismissal
-   or signup. Reuses the .modal-veil / .modal chrome + useDialog (ESC + click-out). */
+   Triggers on exit-intent, 50% scroll or 30s dwell. A dismissal starts a 14-day
+   cooldown; a signup suppresses it permanently. Also suppressed on conversion /
+   admin paths. Reuses the modal chrome + useDialog (ESC + click-out). */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -11,8 +11,9 @@ import { Icon, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 import { claimPopupSession, isLeadPopupMounted, popupSessionTaken } from "./lead-capture/popup-guard";
 import { track } from "@/lib/analytics";
+import { newsletterPopupHandled, newsletterPopupStoreValue } from "@/lib/newsletter-popup";
 
-const STORE_KEY = "hh_nl_popup"; // "dismissed" | "subscribed"
+const STORE_KEY = "hh_nl_popup"; // "dismissed:<timestamp>" | "subscribed"
 const POPUP_SOURCE = "weekend-planner:popup";
 const DWELL_MS = 30_000;
 const SCROLL_FRACTION = 0.5;
@@ -26,7 +27,7 @@ const SUPPRESS_PREFIXES = ["/advertise", "/subscribe", "/checkout", "/owner", "/
 
 function alreadyHandled(): boolean {
   try {
-    return !!window.localStorage.getItem(STORE_KEY);
+    return newsletterPopupHandled(window.localStorage.getItem(STORE_KEY));
   } catch {
     return false;
   }
@@ -34,7 +35,7 @@ function alreadyHandled(): boolean {
 
 function mark(value: "dismissed" | "subscribed") {
   try {
-    window.localStorage.setItem(STORE_KEY, value);
+    window.localStorage.setItem(STORE_KEY, newsletterPopupStoreValue(value));
   } catch {
     /* private mode — popup simply re-eligible next session */
   }
