@@ -342,21 +342,27 @@ function HomeNewsletterCapture() {
     <section className="hh-wrap home-capture-wrap">
       <div className="home-capture">
         <div className="home-capture-copy">
-          <span className="eyebrow">Weekly halal guide</span>
-          <h2>Get new halal finds before the weekend</h2>
+          <span className="eyebrow">Free 10-minute planner</span>
+          <h2>Plan a simpler halal weekend</h2>
           <p>
-            A short email with new MUIS-certified places, Muslim-owned businesses, prayer-room updates,
-            guides and community picks around Singapore.
+            Get the reusable worksheet for choosing one meal, placing prayer into the route and adding
+            one meaningful stop—then use Friday&apos;s email to fill it.
           </p>
           <ul className="home-capture-list" aria-label="Newsletter includes">
-            <li><Icon name="check" size={15} /> New verified listings</li>
-            <li><Icon name="check" size={15} /> Prayer rooms and mosque updates</li>
-            <li><Icon name="check" size={15} /> Deals, events and guides</li>
+            <li><Icon name="check" size={15} /> One printable planning sheet</li>
+            <li><Icon name="check" size={15} /> A quick halal-status check</li>
+            <li><Icon name="check" size={15} /> One useful Friday email</li>
           </ul>
         </div>
         <div className="home-capture-form">
-          <strong>Join the free weekly guide</strong>
-          <Newsletter source="home-guide" collectName cta="Send me the guide" />
+          <strong>Where should we send the planner?</strong>
+          <Newsletter
+            source="weekend-planner:home"
+            cta="Email me the planner"
+            successHref="/guides/halal-weekend-planner-singapore.pdf"
+            successCta="Open the planner now"
+            successMessage="The planner is on its way. You can also open it now."
+          />
         </div>
       </div>
     </section>

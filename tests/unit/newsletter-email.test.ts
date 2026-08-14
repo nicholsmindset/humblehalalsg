@@ -3,16 +3,17 @@ import { newsletterSignupEmail } from "@/lib/emails/newsletter";
 
 describe("newsletterSignupEmail", () => {
   it.each([
-    ["home-guide", "newsletter-food-guide", "/guides/ultimate-halal-food-guide-mrt.pdf"],
-    ["best-restaurants", "newsletter-food-guide", "/guides/ultimate-halal-food-guide-mrt.pdf"],
-    ["guides", "newsletter-guides", "/guides"],
+    ["home-guide", "newsletter-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
+    ["best-restaurants", "newsletter-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
+    ["weekend-planner:home", "newsletter-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
+    ["guides", "newsletter-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
     ["cert-changes", "newsletter-certification-updates", "/halal-certification-changes"],
     ["is-halal-brand", "newsletter-certification-updates", "/halal-certification-changes"],
     ["hawker", "newsletter-hawker", "/hawker"],
     ["hawker-centre", "newsletter-hawker", "/hawker"],
     ["events", "newsletter-events", "/events"],
     ["travel", "newsletter-travel", "/travel"],
-    ["ramadan", "newsletter-ramadan-planner", "/guides/ramadan-2026-planner.pdf"],
+    ["ramadan", "newsletter-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
     ["hari-raya", "newsletter-hari-raya-checklist", "/hari-raya"],
     ["for-business", "newsletter-owner-starter-kit", "/for-business"],
     ["advertise", "newsletter-advertising-kit", "/advertise"],
@@ -23,9 +24,9 @@ describe("newsletterSignupEmail", () => {
     ["tool:prayer-times", "newsletter-prayer-times", "/waktu-solat-singapore"],
     ["tool:ingredient-checker", "newsletter-tool-ingredient-checker", "/tools/ingredient-checker"],
     ["tool:quran", "newsletter-tools", "/tools"],
-    ["ms-makanan-halal", "newsletter-ms-food", "/guides/ultimate-halal-food-guide-mrt.pdf"],
+    ["ms-makanan-halal", "newsletter-ms-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
     ["ms-masjid", "newsletter-ms-mosque", "/mosques"],
-    ["ms-ramadan", "newsletter-ms-ramadan", "/guides/ramadan-2026-planner.pdf"],
+    ["ms-ramadan", "newsletter-ms-weekend-planner", "/guides/halal-weekend-planner-singapore.pdf"],
     ["ms-hari-raya", "newsletter-ms-hari-raya", "/ms/hari-raya"],
   ])("maps %s to %s", (source, template, link) => {
     const email = newsletterSignupEmail({ source, name: "Aminah" });
@@ -36,7 +37,7 @@ describe("newsletterSignupEmail", () => {
 
   it("falls back safely and escapes a supplied first name", () => {
     const email = newsletterSignupEmail({ source: "unknown", name: '<script>alert("x")</script>' });
-    expect(email.template).toBe("newsletter-food-guide");
+    expect(email.template).toBe("newsletter-weekend-planner");
     expect(email.html).not.toContain("<script>");
     expect(email.html).toContain("&lt;script&gt;");
   });

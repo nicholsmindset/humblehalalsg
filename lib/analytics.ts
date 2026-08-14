@@ -292,6 +292,20 @@ export const track = {
     dl({ event: "newsletter_signup", source, event_id: eventId });
     postServerEvent("newsletter_signup", eventId, { user_data: email ? { email } : undefined, custom_data: { source } });
   },
+  // Lightweight diagnostics for the capture funnel. These stay in the
+  // consent-aware tag-manager layer and do not add new first-party DB types.
+  newsletterFormStart(source: string) {
+    dl({ event: "newsletter_form_start", source });
+  },
+  newsletterFormError(source: string, reason: string) {
+    dl({ event: "newsletter_form_error", source, reason: reason.slice(0, 80) });
+  },
+  newsletterPopupView(source: string, trigger: "dwell" | "scroll" | "exit_intent") {
+    dl({ event: "newsletter_popup_view", source, trigger });
+  },
+  newsletterPopupDismiss(source: string, reason: "close_button" | "backdrop" | "escape") {
+    dl({ event: "newsletter_popup_dismiss", source, reason });
+  },
   // --- Conversion events. dataLayer drives the browser pixels; postServerEvent
   // mirrors to /api/track (Meta CAPI / TikTok Events API) with the SAME event_id
   // for de-duplication (no-op until NEXT_PUBLIC_SERVER_EVENTS=1). One call → all
