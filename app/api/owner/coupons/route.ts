@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { canUse } from "@/lib/plans";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { revalidatePublic } from "@/lib/revalidate";
-import { couponDateInput } from "@/lib/coupons";
+import { couponDateInput, couponPositiveInteger, couponTimeInput } from "@/lib/coupons";
 
 export const dynamic = "force-dynamic";
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -49,10 +49,10 @@ function fields(body: Record<string, unknown>) {
     starts_at: body.startsAt ? couponDateInput(body.startsAt) : new Date().toISOString(),
     ends_at: body.endsAt ? couponDateInput(body.endsAt) ?? "" : null,
     valid_days: days.length ? [...new Set(days)] : [0,1,2,3,4,5,6],
-    redeem_start: /^\d{2}:\d{2}$/.test(String(body.redeemStart || "")) ? body.redeemStart : null,
-    redeem_end: /^\d{2}:\d{2}$/.test(String(body.redeemEnd || "")) ? body.redeemEnd : null,
-    per_user_limit: Math.min(20, Math.max(1, Number(body.perUserLimit) || 1)),
-    total_limit: body.totalLimit ? Math.max(1, Number(body.totalLimit)) : null,
+    redeem_start: couponTimeInput(body.redeemStart),
+    redeem_end: couponTimeInput(body.redeemEnd),
+    per_user_limit: couponPositiveInteger(body.perUserLimit, 1, 20),
+    total_limit: couponPositiveInteger(body.totalLimit, null),
     terms: String(body.terms || "").trim().slice(0, 1000) || null,
   };
 }
