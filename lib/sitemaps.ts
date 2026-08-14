@@ -55,11 +55,12 @@ export function isSitemapSegment(v: string): v is SitemapSegment {
   return (SITEMAP_SEGMENTS as readonly string[]).includes(v);
 }
 
-// Stable lastmod for evergreen/static + entity pages. Request-time `new Date()`
-// made every URL's lastmod change hourly regardless of content, which trains
-// Google to discount the signal — bump this on a meaningful content release.
-// (Blog posts use their real dateModified below.)
-const STATIC_LASTMOD = "2026-07-19";
+/** Normalize a real source timestamp; never substitute the request/deploy time. */
+export function sitemapDate(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
 
 const PUBLIC_STATIC = [
   "/",
@@ -110,13 +111,11 @@ const PUBLIC_STATIC = [
 /** URLs for one sitemap segment. Unknown segments return []. */
 export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
   const base = SITE.url;
-  const now = STATIC_LASTMOD;
 
   switch (seg) {
     case "core": {
       const staticEntries: SitemapUrl[] = PUBLIC_STATIC.map((path) => ({
         loc: `${base}${path === "/" ? "" : path}`,
-        lastmod: now,
         changefreq: path === "/" ? "daily" : "weekly",
         priority: path === "/" ? 1 : 0.7,
       }));
@@ -124,7 +123,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       // highest-volume untapped keyword — hub gets top-tier priority.
       const waktuEntries: SitemapUrl[] = waktuSolatSitemapPaths().map((path, i) => ({
         loc: `${base}${path}`,
-        lastmod: now,
         changefreq: i === 0 ? "daily" : "weekly",
         priority: i === 0 ? 0.9 : 0.6,
       }));
@@ -132,14 +130,13 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       // PUBLIC_STATIC; hreflang on both sides links the pair.
       const msEntries: SitemapUrl[] = MS_PAGES.map((p) => ({
         loc: `${base}${p.path}`,
-        lastmod: now,
         changefreq: "weekly",
         priority: 0.6,
       }));
       // Cert-changes changelog is noindex until ≥10 logged events — keep it out
       // of the sitemap until then (same mixed-signal rule as thin SEO pages).
       const certEntries: SitemapUrl[] = (await certChangesIndexable())
-        ? [{ loc: `${base}/halal-certification-changes`, lastmod: now, changefreq: "weekly", priority: 0.6 }]
+        ? [{ loc: `${base}/halal-certification-changes`, changefreq: "weekly", priority: 0.6 }]
         : [];
       return [...staticEntries, ...waktuEntries, ...msEntries, ...certEntries];
     }
@@ -148,7 +145,7 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       const listings = await getDirectory();
       return listings.map((l) => ({
         loc: `${base}/business/${l.slug}`,
-        lastmod: now,
+        lastmod: sitemapDate(l.updatedAt),
         changefreq: "weekly",
         priority: 0.8,
         image: l.image || undefined,
@@ -165,7 +162,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
           // Canonical public path (flat-URL migration): /halal-food/[location]
           // for places, top-level for cuisine/cat, /halal/[slug] for the rest.
           loc: `${base}${seoPagePath(p)}`,
-          lastmod: now,
           changefreq: "weekly",
           priority: 0.7,
         }));
@@ -175,7 +171,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       const fileBrands = await allBrandsMerged();
       const brandEntries: SitemapUrl[] = fileBrands.map((b) => ({
         loc: `${base}/is-halal/${b.slug}`,
-        lastmod: now,
         changefreq: "monthly",
         priority: 0.6,
         image: b.logo || undefined,
@@ -188,14 +183,13 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         .filter((v) => !fileSlugSet.has(v.slug))
         .map((v) => ({
           loc: `${base}/is-halal/${v.slug}`,
-          lastmod: v.date_reviewed ? new Date(v.date_reviewed).toISOString() : now,
+          lastmod: sitemapDate(v.date_reviewed),
           changefreq: "monthly",
           priority: 0.6,
         }));
       // Curated head-to-head comparison pages (static pairs; both sides exist).
       const compareEntries: SitemapUrl[] = (await allComparePairs()).map((p) => ({
         loc: `${base}/is-halal/compare/${p.pairSlug}`,
-        lastmod: now,
         changefreq: "monthly",
         priority: 0.6,
       }));
@@ -206,14 +200,13 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       const eventsList = await getEvents();
       const eventEntries: SitemapUrl[] = eventsList.map((e) => ({
         loc: `${base}/events/${e.slug}`,
-        lastmod: now,
+        lastmod: sitemapDate(e.updatedAt),
         changefreq: "weekly",
         priority: 0.6,
         image: e.img || undefined,
       }));
       const eventSeoEntries: SitemapUrl[] = allEventSeoPages().map((p) => ({
         loc: `${base}${eventSeoPath(p)}`,
-        lastmod: now,
         changefreq: "weekly",
         priority: 0.7,
       }));
@@ -232,7 +225,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         }));
       const blogCatEntries: SitemapUrl[] = allCategories().map((c) => ({
         loc: `${base}/blog/category/${c.slug}`,
-        lastmod: now,
         changefreq: "weekly",
         priority: 0.6,
         image: c.heroImage || undefined,
@@ -243,29 +235,26 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
     case "tools": {
       const toolEntries: SitemapUrl[] = TOOLS.filter((t) => t.live && !t.href).map((t) => ({
         loc: `${base}/tools/${t.slug}`,
-        lastmod: now,
         changefreq: "monthly",
         priority: 0.7,
       }));
       const quranEntries: SitemapUrl[] = SURAHS.map((s) => ({
         loc: `${base}/tools/quran/${s.n}`,
-        lastmod: now,
         changefreq: "yearly",
         priority: 0.6,
       }));
       // Indexable ingredient detail pages (only quality-gated ones; alt slugs 301).
       const ingredientEntries: SitemapUrl[] = indexableIngredients().map((a) => ({
         loc: `${base}/tools/ingredient-checker/${ingredientSlug(a)}`,
-        lastmod: a.lastReviewed ? new Date(a.lastReviewed).toISOString() : now,
+        lastmod: sitemapDate(a.lastReviewed),
         changefreq: "monthly",
         priority: 0.6,
       }));
       // Qualifying ingredient category hubs (thin hubs are noindex + excluded).
       const hubEntries: SitemapUrl[] = [
-        { loc: `${base}/tools/ingredient-checker/categories`, lastmod: now, changefreq: "monthly", priority: 0.5 },
+        { loc: `${base}/tools/ingredient-checker/categories`, changefreq: "monthly", priority: 0.5 },
         ...indexableHubs().map((h) => ({
           loc: `${base}/tools/ingredient-checker/categories/${h.slug}`,
-          lastmod: now,
           changefreq: "monthly" as const,
           priority: 0.5,
         })),
@@ -295,7 +284,7 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         "/baju-nikah-attire-singapore",
         "/malay-wedding-attire-baju-guide",
         "/aqiqah-kenduri-catering-singapore",
-      ].map((path) => ({ loc: `${base}${path}`, lastmod: now, changefreq: "weekly", priority: 0.7 }));
+      ].map((path) => ({ loc: `${base}${path}`, changefreq: "weekly", priority: 0.7 }));
 
     case "mosques": {
       // Only PROFILED mosques get an indexable detail page (thin-content gate).
@@ -305,7 +294,6 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       const overlays = await getMosqueOverlays();
       return profiledMosqueSlugs().map((slug) => ({
         loc: `${base}/mosques/${slug}`,
-        lastmod: now,
         changefreq: "weekly",
         priority: 0.6,
         image: overlays.get(slug)?.image || mosqueProfile(slug)?.image || `/mosques/${slug}/opengraph-image`,
@@ -323,12 +311,11 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       // would be a mixed signal.
       const profiled = new Set(profiledHawkerIds());
       return [
-        { loc: `${base}/hawker`, lastmod: now, changefreq: "weekly", priority: 0.6 },
+        { loc: `${base}/hawker`, changefreq: "weekly", priority: 0.6 },
         ...centres
           .filter((c) => profiled.has(c.id))
           .map((c) => ({
             loc: `${base}/hawker/${c.id}`,
-            lastmod: now,
             changefreq: "weekly" as ChangeFreq,
             priority: 0.6,
           })),
@@ -377,9 +364,8 @@ export function urlsetXml(urls: SitemapUrl[]): string {
 /** Serialise the sitemap index pointing at every segment child. */
 export function sitemapIndexXml(): string {
   const base = SITE.url;
-  const lastmod = new Date().toISOString();
   const body = SITEMAP_SEGMENTS.map(
-    (s) => `  <sitemap>\n    <loc>${esc(`${base}/sitemap/${s}.xml`)}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </sitemap>`,
+    (s) => `  <sitemap>\n    <loc>${esc(`${base}/sitemap/${s}.xml`)}</loc>\n  </sitemap>`,
   ).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</sitemapindex>\n`;
 }

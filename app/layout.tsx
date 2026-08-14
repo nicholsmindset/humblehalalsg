@@ -4,8 +4,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   Spectral,
   Hanken_Grotesk,
-  Cormorant_Garamond,
-  Libre_Caslon_Text,
   Newsreader,
   Amiri,
 } from "next/font/google";
@@ -105,34 +103,26 @@ export const viewport: Viewport = {
    variables so styles.css tokens + the tweaks-panel font swap resolve. */
 const spectral = Spectral({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  style: ["normal", "italic"],
+  weight: ["600", "700"],
+  style: ["normal"],
   variable: "--font-spectral",
-  display: "swap",
+  // Avoid a late brand-font swap moving headings on slow first visits. The
+  // metric-compatible fallback renders immediately; the real face is used
+  // when it arrives within the browser's short optional window or from cache.
+  display: "optional",
 });
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
   variable: "--font-hanken",
-  display: "swap",
-});
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-const libreCaslon = Libre_Caslon_Text({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-libre",
-  display: "swap",
+  display: "optional",
 });
 const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   variable: "--font-newsreader",
   display: "swap",
+  preload: false,
 });
 
 // Quranic/Arabic naskh face — Arabic ayah text must never fall back to a Latin sans.
@@ -141,9 +131,10 @@ const amiri = Amiri({
   weight: ["400", "700"],
   variable: "--font-quran",
   display: "swap",
+  preload: false,
 });
 
-const fontVars = [spectral, hanken, cormorant, libreCaslon, newsreader, amiri]
+const fontVars = [spectral, hanken, newsreader, amiri]
   .map((f) => f.variable)
   .join(" ");
 
@@ -177,6 +168,8 @@ export default async function RootLayout({
     delete c.seoTitle;
     delete c.seoDescription;
     delete c.createdAt;
+    delete c.photos;
+    delete c.outlets;
     delete c.phone;
     delete c.wa;
     delete c.ig;
@@ -193,7 +186,11 @@ export default async function RootLayout({
       <body>
         <GoogleTagManager />
         <AdsenseScript />
-        <ClerkProvider afterSignOutUrl="/" appearance={{ variables: { colorPrimary: "#12525B" } }}>
+        <ClerkProvider
+          afterSignOutUrl="/"
+          prefetchUI={false}
+          appearance={{ variables: { colorPrimary: "#12525B" } }}
+        >
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directoryClient} categories={categories} areas={areas}>

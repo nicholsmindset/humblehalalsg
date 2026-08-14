@@ -158,7 +158,7 @@ export function PrayerStrip({
           className="prayer-lead"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
-          aria-label={`Prayer times. Next: ${next.name} at ${next.time}`}
+          aria-label={`${next.name} ${next.time}, next prayer — open prayer times`}
         >
           <span className="prayer-ico">
             <Icon name="mosque" size={17} />
@@ -174,7 +174,7 @@ export function PrayerStrip({
         <button
           className="prayer-mosque"
           onClick={() => (nearest ? navigate("map", { show: "mosques" }) : findNearest())}
-          aria-label={nearest ? `Nearest mosque: ${nearest.name}, ${nearest.km.toFixed(1)} km away — open map` : "Find the nearest mosque"}
+          aria-label={nearest ? `${nearest.name}, ${nearest.km.toFixed(1)} km — nearest mosque, open map` : "Find masjid near you — nearest mosque"}
         >
           <Icon name="pin" size={15} />{" "}
           <span>
@@ -498,8 +498,19 @@ export function MobileBar() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  useDialog(ref, close);
+  useDialog(ref, close, open);
   useBodyScrollLock(open);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-blocking-overlay", open);
+    const background = Array.from(document.querySelectorAll<HTMLElement>(
+      "#main-content, .prayer-strip, .hh-tabbar, .hh-footer, .hh-topnav",
+    ));
+    background.forEach((node) => { node.inert = open; });
+    return () => {
+      document.documentElement.removeAttribute("data-blocking-overlay");
+      background.forEach((node) => { node.inert = false; });
+    };
+  }, [open]);
   const user = state.user;
 
   const go = (screen: string) => {
@@ -542,6 +553,7 @@ export function MobileBar() {
             onClick={() => setOpen(true)}
             aria-label="Open menu"
             aria-expanded={open}
+            aria-controls="mobile-navigation-menu"
           >
             <Icon name="menu" size={24} />
           </button>
@@ -555,14 +567,15 @@ export function MobileBar() {
             if ((e.target as HTMLElement).classList.contains("nav-drawer-veil")) setOpen(false);
           }}
         >
-          <aside className="nav-drawer" ref={ref} role="dialog" aria-modal="true" aria-label="Menu">
+          <aside id="mobile-navigation-menu" className="nav-drawer" ref={ref} role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
             <div className="nav-drawer-head">
-              <Logo onClick={() => go("home")} />
+              <div id="mobile-menu-title"><Logo onClick={() => go("home")} /></div>
               <button
                 className="btn btn-ghost btn-sm"
                 style={{ padding: 8 }}
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
+                data-dialog-initial-focus
               >
                 <Icon name="x" size={20} />
               </button>

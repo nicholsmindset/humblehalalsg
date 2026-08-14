@@ -97,6 +97,7 @@ export function rowToListing(r: Row): Listing {
     halalTier: tier || undefined,
     claimed: !!(r.owner_id || r.claimed_by),
     createdAt: str(r.created_at) || undefined,
+    updatedAt: str(r.updated_at) || undefined,
     certBody: tier === "muis" ? "MUIS" : tier === "admin" ? "Humble Halal" : null,
     verify: {
       certNo: certNo || null,

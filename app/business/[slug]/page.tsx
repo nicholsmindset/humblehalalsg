@@ -5,8 +5,8 @@ import { getDirectory, getListingBySlug, getGoneBusinessMeta } from "@/lib/direc
 import { businessRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { getHawkerCentre } from "@/lib/hawker";
 import { pageMeta } from "@/lib/seo";
-import { joinParts } from "@/lib/format";
 import { muisUnbacked } from "@/lib/halal-score";
+import { businessMetaText } from "@/lib/business-seo";
 import {
   JsonLd,
   listingJsonLd,
@@ -55,15 +55,18 @@ export async function generateMetadata({
       : isFood
         ? "halal-friendly"
         : "Muslim-friendly";
-  const reviewLine = l.reviews > 0 ? ` ${l.rating}★ from ${l.reviews} reviews.` : "";
+  const generated = businessMetaText(l, descriptor);
   return pageMeta({
     // Prefer admin-approved AI-enriched SEO when present; else the computed default.
-    title: l.seoTitle || joinParts([l.name, joinParts([l.cuisine, l.area], ", ")], " — "),
-    description: l.seoDescription || `${l.blurb} ${descriptor} listing in ${l.area}, Singapore.${reviewLine}`,
+    title: l.seoTitle || generated.title,
+    description: l.seoDescription || generated.description,
     path: `/business/${l.slug}`,
     // Real photo when we have one; else the branded per-listing OG card (the
     // dynamic route is otherwise shadowed by pageMeta's generic fallback).
     image: l.image || `/business/${l.slug}/opengraph-image`,
+    // The generated title is already capped for the result page; adding the
+    // root brand template would push it back over the practical limit.
+    absoluteTitle: true,
   });
 }
 

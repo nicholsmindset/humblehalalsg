@@ -9,6 +9,7 @@ import { categoryContent, cuisineContent, CATEGORY_PAGE_IDS } from "./category-c
 import seoCounts from "./seo-counts.json";
 import { areaProfile } from "./area-content";
 import { CATEGORY_PRESENTATION } from "./category-presentation";
+import { slugify } from "./slug";
 
 /** Bump annually. Used in SEO titles only (keeps visible H1 evergreen). */
 export const SEO_YEAR = 2026;
@@ -428,4 +429,34 @@ for (const p of PAGES) {
 export function locationIdForArea(area: string | undefined): string | undefined {
   if (!area) return undefined;
   return AREA_NAME_TO_LOCATION.get(area.trim().toLowerCase());
+}
+
+export interface BusinessSeoLink {
+  href: string;
+  slug: string;
+  label: string;
+}
+
+/** Compose business-page links only after resolving them to a real SEO page. */
+export function businessSeoLinks(
+  listing: Pick<Listing, "area" | "cat" | "catId">,
+): BusinessSeoLink[] {
+  const area = listing.area.trim();
+  const locationId = locationIdForArea(area);
+  if (!area || !locationId) return [];
+
+  const areaPage = getSeoPageByLocation(locationId);
+  const categoryPage = getSeoPage(`halal-${slugify(listing.catId)}-in-${locationId}`);
+  return [
+    areaPage && {
+      href: seoPagePath(areaPage),
+      slug: areaPage.slug,
+      label: `Halal Food in ${area}`,
+    },
+    categoryPage && {
+      href: seoPagePath(categoryPage),
+      slug: categoryPage.slug,
+      label: `Halal ${listing.cat} in ${area}`,
+    },
+  ].filter((link): link is BusinessSeoLink => Boolean(link));
 }
