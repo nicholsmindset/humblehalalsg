@@ -2,17 +2,19 @@
 
 /* Site-wide newsletter capture popup.
    Triggers once per visitor (localStorage): exit-intent on desktop, or 50% scroll
-   / 25s dwell on touch. Suppressed on conversion/admin paths and after dismissal
+   / 30s dwell on touch. Suppressed on conversion/admin paths and after dismissal
    or signup. Reuses the .modal-veil / .modal chrome + useDialog (ESC + click-out). */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icon, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 import { claimPopupSession, isLeadPopupMounted, popupSessionTaken } from "./lead-capture/popup-guard";
+import { track } from "@/lib/analytics";
 
 const STORE_KEY = "hh_nl_popup"; // "dismissed" | "subscribed"
-const DWELL_MS = 25_000;
+const POPUP_SOURCE = "weekend-planner:popup";
+const DWELL_MS = 30_000;
 const SCROLL_FRACTION = 0.5;
 // Don't let the scroll trigger fire on the very first flick: on a short page 50%
 // is reached in ~1 tick, so the popup could appear within a second of landing.
@@ -46,17 +48,19 @@ export function NewsletterPopup() {
 
   const suppressed = SUPPRESS_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  const close = () => {
+  const close = useCallback((reason: "close_button" | "backdrop" | "escape") => {
     setOpen(false);
     mark("dismissed");
-  };
-  useDialog(ref, close);
+    track.newsletterPopupDismiss(POPUP_SOURCE, reason);
+  }, []);
+  const closeFromEscape = useCallback(() => close("escape"), [close]);
+  useDialog(ref, closeFromEscape, open);
   useBodyScrollLock(open);
 
   useEffect(() => {
     if (suppressed || alreadyHandled() || shownRef.current) return;
 
-    const trigger = () => {
+    const trigger = (reason: "dwell" | "scroll" | "exit_intent") => {
       if (shownRef.current || alreadyHandled()) return;
       // Popup coordination (owner subtlety rule): yield entirely on pages
       // where the lead-capture popup is mounted, and never show if any popup
@@ -65,22 +69,23 @@ export function NewsletterPopup() {
       if (!claimPopupSession("newsletter")) return;
       shownRef.current = true;
       setOpen(true);
+      track.newsletterPopupView(POPUP_SOURCE, reason);
       cleanup();
     };
 
     const onMouseOut = (e: MouseEvent) => {
       // exit-intent: cursor leaves through the top of the viewport
-      if (e.clientY <= 0 && !e.relatedTarget) trigger();
+      if (e.clientY <= 0 && !e.relatedTarget) trigger("exit_intent");
     };
     const armedAt = Date.now();
     const onScroll = () => {
       if (Date.now() - armedAt < SCROLL_ARM_MS) return; // ignore the first-flick scroll
       const scrolled = window.scrollY + window.innerHeight;
       const full = document.documentElement.scrollHeight;
-      if (full > 0 && scrolled / full >= SCROLL_FRACTION) trigger();
+      if (full > 0 && scrolled / full >= SCROLL_FRACTION) trigger("scroll");
     };
 
-    const timer = window.setTimeout(trigger, DWELL_MS);
+    const timer = window.setTimeout(() => trigger("dwell"), DWELL_MS);
     document.addEventListener("mouseout", onMouseOut);
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -110,13 +115,13 @@ export function NewsletterPopup() {
     <div
       className="modal-veil"
       onClick={(e) => {
-        if ((e.target as HTMLElement).classList.contains("modal-veil")) close();
+        if ((e.target as HTMLElement).classList.contains("modal-veil")) close("backdrop");
       }}
     >
       <div className="modal nl-popup" ref={ref} role="dialog" aria-modal="true" aria-label="Join the Humble Halal newsletter">
         <div className="onboard-head">
           <span className="eyebrow">🌙 Free weekly guide</span>
-          <button className="btn btn-ghost btn-sm" style={{ padding: 8 }} onClick={close} aria-label="Close">
+          <button className="btn btn-ghost btn-sm" style={{ padding: 8 }} onClick={() => close("close_button")} aria-label="Close">
             <Icon name="x" size={18} />
           </button>
         </div>
@@ -127,7 +132,7 @@ export function NewsletterPopup() {
         </p>
         <div style={{ marginTop: 16 }}>
           <Newsletter
-            source="weekend-planner:popup"
+            source={POPUP_SOURCE}
             cta="Email me the planner"
             successHref="/guides/halal-weekend-planner-singapore.pdf"
             successCta="Open the planner now"

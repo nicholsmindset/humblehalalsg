@@ -300,6 +300,12 @@ export const track = {
   newsletterFormError(source: string, reason: string) {
     dl({ event: "newsletter_form_error", source, reason: reason.slice(0, 80) });
   },
+  newsletterPopupView(source: string, trigger: "dwell" | "scroll" | "exit_intent") {
+    dl({ event: "newsletter_popup_view", source, trigger });
+  },
+  newsletterPopupDismiss(source: string, reason: "close_button" | "backdrop" | "escape") {
+    dl({ event: "newsletter_popup_dismiss", source, reason });
+  },
   // --- Conversion events. dataLayer drives the browser pixels; postServerEvent
   // mirrors to /api/track (Meta CAPI / TikTok Events API) with the SAME event_id
   // for de-duplication (no-op until NEXT_PUBLIC_SERVER_EVENTS=1). One call → all
