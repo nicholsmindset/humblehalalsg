@@ -86,6 +86,13 @@ async function goneRedirect(req: NextRequest): Promise<NextResponse | null> {
 // so guest-vs-admin protection is not weakened.
 const clerkEnabled = !!process.env.CLERK_SECRET_KEY;
 
+export function protectedRouteRedirect(req: NextRequest, userId: string | null | undefined): NextResponse | null {
+  if (!isProtected(req) || userId) return null;
+  const destination = new URL("/login", req.url);
+  destination.searchParams.set("next", `${req.nextUrl.pathname}${req.nextUrl.search}`);
+  return NextResponse.redirect(destination);
+}
+
 export default clerkEnabled
   ? clerkMiddleware(async (auth, req) => {
       const travelDisabled = travelDisabledResponse(req);
@@ -96,7 +103,11 @@ export default clerkEnabled
       if (redirect) return redirect;
       const gone = await goneRedirect(req);
       if (gone) return gone;
-      if (isProtected(req)) await auth.protect();
+      if (isProtected(req)) {
+        const { userId } = await auth();
+        const signIn = protectedRouteRedirect(req, userId);
+        if (signIn) return signIn;
+      }
     })
   : async function proxy(req: NextRequest) {
       return (
