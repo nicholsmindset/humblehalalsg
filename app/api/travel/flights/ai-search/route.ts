@@ -186,6 +186,7 @@ export async function POST(req: Request) {
       legs,
       adults: Math.min(9, Math.max(1, adults)),
       children: Math.min(8, Math.max(0, children)),
+      infants: Math.min(8, Math.max(0, infants)),
       cabin: cabinCode,
       currency: "USD",
     });
