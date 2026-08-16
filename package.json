@@ -58,7 +58,7 @@
     "react-leaflet": "^5.0.0",
     "recharts": "^3.10.1",
     "stripe": "^22.4.0",
-    "supercluster": "^8.0.1",
+    "supercluster": "^9.0.0",
     "svix": "^1.99.1",
     "zod": "^4.4.3"
   },
