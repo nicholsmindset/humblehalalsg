@@ -7,6 +7,7 @@ import { CURRENCY } from "@/lib/fees";
 import { SITE } from "@/lib/seo";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { sendEmail } from "@/lib/email";
+import { adCampaignEndDate, isValidAdCampaignDate } from "@/lib/ad-campaign-dates";
 
 /* Owner self-serve campaign purchase — DRAFT-FIRST flow:
 
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   const businessId = String(b.businessId || "").trim();
   const placementKey = String(b.placementKey || "").trim();
   const startsOn = String(b.startsOn || "").trim();
-  const months = Math.round(Number(b.months) || 0);
+  const months = Number(b.months);
   const title = String(b.title || "").trim().slice(0, 80);
   const body = String(b.body || "").trim().slice(0, 280);
   const targetUrl = String(b.targetUrl || "").trim().slice(0, 500);
@@ -47,13 +48,15 @@ export async function POST(req: Request) {
   if (!businessId || !placementKey || !title) {
     return NextResponse.json({ ok: false, reason: "missing_fields" }, { status: 422 });
   }
-  if (months < 1 || months > MAX_MONTHS) {
+  if (!Number.isInteger(months) || months < 1 || months > MAX_MONTHS) {
     return NextResponse.json({ ok: false, reason: "bad_duration" }, { status: 422 });
   }
   const todaySG = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(startsOn) || startsOn < todaySG) {
+  if (!isValidAdCampaignDate(startsOn) || startsOn < todaySG) {
     return NextResponse.json({ ok: false, reason: "bad_start_date" }, { status: 422 });
   }
+  const endsOn = adCampaignEndDate(startsOn, months);
+  if (!endsOn) return NextResponse.json({ ok: false, reason: "bad_start_date" }, { status: 422 });
   for (const u of [targetUrl, imageUrl]) {
     if (u && !/^https:\/\//.test(u)) return NextResponse.json({ ok: false, reason: "bad_url" }, { status: 422 });
   }
@@ -73,13 +76,6 @@ export async function POST(req: Request) {
   const monthlyRate = Number(placement.monthly_rate_cents) || 0;
   if (monthlyRate <= 0) return NextResponse.json({ ok: false, reason: "placement_unavailable" }, { status: 422 });
   const rateCents = monthlyRate * months;
-
-  // ends_on = starts_on + months (calendar), exclusive-ish: last served day.
-  const start = new Date(`${startsOn}T00:00:00Z`);
-  const end = new Date(start);
-  end.setUTCMonth(end.getUTCMonth() + months);
-  end.setUTCDate(end.getUTCDate() - 1);
-  const endsOn = end.toISOString().slice(0, 10);
 
   // Inventory cap enforced SERVER-SIDE (audit ads-oversell-02): the builder's
   // disabled radio is client-trustable only. Without this, two owners can both
