@@ -58,6 +58,31 @@ describe("donationRefundDelta — decrement the public total exactly once", () =
     const r = donationRefundDelta({ amountRefundedCents: 4000, alreadyRefundedCents: 0, donatedCents: 0, chargeFullyRefunded: false });
     expect(r.newRefundedCents).toBe(4000);
   });
+
+  it("rejects invalid cent values instead of applying malformed refund deltas", () => {
+    const negativeAlreadyRefunded = donationRefundDelta({
+      amountRefundedCents: 5000,
+      alreadyRefundedCents: -1000,
+      donatedCents: 10_000,
+      chargeFullyRefunded: false,
+    });
+    const fractionalRefund = donationRefundDelta({
+      amountRefundedCents: 1500.5,
+      alreadyRefundedCents: 0,
+      donatedCents: 5000,
+      chargeFullyRefunded: false,
+    });
+    const nonFiniteRefund = donationRefundDelta({
+      amountRefundedCents: Number.POSITIVE_INFINITY,
+      alreadyRefundedCents: 0,
+      donatedCents: 5000,
+      chargeFullyRefunded: false,
+    });
+
+    expect(negativeAlreadyRefunded).toMatchObject({ newRefundedCents: 5000, deltaCents: 5000, shouldApply: true });
+    expect(fractionalRefund).toMatchObject({ newRefundedCents: 0, deltaCents: 0, shouldApply: false });
+    expect(nonFiniteRefund).toMatchObject({ newRefundedCents: 0, deltaCents: 0, shouldApply: false });
+  });
 });
 
 describe("resolveTicketOrderMoney", () => {
