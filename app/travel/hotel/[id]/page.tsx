@@ -6,6 +6,7 @@ import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd, hotelJsonLd } from "@/components/seo/json-ld";
 import { qiblaBearing } from "@/lib/qibla";
+import { validHotelStayOrFallback } from "@/lib/hotel-dates";
 
 function defaultDates() {
   const t = Date.now();
@@ -31,14 +32,12 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const dates =
-    sp.checkin && sp.checkout
-      ? { checkin: String(sp.checkin), checkout: String(sp.checkout), currency: String(sp.currency || "USD") }
-      : defaultDates();
+  const stay = validHotelStayOrFallback(sp.checkin, sp.checkout, defaultDates());
+  const dates = { ...stay, currency: typeof sp.currency === "string" ? sp.currency : "USD" };
 
   const d = await hotelDetail(id, dates);
   if (!d) notFound();
