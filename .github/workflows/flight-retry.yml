@@ -1,18 +1,16 @@
 name: Flight retry backstop
 
-# Reconciles flight bookings stuck in 'confirming' (payment captured, provider not
-# yet confirmed) by hitting the idempotent cron endpoint every 10 minutes. This is
-# the Hobby-plan-safe alternative to a sub-daily Vercel cron (Vercel Hobby rejects
-# */10 crons). The daily Vercel cron in vercel.json remains as a fallback.
+# Manual recovery backstop for flight bookings stuck in 'confirming'. The paid
+# flight product is currently disabled, so this workflow must not consume runner
+# time or create alerts on a schedule. Re-enable a schedule only after the travel
+# feature is deliberately restored and the production endpoint returns 2xx.
 #
 # Requires repo secret CRON_SECRET = the value set in Vercel env. lib/cron.ts
 # authorizeCron() checks `Authorization: Bearer <CRON_SECRET>`.
 # Note: GitHub-scheduled runs can drift a few minutes under load — fine for a backstop.
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch: {} # manual trigger for verification
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -33,6 +31,17 @@ jobs:
             echo "::error::CRON_SECRET secret is not set in this repo."
             exit 1
           fi
-          curl -fsS --max-time 60 \
+          status=$(curl -sS --max-time 60 \
+            -o response.json -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            https://www.humblehalal.com/api/cron/flight-retry
+            https://www.humblehalal.com/api/cron/flight-retry)
+          if [ "$status" = "410" ]; then
+            echo "Flight recovery is intentionally unavailable while paid travel is disabled."
+            exit 0
+          fi
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            cat response.json
+            echo "::error::Flight retry endpoint returned HTTP ${status}."
+            exit 1
+          fi
+          cat response.json
