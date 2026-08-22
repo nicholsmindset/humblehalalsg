@@ -188,7 +188,9 @@ export default async function RootLayout({
         <AdsenseScript />
         <ClerkProvider
           afterSignOutUrl="/"
-          prefetchUI={false}
+          // This app renders Clerk's prebuilt UserButton. Keep UI prefetching
+          // enabled (the default); disabling it can leave signed-in visitors
+          // with Clerk core loaded but no UI bundle, crashing the whole shell.
           appearance={{ variables: { colorPrimary: "#12525B" } }}
         >
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />

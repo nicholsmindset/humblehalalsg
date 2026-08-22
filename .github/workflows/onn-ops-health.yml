@@ -1,0 +1,33 @@
+name: ONN Ops health
+
+on:
+  workflow_run:
+    workflows: ["CI", "Deploy to Vercel (production)", "Security", "CodeQL", "Sitemap Diff"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    if: github.repository_owner == 'nicholsmindset'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report completed workflow to ONN Operations
+        env:
+          ONN_OPS_WEBHOOK_URL: ${{ secrets.ONN_OPS_WEBHOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          EVENT_NAME: ${{ github.event.workflow_run.event }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          COMPLETED_AT: ${{ github.event.workflow_run.updated_at }}
+        run: |
+          if [ -z "$ONN_OPS_WEBHOOK_URL" ]; then
+            echo "::error::ONN_OPS_WEBHOOK_URL is not configured."
+            exit 1
+          fi
+          jq -n --arg repository "$REPOSITORY" --arg workflow "$WORKFLOW" --arg conclusion "$CONCLUSION" --arg branch "$BRANCH" --arg event "$EVENT_NAME" --arg run_id "$RUN_ID" --arg run_url "$RUN_URL" --arg completed_at "$COMPLETED_AT" '{repository:$repository,workflow:$workflow,conclusion:$conclusion,branch:$branch,event:$event,run_id:$run_id,run_url:$run_url,completed_at:$completed_at}' \
+            | curl --fail-with-body --silent --show-error --max-time 30 -H 'content-type: application/json' --data-binary @- "$ONN_OPS_WEBHOOK_URL"
