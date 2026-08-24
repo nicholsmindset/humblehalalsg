@@ -55,6 +55,15 @@ export interface FlightItinerary {
   stops: number;
 }
 
+export function normalizeFlightPassengerCount(
+  value: unknown,
+  { min, max, fallback }: { min: number; max: number; fallback: number },
+): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
 function num(v: unknown): number | undefined {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
