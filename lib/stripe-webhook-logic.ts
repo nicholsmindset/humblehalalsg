@@ -26,9 +26,9 @@ export function donationRefundDelta(args: {
   donatedCents: number | null | undefined;
   chargeFullyRefunded: boolean;
 }): { newRefundedCents: number; deltaCents: number; shouldApply: boolean; markRefunded: boolean } {
-  const amountRefunded = Number(args.amountRefundedCents) || 0;
-  const already = Number(args.alreadyRefundedCents) || 0;
-  const donated = Number(args.donatedCents) || 0;
+  const amountRefunded = nonNegativeInteger(args.amountRefundedCents);
+  const already = nonNegativeInteger(args.alreadyRefundedCents);
+  const donated = nonNegativeInteger(args.donatedCents);
   // Clamp to the recorded donation (fall back to the raw amount when we don't
   // know the donation size) so the public total can't go negative beyond this
   // donation's own contribution.
