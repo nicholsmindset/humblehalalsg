@@ -1,163 +1,174 @@
 [
   {
     "slug": "doa-buka-puasa-niat-puasa",
-    "url": "/blog/cms-doa-buka-puasa-niat-puasa.webp",
+    "url": "/blog/doa-buka-puasa-niat-puasa.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "editorial iftar still life; no text, logo, people, alcohol, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "doa-dhuha-guide",
-    "url": "/blog/cms-doa-dhuha-guide.webp",
+    "url": "/blog/doa-dhuha-guide.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "respectful mid-morning prayer still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "doa-qunut-guide",
-    "url": "/blog/cms-doa-qunut-guide.webp",
+    "url": "/blog/doa-qunut-guide.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "respectful reflective prayer still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "doa-selepas-solat",
-    "url": "/blog/cms-doa-selepas-solat.webp",
+    "url": "/blog/doa-selepas-solat.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "respectful after-prayer room still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-cruises-from-singapore",
-    "url": "/blog/cms-halal-cruises-from-singapore.webp",
+    "url": "/blog/halal-cruises-from-singapore.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "Singapore cruise travel still life with tea and water; no text, logo, people, or alcohol",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-funan-raffles-city",
-    "url": "/blog/best-halal-cafes-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing best-halal-cafes-singapore.webp",
+    "url": "/blog/halal-food-funan-raffles-city.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific City Hall food-and-location editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-jurong-east",
-    "url": "/blog/halal-food-jewel-changi-airport.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-food-jewel-changi-airport.webp",
+    "url": "/blog/halal-food-jurong-east.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific Jurong East food-and-location editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-near-me-singapore",
-    "url": "/blog/best-halal-restaurants-singapore-2026.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing best-halal-restaurants-singapore-2026.webp",
+    "url": "/blog/halal-food-near-me-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific halal-near-me map and food editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-nex-serangoon",
-    "url": "/blog/halal-buffet-guide-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-buffet-guide-singapore.webp",
+    "url": "/blog/halal-food-nex-serangoon.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific Serangoon mall food editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-northpoint-causeway-point",
-    "url": "/blog/halal-steamboat-hotpot-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-steamboat-hotpot-singapore.webp",
+    "url": "/blog/halal-food-northpoint-causeway-point.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific north Singapore food-and-location editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-orchard-road",
-    "url": "/blog/halal-fine-dining-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-fine-dining-singapore.webp",
+    "url": "/blog/halal-food-orchard-road.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific Orchard Road food-and-location editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-suntec-marina-square",
-    "url": "/blog/halal-food-bugis-arab-street.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-food-bugis-arab-street.webp",
+    "url": "/blog/halal-food-suntec-marina-square.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific Suntec and Marina Centre food editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-tampines",
-    "url": "/blog/best-halal-breakfast-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing best-halal-breakfast-singapore.webp",
+    "url": "/blog/halal-food-tampines.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific Tampines food-and-location editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-food-vivocity-harbourfront",
-    "url": "/blog/halal-high-tea-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-high-tea-singapore.webp",
+    "url": "/blog/halal-food-vivocity-harbourfront.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific HarbourFront and Sentosa food editorial image; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "malay-wedding-customs-checklist",
-    "url": "/blog/cms-malay-wedding-customs-checklist.webp",
+    "url": "/blog/malay-wedding-customs-checklist.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "Malay wedding customs still life with songket and gift trays; no text, logo, or people",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "mediterranean-food-singapore",
-    "url": "/blog/halal-steak-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-steak-singapore.webp",
+    "url": "/blog/mediterranean-food-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific halal Mediterranean food editorial image; no text, logo, people, pork, or alcohol",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "nasi-padang-singapore-guide",
-    "url": "/blog/halal-dim-sum-singapore.webp",
-    "source": "owned-local-webp",
-    "note": "mapped to existing halal-dim-sum-singapore.webp",
+    "url": "/blog/nasi-padang-singapore-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "subject-specific nasi padang editorial food image; no text, logo, people, pork, or alcohol",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "songkok-kopiah-singapore",
-    "url": "/blog/cms-songkok-kopiah-singapore.webp",
+    "url": "/blog/songkok-kopiah-singapore.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "editorial songkok and kopiah product still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "waktu-solat-singapore",
-    "url": "/blog/cms-waktu-solat-singapore.webp",
+    "url": "/blog/waktu-solat-singapore.webp",
     "source": "brand-generated",
-    "model": "sharp+svg (crescent hero, no AI/external)",
-    "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
+    "model": "OpenAI Imagegen",
+    "note": "prayer-time still life with clock and plain mat; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
-    "updatedAt": "2026-07-18"
+    "updatedAt": "2026-08-30"
   },
   {
     "slug": "halal-desserts-singapore-guide",
@@ -246,6 +257,114 @@
     "source": "brand-generated",
     "model": "OpenAI Imagegen",
     "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "ramadan-singapore-2026-guide",
+    "url": "/blog/ramadan-singapore-2026-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Singapore iftar editorial still life; no text, logo, people, pork, alcohol, or decorative religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "malay-wedding-cost-singapore",
+    "url": "/blog/malay-wedding-cost-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Malay wedding budget still life with songket, rings and calculator; no text, logo, or people",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-food-johor-bahru-guide",
+    "url": "/blog/halal-food-johor-bahru-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Johor Bahru halal food editorial image; no text, logo, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "crossing-to-johor-bahru-checkpoints-transport",
+    "url": "/blog/crossing-to-johor-bahru-checkpoints-transport.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Singapore–Johor checkpoint travel-planning still life; no text, logo, or people",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "umrah-from-singapore-guide",
+    "url": "/blog/umrah-from-singapore-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "respectful pilgrimage travel-preparation still life; no text, logo, people, or decorative religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-mala-singapore",
+    "url": "/blog/halal-mala-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "halal mala editorial food image; no text, logo, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-mookata-singapore",
+    "url": "/blog/halal-mookata-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "halal mookata editorial food image; no text, logo, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-korean-bbq-singapore",
+    "url": "/blog/halal-korean-bbq-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "halal Korean barbecue editorial food image; no text, logo, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-western-food-singapore",
+    "url": "/blog/halal-western-food-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "halal Western food editorial image; no text, logo, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "is-it-halal-popular-chains-singapore",
+    "url": "/blog/is-it-halal-popular-chains-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "halal-status checking editorial concept; no text, brand logos, or people",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "is-it-halal-bakeries-cafes-singapore",
+    "url": "/blog/is-it-halal-bakeries-cafes-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "bakery halal-status checking editorial image; no text, brand logos, people, pork, or alcohol",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "aqiqah-singapore-guide",
+    "url": "/blog/aqiqah-singapore-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "respectful aqiqah and new-parent still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
     "updatedAt": "2026-08-30"
   }
