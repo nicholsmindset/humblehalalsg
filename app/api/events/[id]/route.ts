@@ -7,6 +7,7 @@ import { getStripe } from "@/lib/stripe";
 import { reverseOrderTransferIfPaid } from "@/lib/payout-reversal";
 import { revalidatePublic } from "@/lib/revalidate";
 import { recordRedirect, clearRedirect, eventRedirectTarget } from "@/lib/gone-redirects";
+import { eventCapacity } from "@/lib/event-capacity";
 
 /** Best relevant /events hub for an event's own category/area (in `display`). */
 function eventHub(display: unknown): string {
@@ -48,7 +49,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const patch: Record<string, unknown> = {};
   if (typeof b.title === "string" && b.title.trim()) patch.title = b.title.trim();
-  if (typeof b.capacity === "number") patch.capacity = Math.max(0, b.capacity);
+  if ("capacity" in b) {
+    const capacity = eventCapacity(b.capacity);
+    if (capacity == null) {
+      return NextResponse.json({ ok: false, reason: "bad_capacity" }, { status: 422 });
+    }
+    patch.capacity = capacity;
+  }
   if (typeof b.date_iso === "string" || b.date_iso === null) patch.date_iso = b.date_iso ? String(b.date_iso).slice(0, 40) : null;
   // Pricing mode can be changed while a submission is pending/draft. Once live,
   // changing free ↔ paid would invalidate existing orders and ticket tiers.
