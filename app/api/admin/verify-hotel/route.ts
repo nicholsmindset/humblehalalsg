@@ -17,7 +17,15 @@ export async function POST(req: Request) {
   if (!id) return NextResponse.json({ ok: false, error: "Missing hotel id" }, { status: 422 });
 
   const flags: HotelFlags = { ...EMPTY_FLAGS, ...(body.flags || {}) };
-  const score = body.halal_score != null ? Math.max(0, Math.min(100, Number(body.halal_score))) : hotelHalalScore(flags);
+  const suppliedScore = body.halal_score != null ? Number(body.halal_score) : null;
+  if (suppliedScore != null && !Number.isFinite(suppliedScore)) {
+    return NextResponse.json({ ok: false, error: "Invalid halal score" }, { status: 422 });
+  }
+  const mosqueDistance = body.near_mosque_m != null ? Number(body.near_mosque_m) : null;
+  if (mosqueDistance != null && (!Number.isFinite(mosqueDistance) || mosqueDistance < 0)) {
+    return NextResponse.json({ ok: false, error: "Invalid mosque distance" }, { status: 422 });
+  }
+  const score = suppliedScore != null ? Math.max(0, Math.min(100, suppliedScore)) : hotelHalalScore(flags);
 
   const admin = getSupabaseAdmin()!;
   const { error } = await admin.from("muslim_friendly_hotels").upsert({
@@ -31,7 +39,7 @@ export async function POST(req: Request) {
     women_only_facilities: flags.women_only_facilities,
     qibla_direction: flags.qibla_direction,
     prayer_mat_available: flags.prayer_mat_available,
-    near_mosque_m: body.near_mosque_m != null ? Number(body.near_mosque_m) : null,
+    near_mosque_m: mosqueDistance,
     halal_score: score,
     verified_by: "ustaz",
     source_notes: body.source_notes || null,
