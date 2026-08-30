@@ -3,7 +3,7 @@ import "server-only";
 // model strings; graceful by design — when no gateway key/OIDC is present, the
 // helpers return null and callers fall back (matching the project's mock-mode
 // convention). Never let an AI call throw into a route.
-import { generateText, generateObject } from "ai";
+import { generateText, generateObject, NoObjectGeneratedError } from "ai";
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import type { z } from "zod";
 
@@ -36,6 +36,28 @@ export function gatewayProviderOptions(feature: AiFeature): ProviderOptions {
   };
 }
 
+function recoverGeneratedObject<T>(schema: z.ZodSchema<T>, text: string | undefined): T | null {
+  if (!text) return null;
+  const withoutFence = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const firstBrace = withoutFence.indexOf("{");
+  const lastBrace = withoutFence.lastIndexOf("}");
+  const candidates = [
+    withoutFence,
+    firstBrace >= 0 && lastBrace > firstBrace ? withoutFence.slice(firstBrace, lastBrace + 1) : "",
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const result = schema.safeParse(JSON.parse(candidate));
+      if (result.success) return result.data;
+    } catch {
+      // Try the next bounded JSON candidate, then use the caller's deterministic fallback.
+    }
+  }
+  return null;
+}
+
 /** Structured generation. Returns the validated object, or null on no-config / error. */
 export async function aiObject<T>(
   schema: z.ZodSchema<T>,
@@ -51,7 +73,12 @@ export async function aiObject<T>(
       prompt: opts.prompt ?? "",
     });
     return object;
-  } catch {
+  } catch (error) {
+    // Some free-tier models return valid JSON as text but do not advertise native
+    // structured-output support. Recover only schema-valid JSON; never trust raw text.
+    if (NoObjectGeneratedError.isInstance(error)) {
+      return recoverGeneratedObject(schema, error.text);
+    }
     return null;
   }
 }
