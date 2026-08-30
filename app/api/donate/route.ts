@@ -24,8 +24,8 @@ export async function POST(req: Request) {
   let body: { eventId?: string; amountCents?: number; name?: string; anonymous?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 }); }
 
-  const amountCents = Math.round(Number(body.amountCents) || 0);
-  if (!(amountCents >= MIN_CENTS && amountCents <= MAX_CENTS)) {
+  const amountCents = body.amountCents;
+  if (typeof amountCents !== "number" || !Number.isSafeInteger(amountCents) || amountCents < MIN_CENTS || amountCents > MAX_CENTS) {
     return NextResponse.json({ ok: false, reason: "bad_amount" }, { status: 422 });
   }
 
