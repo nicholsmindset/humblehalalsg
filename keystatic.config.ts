@@ -50,6 +50,11 @@ export default config({
       slugField: "title",
       path: "content/posts/*",
       entryLayout: "content",
+      previewUrl: "/blog/{slug}",
+      // Keep the editorial state visible from the collection screen. Keystatic
+      // supports sortable scalar columns here; the visual thumbnail schedule is
+      // linked from the CMS shell because image fields render as paths in tables.
+      columns: ["title", "status", "datePublished", "category", "image"],
       schema: {
         title: fields.slug({ name: { label: "Title", ...required } }),
         status: fields.select({

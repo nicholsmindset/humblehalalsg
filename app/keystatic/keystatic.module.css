@@ -1,0 +1,38 @@
+.editorialOverview {
+  position: fixed;
+  right: 22px;
+  bottom: 20px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: #12525b;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  font: 700 14px/1 system-ui, sans-serif;
+  text-decoration: none;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.editorialOverview:hover {
+  background: #0d444b;
+  transform: translateY(-1px);
+}
+
+.editorialOverview:focus-visible {
+  outline: 3px solid #e7b66d;
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .editorialOverview {
+    right: 12px;
+    bottom: 12px;
+    padding-inline: 13px;
+    font-size: 13px;
+  }
+}

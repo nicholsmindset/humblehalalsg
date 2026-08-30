@@ -158,5 +158,95 @@
     "note": "programmatic on-brand cover; no photo to avoid misrepresenting deen/service content",
     "rightsConfirmed": true,
     "updatedAt": "2026-07-18"
+  },
+  {
+    "slug": "halal-desserts-singapore-guide",
+    "url": "/blog/halal-desserts-singapore-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-mooncake-singapore",
+    "url": "/blog/halal-mooncake-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-vietnamese-food-singapore",
+    "url": "/blog/halal-vietnamese-food-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-peranakan-food-singapore",
+    "url": "/blog/halal-peranakan-food-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-cake-delivery-singapore",
+    "url": "/blog/halal-cake-delivery-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-food-delivery-singapore",
+    "url": "/blog/halal-food-delivery-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-meat-singapore-guide",
+    "url": "/blog/halal-meat-singapore-guide.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-snacks-singapore",
+    "url": "/blog/halal-snacks-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-ice-cream-singapore",
+    "url": "/blog/halal-ice-cream-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-chocolate-singapore",
+    "url": "/blog/halal-chocolate-singapore.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "on-brand editorial food still life; no text, logo, people, pork, alcohol, or religious imagery",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-08-30"
   }
 ]
