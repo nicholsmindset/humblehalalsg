@@ -43,3 +43,28 @@ export function mapArea(i: string | null | undefined): string | null {
 export function postalFrom(postal?: string | null, addr?: string | null): string | null {
   return (String(postal || "").match(/\b(\d{6})\b/) || String(addr || "").match(/\b(\d{6})\b/) || [])[1] || null;
 }
+
+export type ImportCoordinates =
+  | { ok: true; lat: number | null; lng: number | null }
+  | { ok: false; reason: string };
+
+/** Coordinates are optional, but a supplied location must be a complete,
+ * finite latitude/longitude pair within the bounds accepted by map clients. */
+export function parseImportCoordinates(latInput: string, lngInput: string): ImportCoordinates {
+  const latRaw = latInput.trim();
+  const lngRaw = lngInput.trim();
+
+  if (!latRaw && !lngRaw) return { ok: true, lat: null, lng: null };
+  if (!latRaw || !lngRaw) return { ok: false, reason: "lat and lng must be provided together" };
+
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return { ok: false, reason: "lat/lng must be finite numbers" };
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return { ok: false, reason: "lat/lng are outside valid coordinate ranges" };
+  }
+
+  return { ok: true, lat, lng };
+}

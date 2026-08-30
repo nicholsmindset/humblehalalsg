@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { slugify } from "@/lib/slug";
-import { mapCat, mapHalalHint, mapArea, postalFrom } from "@/lib/import-mapping";
+import { mapCat, mapHalalHint, mapArea, parseImportCoordinates, postalFrom } from "@/lib/import-mapping";
 import { parseCsv } from "@/lib/csv";
 
 /* Admin bulk import: CSV (paste or file text) → staging_businesses rows with
@@ -83,11 +83,11 @@ export async function POST(req: Request) {
 
     const postal = postalFrom(cell(r, "postal"), cell(r, "address"));
     if (cell(r, "postal") && !postal) { report.push({ row: rowNo, name, status: "error", reason: "postal must be 6 digits" }); return; }
-    const lat = cell(r, "lat") ? Number(cell(r, "lat")) : null;
-    const lng = cell(r, "lng") ? Number(cell(r, "lng")) : null;
-    if ((lat != null && Number.isNaN(lat)) || (lng != null && Number.isNaN(lng))) {
-      report.push({ row: rowNo, name, status: "error", reason: "lat/lng must be numbers" }); return;
+    const coordinates = parseImportCoordinates(cell(r, "lat"), cell(r, "lng"));
+    if (!coordinates.ok) {
+      report.push({ row: rowNo, name, status: "error", reason: coordinates.reason }); return;
     }
+    const { lat, lng } = coordinates;
     const website = cell(r, "website");
     if (website && !/^https?:\/\//i.test(website)) {
       report.push({ row: rowNo, name, status: "error", reason: "website must start with http(s)://" }); return;
