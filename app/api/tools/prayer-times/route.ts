@@ -11,12 +11,23 @@ const PRAYER_TIMES_FOR_LOCATION_HEADERS = {
 
 export async function GET(request: Request) {
   const sp = new URL(request.url).searchParams;
-  const lat = Number(sp.get("lat"));
-  const lng = Number(sp.get("lng"));
+  const latParam = sp.get("lat");
+  const lngParam = sp.get("lng");
+  const lat = Number(latParam);
+  const lng = Number(lngParam);
   const method = Number(sp.get("method"));
   const date = sp.get("date");
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+  if (
+    !latParam?.trim()
+    || !lngParam?.trim()
+    || !Number.isFinite(lat)
+    || !Number.isFinite(lng)
+    || lat < -90
+    || lat > 90
+    || lng < -180
+    || lng > 180
+  ) {
     return NextResponse.json({ ok: false, error: "invalid_coords" }, { status: 400 });
   }
   if (date !== null && !aladhanDatePath(date)) {
