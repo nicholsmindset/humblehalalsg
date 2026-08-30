@@ -7,19 +7,20 @@ function pad(n: number) {
 
 /** Parse "4:00 PM – 11:00 PM" → { start: "16:00", end: "23:00" }. */
 function parseTimes(timeLabel: string): { start: string; end: string } {
-  const to24 = (t: string): string => {
-    const m = t.trim().match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-    if (!m) return "09:00";
+  const to24 = (t: string): string | null => {
+    const m = t.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (!m) return null;
     let h = parseInt(m[1], 10);
     const min = m[2] ? parseInt(m[2], 10) : 0;
     const ap = m[3]?.toUpperCase();
+    if (min > 59 || (ap ? h < 1 || h > 12 : h > 23)) return null;
     if (ap === "PM" && h < 12) h += 12;
     if (ap === "AM" && h === 12) h = 0;
     return `${pad(h)}:${pad(min)}`;
   };
   const parts = timeLabel.split(/[–-]/);
-  const start = to24(parts[0] || "09:00");
-  const end = to24(parts[1] || parts[0] || "10:00");
+  const start = to24(parts[0] || "") ?? "09:00";
+  const end = to24(parts[1] || parts[0] || "") ?? "10:00";
   return { start, end };
 }
 
