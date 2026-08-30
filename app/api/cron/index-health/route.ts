@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   const issues: string[] = [];
   try {
     const robots = await fetch(`${base}/robots.txt`, { cache: "no-store" }).then((r) => r.text()).catch(() => "");
-    if (!/User-Agent:\s*\*/i.test(robots) || !/Allow:\s*\//i.test(robots)) {
+    if (!/^User-Agent:\s*\*/im.test(robots) || !/^Allow:\s*\//im.test(robots)) {
       issues.push("robots.txt no longer allows public crawlers");
     }
     const sm = await fetch(`${base}/sitemap.xml`, { cache: "no-store" });
