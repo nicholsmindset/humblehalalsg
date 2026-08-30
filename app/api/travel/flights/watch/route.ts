@@ -7,7 +7,14 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    Requires a signed-in user and ALWAYS uses the session email (never an arbitrary
    address from the body) so the alerts can't be used to email-bomb third parties.
    Upserts on (email, origin, destination, date). Graceful without Supabase. */
+const IATA_CODE = /^[A-Z]{3}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isCalendarDate(value: string): boolean {
+  if (!DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "fare-watch", 15, 60); if (!rl.ok) return tooMany(rl.retryAfter);
@@ -16,8 +23,13 @@ export async function POST(req: Request) {
   const destination = String(body.destination || "").trim().toUpperCase();
   const date = String(body.date || "").trim();
   const currency = String(body.currency || "SGD").toUpperCase().slice(0, 3);
-  const price = body.price != null && Number.isFinite(Number(body.price)) ? Number(body.price) : null;
-  if (origin.length < 3 || destination.length < 3 || !DATE.test(date)) return NextResponse.json({ ok: false, error: "Pick a route and date first" }, { status: 422 });
+  const price = body.price == null ? null : Number(body.price);
+  if (!IATA_CODE.test(origin) || !IATA_CODE.test(destination) || !isCalendarDate(date)) {
+    return NextResponse.json({ ok: false, error: "Pick a valid route and date" }, { status: 422 });
+  }
+  if (price != null && (!Number.isFinite(price) || price <= 0)) {
+    return NextResponse.json({ ok: false, error: "Price must be greater than zero" }, { status: 422 });
+  }
 
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: true, simulated: true });
