@@ -3,7 +3,7 @@
    Built per-request so it knows today's date (relative-date resolution). The UIMessage
    type is inferred from a stable typing instance — safe to `import type` on the client. */
 import { ToolLoopAgent, type InferAgentUIMessage } from "ai";
-import { AI_MODEL } from "@/lib/ai";
+import { AI_MODEL, gatewayProviderOptions } from "@/lib/ai";
 import { searchHotels, searchFlights } from "./tools";
 
 const TOOLS = { searchHotels, searchFlights };
@@ -31,10 +31,20 @@ function instructions(today: string): string {
 }
 
 /** Stable instance purely for inferring the UIMessage type (tools fix the shape). */
-const typingAgent = new ToolLoopAgent({ model: AI_MODEL, instructions: "", tools: TOOLS });
+const typingAgent = new ToolLoopAgent({
+  model: AI_MODEL,
+  instructions: "",
+  tools: TOOLS,
+  providerOptions: gatewayProviderOptions("travel-chat"),
+});
 export type TravelConciergeUIMessage = InferAgentUIMessage<typeof typingAgent>;
 
 /** Build a request-scoped concierge that knows today's date. */
 export function buildTravelConcierge(today: string) {
-  return new ToolLoopAgent({ model: AI_MODEL, instructions: instructions(today), tools: TOOLS });
+  return new ToolLoopAgent({
+    model: AI_MODEL,
+    instructions: instructions(today),
+    tools: TOOLS,
+    providerOptions: gatewayProviderOptions("travel-chat"),
+  });
 }

@@ -36,6 +36,7 @@ export async function GET(req: Request) {
     let flagged = 0;
     for (const r of (pending || []) as { id: string; text: string }[]) {
       const verdict = await aiObject(Verdict, {
+        feature: "review-triage",
         model: AI_MODEL_FAST,
         system: SYSTEM,
         prompt: `Review:\n"""${(r.text || "").slice(0, 1500)}"""`,

@@ -45,6 +45,7 @@ export async function POST(req: Request) {
   };
 
   const generated = await aiObject(EnrichmentSchema, {
+    feature: "admin-enrichment",
     model: AI_MODEL_FAST, // rewrite/SEO — the fast model is plenty and cheaper
     system: ENRICH_SYSTEM_PROMPT,
     prompt: enrichUserPrompt(source_input),

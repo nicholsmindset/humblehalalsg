@@ -69,7 +69,11 @@ async function overlayGroundedAnswer(hotelId: string, q: string): Promise<string
     "ONLY from the FACTS (a human-verified halal overlay + nearby mosques/halal food). " +
     "Be concise (1–3 sentences), honest, never invent amenities; if a fact isn't " +
     "present, say it isn't confirmed and suggest contacting the hotel.";
-  const answer = await aiText({ system, prompt: `FACTS (JSON):\n${JSON.stringify(facts)}\n\nQUESTION: ${q}` });
+  const answer = await aiText({
+    feature: "travel-question",
+    system,
+    prompt: `FACTS (JSON):\n${JSON.stringify(facts)}\n\nQUESTION: ${q}`,
+  });
   return answer || flagSummary(facts);
 }
 
