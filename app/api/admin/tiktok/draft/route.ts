@@ -56,6 +56,7 @@ export async function POST(req: Request) {
   if (!aiConfigured) return NextResponse.json({ ok: false, error: "ai_not_configured" }, { status: 503 });
 
   const generated = await aiObject(TiktokSchema, {
+    feature: "tiktok-draft",
     model: AI_MODEL_FAST,
     system: TIKTOK_SYSTEM_PROMPT,
     prompt: tiktokUserPrompt({ url: String(sub.url), handle: sub.handle as string, note: sub.note as string, claimedBusinessName: claimedName, candidates }),

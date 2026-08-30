@@ -24,6 +24,7 @@ export async function generateVerdictRow(input: VerdictDraftInput): Promise<Reco
   if (!aiConfigured) return null;
 
   const content = await aiObject(VerdictSchema, {
+    feature: "verdict-draft",
     model: AI_MODEL, // stronger model — verdicts need careful reasoning
     system: VERDICT_SYSTEM_PROMPT,
     prompt: verdictUserPrompt(input),

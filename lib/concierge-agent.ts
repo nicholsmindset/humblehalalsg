@@ -6,7 +6,7 @@ import "server-only";
    certification. Travel tools are intentionally excluded for launch. */
 import { ToolLoopAgent, tool, type InferAgentUIMessage } from "ai";
 import { z } from "zod";
-import { AI_MODEL } from "@/lib/ai";
+import { AI_MODEL, gatewayProviderOptions } from "@/lib/ai";
 import { getDirectory } from "@/lib/directory";
 import { scoreListing } from "@/lib/halal-score";
 import type { Listing } from "@/lib/types";
@@ -93,9 +93,19 @@ const INSTRUCTIONS = [
 ].join("\n");
 
 /** Stable instance purely for inferring the UIMessage type (tools fix the shape). */
-const typingAgent = new ToolLoopAgent({ model: AI_MODEL, instructions: "", tools: TOOLS });
+const typingAgent = new ToolLoopAgent({
+  model: AI_MODEL,
+  instructions: "",
+  tools: TOOLS,
+  providerOptions: gatewayProviderOptions("concierge"),
+});
 export type ConciergeUIMessage = InferAgentUIMessage<typeof typingAgent>;
 
 export function buildConcierge() {
-  return new ToolLoopAgent({ model: AI_MODEL, instructions: INSTRUCTIONS, tools: TOOLS });
+  return new ToolLoopAgent({
+    model: AI_MODEL,
+    instructions: INSTRUCTIONS,
+    tools: TOOLS,
+    providerOptions: gatewayProviderOptions("concierge"),
+  });
 }

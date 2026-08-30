@@ -141,6 +141,7 @@ export async function POST(req: Request) {
       constraints: z.array(z.enum(FLAG_KEYS)).default([]),
     });
     const out = await aiObject(Intent, {
+      feature: "travel-hotel-search",
       model: AI_MODEL_FAST,
       system:
         `You are the Humble Halal travel concierge. Today is ${today}. Extract a hotel-search ` +

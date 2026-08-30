@@ -102,6 +102,7 @@ export async function POST(req: Request) {
         .max(4),
     });
     const out = await aiObject(Schema, {
+      feature: "travel-highlights",
       model: AI_MODEL_FAST,
       system:
         "You write hotel highlights FOR A MUSLIM TRAVELLER using ONLY the provided facts — never " +

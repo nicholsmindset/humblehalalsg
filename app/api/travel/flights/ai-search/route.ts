@@ -107,6 +107,7 @@ export async function POST(req: Request) {
       nonStop: z.boolean().default(false),
     });
     const out = await aiObject(Intent, {
+      feature: "travel-flight-search",
       model: AI_MODEL_FAST,
       system:
         `You are the Humble Halal travel concierge. Today is ${today}. Extract a flight-search intent. ` +

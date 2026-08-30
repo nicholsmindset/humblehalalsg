@@ -77,6 +77,7 @@ export async function POST(req: Request) {
   });
 
   const out = await aiObject(Answer, {
+    feature: "concierge",
     system:
       "You are the Humble Halal concierge for Singapore. Recommend ONLY from the " +
       "provided listings (by slug) — never invent places. Never assert a place is " +
