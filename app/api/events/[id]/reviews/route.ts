@@ -46,7 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const rating = Number(b.rating);
   const text = String(b.text || "").trim().slice(0, TEXT_MAX);
-  if (!(rating >= 1 && rating <= 5)) return NextResponse.json({ ok: false, error: "Add a rating (1–5)." }, { status: 422 });
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return NextResponse.json({ ok: false, error: "Add a rating (1–5)." }, { status: 422 });
 
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: true, simulated: true });
