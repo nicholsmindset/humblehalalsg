@@ -218,7 +218,9 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
         .filter((p) => !p.noindex) // per-post noindex override drops it from the sitemap too
         .map((p) => ({
           loc: `${base}/blog/${p.slug}`,
-          lastmod: new Date(p.dateModified || p.datePublished).toISOString(),
+          // CMS content is editable outside the application. Keep one malformed
+          // date from throwing and making the entire blog sitemap unavailable.
+          lastmod: sitemapDate(p.dateModified || p.datePublished),
           changefreq: "monthly",
           priority: 0.7,
           image: p.image || undefined,
