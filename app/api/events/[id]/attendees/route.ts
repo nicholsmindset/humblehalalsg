@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { csvCell } from "@/lib/csv";
 
 /* Organiser attendee roster for an event (orders + ticket check-in status).
    Owner/admin only. ?format=csv streams a spreadsheet for the door list. */
@@ -22,8 +23,6 @@ async function authorize(eventId: string) {
   if (!ok) return { error: NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 }) };
   return { admin, ev };
 }
-
-const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
