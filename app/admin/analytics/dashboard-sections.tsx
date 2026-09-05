@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { fmt, pct, LEAD_LABELS } from "@/lib/analytics-dashboard";
+import { csvCell } from "@/lib/csv";
 
 // ---- row types (RPC return shapes from 0045_analytics_v2.sql) --------------
 
@@ -77,11 +78,6 @@ export const sgd = (cents: number | null | undefined) => {
 };
 
 // ---- CSV export -------------------------------------------------------------
-
-const csvCell = (v: unknown): string => {
-  const s = v == null ? "" : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 
 /** Client-side CSV download. Headers come from the first row's keys. */
 export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
