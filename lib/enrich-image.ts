@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { extForType, sniffAllowed } from "@/lib/file-sniff";
 
 /* Listing image enrichment (Phase 2 upscale + Phase 3 real-photo acquisition).
    Phase 3: find a real photo for a business via Firecrawl (its own site first,
@@ -12,6 +13,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUCKET = "business-photos";
 const IMG_RE = /^https:\/\/.+\.(jpe?g|png|webp)/i;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export const firecrawlConfigured = !!process.env.FIRECRAWL_API_KEY;
 export const falConfigured = !!process.env.FAL_KEY;
@@ -87,12 +90,30 @@ export async function rehostImage(sb: SupabaseClient, slug: string, imageUrl: st
     }
     const resp = await fetch(imageUrl);
     if (!resp.ok) return null;
-    const buf = Buffer.from(await resp.arrayBuffer());
+    const declaredLength = Number(resp.headers.get("content-length"));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_IMAGE_BYTES) return null;
+    if (!resp.body) return null;
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    const reader = resp.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_IMAGE_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+    const buf = Buffer.concat(chunks, total);
     if (buf.length < 3000) return null; // too small to be a real photo
-    const ext = (imageUrl.match(/\.(jpe?g|png|webp)/i)?.[0] || ".jpg").replace(".jpeg", ".jpg").toLowerCase();
+    const sniffed = sniffAllowed(buf, ALLOWED_IMAGE_TYPES);
+    if (!sniffed) return null;
+    const ext = `.${extForType(sniffed)}`;
     const path = `${slug}${suffix}${ext}`;
-    const contentType = `image/${ext.slice(1).replace("jpg", "jpeg")}`;
-    const up = await sb.storage.from(BUCKET).upload(path, buf, { contentType, upsert: true });
+    const up = await sb.storage.from(BUCKET).upload(path, buf, { contentType: sniffed, upsert: true });
     if (up.error) return null;
     return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   } catch { return null; }
