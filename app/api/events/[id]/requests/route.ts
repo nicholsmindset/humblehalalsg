@@ -91,7 +91,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ ok: true, action: "declined" });
   }
 
-  // approve → confirm the order, issue tickets, bump taken
+  // approve → claim the pending order, reserve capacity, then issue tickets.
   const { data: currentEvent } = await admin.from("events").select("capacity, taken").eq("id", ev.id).maybeSingle();
   const capacity = Number(currentEvent?.capacity ?? ev.capacity) || 0;
   const taken = Number(currentEvent?.taken ?? ev.taken) || 0;
@@ -99,21 +99,41 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const left = Math.max(0, capacity - taken);
     return NextResponse.json({ ok: false, reason: left > 0 ? "insufficient_capacity" : "sold_out", left }, { status: 409 });
   }
-  const { error: uErr } = await admin.from("orders").update({ status: "confirmed" }).eq("id", orderId).eq("status", "pending");
+  // The conditional update is also the approval claim: only one concurrent
+  // request can move this order out of pending and continue.
+  const { data: claimed, error: uErr } = await admin.from("orders")
+    .update({ status: "confirmed" }).eq("id", orderId).eq("status", "pending")
+    .select("id").maybeSingle();
   if (uErr) return NextResponse.json({ ok: false, reason: "update_failed" }, { status: 500 });
+  if (!claimed) return NextResponse.json({ ok: false, reason: "not_a_pending_request" }, { status: 409 });
+
+  // The read-check above improves the error detail, but cannot prevent two
+  // different requests from passing simultaneously. Reserve in the database so
+  // the capacity check and increment happen atomically.
+  const { data: gotSeats, error: reserveErr } = await admin.rpc("reserve_event_capacity", { p_event_id: ev.id, p_qty: qty });
+  if (reserveErr) {
+    await admin.from("orders").update({ status: "pending" }).eq("id", orderId).eq("status", "confirmed");
+    return NextResponse.json({ ok: false, reason: "capacity_check_failed" }, { status: 500 });
+  }
+  if (gotSeats !== true) {
+    await admin.from("orders").update({ status: "pending" }).eq("id", orderId).eq("status", "confirmed");
+    return NextResponse.json({ ok: false, reason: "sold_out", left: 0 }, { status: 409 });
+  }
+  const rollBackApproval = async () => {
+    await admin.rpc("decrement_event_taken", { p_event_id: ev.id, p_qty: qty });
+    await admin.from("orders").update({ status: "pending" }).eq("id", orderId).eq("status", "confirmed");
+  };
   // Human-friendly qr_refs (lib/ticket-ref) — same format as direct RSVPs.
   let approvedRef = makeOrderRef("RSVP");
   for (let attempt = 0; attempt < 3; attempt++) {
     const tix = ticketRefs(approvedRef, qty).map((qr) => ({ order_id: orderId, event_id: ev.id, tier: "RSVP", qr_ref: qr }));
     const { error: tixErr } = await admin.from("tickets").insert(tix);
     if (!tixErr) break;
-    if (tixErr.code !== "23505" || attempt === 2) return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    if (tixErr.code !== "23505" || attempt === 2) {
+      await rollBackApproval();
+      return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    }
     approvedRef = makeOrderRef("RSVP");
-  }
-  const { error: incErr } = await admin.rpc("increment_event_taken", { p_event_id: ev.id, p_qty: qty });
-  if (incErr) {
-    const { data: e2 } = await admin.from("events").select("taken").eq("id", ev.id).maybeSingle();
-    await admin.from("events").update({ taken: (Number(e2?.taken) || 0) + qty }).eq("id", ev.id);
   }
   if (buyerEmail) {
     const { subject, html } = joinApprovedEmail({ eventTitle: ev.title });
