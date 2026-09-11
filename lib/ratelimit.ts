@@ -44,8 +44,15 @@ function memHit(key: string, limit: number, windowSec: number): boolean {
 async function redisHit(key: string, limit: number, windowSec: number, failClosed: boolean, bucket: string): Promise<boolean> {
   try {
     const inc = await fetch(`${REST_URL}/incr/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
-    const n = Number((await inc.json())?.result || 0);
-    if (n === 1) await fetch(`${REST_URL}/expire/${encodeURIComponent(key)}/${windowSec}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
+    if (!inc.ok) throw new Error(`Upstash INCR failed with ${inc.status}`);
+    const n = Number((await inc.json())?.result);
+    // Never interpret an upstream error payload as count zero. That would let
+    // fail-closed paid/LLM buckets silently become unlimited during an outage.
+    if (!Number.isSafeInteger(n) || n < 1) throw new Error("Upstash INCR returned an invalid count");
+    if (n === 1) {
+      const expire = await fetch(`${REST_URL}/expire/${encodeURIComponent(key)}/${windowSec}`, { headers: { Authorization: `Bearer ${REST_TOKEN}` }, cache: "no-store" });
+      if (!expire.ok) throw new Error(`Upstash EXPIRE failed with ${expire.status}`);
+    }
     // Flood signal: fire ONCE per window per key when abuse is 5× the limit, so a
     // sustained per-IP flood pages us (Sentry no-ops until a DSN is set).
     if (n === limit * 5) {
