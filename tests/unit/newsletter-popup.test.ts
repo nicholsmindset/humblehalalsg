@@ -27,6 +27,10 @@ describe("newsletter popup frequency", () => {
     expect(newsletterPopupHandled("dismissed:nope", now)).toBe(false);
   });
 
+  it("re-enables dismissals timestamped in the future", () => {
+    expect(newsletterPopupHandled(`dismissed:${now + 1}`, now)).toBe(false);
+  });
+
   it("stores dismissals with a timestamp", () => {
     expect(newsletterPopupStoreValue("dismissed", now)).toBe(`dismissed:${now}`);
     expect(newsletterPopupStoreValue("subscribed", now)).toBe("subscribed");
