@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   // proceeds, so two concurrent clicks can't both fire a Stripe refund.
   const { data: claimed } = await admin
     .from("orders").update({ status: "refunded" })
-    .eq("id", orderId).neq("status", "refunded")
+    .eq("id", orderId).eq("status", "confirmed")
     .select("id");
   if (!claimed?.length) return NextResponse.json({ ok: true, already: true });
 
