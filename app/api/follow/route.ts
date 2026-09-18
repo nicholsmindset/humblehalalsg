@@ -20,10 +20,14 @@ export async function POST(req: Request) {
   if (!businessId) return NextResponse.json({ ok: false, reason: "no_business" }, { status: 422 });
   const follow = b.follow !== false;
 
-  if (follow) {
-    await server.from("organizer_follows").upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id" });
-  } else {
-    await server.from("organizer_follows").delete().eq("user_id", userId).eq("business_id", businessId);
+  const { error } = follow
+    ? await server.from("organizer_follows").upsert(
+        { user_id: userId, business_id: businessId },
+        { onConflict: "user_id,business_id" },
+      )
+    : await server.from("organizer_follows").delete().eq("user_id", userId).eq("business_id", businessId);
+  if (error) {
+    return NextResponse.json({ ok: false, reason: "could_not_update" }, { status: 502 });
   }
 
   // Halal Passport: award once per business followed (dedupe = no toggle farming;
