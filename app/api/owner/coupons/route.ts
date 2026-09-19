@@ -96,12 +96,14 @@ export async function PATCH(req: Request) {
   const biz = await ownedBusiness(db, String(existing.business_id), userId);
   if (!biz) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (body.action === "pause") {
-    await db.from("business_promotions").update({ status: "paused" }).eq("id", existing.id);
+    const { error } = await db.from("business_promotions").update({ status: "paused" }).eq("id", existing.id);
+    if (error) return NextResponse.json({ ok: false, error: "save_failed" }, { status: 500 });
     revalidatePublic(["/deals", `/business/${biz.slug}`]);
     return NextResponse.json({ ok: true, status: "paused" });
   }
   if (body.action === "resume") {
-    await db.from("business_promotions").update({ status: "pending", rejection_reason: null }).eq("id", existing.id);
+    const { error } = await db.from("business_promotions").update({ status: "pending", rejection_reason: null }).eq("id", existing.id);
+    if (error) return NextResponse.json({ ok: false, error: "save_failed" }, { status: 500 });
     return NextResponse.json({ ok: true, status: "pending" });
   }
   const p = fields(body); const invalid = validate(p);
@@ -120,9 +122,11 @@ export async function DELETE(req: Request) {
   if (!data || !(await ownedBusiness(db, String(data.business_id), userId))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const { count } = await db.from("coupon_redemptions").select("id", { count: "exact", head: true }).eq("promotion_id", id);
   if ((count || 0) > 0) {
-    await db.from("business_promotions").update({ status: "paused" }).eq("id", id);
+    const { error } = await db.from("business_promotions").update({ status: "paused" }).eq("id", id);
+    if (error) return NextResponse.json({ ok: false, error: "save_failed" }, { status: 500 });
     return NextResponse.json({ ok: true, archived: true });
   }
-  await db.from("business_promotions").delete().eq("id", id);
+  const { error } = await db.from("business_promotions").delete().eq("id", id);
+  if (error) return NextResponse.json({ ok: false, error: "save_failed" }, { status: 500 });
   return NextResponse.json({ ok: true, deleted: true });
 }
