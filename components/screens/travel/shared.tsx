@@ -125,16 +125,28 @@ export function PlaceAutocomplete({ cities, value, onPick }: { cities: TravelHub
   const [open, setOpen] = useState(false);
   const [places, setPlaces] = useState<{ placeId: string; name: string; address: string }[]>([]);
   useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) return;
+
+    const controller = new AbortController();
+    let active = true;
     const t = setTimeout(async () => {
-      if (q.trim().length < 2) { setPlaces([]); return; }
-      try { const r = await fetch(`/api/travel/places?q=${encodeURIComponent(q)}`); const d = await r.json(); if (d.ok) setPlaces(d.places || []); } catch { /* ignore */ }
+      try {
+        const r = await fetch(`/api/travel/places?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+        const d = await r.json();
+        if (active && d.ok) setPlaces(d.places || []);
+      } catch { /* Network and aborted requests leave the current suggestions intact. */ }
     }, 250);
-    return () => clearTimeout(t);
+    return () => {
+      active = false;
+      clearTimeout(t);
+      controller.abort();
+    };
   }, [q]);
   const curated = cities.filter((c) => `${c.name} ${c.country}`.toLowerCase().includes(q.toLowerCase())).slice(0, 4);
   return (
     <div className="ac">
-      <input value={q} placeholder="City, landmark…" onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
+      <input value={q} placeholder="City, landmark…" onChange={(e) => { const next = e.target.value; setQ(next); if (next.trim().length < 2) setPlaces([]); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
       {open && q.trim().length >= 2 && (curated.length > 0 || places.length > 0) && (
         <div className="ac-list">
           {curated.map((c) => (
