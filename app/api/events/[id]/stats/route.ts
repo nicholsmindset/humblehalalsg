@@ -44,12 +44,27 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!a.ok) return a.res;
   const { admin, ev } = a;
 
-  const { data: orders } = await admin
-    .from("orders")
-    .select("id, qty, amount_cents, fee_cents, net_cents, status, payout_status, payout_due, created_at")
-    .eq("event_id", ev.id).limit(10000);
-  const { data: tix } = await admin.from("tickets").select("tier, status").eq("event_id", ev.id).limit(10000);
-  const { data: tierOptions } = await admin.from("ticket_tiers").select("id, name, price_cents, qty, sold").eq("event_id", ev.id).order("price_cents");
+  const [ordersResult, ticketsResult, tiersResult] = await Promise.all([
+    admin
+      .from("orders")
+      .select("id, qty, amount_cents, fee_cents, net_cents, status, payout_status, payout_due, created_at")
+      .eq("event_id", ev.id)
+      .limit(10000),
+    admin.from("tickets").select("tier, status").eq("event_id", ev.id).limit(10000),
+    admin.from("ticket_tiers").select("id, name, price_cents, qty, sold").eq("event_id", ev.id).order("price_cents"),
+  ]);
+  if (ordersResult.error || ticketsResult.error || tiersResult.error) {
+    console.error("[event-stats] stats query failed", {
+      orders: ordersResult.error?.message,
+      tickets: ticketsResult.error?.message,
+      tiers: tiersResult.error?.message,
+    });
+    return NextResponse.json({ ok: false, reason: "query_failed" }, { status: 502 });
+  }
+
+  const orders = ordersResult.data;
+  const tix = ticketsResult.data;
+  const tierOptions = tiersResult.data;
 
   const ords = orders || [];
   const confirmed = ords.filter((o) => o.status === "confirmed");
