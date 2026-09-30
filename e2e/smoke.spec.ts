@@ -1,32 +1,21 @@
 import { test, expect } from "@playwright/test";
 
-/* Smoke: the critical user flows that must never break — search → business →
-   real contact action, plus the key SEO surfaces render. */
+/* Smoke: the publication's guides and tools remain usable, while retired
+   directory and checkout routes return a real gone response. */
 
 test("home renders key sections", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/Humble Halal/);
-  // Unique h2 section headings (avoid footer text collisions under strict mode).
-  await expect(page.getByRole("heading", { name: "Discover halal places" })).toBeVisible();
-  // 3-hub entry row (replaced the old "Why Humble Halal" pillars band).
-  await expect(page.getByRole("heading", { name: "Food. Weddings & catering. Business." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Good guidance for the way you live." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What would you like to explore?" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore tools" })).toBeVisible();
+  await expect(page.getByText("Configure your application")).toHaveCount(0);
 });
 
-test("business detail has real contact actions", async ({ page }) => {
-  // Integration test: needs a seeded Supabase directory (a real business with a
-  // phone + coordinates). Skipped when the backend isn't wired into CI.
-  test.skip(!process.env.NEXT_PUBLIC_SUPABASE_URL, "requires a seeded Supabase directory");
-  await page.goto("/business/atrium-restaurant");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Atrium Restaurant");
-  await expect(page.getByRole("link", { name: /Call/i }).first()).toHaveAttribute("href", /^tel:/);
-  await expect(page.getByRole("link", { name: /Directions/i }).first()).toHaveAttribute("href", /google\.com\/maps/);
-});
-
-test("explore lists results", async ({ page }) => {
-  await page.goto("/explore");
-  // The results count, e.g. "73 places" — digit-prefixed so it doesn't collide
-  // with footer links like "Saved places" / "Suggest a place".
-  await expect(page.getByText(/\d+\s+places?\b/).first()).toBeVisible();
+test("retired features return 410", async ({ request }) => {
+  for (const path of ["/explore", "/hawker", "/events", "/pricing", "/business/atrium-restaurant", "/api/checkout/plan"]) {
+    expect((await request.get(path)).status(), path).toBe(410);
+  }
 });
 
 test("is-halal brand page renders an answer", async ({ page }) => {

@@ -21,7 +21,7 @@ import "../styles/travel.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
 import "../styles/ads.css";
-import { ClerkProvider } from "@clerk/nextjs";
+import { AdminClerkBoundary } from "@/components/admin-clerk-boundary";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
@@ -177,13 +177,7 @@ export default async function RootLayout({
     <html lang="en" className={fontVars}>
       <body>
         <GoogleTagManager />
-        <ClerkProvider
-          afterSignOutUrl="/"
-          // This app renders Clerk's prebuilt UserButton. Keep UI prefetching
-          // enabled (the default); disabling it can leave signed-in visitors
-          // with Clerk core loaded but no UI bundle, crashing the whole shell.
-          appearance={{ variables: { colorPrimary: "#12525B" } }}
-        >
+        <AdminClerkBoundary>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directoryClient} categories={categories} areas={areas}>
@@ -194,7 +188,7 @@ export default async function RootLayout({
           </AppProviders>
           <CookieConsent />
           <AnalyticsPageView />
-        </ClerkProvider>
+        </AdminClerkBoundary>
         <Analytics />
         <SpeedInsights />
       </body>

@@ -24,7 +24,7 @@ test.describe.configure({ timeout: 60_000 });
 
 const ALLOW = SCROLLER_ALLOWLIST.join(",");
 
-// Pre-accept consent + onboarding + newsletter popup so overlays don't
+// Pre-accept consent + newsletter popup so overlays don't
 // intercept the probes.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -73,15 +73,8 @@ type RouteCheck = { name: string; path: string; ready?: string; action?: (page: 
 
 const CHECKS: RouteCheck[] = [
   { name: "home", path: "/" },
-  { name: "explore", path: "/explore" },
-  {
-    name: "explore filter sheet", path: "/explore",
-    action: async (page) => {
-      await page.getByRole("button", { name: "Filters", exact: true }).click();
-      await page.locator(".filter-panel").waitFor();
-    },
-  },
-  { name: "events", path: "/events" },
+  { name: "blog hub", path: "/blog" },
+  { name: "food guides", path: "/blog/category/restaurants-cafes" },
   { name: "blog post", path: "/blog/what-is-halal-singapore" },
   { name: "tools hub", path: "/tools" },
   {
@@ -93,12 +86,9 @@ const CHECKS: RouteCheck[] = [
     },
   },
   { name: "prayer times", path: "/tools/prayer-times" },
-  { name: "login", path: "/login" },
-  { name: "pricing", path: "/pricing" },
   { name: "is-halal brand", path: "/is-halal/paris-baguette" },
-  { name: "hawker finder", path: "/hawker" },
-  { name: "seo landing", path: "/halal-food-singapore" },
-  { name: "passport (signed out)", path: "/passport" },
+  { name: "mosques", path: "/mosques" },
+  { name: "prayer rooms", path: "/prayer-rooms" },
 ];
 
 for (const check of CHECKS) {
@@ -121,7 +111,7 @@ test("axe critical violations", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile-390", "axe runs on mobile-390 only");
   const { default: AxeBuilder } = await import("@axe-core/playwright");
   const critical: string[] = [];
-  for (const path of ["/", "/explore", "/tools", "/login"]) {
+  for (const path of ["/", "/blog", "/tools", "/mosques"]) {
     await page.goto(path, { waitUntil: "domcontentloaded" });
     await page.locator("#main-content, main").first().waitFor();
     await settle(page);
@@ -132,24 +122,6 @@ test("axe critical violations", async ({ page }, testInfo) => {
     }
   }
   expect(critical, `Critical axe violations:\n${critical.join("\n")}`).toEqual([]);
-});
-
-test("explore filter sheet behaves as a modal and restores focus", async ({ page }) => {
-  await page.goto("/explore", { waitUntil: "domcontentloaded" });
-  await settle(page);
-  const trigger = page.getByRole("button", { name: /Filters/ }).first();
-  await trigger.click();
-
-  const dialog = page.getByRole("dialog", { name: "Filters" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Close filters" })).toBeFocused();
-  await expect(page.locator(".hh-app")).toHaveAttribute("inert", "");
-  await expect(page.locator(".hh-tabbar")).toBeHidden();
-
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
-  await expect(trigger).toBeFocused();
-  await expect(page.locator(".hh-app")).not.toHaveAttribute("inert", "");
 });
 
 test("mobile menu moves focus, closes with Escape, and restores focus", async ({ page }) => {
@@ -167,20 +139,4 @@ test("mobile menu moves focus, closes with Escape, and restores focus", async ({
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
   await expect(page.locator("#main-content")).not.toHaveAttribute("inert", "");
-});
-
-test("listing keeps trust status and primary mobile actions immediately available", async ({ page }, testInfo) => {
-  await page.goto("/business/warung-bumbu-rempah", { waitUntil: "domcontentloaded" });
-  await page.locator("#main-content, main").first().waitFor();
-  await settle(page);
-  // The real directory intentionally has no fabricated local fallback. CI and
-  // local runs without a seeded Supabase therefore cannot render a business
-  // fixture; deployed/seeded runs continue to exercise this assertion.
-  if (await page.getByRole("heading", { name: "This page wandered off" }).isVisible()) {
-    testInfo.skip(true, "requires a seeded directory listing");
-  }
-  await expect(page.getByRole("region", { name: "Halal trust status at a glance" })).toBeVisible();
-  const actions = page.locator(".detail-stickybar");
-  await expect(actions).toBeVisible();
-  await expect(actions.getByRole("link", { name: /directions/i })).toBeVisible();
 });

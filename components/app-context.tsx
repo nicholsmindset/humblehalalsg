@@ -11,12 +11,9 @@ import {
   useState,
 } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { useSupabaseBrowser } from "@/lib/supabase/client";
 import { pathToScreen, screenToPath, type Params } from "@/lib/routes";
 import { t as translate } from "@/lib/i18n";
 import { DEFAULT_FLAGS, type Flags } from "@/lib/flags";
-import { track } from "@/lib/analytics";
 import type { Collection, Lang, Prefs, Ticket, Tweaks, UserState } from "@/lib/types";
 
 const DEFAULT_COLLECTIONS: Collection[] = [
@@ -134,8 +131,6 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
   const router = useRouter();
   const pathname = usePathname();
   const routeParams = useParams();
-  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
-  const supabase = useSupabaseBrowser();
   const [query, setQuery] = useState<Params>({});
 
   const [saved, setSaved] = useState<string[]>([]);
@@ -177,7 +172,6 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     if (ls.saved) setSaved(ls.saved);
     if (ls.wishlist) setWishlist(ls.wishlist);
     if (ls.recent) setRecent(ls.recent);
-    if (ls.user) setUserState(ls.user);
     if (ls.prefs) setPrefs(ls.prefs);
     if (ls.savedEvents) setSavedEvents(ls.savedEvents);
     if (ls.tickets) setTickets(ls.tickets);
@@ -188,58 +182,6 @@ export function AppProvider({ children, ramadanModeEnabled: ramadanModeInitial =
     // resolved value is the truth; a stale local copy overrode admin flips.
     setHydrated(true);
   }, []);
-
-  // Sync the Clerk session → user state. Role is read from profiles via the
-  // Clerk-token-scoped Supabase client (RLS passes since auth.jwt()->>'sub'
-  // matches). Graceful: stays "Guest" without keys / while signed out.
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      if (!isLoaded) return;
-      if (!isSignedIn || !clerkUser) {
-        if (active) setUserState({ loggedIn: false, role: "user", name: "Guest" });
-        return;
-      }
-      let role: "user" | "owner" = "user";
-      try {
-        if (supabase) {
-          const { data } = await supabase.from("profiles").select("role").eq("id", clerkUser.id).single();
-          if (data?.role === "owner" || data?.role === "admin") role = "owner";
-        }
-      } catch {
-        /* ignore */
-      }
-      // Post-OAuth fallback for the signup account-type choice: the Google
-      // redirect stashes it in sessionStorage before leaving (LoginScreen).
-      // If the choice was "owner" but the profile came back as a plain user
-      // (metadata didn't reach the webhook, e.g. sign-up transferred to
-      // sign-in), upgrade via the one-way /api/profile/role endpoint.
-      try {
-        const chosen = sessionStorage.getItem("hh-account-type");
-        if (chosen) {
-          sessionStorage.removeItem("hh-account-type"); // one-shot, never loops
-          if (chosen === "owner" && role !== "owner") {
-            const res = await fetch("/api/profile/role", { method: "POST" });
-            const j = await res.json().catch(() => ({}));
-            if (j?.ok) role = "owner";
-          }
-        }
-      } catch {
-        /* private mode / fetch failure — the user can still upgrade later */
-      }
-      const base = (clerkUser.primaryEmailAddress?.emailAddress || clerkUser.firstName || "You").split("@")[0] || "You";
-      if (active) {
-        setUserState({ loggedIn: true, role, name: base[0]?.toUpperCase() + base.slice(1) });
-        // GA4 identity: user_id (pseudonymous Clerk id) + user_role, so every
-        // subsequent event can be segmented owner-vs-consumer. Consent-gated
-        // inside track.identify (no-op until analytics consent is granted).
-        track.identify(clerkUser.id, role);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [isLoaded, isSignedIn, clerkUser, supabase]);
 
   // persist
   useEffect(() => {
