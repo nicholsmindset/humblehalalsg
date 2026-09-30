@@ -79,6 +79,7 @@ export function ingredientRedirects(): Redirect[] {
 
 export function seoRedirects(): Redirect[] {
   return [
+    { source: "/blog/halal-food-near-me-singapore", destination: "/blog/category/areas-malls", permanent: true },
     ...LEGACY_HALAL_REDIRECTS,
     ...ingredientRedirects(),
     // Retire time-sensitive and unverified PDF assets without breaking links
@@ -86,13 +87,11 @@ export function seoRedirects(): Redirect[] {
     { source: "/guides/ultimate-halal-food-guide-mrt.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
     { source: "/guides/halal-brand-cheat-sheet.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
     { source: "/guides/ramadan-2026-planner.pdf", destination: "/guides/halal-weekend-planner-singapore.pdf", statusCode: 301 as const },
-    // Consolidate the older generic blog guide into the live, catalog-backed
-    // ranking page. Both targeted the same "best halal restaurants Singapore"
-    // intent; keeping one canonical destination prevents them competing in
-    // search and ensures readers see current directory data.
+    // The old ranking page depended on the retired directory. Point its blog
+    // alias to the current editorial topic rather than a gone listing page.
     {
       source: "/blog/best-halal-restaurants-singapore-2026",
-      destination: "/best-halal-restaurants-singapore",
+      destination: "/blog/category/restaurants-cafes",
       statusCode: 301 as const,
     },
     // Non-food categories no longer use "halal" as a blanket business label.

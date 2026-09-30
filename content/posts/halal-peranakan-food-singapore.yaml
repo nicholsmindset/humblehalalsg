@@ -200,7 +200,7 @@ sections:
         family story; it becomes empty when used as a generic marketing superlative.
     links:
       - label: "Halal food around Marine Parade and the east"
-        href: "https://www.humblehalal.com/halal-food/marine-parade"
+        href: "https://www.humblehalal.com/blog/category/areas-malls"
   - h2: "A first halal Peranakan order in five steps"
     body:
       - >-
@@ -216,7 +216,7 @@ sections:
         Singapore" with a usable first meal—not a long list of uncertain venues.
     links:
       - label: "Open Humble Halal's restaurant map"
-        href: "https://www.humblehalal.com/map"
+        href: "https://halal.muis.gov.sg/halal/establishments"
 faq:
   - q: "Where can I eat halal Peranakan food in Singapore?"
     a: >-

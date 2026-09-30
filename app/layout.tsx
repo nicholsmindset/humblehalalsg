@@ -21,13 +21,12 @@ import "../styles/travel.css";
 import "../styles/mobile.css";
 import "../styles/mobile-a11y.css";
 import "../styles/ads.css";
-import { ClerkProvider } from "@clerk/nextjs";
+import { AdminClerkBoundary } from "@/components/admin-clerk-boundary";
 import { AppProviders } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 import { CookieConsent } from "@/components/cookie-consent";
 import { AnalyticsPageView } from "@/components/analytics/page-view";
 import { GoogleTagManager } from "@/components/analytics/gtm";
-import { AdsenseScript } from "@/components/ads/adsense";
 import { DirectoryProvider } from "@/components/directory-context";
 import { getDirectory } from "@/lib/directory";
 import type { Listing } from "@/lib/types";
@@ -43,8 +42,6 @@ import {
   websiteJsonLd,
 } from "@/components/seo/json-ld";
 
-const adsenseClient = (process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "").trim();
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
@@ -56,11 +53,10 @@ export const metadata: Metadata = {
   keywords: [
     "halal Singapore",
     "halal food",
-    "Muslim-owned business",
     "MUIS certified",
     "halal restaurants",
-    "halal directory",
-    "halal near me",
+    "Muslim life Singapore",
+    "prayer times Singapore",
   ],
   alternates: {
     canonical: "/",
@@ -84,10 +80,6 @@ export const metadata: Metadata = {
   // Google Search Console ownership (meta-tag method; the HTML-file method is
   // also served from public/googledeada25508a8dbb9.html as a backup).
   verification: { google: "hpyENNOXNa-bCerM6QCS2IRau9olW41Sov-CGUKkqAE" },
-  // AdSense account-association meta (site verification). Emitted only when the
-  // publisher id is set — the AdsenseScript loader gates on the same env var, so
-  // the whole AdSense integration turns on together.
-  ...(adsenseClient.startsWith("ca-pub-") ? { other: { "google-adsense-account": adsenseClient } } : {}),
 };
 
 export const viewport: Viewport = {
@@ -185,14 +177,7 @@ export default async function RootLayout({
     <html lang="en" className={fontVars}>
       <body>
         <GoogleTagManager />
-        <AdsenseScript />
-        <ClerkProvider
-          afterSignOutUrl="/"
-          // This app renders Clerk's prebuilt UserButton. Keep UI prefetching
-          // enabled (the default); disabling it can leave signed-in visitors
-          // with Clerk core loaded but no UI bundle, crashing the whole shell.
-          appearance={{ variables: { colorPrimary: "#12525B" } }}
-        >
+        <AdminClerkBoundary>
           <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
           <AppProviders ramadanModeEnabled={ramadanMode} serverFlags={serverFlags}>
             <DirectoryProvider listings={directoryClient} categories={categories} areas={areas}>
@@ -203,7 +188,7 @@ export default async function RootLayout({
           </AppProviders>
           <CookieConsent />
           <AnalyticsPageView />
-        </ClerkProvider>
+        </AdminClerkBoundary>
         <Analytics />
         <SpeedInsights />
       </body>

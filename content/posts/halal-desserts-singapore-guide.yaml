@@ -46,9 +46,9 @@ sections:
       - "Reconfirm hours and certification before a long journey or group order"
     links:
       - label: "Browse halal desserts near you"
-        href: "https://www.humblehalal.com/halal-dessert-singapore"
+        href: "https://www.humblehalal.com/blog/category/cuisines"
       - label: "Open the Humble Halal map"
-        href: "https://www.humblehalal.com/map"
+        href: "https://halal.muis.gov.sg/halal/establishments"
   - h2: "Best halal dessert types for different cravings"
     body:
       - >-
@@ -237,7 +237,7 @@ sections:
       - "One nearby backup"
     links:
       - label: "Find a halal dessert now"
-        href: "https://www.humblehalal.com/halal-dessert-singapore"
+        href: "https://www.humblehalal.com/blog/category/cuisines"
 faq:
   - q: "Where can I find halal dessert near me in Singapore?"
     a: >-

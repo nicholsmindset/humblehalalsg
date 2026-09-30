@@ -1,5 +1,5 @@
 title: "Halal Food Near Me: The Complete Singapore Guide"
-status: scheduled
+status: draft
 dek: "Wherever you are in Singapore, halal food is closer than you think. This hub explains how to find MUIS-certified and Muslim-owned places near you — by area, by MRT and by mall."
 answer: >-
   To find halal food near you in Singapore, search the Humble Halal directory and
@@ -26,7 +26,7 @@ sections:
         the Islamic Religious Council of Singapore — runs a national halal
         certification scheme, and certified outlets are found in nearly every
         neighbourhood, mall and MRT interchange. The quickest way to see what's
-        genuinely near you is to open the directory and filter for halal, which
+        genuinely near you is to check the current MUIS HalalSG register for certified outlets, which
         maps certified and Muslim-owned places around your location.
       - >-
         Before you order, confirm each outlet's status. Look for the MUIS halal
@@ -35,14 +35,12 @@ sections:
         certification, and remember that status can vary between outlets of the
         same chain.
     bullets:
-      - "Open the directory and filter for halal near your location"
+      - "check the current MUIS HalalSG register for certified outlets near your location"
       - "Look for the MUIS certificate or the Muslim-Owned label in-store"
       - "Certification can differ between branches of the same chain"
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
   - h2: "Halal food by area & mall"
     body:
       - >-
@@ -99,8 +97,8 @@ sections:
     links:
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
   - h2: "Plan your next meal"
     body:
       - >-
@@ -109,8 +107,8 @@ sections:
         and let your location do the rest. From there, our area guides help you go
         deeper on a specific mall or neighbourhood.
     links:
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Best halal restaurants in Singapore 2026"
         href: "https://www.humblehalal.com/best-halal-restaurants-singapore"
       - label: "Best halal cafés in Singapore"

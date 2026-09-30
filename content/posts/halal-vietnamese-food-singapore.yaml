@@ -200,7 +200,7 @@ sections:
         The point is not that one restaurant defines the whole cuisine. Eminami is a
         useful, current, Muslim-owned entry point with a founder story connected to
         Phan Thiet and a broad menu. Use it to learn what you enjoy, then compare other
-        certified or clearly labelled Vietnamese options through the directory. We do
+        certified or clearly labelled Vietnamese options through the official MUIS register and direct enquiries. We do
         not accept payment to change halal status or rank, and every outlet mention
         remains subject to a fresh check.
     bullets:
@@ -211,8 +211,8 @@ sections:
     links:
       - label: "Read Eminami's founder and halal-source story"
         href: "https://eminami.sg/chefs-story"
-      - label: "Explore the halal directory"
-        href: "https://www.humblehalal.com/halal"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
   - h2: "The 10-minute halal Vietnamese food plan"
     body:
       - >-
@@ -229,7 +229,7 @@ sections:
         cuisine into a confident first meal.
     links:
       - label: "Find halal restaurants near you"
-        href: "https://www.humblehalal.com/map"
+        href: "https://halal.muis.gov.sg/halal/establishments"
 faq:
   - q: "Is Vietnamese food halal?"
     a: >-

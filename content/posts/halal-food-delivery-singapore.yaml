@@ -42,8 +42,8 @@ sections:
       - "Small group: bento boxes, family trays or mini buffet"
       - "Event: certified caterer with service and setup terms"
     links:
-      - label: "Browse Humble Halal's directory"
-        href: "https://www.humblehalal.com/halal"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Halal catering guide"
         href: "https://www.humblehalal.com/blog/halal-catering-singapore-guide"
   - h2: "How to check a delivery listing is really halal"
@@ -153,7 +153,7 @@ sections:
       - label: "Halal buffet guide"
         href: "https://www.humblehalal.com/blog/halal-buffet-guide-singapore"
       - label: "Halal mini buffet catering"
-        href: "https://www.humblehalal.com/halal-catering-singapore"
+        href: "https://www.humblehalal.com/blog/category/seasonal-events"
   - h2: "Fees, minimum spend and delivery zones"
     body:
       - >-
@@ -205,8 +205,8 @@ sections:
     links:
       - label: "Find halal food near you"
         href: "https://www.humblehalal.com/blog/halal-food-near-me-singapore"
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
 faq:
   - q: "What is the best halal food delivery in Singapore?"
     a: >-

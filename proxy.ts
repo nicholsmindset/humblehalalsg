@@ -34,6 +34,46 @@ const TRAVEL_ADMIN_API_PATH = /^\/api\/admin\/(?:travel-(?:analytics|revenue|vou
 const TRAVEL_CRON_PATH = /^\/api\/cron\/(?:fare-alerts|flight-retry)(?:\/|$)/;
 const TRAVEL_CONTENT_PATH = /^\/blog\/(?:category\/muslim-travel|(?:halal-cruises-from-singapore|halal-food-johor-bahru-guide|crossing-to-johor-bahru-checkpoints-transport|umrah-from-singapore-guide))(?:\/|$)/;
 
+// The publication no longer accepts listings, events or paid placements.
+// Return a real 410 for retired public URLs so stale profiles and event pages
+// are not mistaken for maintained recommendations. Keep editorial and tools
+// routes available; administrative and webhook paths remain for wind-down.
+const RETIRED_PUBLIC_PATH = /^\/(?:explore|map|halal|halal-food|hawker|business|events|deals|pricing|add-listing|claim|owner|for-business|advertise|host-event|quotes|checkout|success|growth-partner|feature-tiktok|saved|dashboard|login|ask|verify|suggest|report|tickets|passport|scorecard)(?:\/|$)/;
+const RETIRED_LANDING_PATH = /^\/(?:halal-food-singapore|halal-food-near-me|best-halal-restaurants-singapore|new-halal-restaurants-singapore|muis-halal-certified-directory|halal-business-directory-singapore|muslim-owned-businesses-singapore|halal-marketing-services)$/;
+const RETIRED_API_PATH = /^\/api\/(?:checkout|events|owner|ads|offers|coupons|claims|listing|listings|tickets|submissions|rsvp|passport|connect|leads|concierge|referral)(?:\/|$)/;
+
+// Older standalone guides were built around the directory or expired event
+// inventory. Send their existing links to maintained editorial hubs.
+const LEGACY_GUIDE_DESTINATIONS: Record<string, string> = {
+  "/halal-food-singapore": "/blog/category/restaurants-cafes",
+  "/halal-certification-singapore-guide": "/blog/category/halal-basics",
+  "/how-to-get-halal-certified-muis": "/blog/category/halal-basics",
+  "/muis-halal-certification-explained": "/blog/what-is-halal-singapore",
+  "/halal-certification-changes": "/blog/category/halal-basics",
+  "/iftar-buka-puasa-singapore": "/blog/category/seasonal-events",
+  "/ramadan-bazaar-singapore": "/blog/category/seasonal-events",
+  "/hari-raya": "/blog/category/seasonal-events",
+  "/hari-raya-catering-singapore": "/blog/category/seasonal-events",
+  "/ms/hari-raya": "/blog/category/seasonal-events",
+  "/ms/makanan-halal-singapura": "/blog/category/restaurants-cafes",
+  "/ms/masjid-singapura": "/mosques",
+};
+
+export function legacyGuideRedirect(req: NextRequest): NextResponse | null {
+  const destination = LEGACY_GUIDE_DESTINATIONS[req.nextUrl.pathname];
+  return destination ? NextResponse.redirect(new URL(destination, req.url), 308) : null;
+}
+
+export function retiredFeatureResponse(req: NextRequest): NextResponse | null {
+  const path = req.nextUrl.pathname;
+  if (RETIRED_API_PATH.test(path)) {
+    return NextResponse.json({ ok: false, error: "feature_retired" }, { status: 410 });
+  }
+  if (!RETIRED_PUBLIC_PATH.test(path) && !RETIRED_LANDING_PATH.test(path)) return null;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page retired | Humble Halal</title><style>body{font:18px/1.6 system-ui,sans-serif;background:#f8f6f1;color:#18383c;max-width:700px;margin:12vh auto;padding:24px}h1{font:700 2.4rem Georgia,serif}a{color:#12525b;font-weight:700}</style></head><body><p>Humble Halal</p><h1>This page has been retired.</h1><p>We now focus on practical guides and free tools for Muslim life in Singapore.</p><p><a href="/blog">Read the guides</a> · <a href="/tools">Explore tools</a></p></body></html>`;
+  return new NextResponse(html, { status: 410, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, s-maxage=86400" } });
+}
+
 export function travelDisabledResponse(req: NextRequest): NextResponse | null {
   const path = req.nextUrl.pathname;
   if (!TRAVEL_PATH.test(path) && !TRAVEL_API_PATH.test(path) && !TRAVEL_ADMIN_API_PATH.test(path) && !TRAVEL_CRON_PATH.test(path) && !TRAVEL_CONTENT_PATH.test(path)) {
@@ -97,6 +137,10 @@ export default clerkEnabled
   ? clerkMiddleware(async (auth, req) => {
       const travelDisabled = travelDisabledResponse(req);
       if (travelDisabled) return travelDisabled;
+      const retired = retiredFeatureResponse(req);
+      if (retired) return retired;
+      const legacy = legacyGuideRedirect(req);
+      if (legacy) return legacy;
       const blocked = unsafeFoodListingResponse(req);
       if (blocked) return blocked;
       const redirect = featureTikTokRedirect(req);
@@ -112,6 +156,8 @@ export default clerkEnabled
   : async function proxy(req: NextRequest) {
       return (
         travelDisabledResponse(req) ??
+        retiredFeatureResponse(req) ??
+        legacyGuideRedirect(req) ??
         unsafeFoodListingResponse(req) ??
         featureTikTokRedirect(req) ??
         (await goneRedirect(req)) ??

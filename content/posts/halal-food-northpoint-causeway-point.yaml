@@ -6,7 +6,7 @@ answer: >-
   biggest heartland malls, and both are strong for halal food — MUIS-certified
   chains, Muslim-owned eateries and food-hall stalls covering local, Western,
   Japanese and Korean. Each sits directly on the MRT. Look for the MUIS certificate
-  or the Muslim-Owned label, and use the directory to find the nearest.
+  or the Muslim-Owned label, and check current options and verify the specific outlet on MUIS HalalSG.
 author: The Humble Halal Team
 datePublished: 2026-08-08
 dateModified: 2026-08-08
@@ -63,12 +63,10 @@ sections:
         Both malls sit on the North-South MRT line — Yishun for Northpoint City and
         Woodlands for Causeway Point — so they're easy to reach and easy to pair with
         a trip north. To see exactly which outlets are certified and what's closest,
-        open the directory and filter for halal.
+        check the current MUIS HalalSG register for certified outlets.
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
 faq:

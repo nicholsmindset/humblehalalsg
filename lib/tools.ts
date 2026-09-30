@@ -236,15 +236,14 @@ export const TOOLS: Tool[] = [
     privateLocal: true,
     live: true,
   },
-  // Finders cross-link into the core product — we already have a MUIS-verified
-  // directory and a mosque directory, so we route here rather than rebuild.
+  // Finders link to maintained informational pages.
   {
     slug: "halal-food",
-    title: "Halal Food Near You",
-    blurb: "Browse the MUIS-verified halal directory.",
+    title: "Halal Food Guides",
+    blurb: "Explore food guides by cuisine and neighbourhood.",
     icon: "utensils",
     category: "Finders",
-    href: "/explore",
+    href: "/blog/category/restaurants-cafes",
     live: true,
   },
   {

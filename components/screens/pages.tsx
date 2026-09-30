@@ -90,7 +90,7 @@ export function ContactScreen() {
       <Crumb trail={[{ label: "Home", href: "/" }, { label: "Contact" }]} />
       <div className="hh-wrap hh-section">
         <h1 style={{ fontSize: "1.9rem", marginBottom: 6, textAlign: "center" }}>Contact us</h1>
-        <p className="muted" style={{ maxWidth: 620, margin: "0 auto 26px", textAlign: "center" }}>Questions, feedback or a partnership in mind? We'd love to hear from you. We aim to reply within <strong>1–2 business days</strong>.</p>
+        <p className="muted" style={{ maxWidth: 620, margin: "0 auto 26px", textAlign: "center" }}>Questions about a guide, a correction, or feedback about a tool? We'd love to hear from you. We aim to reply within <strong>1–2 business days</strong>.</p>
 
         <div className="contact-grid">
           <div className="card" style={{ padding: 22 }}>
@@ -104,7 +104,7 @@ export function ContactScreen() {
                   <div className="field"><label htmlFor="contact-name">Your name *</label><input id="contact-name" required value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
                   <div className="field"><label htmlFor="contact-email">Email *</label><input id="contact-email" required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
                 </div>
-                <div className="field"><label htmlFor="contact-subject">Subject</label><select id="contact-subject" value={form.subject} onChange={(e) => set("subject", e.target.value)}><option>General enquiry</option><option>Help with a listing or booking</option><option>Business / advertising partnership</option><option>Managed marketing (Growth Partner)</option><option>Report incorrect information</option><option>Privacy &amp; data request</option><option>Press / media</option></select></div>
+                <div className="field"><label htmlFor="contact-subject">Subject</label><select id="contact-subject" value={form.subject} onChange={(e) => set("subject", e.target.value)}><option>General enquiry</option><option>Guide correction</option><option>Tool feedback</option><option>Newsletter</option><option>Privacy &amp; data request</option><option>Press / media</option></select></div>
                 <div className="field"><label htmlFor="contact-message">Message *</label><textarea id="contact-message" required rows={5} value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="How can we help?" /></div>
                 {state === "error" && <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>Please enter your name, a valid email and a short message.</p>}
                 <Turnstile onToken={setTsToken} />
@@ -118,7 +118,6 @@ export function ContactScreen() {
               <h3 style={{ fontSize: "1.02rem", marginBottom: 10 }}>Email us</h3>
               <ul className="contact-list">
                 <li><Icon name="mail" size={15} /><div><strong>General &amp; support</strong><a href={`mailto:${CONTACT_EMAILS.general}`}>{CONTACT_EMAILS.general}</a></div></li>
-                <li><Icon name="mail" size={15} /><div><strong>Business &amp; advertising</strong><a href={`mailto:${CONTACT_EMAILS.partners}`}>{CONTACT_EMAILS.partners}</a></div></li>
                 <li><Icon name="mail" size={15} /><div><strong>Privacy &amp; data requests</strong><a href={`mailto:${CONTACT_EMAILS.privacy}`}>{CONTACT_EMAILS.privacy}</a></div></li>
               </ul>
             </div>
@@ -130,9 +129,8 @@ export function ContactScreen() {
             <div className="card" style={{ padding: 18 }}>
               <h3 style={{ fontSize: "1.02rem", marginBottom: 10 }}>Quick help</h3>
               <ul className="contact-quick">
-                <li><Link href="/suggest">My business isn't listed →</Link></li>
-                <li><Link href="/claim">Claim or manage my listing →</Link></li>
-                <li><Link href="/report">Report incorrect info →</Link></li>
+                <li><Link href="/blog">Browse the guides →</Link></li>
+                <li><Link href="/tools">Explore free tools →</Link></li>
                 <li><Link href="/faq">Browse the FAQ →</Link></li>
               </ul>
             </div>

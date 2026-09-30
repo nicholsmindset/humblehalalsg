@@ -5,7 +5,7 @@ answer: >-
   Suntec City and Marina Square, linked in the CBD near the Convention Centre, both
   have a wide spread of halal food — MUIS-certified chains, Muslim-owned eateries and
   food-hall stalls covering local, Western, Japanese and Korean. Look for the MUIS
-  certificate or the Muslim-Owned label, and use the directory to find the nearest.
+  certificate or the Muslim-Owned label, and check current options and verify the specific outlet on MUIS HalalSG.
 author: The Humble Halal Team
 datePublished: 2026-07-30
 dateModified: 2026-07-30
@@ -54,12 +54,12 @@ sections:
       - >-
         Esplanade and Promenade MRT stations are the closest, and both malls are an
         easy walk from City Hall too. To see which outlets are certified and what's
-        nearest, open the directory and filter for halal.
+        nearest, check the current MUIS HalalSG register for certified outlets.
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Halal food by area"
-        href: "https://www.humblehalal.com/halal-food/suntec-city"
+        href: "https://www.humblehalal.com/blog/halal-food-suntec-marina-square"
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
 faq:

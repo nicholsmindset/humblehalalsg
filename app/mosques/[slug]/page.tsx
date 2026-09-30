@@ -5,10 +5,7 @@ import { mosqueBySlug, allMosques, mosqueSlug } from "@/lib/mosques";
 import { mosqueProfile, profiledMosqueSlugs, mosqueFaqs } from "@/lib/mosque-content";
 import { getMosqueOverlay } from "@/lib/cms-mosques";
 import { getPrayerTimes } from "@/lib/prayer-times";
-import { getDirectory } from "@/lib/directory";
-import { locationIdForArea } from "@/lib/seo-pages";
 import { qiblaBearing, compassLabel } from "@/lib/qibla";
-import { certSuffix } from "@/lib/halal-score";
 import { haversineKm, formatKm, directionsUrl } from "@/lib/geo";
 import { pageMeta } from "@/lib/seo";
 import { JsonLd, mosqueJsonLd, faqJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
@@ -19,7 +16,7 @@ import { Icon } from "@/components/ui";
    page — the thin-content-proof gate. Each renders unique, genuinely useful
    data the Google prayer-time card can't: our own history intro, today's live
    MUIS prayer times, the Jumu'ah explainer, qibla-from-here, a real map +
-   directions, and nearby halal food from our directory (the unique moat). */
+   directions and nearby mosques. */
 
 export const revalidate = 86400; // refresh prayer times daily
 
@@ -42,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const overlay = await getMosqueOverlay(slug);
   return pageMeta({
     title: `${enTitle(m.name)} — Prayer Times, Jumu'ah & Directions`,
-    description: `${m.name} in ${m.area}, Singapore — today's prayer times, Friday (Jumu'ah) info, qibla direction, address, map and directions, plus halal food nearby.`,
+    description: `${m.name} in ${m.area}, Singapore — today's prayer times, Friday (Jumu'ah) info, qibla direction, address, map and directions.`,
     path: `/mosques/${slug}`,
     // Social image: a CMS/real photo when set, else the branded per-mosque OG card
     // (wiring this makes og:image the per-mosque card, not the site-wide fallback).
@@ -60,16 +57,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const p = mosqueProfile(slug);
   if (!m || !p) notFound();
 
-  const [times, dir] = await Promise.all([getPrayerTimes(), getDirectory()]);
+  const times = await getPrayerTimes();
   const bearing = qiblaBearing(m.coords.lat, m.coords.lng);
-
-  // Nearby halal food — the unique interlink no prayer-time competitor has.
-  const nearby = dir
-    .filter((l) => l.coords && !l.hawkerCentreId)
-    .map((l) => ({ l, km: haversineKm(m.coords, l.coords!) }))
-    .filter((x) => x.km <= 2)
-    .sort((a, b) => a.km - b.km)
-    .slice(0, 6);
 
   // Other mosques nearby — profiled only (so every link resolves), closest first.
   const nearbyMosques = allMosques()
@@ -78,10 +67,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     .map(({ o, oslug }) => ({ o, oslug, km: haversineKm(m.coords, o.coords) }))
     .sort((a, b) => a.km - b.km)
     .slice(0, 5);
-
-  // /halal-food/[location] link — only when a real area page exists (else the
-  // old area.split(" ")[0] guess 404'd, e.g. "kampong", "little", "ang").
-  const foodLocation = locationIdForArea(m.area);
 
   const path = `/mosques/${slug}`;
   // CMS overlay (content/mosques/<slug>.json) — a photo/intro the owner adds in
@@ -179,32 +164,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               <h2 style={{ fontSize: "1.3rem", marginBottom: 10 }}>Qibla direction</h2>
               <p className="muted">From {m.name}, the qibla (direction of the Kaaba) is about <strong>{Math.round(bearing)}° ({compassLabel(bearing)})</strong>. Use <Link className="link-inline" href="/tools/qibla">the live qibla compass</Link> to align precisely on your phone.</p>
             </section>
-
-            {/* Nearby halal food — the moat */}
-            {nearby.length ? (
-              <section style={{ marginBottom: 26 }}>
-                <h2 style={{ fontSize: "1.3rem", marginBottom: 10 }}>Halal food near {m.name}</h2>
-                <ul style={{ display: "grid", gap: 12, padding: 0, margin: 0, listStyle: "none" }}>
-                  {nearby.map(({ l, km }) => (
-                    <li key={l.id} style={{ display: "flex", gap: 12, alignItems: "baseline", borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
-                      <div style={{ flex: 1 }}>
-                        <Link href={`/business/${l.slug}`} style={{ fontWeight: 700 }}>{l.name}</Link>
-                        <div className="muted" style={{ fontSize: ".9rem", marginTop: 2 }}>
-                          {[l.cuisine, l.area].filter(Boolean).join(" · ")}
-                          {certSuffix(l) ? ` · ${certSuffix(l)}` : l.badges.includes("owned") ? " · Muslim-owned" : ""}
-                        </div>
-                      </div>
-                      <span className="faint" style={{ fontSize: ".84rem", whiteSpace: "nowrap" }}>{formatKm(km)}</span>
-                    </li>
-                  ))}
-                </ul>
-                {foodLocation && (
-                  <p style={{ marginTop: 10 }}>
-                    <Link className="link" href={`/halal-food/${foodLocation}`}>More halal food in {m.area} <Icon name="arrow" size={14} /></Link>
-                  </p>
-                )}
-              </section>
-            ) : null}
 
             {/* Other mosques nearby — internal-link depth + discovery. */}
             {nearbyMosques.length ? (

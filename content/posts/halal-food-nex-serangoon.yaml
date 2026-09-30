@@ -5,8 +5,7 @@ answer: >-
   NEX, the largest mall in Singapore's north-east, sits directly above Serangoon MRT
   interchange and has a wide spread of halal food — MUIS-certified chains,
   Muslim-owned eateries and food-hall stalls covering local, Western, Japanese and
-  Korean. Look for the MUIS certificate or the Muslim-Owned label, and use the
-  directory to find the nearest.
+  Korean. Look for the MUIS certificate or the Muslim-Owned label, and verify the exact outlet on MUIS HalalSG before visiting.
 author: The Humble Halal Team
 datePublished: 2026-08-12
 dateModified: 2026-08-12
@@ -52,23 +51,21 @@ sections:
         Beyond the mall, the wider Serangoon area is residential and well served for
         everyday dining, with coffee shops and eateries in the surrounding
         neighbourhoods. NEX remains the anchor for a big choice under one roof, but
-        it's worth checking the directory for nearby options too.
+        it's worth checking current options directly with nearby eateries too.
     bullets:
       - "Residential area with everyday dining options"
       - "NEX is the main anchor for choice under one roof"
-      - "Check the directory for nearby neighbourhood eateries"
+      - "Check nearby neighbourhood eateries directly"
   - h2: "Getting there & finding halal near you"
     body:
       - >-
         Serangoon MRT is an interchange on the North-East and Circle lines, and NEX
         sits directly above it with the bus interchange attached — so it's easy to
         reach from across the island. To see exactly which outlets are certified and
-        what's closest, open the directory and filter for halal.
+        what's closest, check the current MUIS HalalSG register for certified outlets.
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
 faq:
@@ -86,7 +83,7 @@ faq:
     a: >-
       Yes. As the north-east's largest mall, NEX has a big food hall plus full-service
       restaurants and cafés, with plenty of halal options suitable for families.
-      Filter the directory for the mall to see certified outlets.
+      Check the current MUIS HalalSG register for each outlet before visiting.
   - q: "How do I know an outlet is really halal?"
     a: >-
       Look for the MUIS halal certificate on display or the Muslim-Owned label. A

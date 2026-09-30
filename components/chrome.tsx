@@ -7,22 +7,13 @@ import { HHData } from "@/lib/data";
 import { REGIONS, townsInRegion } from "@/lib/sg-locations";
 import { haversineKm } from "@/lib/geo";
 import { SITE } from "@/lib/seo";
-import { allSeoPages } from "@/lib/seo-pages";
 import { allCategories } from "@/lib/blog-categories";
-import { categoryDirectoryLabel } from "@/lib/category-presentation";
-import { screenToPath } from "@/lib/routes";
 import { track } from "@/lib/analytics";
-import { UserButton } from "@clerk/nextjs";
-import { NotificationBell } from "./notification-bell";
 import { useApp } from "./app-context";
 import { Badge, Icon, Logo, useBodyScrollLock, useDialog } from "./ui";
 import { Newsletter } from "./newsletter";
 import { ScreenLink } from "./screen-link";
 import Link from "next/link";
-
-/* Clerk's account control (manage account, security/MFA, sessions, sign out) is
-   only shown when Clerk is configured; demo/mock mode keeps the custom buttons. */
-const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 /* ---------------- CERTIFIED-ONLY TOGGLE ---------------- */
 export function CertifiedToggle({ compact }: { compact?: boolean }) {
@@ -232,8 +223,8 @@ export function PrayerStrip({
           <span className="flex g8 center">
             <Icon name="crescent" size={16} /> <strong>Ramadan mode</strong> · iftar deals, bazaars &amp; open-late spots
           </span>
-          <button className="btn btn-sm" onClick={() => navigate("events", { cat: "bazaar" })}>
-            Find iftar &amp; bazaars <Icon name="arrow" size={15} />
+          <button className="btn btn-sm" onClick={() => navigate("blog")}>
+            Read Ramadan guides <Icon name="arrow" size={15} />
           </button>
         </div>
       </div>
@@ -411,15 +402,12 @@ export function Onboarding() {
 
 /* ---------------- TOP NAV (desktop) ---------------- */
 export function TopNav() {
-  const { navigate, state, t, flags } = useApp();
-  const user = state.user;
+  const { navigate } = useApp();
   const links = [
-    { id: "explore", label: t("nav.explore") },
-    ...(flags?.hawkerFinder ? [{ id: "hawker", label: "Hawker" }] : []),
-    ...(flags?.aiConcierge ? [{ id: "ask", label: "Ask AI" }] : []),
-    { id: "events", label: t("nav.events") },
+    { id: "blog", label: "Guides" },
     { id: "tools", label: "Tools" },
-    { id: "pricing", label: t("nav.pricing") },
+    { id: "mosques", label: "Mosques" },
+    { id: "about", label: "About" },
   ];
   return (
     <header className="hh-topnav">
@@ -435,57 +423,7 @@ export function TopNav() {
         <div className="spacer" />
         <div className="top-actions flex g8 center">
           <LangToggle />
-          {user.loggedIn ? (
-            <>
-              <button
-                className="btn btn-soft btn-sm nav-dashboard"
-                onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
-              >
-                <Icon name={user.role === "owner" ? "store" : "user"} size={16} /> Dashboard
-              </button>
-              {clerkConfigured && <NotificationBell />}
-              {clerkConfigured ? (
-                <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }}>
-                  <UserButton.MenuItems>
-                    <UserButton.Action
-                      label="My dashboard"
-                      labelIcon={<Icon name="heart" size={15} />}
-                      onClick={() => navigate("user-dashboard")}
-                    />
-                    {user.role === "owner" && (
-                      <UserButton.Action
-                        label="Business dashboard"
-                        labelIcon={<Icon name="store" size={15} />}
-                        onClick={() => navigate("owner-dashboard")}
-                      />
-                    )}
-                  </UserButton.MenuItems>
-                </UserButton>
-              ) : (
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => navigate(user.role === "owner" ? "owner-dashboard" : "user-dashboard")}
-                >
-                  <span className="avatar" style={{ width: 30, height: 30, fontSize: ".78rem" }}>
-                    {(user.name || "U")[0]}
-                  </span>{" "}
-                  {user.name}
-                </button>
-              )}
-              <button className="btn btn-gold btn-sm" onClick={() => navigate("add-listing")}>
-                <Icon name="plus" size={17} /> Add listing
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate("login")}>
-                {t("nav.login")}
-              </button>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate("for-business")}>
-                {t("nav.listBusiness")}
-              </button>
-            </>
-          )}
+          <ScreenLink screen="blog" className="btn btn-primary btn-sm">Read the guides</ScreenLink>
         </div>
       </div>
     </header>
@@ -494,7 +432,7 @@ export function TopNav() {
 
 /* ---------------- MOBILE TOP BAR + MENU DRAWER ---------------- */
 export function MobileBar() {
-  const { navigate, state, t, flags } = useApp();
+  const { navigate } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -511,8 +449,6 @@ export function MobileBar() {
       background.forEach((node) => { node.inert = false; });
     };
   }, [open]);
-  const user = state.user;
-
   const go = (screen: string) => {
     close();
     navigate(screen);
@@ -520,22 +456,15 @@ export function MobileBar() {
 
   // Mobile primary nav — keep parity with desktop TopNav.
   const links: [string, string, string][] = [
-    ["explore", t("nav.explore"), "search"],
-    ...(flags?.aiConcierge ? ([["ask", "Ask AI", "sparkles"]] as [string, string, string][]) : []),
-    ["events", t("nav.events"), "calendar"],
+    ["blog", "Guides", "doc"],
     ["tools", "Tools", "grid"],
-    ["blog", "Blog", "doc"],
-    ["for-business", t("nav.forBusiness"), "store"],
-    ["pricing", t("nav.pricing"), "tag"],
+    ["mosques", "Mosques", "mosque"],
+    ["about", "About", "heart"],
   ];
   const more: [string, string, string][] = [
-    ["mosques", "Mosques near me", "mosque"],
     ["prayer-rooms", "Prayer rooms & musollahs", "mosque"],
-    ["request-quote", "Request a quote", "doc"],
-    ["advertise", "Advertise with us", "megaphone"],
-    ["host-event", "Host an event", "ticket"],
-    ["verify", "How we verify", "shield-check"],
-    ["suggest", "Suggest a place", "plus"],
+    ["is-halal", "Is it halal?", "search"],
+    ["contact", "Contact us", "mail"],
   ];
 
   return (
@@ -544,10 +473,6 @@ export function MobileBar() {
         <Logo onClick={() => navigate("home")} />
         <div className="flex g8 center">
           <LangToggle />
-          {user.loggedIn && clerkConfigured && <NotificationBell />}
-          {user.loggedIn && clerkConfigured && (
-            <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
-          )}
           <button
             className="mobilebar-burger"
             onClick={() => setOpen(true)}
@@ -601,29 +526,7 @@ export function MobileBar() {
             {/* Real anchors (crawlable, middle-clickable — audit #167); still
                 close the drawer on tap. */}
             <div className="nav-drawer-cta">
-              {user.loggedIn ? (
-                <>
-                  <ScreenLink
-                    screen={user.role === "owner" ? "owner-dashboard" : "user-dashboard"}
-                    className="btn btn-primary btn-block"
-                    onClick={close}
-                  >
-                    <Icon name="user" size={18} /> {user.name || "Dashboard"}
-                  </ScreenLink>
-                  <ScreenLink screen="add-listing" className="btn btn-gold btn-block" onClick={close}>
-                    <Icon name="plus" size={18} /> Add listing
-                  </ScreenLink>
-                </>
-              ) : (
-                <>
-                  <ScreenLink screen="for-business" className="btn btn-primary btn-block" onClick={close}>
-                    {t("nav.listBusiness")}
-                  </ScreenLink>
-                  <ScreenLink screen="login" className="btn btn-outline btn-block" onClick={close}>
-                    {t("nav.login")}
-                  </ScreenLink>
-                </>
-              )}
+              <ScreenLink screen="blog" className="btn btn-primary btn-block" onClick={close}>Read the guides</ScreenLink>
             </div>
 
             <div className="nav-drawer-more">
@@ -643,38 +546,20 @@ export function MobileBar() {
 
 /* ---------------- BOTTOM NAV (mobile) ---------------- */
 export function BottomNav() {
-  const { state, t } = useApp();
   const tabs = [
-    { id: "home", icon: "home", label: t("tab.home") },
-    { id: "explore", icon: "search", label: t("tab.search") },
-    { id: "add-listing", icon: "plus", label: t("tab.add"), add: true },
-    { id: "user-dashboard", icon: "heart", label: t("tab.saved") },
-    {
-      id: state.user.loggedIn
-        ? state.user.role === "owner"
-          ? "owner-dashboard"
-          : "user-dashboard"
-        : "login",
-      icon: "user",
-      label: t("tab.profile"),
-    },
+    { id: "home", icon: "home", label: "Home" },
+    { id: "blog", icon: "doc", label: "Guides" },
+    { id: "tools", icon: "grid", label: "Tools" },
+    { id: "mosques", icon: "mosque", label: "Mosques" },
   ];
   return (
     <nav className="hh-tabbar" aria-label="Primary mobile">
-      {tabs.map((tab) =>
-        tab.add ? (
-          <ScreenLink key="add" screen="add-listing" className="hh-tab add" aria-label="Add a listing">
-            <span className="addbtn">
-              <Icon name="plus" size={24} />
-            </span>
-          </ScreenLink>
-        ) : (
-          <ScreenLink key={tab.label} screen={tab.id} className="hh-tab" activeClassName="active">
-            <Icon name={tab.icon} size={23} />
-            <span>{tab.label}</span>
-          </ScreenLink>
-        ),
-      )}
+      {tabs.map((tab) => (
+        <ScreenLink key={tab.label} screen={tab.id} className="hh-tab" activeClassName="active">
+          <Icon name={tab.icon} size={23} />
+          <span>{tab.label}</span>
+        </ScreenLink>
+      ))}
     </nav>
   );
 }
@@ -721,57 +606,30 @@ export function Footer() {
   // like the header nav (previously the whole footer was hardcoded English).
   const cols: [string, [string, string][]][] = [
     [
-      t("footer.col.discover"),
+      "Explore",
       [
-        [t("nav.explore"), "explore"],
-        [t("footer.link.deals"), "deals"],
-        [t("nav.events"), "events"],
-        [t("footer.link.map"), "map"],
+        ["All guides", "blog"],
+        ["Halal questions", "is-halal"],
+        ["Islamic tools", "tools"],
       ],
     ],
     [
-      t("footer.col.community"),
+      "Useful links",
       [
-        [t("footer.link.tools"), "tools"],
-        [t("footer.link.mosques"), "mosques"],
-        [t("footer.link.prayerRooms"), "prayer-rooms"],
-        [t("footer.link.saved"), "saved"],
-        [t("footer.link.blog"), "blog"],
+        ["Prayer times", "tools"],
+        ["Mosques", "mosques"],
+        ["Prayer rooms", "prayer-rooms"],
       ],
     ],
     [
-      t("footer.col.business"),
+      "Humble Halal",
       [
-        [t("nav.listBusiness"), "for-business"],
-        [t("footer.link.ownerStart"), "for-business-onboarding"],
-        [t("footer.link.advertise"), "advertise"],
-        [t("footer.link.hostEvent"), "host-event"],
-        [t("nav.pricing"), "pricing"],
-        [t("footer.link.claim"), "claim"],
-        [t("footer.link.quote"), "request-quote"],
-      ],
-    ],
-    [
-      t("footer.col.trust"),
-      [
-        [t("footer.link.verify"), "verify"],
-        [t("footer.link.isHalal"), "is-halal"],
-        [t("footer.link.report"), "report"],
-        [t("footer.link.suggest"), "suggest"],
-      ],
-    ],
-    [
-      t("footer.col.company"),
-      [
-        [t("footer.link.about"), "about"],
-        [t("footer.link.contact"), "contact"],
-        [t("footer.link.faq"), "faq"],
+        ["About", "about"],
+        ["Contact", "contact"],
+        ["FAQ", "faq"],
       ],
     ],
   ];
-  // Category cloud: top links only + "All categories" — the full list made the
-  // mobile footer scroll for screens.
-  const catPages = allSeoPages().filter((p) => p.catId && !p.areaId).slice(0, 12);
   return (
     <footer className="hh-footer">
       <nav aria-label="Footer">
@@ -779,7 +637,7 @@ export function Footer() {
           <div className="hh-footer-brand">
             <div>
               <Logo light onClick={() => navigate("home")} />
-              <p className="hh-footer-intro">{t("footer.intro")}</p>
+              <p className="hh-footer-intro">Halal guides, Muslim life stories and practical tools for Singapore.</p>
             </div>
             <div className="hh-footer-newsletter">
               <h2 className="hh-footer-title">{t("footer.newsletter")}</h2>
@@ -789,10 +647,6 @@ export function Footer() {
                 successHref="/guides/halal-weekend-planner-singapore.pdf"
                 successCta="Open the planner now"
               />
-            </div>
-            <div className="hh-footer-badges" aria-label="Trust badges">
-              <Badge type="muis" />
-              <Badge type="owned" />
             </div>
             <address className="hh-footer-addr">
               <span>{t("footer.operatedBy")} <strong>{SITE.org.legalName}</strong></span>
@@ -817,30 +671,14 @@ export function Footer() {
             ))}
           </div>
         </div>
-        {/* One cloud row: categories (wide) + guides (bounded) side by side —
-            two stacked full-width clouds doubled the footer's height. */}
         <div className="hh-wrap hh-footer-clouds">
-          <FooterSection title={t("footer.browseCategory")} cloud>
-            <li><Link href="/halal">{t("footer.halalDirectory")}</Link></li>
-            {catPages.map((p) => {
-              const rawLabel = HHData.categories.find((c) => c.id === p.catId)?.label || p.catId;
-              return (
-                <li key={p.slug}>
-                  <ScreenLink screen="seo" params={{ slug: p.slug }}>
-                    {categoryDirectoryLabel(p.catId, rawLabel)}
-                  </ScreenLink>
-                </li>
-              );
-            })}
-            <li><Link href="/halal">{t("footer.allCategories")}</Link></li>
-          </FooterSection>
-          <FooterSection title={t("footer.halalGuides")} cloud>
+          <FooterSection title="Browse guides" cloud>
             {allCategories().slice(0, 6).map((c) => (
               <li key={c.slug}>
                 <Link href={`/blog/category/${c.slug}`}>{c.name}</Link>
               </li>
             ))}
-            <li><Link href="/blog">{t("footer.allGuides")}</Link></li>
+            <li><Link href="/blog">All guides</Link></li>
           </FooterSection>
         </div>
       </nav>

@@ -6,7 +6,7 @@ answer: >-
   clusters — JEM, Westgate and IMM sit around Jurong East MRT, with Jurong Point at
   Boon Lay — and all carry plenty of halal food, from MUIS-certified chains to
   Muslim-owned eateries and food-hall stalls. Look for the MUIS certificate or the
-  Muslim-Owned label, and use the directory to find the nearest.
+  Muslim-Owned label, and check current options and verify the specific outlet on MUIS HalalSG.
 author: The Humble Halal Team
 datePublished: 2026-08-05
 dateModified: 2026-08-05
@@ -62,13 +62,11 @@ sections:
       - >-
         Jurong East MRT sits on both the North-South and East-West lines, putting JEM,
         Westgate and IMM within easy reach; Jurong Point is one stop west at Boon Lay.
-        To see exactly which outlets are certified and what's closest, open the
-        directory and filter for halal.
+        Check individual outlets on the current MUIS HalalSG register before
+        visiting, and confirm each venue's opening details directly.
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
-      - label: "Open the halal map"
-        href: "https://www.humblehalal.com/map"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
 faq:

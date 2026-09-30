@@ -1,11 +1,29 @@
-import { AboutScreen } from "@/components/screens/pages";
-import { pageMeta, SITE } from "@/lib/seo";
-import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
+import Link from "next/link";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = pageMeta({ title: "About Humble Halal — Singapore halal directory", description: "Humble Halal helps Muslims discover halal and Muslim-owned businesses across Singapore with clear trust signals. A discovery platform, not a certifier.", path: "/about" });
-
-const org = { "@context": "https://schema.org", "@type": "Organization", name: "Humble Halal", url: SITE.url, description: "Singapore halal and Muslim-owned business directory.", legalName: "ONN GROUP LLP", address: { "@type": "PostalAddress", streetAddress: "60 Paya Lebar Road, #06-28 Paya Lebar Square", addressLocality: "Singapore", postalCode: "409051", addressCountry: "SG" } };
+export const metadata = pageMeta({
+  title: "About Humble Halal",
+  description: "Humble Halal publishes practical halal food and Muslim life guides and free tools for readers in Singapore.",
+  path: "/about",
+});
 
 export default function Page() {
-  return (<><JsonLd data={[org, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "About", path: "/about" }])]} /><AboutScreen /></>);
+  return (
+    <div className="screen-in hh-page">
+      <section className="seo-hero hh-pattern"><div className="hh-wrap">
+        <span className="eyebrow">About Humble Halal</span>
+        <h1>Useful guidance for Muslim life in Singapore.</h1>
+        <p className="muted">We publish practical guides about halal food, everyday questions and local Muslim life, alongside free tools for planning and learning.</p>
+      </div></section>
+      <div className="hh-wrap hh-section" style={{ maxWidth: 800 }}>
+        <h2>How to use our guides</h2>
+        <p>Our articles are a starting point. Restaurants, ingredients and certification can change. Check the latest details with the business and the relevant official source before relying on a recommendation.</p>
+        <p>Humble Halal does not issue halal certification.</p>
+        <div className="flex g10 wrap" style={{ marginTop: 24 }}>
+          <Link className="btn btn-primary" href="/blog">Browse guides</Link>
+          <Link className="btn btn-outline" href="/tools">Use free tools</Link>
+        </div>
+      </div>
+    </div>
+  );
 }
