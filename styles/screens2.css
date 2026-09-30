@@ -202,9 +202,10 @@
 .hub-link:hover { border-color:var(--emerald-300); transform:translateY(-1px); }
 .hub-link-arr { color:var(--emerald); font-weight:700; }
 .mosque-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); }
-.mosque-row-name { font-weight:700; font-size:.96rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mosque-row > div { min-width:0; flex:1; }
+.mosque-row-name { display:block; font-weight:700; font-size:.96rem; overflow-wrap:anywhere; }
 .mosque-row-area { font-size:.82rem; color:var(--ink-soft); margin-top:2px; }
-.mosque-row-dir { flex:none; color:var(--emerald); font-weight:700; font-size:.86rem; white-space:nowrap; }
+.mosque-row-dir { display:inline-flex; align-items:center; justify-content:center; flex:none; min-height:44px; min-width:44px; color:var(--emerald); font-weight:700; font-size:.86rem; white-space:nowrap; }
 .mosque-row-dir:hover { text-decoration:underline; }
 /* Region jump-nav + section headings (keeps a long list scannable) */
 .mosque-jump { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
