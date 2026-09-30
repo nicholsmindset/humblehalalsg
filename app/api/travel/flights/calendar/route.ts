@@ -16,6 +16,10 @@ function shift(iso: string, days: number): string {
   return new Date(t + days * 86400000).toISOString().slice(0, 10);
 }
 
+function todayInSingapore(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(new Date());
+}
+
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "flight-calendar", 12, 60); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
@@ -28,7 +32,8 @@ export async function POST(req: Request) {
   }
 
   const today = date; // window centred on the chosen date
-  const dates = Array.from({ length: WINDOW * 2 + 1 }, (_, i) => shift(today, i - WINDOW)).filter((d) => d >= shift(new Date().toISOString().slice(0, 10), -1));
+  const earliestDate = shift(todayInSingapore(), -1);
+  const dates = Array.from({ length: WINDOW * 2 + 1 }, (_, i) => shift(today, i - WINDOW)).filter((d) => d >= earliestDate);
 
   if (!liteapiConfigured()) {
     return NextResponse.json({ ok: true, simulated: true, days: dates.map((d) => ({ date: d, price: null })) });
