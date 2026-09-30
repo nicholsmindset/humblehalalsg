@@ -23,7 +23,8 @@ export async function GET(req: Request) {
     .order("created_at", { ascending: false })
     .limit(100);
   if (status) q = q.eq("status", status);
-  const { data: leads } = await q;
+  const { data: leads, error: leadsError } = await q;
+  if (leadsError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 502 });
 
   // Routes for these leads (routed/contacted view + the WhatsApp delivery
   // queue: exclusive routes with delivered_at null need a manual send).
