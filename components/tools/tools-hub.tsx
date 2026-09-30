@@ -29,7 +29,7 @@ const CATEGORY_COPY: Record<ToolCategory, string> = {
   Trackers: "Private habit logs that stay in this browser.",
   Calculators: "Fast calculators for dates, zakat, faraid, stocks, and more.",
   Knowledge: "Learn meanings, duas, hadith, names, and halal ingredients.",
-  Finders: "Move from tools into the live directory and prayer-space guides.",
+  Finders: "Explore halal food guides and find prayer spaces.",
 };
 
 const QUICK_PROMPTS = [
@@ -272,7 +272,7 @@ export function ToolsHub({ tools }: { tools: Tool[] }) {
         </div>
         <p className="tools-suggest-line">
           <Icon name="edit" size={14} /> Missing something useful?{" "}
-          <Link className="link-inline" href="/suggest">Suggest an Islamic tool →</Link>
+          <Link className="link-inline" href="/contact">Suggest an Islamic tool →</Link>
         </p>
       </section>
     </div>

@@ -9,7 +9,6 @@ import { JsonLd, breadcrumbJsonLd, blogCollectionJsonLd } from "@/components/seo
 import { BlogCard } from "@/components/blog/blog-card";
 import { CategoryChips } from "@/components/blog/category-chips";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
-import { SponsoredSlot } from "@/components/sponsored-slot";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 
 export function generateStaticParams() {
@@ -81,10 +80,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               ))}
             </div>
           )}
-
-          <div className="blog-inline-cta">
-            <SponsoredSlot placement="blog_inline" />
-          </div>
 
           <div className="blog-inline-cta">
             <BlogNewsletterBand source={`blog-cat:${cat.slug}`} />

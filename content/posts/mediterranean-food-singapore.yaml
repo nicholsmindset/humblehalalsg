@@ -56,10 +56,10 @@ sections:
       - >-
         You'll also find halal Mediterranean in the CBD and scattered across the malls.
         For the wider cuisine and the shawarma scene specifically, see our related guides,
-        or filter the directory for Mediterranean and Middle Eastern outlets near you.
+        or look for Mediterranean and Middle Eastern outlets near you, then verify each one.
     links:
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Halal food in Bugis & Arab Street"
         href: "https://www.humblehalal.com/blog/halal-food-bugis-arab-street"
 faq:

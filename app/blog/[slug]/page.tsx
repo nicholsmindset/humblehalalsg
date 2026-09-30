@@ -12,8 +12,6 @@ import { JsonLd, blogPostingJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/compon
 import { Newsletter } from "@/components/newsletter";
 import { BlogCard } from "@/components/blog/blog-card";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
-import { SponsoredSlot } from "@/components/sponsored-slot";
-import { AdSlot } from "@/components/ads/ad-slot";
 import { PullQuote } from "@/components/blog/pull-quote";
 import { ArticleFigure } from "@/components/blog/article-figure";
 import { AuthorBio } from "@/components/blog/author-bio";
@@ -76,12 +74,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const author = await resolveBlogAuthor(p);
   const n = p.sections.length;
   const midIndex = n >= 4 ? Math.floor(n / 2) - 1 : -1; // newsletter after this section
-  const adIndex = n >= 3 ? n - 2 : -1; // sponsored slot before the final section
   const pqIndex = p.pullQuote ? Math.min(1, n - 1) : -1; // pull-quote after this section
   // Subtle lead-capture teaser (vertical-tagged posts only): placement helper
   // guarantees ≥2 sections from the newsletter ribbon or omits entirely; the
   // component itself is flag-gated client-side (renders nothing when off).
-  const leadIndex = p.leadVertical ? leadInlineIndex(n, midIndex, adIndex) : -1;
+  const leadIndex = p.leadVertical ? leadInlineIndex(n, midIndex, -1) : -1;
 
   return (
     <>
@@ -153,9 +150,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <p>{p.answer}</p>
           </div>
 
-          {/* Top-of-article slot (leaderboard) — AdSense fill, below the TL;DR so it
-              never sits between the reader and the answer. */}
-          <AdSlot slot="blog_article_top" />
 
           <div className="article-body">
             {p.sections.map((s, i) => (
@@ -195,16 +189,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                   <div className="article-ribbon">
                     <span className="eyebrow">🌙 The weekly halal guide</span>
                     <strong>Enjoying this guide?</strong>
-                    <p>New MUIS-verified spots, mosque events &amp; deals across Singapore — free, every week.</p>
+                    <p>One useful guide to halal food and Muslim life in Singapore, free every Friday.</p>
                     <Newsletter source="blog-mid" variant="inline" cta="Get weekly finds" />
                   </div>
                 )}
 
-                {i === adIndex && (
-                  <div className="blog-inline-cta">
-                    <SponsoredSlot placement="blog_inline" />
-                  </div>
-                )}
               </Fragment>
             ))}
           </div>
@@ -224,11 +213,11 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <AuthorBio author={author} />
 
           <div className="article-cta">
-            <strong>Find halal places near you</strong>
-            <p>Browse Singapore’s halal &amp; Muslim-owned directory by category, area or map.</p>
+            <strong>Keep exploring</strong>
+            <p>Find more practical guides and free tools for Muslim life in Singapore.</p>
             <div className="flex g10 wrap">
-              <Link className="btn btn-primary btn-sm" href="/halal">Browse the halal directory</Link>
-              <Link className="btn btn-outline btn-sm" href="/is-halal">Is it halal? brand checker</Link>
+              <Link className="btn btn-primary btn-sm" href="/blog">Browse all guides</Link>
+              <Link className="btn btn-outline btn-sm" href="/tools">Explore free tools</Link>
             </div>
           </div>
 

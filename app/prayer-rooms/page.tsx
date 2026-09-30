@@ -57,8 +57,8 @@ export default function Page() {
               Prayer rooms open, close and move over time — always confirm on site before you rely on one.
             </p>
             <div style={{ marginTop: 16 }}>
-              <Link href="/map?show=prayer-rooms" className="btn btn-primary">
-                Find prayer rooms near you on the map →
+              <Link href="#prayer-room-list" className="btn btn-primary">
+                Browse prayer rooms →
               </Link>
             </div>
             </div>
@@ -67,7 +67,7 @@ export default function Page() {
               <div className="prayer-stat-grid">
                 <div><strong>{spaces.length}</strong><span>spaces listed</span></div>
                 <div><strong>{groups.length}</strong><span>area groups</span></div>
-                <div><strong>Map</strong><span>building-level pins</span></div>
+                <div><strong>Guide</strong><span>location notes</span></div>
               </div>
               <p>
                 Use the cards for level and landmark notes after opening directions. Facilities can change, so confirm at the venue when timing matters.
@@ -76,7 +76,7 @@ export default function Page() {
           </div>
         </section>
 
-        <div className="hh-wrap hh-section">
+        <div id="prayer-room-list" className="hh-wrap hh-section">
           <PrayerRoomsDirectory spaces={spaces} categories={PRAYER_CATEGORIES} />
 
           <h2 style={{ fontSize: "1.4rem", margin: "8px 0 14px" }}>Related</h2>
@@ -84,7 +84,6 @@ export default function Page() {
             <Link href="/mosques" className="hub-link"><span>Mosques in Singapore</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/tools/prayer-times" className="hub-link"><span>Prayer times today</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
             <Link href="/tools/qibla" className="hub-link"><span>Qibla direction finder</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
-            <Link href="/map?show=prayer-rooms" className="hub-link"><span>Prayer rooms on the live map</span><span className="hub-link-arr" aria-hidden="true">→</span></Link>
           </div>
 
           <p className="faint" style={{ fontSize: ".84rem", marginTop: 20 }}>

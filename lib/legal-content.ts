@@ -23,7 +23,7 @@ const ADDRESS = "60 Paya Lebar Road, #06-28 Paya Lebar Square, Singapore 409051"
 const PRIVACY_EMAIL = CONTACT_EMAILS.privacy;
 // "Last updated" shown on every legal page — bump this whenever any legal doc's
 // wording changes (it won't auto-update).
-const UPDATED = "3 August 2026";
+const UPDATED = "30 September 2026";
 const CAVEAT = "This is a plain-language summary written in good faith and tailored to how the platform actually works. It is not legal advice — please have it reviewed by a qualified lawyer before relying on it.";
 
 export const legalDocs: Record<string, LegalDoc> = {
@@ -38,19 +38,18 @@ export const legalDocs: Record<string, LegalDoc> = {
         h2: "What we collect",
         bullets: [
           "Email address — when you subscribe to the halal guide newsletter.",
-          "Name, email and phone — when you request a quote, suggest or claim a business, or contact us.",
-          "Reviews and the display name you provide — when you post a review.",
-          "Approximate location — only when you tap “near me” and grant permission; used in your browser to sort results and not stored on our servers.",
-          "Usage preferences — saved places, filters and settings are stored locally in your browser (localStorage), not on our servers, unless you create an account.",
+          "Name and email — when you contact us or previously used a retired business feature.",
+          "Approximate location — only when you use a location-based tool and grant permission.",
+          "Usage preferences and consent choices — stored locally in your browser.",
         ],
       },
       {
         h2: "How we use it",
         bullets: [
-          "To run the directory: show listings, sort by distance, save favourites.",
+          "To publish guides and operate free tools.",
           "To send the newsletter you asked for (you can unsubscribe any time).",
-          "To process business submissions, claims and quote requests.",
-          "To moderate reviews and keep the platform safe and accurate.",
+          "To respond to contact messages and correction requests.",
+          "To retain and resolve records from retired business and transaction features where necessary.",
           "We do not sell your personal data.",
         ],
       },
@@ -62,10 +61,10 @@ export const legalDocs: Record<string, LegalDoc> = {
         bullets: [
           "Beehiiv — newsletter delivery (email address, plus the signup source so we know which page you subscribed from).",
           "Resend — transactional email such as account and contact emails (email address + message content).",
-          "Stripe — payment processing for our own paid plans, advertising and event tickets (only if you make such a transaction).",
-          "Supabase — database and storage (when account features are enabled).",
+          "Stripe — records and administration for transactions made before paid features were retired.",
+          "Supabase — database and storage for remaining or historical account data.",
           "Vercel — website hosting.",
-          "OneMap (Singapore Land Authority) — address lookup; OpenStreetMap — map tiles.",
+          "OneMap (Singapore Land Authority) and OpenStreetMap — location tools where used.",
         ],
       },
       {
@@ -77,7 +76,7 @@ export const legalDocs: Record<string, LegalDoc> = {
       {
         h2: "Cookies & local storage",
         body: [
-          "We use minimal browser storage to remember your preferences and saved places, and a small record of your cookie-consent choice. See our Cookie Policy for details.",
+          "We use browser storage to remember preferences and your cookie-consent choice. See our Cookie Policy for details.",
         ],
       },
       {
@@ -96,8 +95,8 @@ export const legalDocs: Record<string, LegalDoc> = {
         ],
         bullets: [
           "Newsletter subscribers — until you unsubscribe, then removed at the next clean-up.",
-          "Quote requests, business suggestions, claims and contact messages — up to about 12 months after they are resolved.",
-          "Reviews — kept while published; on account deletion we remove or anonymise them.",
+          "Contact messages — up to about 12 months after they are resolved.",
+          "Historical submissions, reviews and transactions from retired features — retained or removed according to applicable obligations and deletion requests.",
         ],
       },
       {
@@ -129,17 +128,17 @@ export const legalDocs: Record<string, LegalDoc> = {
           "We collect, use and disclose personal data only for the limited purposes you would reasonably expect, and we seek your consent where required. Those purposes are:",
         ],
         bullets: [
-          "Running the directory and your saved places.",
+          "Publishing guides and operating free tools.",
           "Sending content and emails you asked for (newsletter, account and contact emails).",
-          "Processing business submissions, claims, quote requests and contact messages.",
-          "Moderating reviews and keeping the platform safe and accurate.",
+          "Responding to contact messages and correction requests.",
+          "Resolving records and obligations from retired features.",
         ],
       },
       {
         h2: "Quote requests & sharing with providers",
         body: [
-          "When you submit a quote request (\"Request a quote\"), you explicitly consent to us sharing your request and contact details with up to five matching halal providers so they can quote you directly. We only share with providers relevant to your request (by category and area) and never sell your details for unrelated marketing.",
-          "Providers see your enquiry but only unlock your contact details when they accept your request. Providers are independent businesses; once you engage one, their own privacy practices apply. You can withdraw consent at any time (see below), and we anonymise quote requests on a schedule: enquiries we've closed after 180 days, and any enquiry after 12 months.",
+          "Quote requests are no longer accepted. Requests submitted before this feature was retired may have been shared with relevant providers under the consent given at the time. We do not sell your details for unrelated marketing.",
+          `To ask about a past request or withdraw consent for processing that still depends on it, email ${PRIVACY_EMAIL}. Some records may be retained where required to resolve a past transaction or comply with law.`,
         ],
       },
       {
@@ -197,51 +196,51 @@ export const legalDocs: Record<string, LegalDoc> = {
       {
         h2: "What Humble Halal is",
         body: [
-          "Humble Halal is a discovery and directory platform for halal and Muslim-owned businesses in Singapore. We are NOT a halal certifier. We surface MUIS certification status and link to the official MUIS HalalSG register, but the authoritative source for halal certification is always MUIS. Always verify before you rely on it — see our Halal Disclaimer.",
+          "Humble Halal publishes guides and offers free tools for Muslim life in Singapore. We are not a halal certifier. For certification, check the official MUIS HalalSG register and verify current details before relying on an article — see our Halal Disclaimer.",
         ],
       },
       {
-        h2: "Listings & accuracy",
+        h2: "Information & accuracy",
         body: [
-          "Listing information (including hours, contact details and halal status) may be submitted by businesses or community members and can be out of date or incorrect. We make reasonable efforts to keep it accurate but do not guarantee it. Use the “Report incorrect info” link to flag issues.",
+          "Articles and tool information can become outdated or contain errors. We make reasonable efforts to keep it accurate but do not guarantee it. Contact us if you spot a correction. Verify restaurant details and halal certification with the business and MUIS before visiting.",
         ],
       },
       {
-        h2: "Your content (reviews)",
+        h2: "Your submissions",
         bullets: [
           "You must own or have the right to post what you submit, and it must be honest and lawful.",
           "No spam, hate speech, harassment, false claims, or content that infringes others' rights.",
-          "Reviews are moderated and may be removed. You grant us a licence to display your submitted content on the platform.",
+          "If you previously submitted a review or send us content, you grant us a licence to display it on Humble Halal. We may moderate or remove submitted content.",
         ],
       },
       {
-        h2: "Business listings & claims",
+        h2: "Historical business listings & claims",
         body: [
-          "Business owners may submit, claim and manage listings. By doing so you confirm you are authorised to represent the business and that the information is accurate. We may verify, edit, suspend or remove listings.",
+          "Business listing and claim features are retired. If you previously submitted or claimed a listing, you confirmed that you were authorised to represent the business and that the information was accurate. Contact us about historical records or corrections.",
         ],
       },
       {
-        h2: "Payments & refunds (our paid plans)",
+        h2: "Historical payments & refunds",
         body: [
-          "Paid business plans, advertising and event tickets (where enabled) are processed by Stripe. Fees and billing cycles are shown at the point of purchase. Subscriptions renew until cancelled; you can cancel at any time and your plan runs to the end of the paid period. Where we offer a money-back guarantee, its terms are shown at checkout. To request a refund or cancel, contact us at hello@humblehalal.com.",
+          "We no longer offer paid business plans, advertising or event tickets. Stripe may retain records of past transactions. The terms shown at the time of purchase govern any past order or subscription. To ask about a charge, cancellation or refund, contact hello@humblehalal.com.",
         ],
       },
       {
         h2: "Service providers",
         body: [
-          "We rely on third-party providers to operate the service, including Stripe (our paid plans), Resend and Beehiiv (email), Supabase (database), Vercel (hosting) and OneMap/OpenStreetMap (maps). Your use of features that involve them may also be subject to their terms.",
+          "We rely on third-party providers to operate the site, including Beehiiv and Resend (email), Supabase (data), Vercel (hosting) and OneMap/OpenStreetMap (location tools). Stripe may process historical transaction records. Your use of features that involve these providers may also be subject to their terms.",
         ],
       },
       {
         h2: "Suspension & termination",
         body: [
-          "We may suspend or remove listings, reviews or accounts that breach these terms, are fraudulent or unlawful, infringe others' rights, or harm the platform or its users. Where practical we'll give notice; serious cases may be actioned immediately.",
+          "We may remove submissions or restrict accounts that breach these terms, are fraudulent or unlawful, infringe others' rights, or harm the site or its users. Where practical we'll give notice; serious cases may be actioned immediately.",
         ],
       },
       {
         h2: "Disclaimers & liability",
         body: [
-          "The service is provided “as is”. To the extent permitted by law, we exclude warranties and are not liable for indirect or consequential loss, or for decisions you make based on listing or halal-status information. Nothing limits liability that cannot be excluded by law.",
+          "The service is provided “as is”. To the extent permitted by law, we exclude warranties and are not liable for indirect or consequential loss, or for decisions you make based on articles or halal-related information. Nothing limits liability that cannot be excluded by law.",
         ],
       },
       {

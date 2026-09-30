@@ -8,7 +8,6 @@ import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 import { BlogCard } from "@/components/blog/blog-card";
 import { CategoryChips } from "@/components/blog/category-chips";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
-import { SponsoredSlot } from "@/components/sponsored-slot";
 import { isUnoptimizedImageSrc } from "@/lib/img";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -94,10 +93,6 @@ export default async function Page() {
             <CategoryChips />
           </div>
 
-          {/* Sponsored placement — renders nothing until a campaign is booked */}
-          <div className="blog-inline-cta">
-            <SponsoredSlot placement="blog_inline" />
-          </div>
 
           {/* Latest posts */}
           {rest.length > 0 && (
@@ -119,11 +114,9 @@ export default async function Page() {
           {/* SEO copy / funnel links */}
           <div className="blog-section blog-foot-copy">
             <p>
-              Every guide here links into the{" "}
-              <Link className="link-inline" href="/halal">halal directory</Link> so you can find
-              MUIS-verified places near you — or check a specific brand with the{" "}
-              <Link className="link-inline" href="/is-halal">is-it-halal brand checker</Link>. New
-              guides are added regularly.
+              Use these guides to plan and explore, and check time-sensitive details directly before you visit.
+              For practical help with prayer, Quran and everyday questions, explore our{" "}
+              <Link className="link-inline" href="/tools">free tools</Link>.
             </p>
           </div>
         </div>

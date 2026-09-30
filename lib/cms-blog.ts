@@ -6,6 +6,7 @@ import { allPosts as allLegacyPosts, type BlogPost } from "./blog";
 import type { BlogCategorySlug } from "./blog-categories";
 import { isPostLive } from "./content-calendar";
 import { DEFAULT_AUTHOR, resolveAuthor, type BlogAuthor } from "./blog-authors";
+import { currentEditorialPost } from "./editorial-pivot";
 
 const reader = createReader(process.cwd(), keystaticConfig);
 
@@ -80,6 +81,7 @@ export async function allBlogPosts(): Promise<BlogPost[]> {
   for (const post of await cmsPosts()) merged.set(post.slug, post);
   return [...merged.values()]
     .filter((post) => post.category !== "muslim-travel")
+    .map(currentEditorialPost)
     .sort((a, b) => b.datePublished.localeCompare(a.datePublished));
 }
 

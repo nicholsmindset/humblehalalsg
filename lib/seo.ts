@@ -5,9 +5,9 @@ export const SITE = {
   name: "Humble Halal",
   shortName: "Humble Halal",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.humblehalal.com",
-  tagline: "Singapore's trusted halal & Muslim-owned business directory",
+  tagline: "Halal guides and tools for Singapore",
   description:
-    "Discover halal restaurants, cafés, Muslim-owned businesses, services and community-friendly places across Singapore. A discovery platform — not a certifier.",
+    "Practical halal food guides, Muslim life stories and free Islamic tools for Singapore.",
   locale: "en_SG",
   twitter: "@humblehalalsg",
   // Brand palette — single source of truth so the manifest, viewport theme-color

@@ -12,7 +12,6 @@ import { approvedVerdictSummaries } from "@/lib/verdicts-data";
 import { allComparePairs } from "@/lib/brand-compare";
 import { waktuSolatSitemapPaths } from "@/lib/waktu-solat";
 import { MS_PAGES } from "@/lib/ms-pages";
-import { certChangesIndexable } from "@/lib/cert-changes";
 import { profiledHawkerIds } from "@/lib/hawker-content";
 import { allBlogPosts } from "@/lib/cms-blog";
 import { allCategories } from "@/lib/blog-categories";
@@ -28,15 +27,11 @@ import { SITE } from "@/lib/seo";
 
 export const SITEMAP_SEGMENTS = [
   "core",
-  "businesses",
-  "areas",
   "brands",
-  "events",
   "blog",
   "tools",
   "weddings",
   "mosques",
-  "hawker",
 ] as const;
 
 export type SitemapSegment = (typeof SITEMAP_SEGMENTS)[number];
@@ -64,43 +59,17 @@ export function sitemapDate(value?: string | null): string | undefined {
 
 const PUBLIC_STATIC = [
   "/",
-  "/explore",
-  "/map",
   "/mosques",
   "/prayer-rooms",
   "/tools",
-  "/halal",
-  "/halal-food-singapore",
-  "/halal-food-near-me",
-  "/best-halal-restaurants-singapore",
-  "/new-halal-restaurants-singapore",
   "/is-halal",
   "/blog",
-  "/events",
-  "/deals",
   "/ramadan",
-  "/ramadan-bazaar-singapore",
-  "/iftar-buka-puasa-singapore",
-  "/hari-raya",
-  "/hari-raya-catering-singapore",
-  "/halal-certification-singapore-guide",
-  "/how-to-get-halal-certified-muis",
-  "/muis-halal-certification-explained",
-  "/muis-halal-certified-directory",
-  "/halal-business-directory-singapore",
-  "/muslim-owned-businesses-singapore",
-  "/halal-marketing-services",
-  "/for-business",
-  "/advertise",
-  "/pricing",
-  "/quotes",
   "/about",
   "/contact",
   "/faq",
   "/guides",
-  "/verify",
   "/disclaimer",
-  "/suggest",
   "/terms",
   "/privacy",
   "/pdpa",
@@ -128,17 +97,14 @@ export async function segmentUrls(seg: string): Promise<SitemapUrl[]> {
       }));
       // Malay translation pairs (/ms/*) — the EN counterparts are already in
       // PUBLIC_STATIC; hreflang on both sides links the pair.
-      const msEntries: SitemapUrl[] = MS_PAGES.map((p) => ({
+      const msEntries: SitemapUrl[] = MS_PAGES.filter((p) => p.path === "/ms/ramadan").map((p) => ({
         loc: `${base}${p.path}`,
         changefreq: "weekly",
         priority: 0.6,
       }));
       // Cert-changes changelog is noindex until ≥10 logged events — keep it out
       // of the sitemap until then (same mixed-signal rule as thin SEO pages).
-      const certEntries: SitemapUrl[] = (await certChangesIndexable())
-        ? [{ loc: `${base}/halal-certification-changes`, changefreq: "weekly", priority: 0.6 }]
-        : [];
-      return [...staticEntries, ...waktuEntries, ...msEntries, ...certEntries];
+      return [...staticEntries, ...waktuEntries, ...msEntries];
     }
 
     case "businesses": {

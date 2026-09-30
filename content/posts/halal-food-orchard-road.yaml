@@ -6,7 +6,7 @@ answer: >-
   ION Orchard, Plaza Singapura, 313@Somerset and the surrounding malls all carry
   MUIS-certified and Muslim-owned options — from local hawker-style fare to cafés
   and full-service restaurants. Look for the MUIS certificate or the Muslim-Owned
-  label, and use the directory to find the closest.
+  label, and check current options and verify the specific outlet on MUIS HalalSG.
 author: The Humble Halal Team
 datePublished: 2026-07-28
 dateModified: 2026-07-28
@@ -61,13 +61,12 @@ sections:
       - >-
         The whole belt runs along the North-South MRT line — Orchard, Somerset and
         Dhoby Ghaut stations put you within a few minutes of everything above. To see
-        exactly which outlets are certified and what's closest, open the directory and
-        filter for halal.
+        exactly which outlets are certified and what's closest, check the current MUIS HalalSG register for certified outlets.
     links:
       - label: "Halal food in Orchard — directory"
-        href: "https://www.humblehalal.com/halal-food/orchard"
-      - label: "Browse the halal directory"
-        href: "https://www.humblehalal.com/halal"
+        href: "https://www.humblehalal.com/blog/halal-food-orchard-road"
+      - label: "Check current MUIS certification"
+        href: "https://halal.muis.gov.sg/halal/establishments"
       - label: "Is it halal? brand checker"
         href: "https://www.humblehalal.com/is-halal"
 faq:
@@ -89,7 +88,7 @@ faq:
   - q: "Are there halal cafés in Orchard?"
     a: >-
       Yes — the Somerset stretch and several malls have Muslim-owned and halal-friendly
-      cafés for brunch, coffee and dessert. Filter the directory for cafés to find the
+      cafés for brunch, coffee and dessert. Check individual cafés directly to find the
       nearest.
 related:
   - halal-food-suntec-marina-square

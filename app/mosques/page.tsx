@@ -74,11 +74,11 @@ export default function Page() {
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Mosques in Singapore</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
               {mosques.length} mosques (masjid) across Singapore, grouped by region. Find one near you, get directions,
-              or open the live map to see the mosques nearest you.
+              and explore their prayer and facility information.
             </p>
             <div style={{ marginTop: 16 }}>
-              <Link href="/map?show=mosques" className="btn btn-primary">
-                Find mosques near you on the map →
+              <Link href="#mosque-list" className="btn btn-primary">
+                Browse mosques by region →
               </Link>
             </div>
             <p className="muted" style={{ marginTop: 12, fontSize: ".92rem" }}>
@@ -96,7 +96,7 @@ export default function Page() {
           </div>
         </section>
 
-        <div className="hh-wrap hh-section">
+        <div id="mosque-list" className="hh-wrap hh-section">
           {grouped.map((g) => (
             <section key={g.region} id={REGION_SLUG[g.region]} className="mosque-region">
               <h2 className="mosque-region-h">
@@ -105,7 +105,7 @@ export default function Page() {
               </h2>
               <div className="hub-grid">
                 {g.items.map((m) => {
-                  // Profiled mosques have a rich detail page; others link to the map.
+                  // Profiled mosques have a rich detail page; others link to external directions.
                   const slug = mosqueSlug(m);
                   const profiled = !!mosqueProfile(slug);
                   return (
