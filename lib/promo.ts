@@ -6,7 +6,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type PromoReason = "invalid_code" | "not_started" | "expired" | "min_qty" | "exhausted";
+export type PromoReason = "invalid_code" | "not_started" | "expired" | "min_qty" | "exhausted" | "service_unavailable";
 
 export type PromoCheck =
   | { ok: true; promoId: string; code: string; kind: "percent" | "fixed"; discountCents: number }
@@ -21,6 +21,7 @@ export const PROMO_MESSAGES: Record<PromoReason, string> = {
   expired: "This code has expired.",
   min_qty: "This code needs a larger ticket quantity.",
   exhausted: "This code has been fully redeemed.",
+  service_unavailable: "Promo codes aren't available right now. Please try again.",
 };
 
 export function normalizePromoCode(raw: unknown): string | null {
@@ -38,13 +39,15 @@ export async function validatePromoCode(
   const code = normalizePromoCode(opts.code);
   if (!code || !opts.businessId || !SAFE_REF.test(opts.eventId)) return { ok: false, reason: "invalid_code" };
 
-  const { data: rows } = await admin
+  const { data: rows, error } = await admin
     .from("promo_codes")
     .select("id, code, kind, percent_off, amount_off_cents, max_redemptions, redeemed, min_qty, starts_at, expires_at, active, event_id")
     .eq("business_id", opts.businessId)
     .eq("code", code)
     .or(`event_id.is.null,event_id.eq.${opts.eventId}`)
     .limit(10);
+
+  if (error) return { ok: false, reason: "service_unavailable" };
 
   const promo = rows?.find((r) => r.event_id === opts.eventId) ?? rows?.find((r) => r.event_id == null);
   if (!promo || !promo.active) return { ok: false, reason: "invalid_code" };
