@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "not_configured" });
 
-  const { data: bk } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
+  const { data: bk, error: bookingError } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
+  if (bookingError) return NextResponse.json({ ok: false, error: "Could not load this booking." }, { status: 503 });
   if (!bk || bk.user_id !== userId) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
 
   // LiteAPI is the source of truth for the guest name; we don't mirror it locally
