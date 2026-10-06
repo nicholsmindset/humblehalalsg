@@ -273,7 +273,7 @@ export const legalDocs: Record<string, LegalDoc> = {
       {
         h2: "Advertising (with consent)",
         body: [
-          "With your consent we show ads through Google AdSense and may use advertising and measurement pixels from Meta, TikTok, LinkedIn and Google Ads. Until you accept marketing cookies, ads are served in a non-personalised mode and these advertising pixels stay blocked.",
+          "With your consent we show ads through Google AdSense and may use advertising and measurement pixels from Meta, TikTok, LinkedIn and Google Ads. Google AdSense uses Google Privacy & messaging to collect and apply regional advertising consent where required. We also respect an explicit advertising opt-out saved in this site’s Cookie settings. Other marketing pixels remain subject to their consent settings. You can open Cookie settings in the footer to change your site choice; where Google displays a consent message, its privacy link lets you review those choices.",
         ],
       },
       {

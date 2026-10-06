@@ -22,6 +22,6 @@ jobs:
           BASE="${{ vars.SITE_URL || 'https://humblehalal.com' }}"
           lhci autorun \
             --collect.url="$BASE/" \
-            --collect.url="$BASE/explore" \
-            --collect.url="$BASE/halal" \
+            --collect.url="$BASE/blog" \
+            --collect.url="$BASE/tools" \
             --collect.url="$BASE/blog/what-is-halal-singapore"

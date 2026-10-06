@@ -41,10 +41,9 @@ function applyConsentMode(analytics: boolean, marketing: boolean) {
   window.dataLayer.push({ event: "consent_update", analytics_consent: analytics, marketing_consent: marketing });
 }
 
-/* PDPA-aware consent banner. Records a granular choice in localStorage and
-   drives Google Consent Mode v2 (see components/analytics/gtm.tsx). Marketing
-   pixels stay blocked until the user opts in; analytics runs in cookieless
-   modeled mode until analytics is granted. */
+/* On-demand site preferences, opened only from the footer. AdSense uses
+   Google Privacy & messaging for regional consent; never auto-open a duplicate
+   custom banner. This panel preserves the visitor's explicit site opt-out. */
 export function CookieConsent() {
   const pathname = usePathname();
   const [show, setShow] = useState(false);
@@ -53,7 +52,15 @@ export function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    if (!readConsent()) setShow(true);
+    const reopen = () => {
+      const saved = readConsent();
+      setAnalytics(saved?.analytics ?? false);
+      setMarketing(saved?.marketing ?? false);
+      setCustomize(true);
+      setShow(true);
+    };
+    window.addEventListener("hh:privacy-settings", reopen);
+    return () => window.removeEventListener("hh:privacy-settings", reopen);
   }, []);
 
   const save = (a: boolean, m: boolean) => {
@@ -63,15 +70,17 @@ export function CookieConsent() {
       /* storage blocked — still apply for this session */
     }
     applyConsentMode(a, m);
+    window.dispatchEvent(new Event("hh:consent-change"));
     setShow(false);
   };
 
   if (!show || pathname.startsWith("/keystatic")) return null;
   return (
     <div className="cookie-banner" role="region" aria-label="Cookie consent" aria-live="polite">
+      <button className="btn btn-ghost btn-sm" aria-label="Close cookie settings" onClick={() => setShow(false)}>Close</button>
       <p className="cookie-text">
         We use essential storage to run the site. With your consent we also use analytics (to improve the site) and
-        marketing cookies (to measure ads). See our <a href="/cookies">Cookie Policy</a> and{" "}
+        marketing cookies (to show and measure ads). See our <a href="/cookies">Cookie Policy</a> and{" "}
         <a href="/privacy">Privacy Policy</a>.
       </p>
 
@@ -87,7 +96,7 @@ export function CookieConsent() {
           </label>
           <label className="flex g10 center" style={{ cursor: "pointer" }}>
             <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
-            <span><strong>Marketing</strong> — ad measurement (Meta, TikTok, LinkedIn, Google Ads)</span>
+            <span><strong>Marketing</strong> — ads and measurement (Google AdSense, Meta, TikTok, LinkedIn, Google Ads)</span>
           </label>
         </div>
       )}

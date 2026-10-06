@@ -1,3 +1,4 @@
+import { EditorialAd } from "@/components/ads/editorial-ad";
 import Link from "next/link";
 import Image from "next/image";
 import { allBlogPosts } from "@/lib/cms-blog";
@@ -79,6 +80,8 @@ export default async function Page() {
           <div className="blog-grid">{latest.slice(0, 6).map((post) => <BlogCard key={post.slug} post={post} headingLevel="h3" />)}</div>
         </section>
       )}
+
+      <div className="hh-wrap"><EditorialAd placement="home-after-guides" /></div>
 
       <section className="editorial-tools editorial-section" aria-labelledby="tools-heading">
         <div className="hh-wrap editorial-tools-inner">

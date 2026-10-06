@@ -8,7 +8,8 @@ const base = (process.argv[2] || process.env.SITE_URL || "https://humblehalal.co
 // path → required @type values (any nesting / @graph entry counts)
 const CHECKS = [
   ["/", ["Organization", "WebSite"]],
-  ["/explore", ["ItemList"]],
+  ["/blog", ["Blog"]],
+  ["/tools", ["ItemList"]],
   ["/is-halal/paris-baguette", ["FAQPage"]],
   ["/blog/what-is-halal-singapore", ["BlogPosting"]],
 ];
