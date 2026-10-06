@@ -687,6 +687,7 @@ export function Footer() {
         <Link href="/privacy">{t("footer.legal.privacy")}</Link>
         <Link href="/pdpa">{t("footer.legal.pdpa")}</Link>
         <Link href="/cookies">{t("footer.legal.cookies")}</Link>
+        <button className="privacy-settings-link" onClick={() => window.dispatchEvent(new Event("hh:privacy-settings"))}>Cookie settings</button>
         <Link href="/accessibility">{t("footer.legal.accessibility")}</Link>
         <Link href="/disclaimer">{t("footer.legal.disclaimer")}</Link>
       </nav>

@@ -54,6 +54,15 @@ export function CookieConsent() {
 
   useEffect(() => {
     if (!readConsent()) setShow(true);
+    const reopen = () => {
+      const saved = readConsent();
+      setAnalytics(saved?.analytics ?? false);
+      setMarketing(saved?.marketing ?? false);
+      setCustomize(true);
+      setShow(true);
+    };
+    window.addEventListener("hh:privacy-settings", reopen);
+    return () => window.removeEventListener("hh:privacy-settings", reopen);
   }, []);
 
   const save = (a: boolean, m: boolean) => {
@@ -63,6 +72,7 @@ export function CookieConsent() {
       /* storage blocked — still apply for this session */
     }
     applyConsentMode(a, m);
+    window.dispatchEvent(new Event("hh:consent-change"));
     setShow(false);
   };
 
@@ -71,7 +81,7 @@ export function CookieConsent() {
     <div className="cookie-banner" role="region" aria-label="Cookie consent" aria-live="polite">
       <p className="cookie-text">
         We use essential storage to run the site. With your consent we also use analytics (to improve the site) and
-        marketing cookies (to measure ads). See our <a href="/cookies">Cookie Policy</a> and{" "}
+        marketing cookies (to show and measure ads). See our <a href="/cookies">Cookie Policy</a> and{" "}
         <a href="/privacy">Privacy Policy</a>.
       </p>
 
@@ -87,7 +97,7 @@ export function CookieConsent() {
           </label>
           <label className="flex g10 center" style={{ cursor: "pointer" }}>
             <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
-            <span><strong>Marketing</strong> — ad measurement (Meta, TikTok, LinkedIn, Google Ads)</span>
+            <span><strong>Marketing</strong> — ads and measurement (Google AdSense, Meta, TikTok, LinkedIn, Google Ads)</span>
           </label>
         </div>
       )}

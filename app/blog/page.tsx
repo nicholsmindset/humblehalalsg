@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+import { EditorialAd } from "@/components/ads/editorial-ad";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -99,8 +101,10 @@ export default async function Page() {
             <div className="blog-section" style={{ marginTop: 8 }}>
               <h2 className="blog-hub-heading">Latest guides</h2>
               <div className="blog-grid">
-                {rest.map((p) => (
-                  <BlogCard key={p.slug} post={p} headingLevel="h3" />
+                {rest.map((p, i) => (
+                  <Fragment key={p.slug}><BlogCard post={p} headingLevel="h3" />
+                    {i === 5 && rest.length >= 9 && <EditorialAd placement="blog-after-six" />}
+                  </Fragment>
                 ))}
               </div>
             </div>

@@ -1,3 +1,4 @@
+import { ToolAd } from "@/components/ads/editorial-ad";
 import type { ReactNode } from "react";
 // Route-scoped: tools.css (~52KB) loads only on /tools/** instead of every
 // route. Its rules are tools-prefixed or tool-container-scoped; the few classes
@@ -8,5 +9,5 @@ import type { ReactNode } from "react";
 import "../../styles/tools.css";
 
 export default function ToolsLayout({ children }: { children: ReactNode }) {
-  return children;
+  return <>{children}<ToolAd /></>;
 }

@@ -1,111 +1,101 @@
 "use client";
 
-/* Google AdSense — programmatic fill for unsold slots. Flag-gated: nothing loads
-   unless NEXT_PUBLIC_ADSENSE_CLIENT (ca-pub-…) is set, so the whole integration
-   ships dark until the AdSense account is approved.
-
-   Privacy: serves non-personalised ads (data-npa="1") until the visitor grants
-   marketing consent via the existing cookie banner (hh_consent_v1). Brand safety
-   (blocked categories) is configured in the AdSense dashboard — see lib/ad-safety.ts
-   and the runbook. */
-
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { validPublisherId } from "@/lib/editorial-ads";
 
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "";
-export const adsenseEnabled = ADSENSE_CLIENT.startsWith("ca-pub-");
+export const adsenseEnabled = validPublisherId(ADSENSE_CLIENT);
+let adLibraryFailed = false;
+export const CONSENT_EVENT = "hh:consent-change";
 
-// Read marketing consent from the cookie-consent store (localStorage hh_consent_v1).
-function marketingConsent(): boolean {
-  if (typeof window === "undefined") return false;
+function subscribeConsent(notify: () => void) {
+  window.addEventListener(CONSENT_EVENT, notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener(CONSENT_EVENT, notify);
+    window.removeEventListener("storage", notify);
+  };
+}
+function marketingConsent() {
   try {
-    const raw = localStorage.getItem("hh_consent_v1");
-    if (!raw) return false;
-    return JSON.parse(raw)?.marketing === true;
-  } catch {
-    return false;
-  }
+    const consent = JSON.parse(localStorage.getItem("hh_consent_v1") || "null");
+    return consent?.v === 1 && consent?.marketing === true;
+  } catch { return false; }
+}
+export function useAdvertisingConsent() {
+  return useSyncExternalStore(subscribeConsent, marketingConsent, () => false);
 }
 
 declare global {
-  interface Window {
-    adsbygoogle?: unknown[];
-  }
+  interface Window { adsbygoogle?: unknown[]; }
 }
 
-/** Loads the AdSense library once, after hydration. Rendered in the root layout.
- *  No-op unless a real publisher id is configured. */
+/** next/script deduplicates the library across slots and client navigations.
+ * Google Privacy & messaging supplies the certified regional consent flow;
+ * the site's marketing choice is an additional gate, never a TCF substitute. */
 export function AdsenseScript() {
-  if (!adsenseEnabled) return null;
-  return (
-    <Script
-      id="adsbygoogle-js"
-      strategy="afterInteractive"
-      async
-      crossOrigin="anonymous"
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-    />
-  );
+  const consent = useAdvertisingConsent();
+  if (!adsenseEnabled || !consent) return null;
+  return <Script id="adsbygoogle-js" strategy="afterInteractive" async
+    crossOrigin="anonymous"
+    onError={() => { adLibraryFailed = true; window.dispatchEvent(new Event("hh:ads-unavailable")); }}
+    src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`} />;
 }
 
-/** A single AdSense unit, sized by the placement's IAB format. Only pushes to
- *  adsbygoogle when it scrolls near the viewport (lazy) to protect performance. */
-export function AdsenseUnit({
-  slot,
-  format,
-  onFilled,
-}: {
-  slot: string;
-  format: string;
-  onFilled?: () => void;
+export function AdsenseUnit({ slot, format, onFilled, onUnfilled }: {
+  slot: string; format: string; onFilled?: () => void; onUnfilled?: () => void;
 }) {
   const ref = useRef<HTMLModElement>(null);
-  const pushed = useRef(false);
-  const [npa] = useState(() => (marketingConsent() ? "0" : "1"));
+  const consent = useAdvertisingConsent();
+  const filled = useRef(onFilled);
+  const unfilled = useRef(onUnfilled);
+  useEffect(() => { filled.current = onFilled; unfilled.current = onUnfilled; }, [onFilled, onUnfilled]);
 
   useEffect(() => {
-    if (!adsenseEnabled || !slot || pushed.current) return;
     const node = ref.current;
-    if (!node) return;
-    const push = () => {
-      if (pushed.current) return;
-      pushed.current = true;
+    if (!adsenseEnabled || !consent || !node || !/^\d+$/.test(slot)) return;
+    const unavailable = () => unfilled.current?.();
+    if (adLibraryFailed) { unavailable(); return; }
+    window.addEventListener("hh:ads-unavailable", unavailable);
+    let requested = node.dataset.hhRequested === "true";
+    let reported = false;
+    const status = new MutationObserver(() => {
+      if (node.dataset.adStatus === "filled" && !reported) {
+        reported = true;
+        filled.current?.();
+      } else if (node.dataset.adStatus === "unfilled") unfilled.current?.();
+    });
+    status.observe(node, { attributes: true, attributeFilter: ["data-ad-status"] });
+    let near = false;
+    const request = () => {
+      // Hidden/zero-width slots must not be pushed. A ResizeObserver retries
+      // only until the first successful request; no refresh timers or loops.
+      if (!near || requested || node.getBoundingClientRect().width < 250) return;
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
-        onFilled?.();
-      } catch {
-        /* AdSense not ready / blocked — leave the reserved box empty */
-      }
+        requested = true;
+        node.dataset.hhRequested = "true";
+      } catch { unfilled.current?.(); }
     };
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          push();
-          io.disconnect();
-        }
-      },
-      { rootMargin: "200px" },
-    );
-    io.observe(node);
-    return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slot]);
+    const resize = new ResizeObserver(request);
+    resize.observe(node);
+    const intersection = new IntersectionObserver(entries => {
+      near = entries.some(entry => entry.isIntersecting);
+      request();
+    }, { rootMargin: "300px" });
+    intersection.observe(node);
+    return () => { intersection.disconnect(); resize.disconnect(); status.disconnect(); window.removeEventListener("hh:ads-unavailable", unavailable); };
+  }, [slot, consent]);
 
-  if (!adsenseEnabled || !slot) return null;
-
-  // Responsive by default; the placement's size_format drives the reserved box
-  // (see styles/ads.css) so this stays CLS-safe.
-  return (
-    <ins
-      ref={ref}
-      className="adsbygoogle"
-      style={{ display: "block", width: "100%", height: "100%" }}
-      data-ad-client={ADSENSE_CLIENT}
-      data-ad-slot={slot}
+  if (!adsenseEnabled || !consent || !/^\d+$/.test(slot)) return null;
+  return <>
+    <AdsenseScript />
+    <ins ref={ref} className="adsbygoogle" style={{ display: "block", width: "100%" }}
+      data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot}
       data-ad-format={format === "in_article" ? "fluid" : "auto"}
       data-ad-layout={format === "in_article" ? "in-article" : undefined}
-      data-full-width-responsive="true"
-      data-npa={npa}
-    />
-  );
+      data-full-width-responsive="false"
+      data-adtest={typeof window !== "undefined" && !["humblehalal.com", "www.humblehalal.com"].includes(window.location.hostname) ? "on" : undefined} />
+  </>;
 }
