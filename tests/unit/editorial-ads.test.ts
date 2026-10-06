@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { articleAdBreaks, AD_SUPPORTED_TOOLS, validPublisherId } from "@/lib/editorial-ads";
+import { articleAdBreaks, AD_SUPPORTED_TOOLS, validPublisherId, canInitializeGoogleAds } from "@/lib/editorial-ads";
 const section = (words: number) => ({ h2: "Section", body: [Array(words).fill("word").join(" ")] });
 describe("editorial ad density", () => {
   it("keeps short pieces and a single long section free of injected ads", () => {
@@ -30,5 +30,16 @@ describe("editorial ad density", () => {
   it("rejects missing and malformed publishers", () => {
     expect(validPublisherId("ca-pub-7886081043408699")).toBe(true);
     for (const id of ["", "ca-pub-", "ca-pub-placeholder", "ca-pub-123"]) expect(validPublisherId(id)).toBe(false);
+  });
+});
+
+describe("Google-managed consent initialization", () => {
+  it("lets Google resolve new visitors without fabricating a consent grant", () => {
+    expect(canInitializeGoogleAds(null)).toBe(true);
+    expect(canInitializeGoogleAds("not-json")).toBe(true);
+  });
+  it("honors existing explicit opt-outs and later opt-ins", () => {
+    expect(canInitializeGoogleAds(JSON.stringify({v: 1, marketing: false}))).toBe(false);
+    expect(canInitializeGoogleAds(JSON.stringify({v: 1, marketing: true}))).toBe(true);
   });
 });

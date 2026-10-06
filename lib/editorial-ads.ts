@@ -42,3 +42,12 @@ export const AD_SUPPORTED_TOOLS = new Set([
   "/tools/date-converter", "/tools/islamic-calendar", "/tools/baby-names",
   "/tools/ingredient-checker",
 ]);
+
+/** Initialize Google's tag/CMP unless the visitor explicitly opted out here.
+ * This is NOT a consent grant: Google resolves regional TCF choices itself. */
+export function canInitializeGoogleAds(raw: string | null): boolean {
+  try {
+    const saved = JSON.parse(raw || "null");
+    return !(saved?.v === 1 && saved?.marketing === false);
+  } catch { return true; }
+}

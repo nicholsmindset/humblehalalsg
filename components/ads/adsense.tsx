@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { validPublisherId } from "@/lib/editorial-ads";
+import { canInitializeGoogleAds, validPublisherId } from "@/lib/editorial-ads";
 
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "";
 export const adsenseEnabled = validPublisherId(ADSENSE_CLIENT);
@@ -17,14 +17,12 @@ function subscribeConsent(notify: () => void) {
     window.removeEventListener("storage", notify);
   };
 }
-function marketingConsent() {
-  try {
-    const consent = JSON.parse(localStorage.getItem("hh_consent_v1") || "null");
-    return consent?.v === 1 && consent?.marketing === true;
-  } catch { return false; }
+function adServingEnabled() {
+  try { return canInitializeGoogleAds(localStorage.getItem("hh_consent_v1")); }
+  catch { return true; } // Google's certified CMP remains the consent authority.
 }
 export function useAdvertisingConsent() {
-  return useSyncExternalStore(subscribeConsent, marketingConsent, () => false);
+  return useSyncExternalStore(subscribeConsent, adServingEnabled, () => false);
 }
 
 declare global {
@@ -33,7 +31,8 @@ declare global {
 
 /** next/script deduplicates the library across slots and client navigations.
  * Google Privacy & messaging supplies the certified regional consent flow;
- * the site's marketing choice is an additional gate, never a TCF substitute. */
+ * prior site-level opt-outs remain an additional gate, never a TCF substitute.
+ * No default consent grant is fabricated when the custom popup is absent. */
 export function AdsenseScript() {
   const consent = useAdvertisingConsent();
   if (!adsenseEnabled || !consent) return null;
