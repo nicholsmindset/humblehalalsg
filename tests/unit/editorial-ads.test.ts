@@ -53,7 +53,7 @@ describe("additional editorial inventory", () => {
       .toEqual({ intro: true, end: true, breaks: [2, 4, 6] });
   });
   it("keeps content between the last inline unit and Multiplex, and skips noindex pages", () => {
-    const sections = Array.from({ length: 6 }, () => section(200));
+    const sections = Array.from({ length: 7 }, () => section(200));
     expect(articleAdPlan(sections).breaks).toEqual([1, 3]);
     expect(articleAdPlan(sections, [], true)).toEqual({ intro: false, end: false, breaks: [] });
   });
