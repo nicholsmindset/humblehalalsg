@@ -1,3 +1,4 @@
+import { listingAdBreaks } from "@/lib/editorial-ads";
 import { Fragment } from "react";
 import { EditorialAd } from "@/components/ads/editorial-ad";
 import type { Metadata } from "next";
@@ -34,6 +35,7 @@ export default async function Page() {
   const posts = await allBlogPosts();
   const featured = posts[0];
   const rest = posts.filter((p) => p.slug !== featured.slug);
+  const adBreaks = listingAdBreaks(rest.length);
   const featuredCat = getCategory(featured.category);
 
   const blogLd = {
@@ -103,7 +105,7 @@ export default async function Page() {
               <div className="blog-grid">
                 {rest.map((p, i) => (
                   <Fragment key={p.slug}><BlogCard post={p} headingLevel="h3" />
-                    {i === 5 && rest.length >= 9 && <EditorialAd placement="blog-after-six" />}
+                    {adBreaks.includes(i) && <EditorialAd placement={`blog-after-${i + 1}`} />}
                   </Fragment>
                 ))}
               </div>

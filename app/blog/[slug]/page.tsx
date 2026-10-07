@@ -1,5 +1,5 @@
 import { EditorialAd } from "@/components/ads/editorial-ad";
-import { articleAdBreaks } from "@/lib/editorial-ads";
+import { articleAdPlan } from "@/lib/editorial-ads";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Link from "next/link";
@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   // component itself is flag-gated client-side (renders nothing when off).
   const leadIndex = p.leadVertical ? leadInlineIndex(n, midIndex, -1) : -1;
 
-  const adBreaks = p.noindex ? [] : articleAdBreaks(p.sections, [midIndex, leadIndex, pqIndex]);
+  const ads = articleAdPlan(p.sections, [midIndex, leadIndex, pqIndex], !!p.noindex);
 
   return (
     <>
@@ -155,6 +155,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           </div>
 
 
+          {ads.intro && <EditorialAd placement="article-after-summary" />}
+
           <div className="article-body">
             {p.sections.map((s, i) => (
               <Fragment key={s.h2}>
@@ -180,7 +182,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                   {s.socialUrl && <BlogSocialEmbed url={s.socialUrl} label={s.socialLabel || s.h2} />}
                 </section>
 
-                {adBreaks.includes(i) && <EditorialAd kind="article" placement={`article-section-${i + 1}`} />}
+                {ads.breaks.includes(i) && <EditorialAd kind="article" placement={`article-section-${i + 1}`} />}
 
                 {s.image && <ArticleFigure src={s.image} alt={s.imageAlt || s.h2} caption={s.caption} />}
 
@@ -215,6 +217,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               </details>
             ))}
           </div>
+
+          {ads.end && <EditorialAd kind="multiplex" placement="article-end" />}
 
           <AuthorBio author={author} />
 

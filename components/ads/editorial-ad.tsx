@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AD_SUPPORTED_TOOLS, EDITORIAL_AD_UNITS } from "@/lib/editorial-ads";
 import { AdsenseUnit, adsenseEnabled, useAdvertisingConsent } from "./adsense";
 
-function Placement({ kind, placement }: { kind: "article" | "display"; placement: string }) {
+function Placement({ kind, placement }: { kind: "article" | "display" | "multiplex"; placement: string }) {
   const consent = useAdvertisingConsent();
   const [unfilled, setUnfilled] = useState(false);
   if (!adsenseEnabled) return null;
@@ -14,7 +14,7 @@ function Placement({ kind, placement }: { kind: "article" | "display"; placement
     <span className="ad-label">{consent && !unfilled ? "Advertisements" : "More from Humble Halal"}</span>
     <div className="editorial-ad-space">
       {consent && !unfilled ? <AdsenseUnit slot={EDITORIAL_AD_UNITS[kind]}
-        format={kind === "article" ? "in_article" : "rectangle"} onUnfilled={() => setUnfilled(true)} /> :
+        format={kind === "article" ? "in_article" : kind === "multiplex" ? "multiplex" : "rectangle"} onUnfilled={() => setUnfilled(true)} /> :
         <div className="editorial-ad-fallback"><p>Good guidance for everyday Muslim life.</p>
           <Link href="/blog">Explore our latest guides →</Link>
         </div>}
@@ -22,7 +22,7 @@ function Placement({ kind, placement }: { kind: "article" | "display"; placement
   </aside>;
 }
 
-export function EditorialAd({ kind = "display", placement }: { kind?: "article" | "display"; placement: string }) {
+export function EditorialAd({ kind = "display", placement }: { kind?: "article" | "display" | "multiplex"; placement: string }) {
   const pathname = usePathname();
   // A new page gets a new ins element. Never reuse a previously filled ad DOM.
   return <Placement key={`${pathname}:${placement}`} kind={kind} placement={placement} />;
