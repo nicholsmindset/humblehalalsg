@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-adsense-production.mjs",
     "build": "next build",
     "check:content": "tsx scripts/check-blog-content.mts",
     "gen:blog-images": "tsx scripts/gen-blog-images.mts",
