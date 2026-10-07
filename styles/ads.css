@@ -66,6 +66,11 @@
 .editorial-ad > .ad-label { display: block; font-size: .65rem; line-height: 18px; }
 .editorial-ad-space { width: 100%; min-height: 280px; }
 .editorial-ad-article { max-width: 100%; }
+/* Responsive Multiplex chooses its own rows; reserve space without clipping. */
+.editorial-ad-multiplex .editorial-ad-space { min-height: 600px; }
+@media (min-width: 761px) {
+  .editorial-ad-multiplex .editorial-ad-space { min-height: 360px; }
+}
 .editorial-ad-fallback { min-height: 280px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; box-sizing: border-box; gap: 12px; }
 .editorial-ad-fallback p { font: inherit; margin: 0; color: var(--ink-soft); }
 .editorial-ad-fallback a { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }

@@ -1,3 +1,4 @@
+import { listingAdBreaks } from "@/lib/editorial-ads";
 import { Fragment } from "react";
 import { EditorialAd } from "@/components/ads/editorial-ad";
 import type { Metadata } from "next";
@@ -35,6 +36,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const cat = getCategory(slug);
   if (!cat) notFound();
   const posts = await blogPostsByCategory(cat.slug);
+  const adBreaks = listingAdBreaks(posts.length, 2);
 
   return (
     <>
@@ -79,7 +81,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <div className="blog-grid">
               {posts.map((p, i) => (
                 <Fragment key={p.slug}><BlogCard post={p} headingLevel="h2" priority={i === 0} />
-                  {i === 5 && posts.length >= 9 && <EditorialAd placement="category-after-six" />}
+                  {adBreaks.includes(i) && <EditorialAd placement={`category-after-${i + 1}`} />}
                 </Fragment>
               ))}
             </div>

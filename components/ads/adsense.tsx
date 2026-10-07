@@ -92,7 +92,7 @@ export function AdsenseUnit({ slot, format, onFilled, onUnfilled }: {
     <AdsenseScript />
     <ins ref={ref} className="adsbygoogle" style={{ display: "block", width: "100%" }}
       data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot}
-      data-ad-format={format === "in_article" ? "fluid" : "auto"}
+      data-ad-format={format === "in_article" ? "fluid" : format === "multiplex" ? "autorelaxed" : "auto"}
       data-ad-layout={format === "in_article" ? "in-article" : undefined}
       data-full-width-responsive="false"
       data-adtest={typeof window !== "undefined" && !["humblehalal.com", "www.humblehalal.com"].includes(window.location.hostname) ? "on" : undefined} />

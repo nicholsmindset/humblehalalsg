@@ -54,6 +54,8 @@ export default async function Page() {
         )}
       </section>
 
+      <div className="hh-wrap"><EditorialAd placement="home-after-featured" /></div>
+
       <section className="editorial-section hh-wrap" aria-labelledby="topics-heading">
         <div className="editorial-section-head">
           <div><span className="eyebrow">Start here</span><h2 id="topics-heading">What would you like to explore?</h2></div>

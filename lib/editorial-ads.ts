@@ -1,9 +1,10 @@
 import type { BlogSection } from "./blog";
 
-// Public ad-unit IDs created specifically for Humble Halal, 6 October 2026.
+// Public ad-unit IDs created specifically for Humble Halal, 6–7 October 2026.
 export const EDITORIAL_AD_UNITS = {
   article: "2244043974",
   display: "8557426020",
+  multiplex: "8535702731",
 } as const;
 
 export function validPublisherId(value: string): boolean {
@@ -32,6 +33,27 @@ export function articleAdBreaks(sections: BlogSection[], excluded: number[] = []
       if (breaks.length === 3) break;
     }
   }
+  return breaks;
+}
+
+/** More inventory only when there is enough editorial content to support it.
+ * Leave at least 250 body words after the final inline unit before Multiplex. */
+export function articleAdPlan(sections: BlogSection[], excluded: number[] = [], noindex = false) {
+  const words = sections.map(s => [...(s.body || []), ...(s.bullets || [])]
+    .join(" ").trim().split(/\s+/).filter(Boolean).length);
+  const total = words.reduce((a, b) => a + b, 0);
+  const intro = !noindex && total >= 600;
+  const end = !noindex && total >= 1200;
+  const breaks = noindex ? [] : articleAdBreaks(sections, excluded)
+    .filter(i => !end || words.slice(i + 1).reduce((a, b) => a + b, 0) >= 250);
+  return { intro, end, breaks };
+}
+
+/** First break after six cards, then twelve cards between units. Keep at least
+ * three more cards below every break; short lists remain free of ad slots. */
+export function listingAdBreaks(count: number, maximum = 3): number[] {
+  const breaks: number[] = [];
+  for (let i = 5; i + 3 < count && breaks.length < maximum; i += 12) breaks.push(i);
   return breaks;
 }
 
