@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { canInitializeGoogleAds, validPublisherId } from "@/lib/editorial-ads";
 
 export const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || "";
@@ -46,10 +46,25 @@ export function AdsenseUnit({ slot, format, onFilled, onUnfilled }: {
   slot: string; format: string; onFilled?: () => void; onUnfilled?: () => void;
 }) {
   const ref = useRef<HTMLModElement>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
   const consent = useAdvertisingConsent();
   const filled = useRef(onFilled);
   const unfilled = useRef(onUnfilled);
   useEffect(() => { filled.current = onFilled; unfilled.current = onUnfilled; }, [onFilled, onUnfilled]);
+
+  useEffect(() => {
+    const node = container.current;
+    if (!node || !consent) return;
+    const intersection = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setNear(true);
+        intersection.disconnect();
+      }
+    }, { rootMargin: "300px" });
+    intersection.observe(node);
+    return () => intersection.disconnect();
+  }, [consent]);
 
   useEffect(() => {
     const node = ref.current;
@@ -66,11 +81,10 @@ export function AdsenseUnit({ slot, format, onFilled, onUnfilled }: {
       } else if (node.dataset.adStatus === "unfilled") unfilled.current?.();
     });
     status.observe(node, { attributes: true, attributeFilter: ["data-ad-status"] });
-    let near = false;
     const request = () => {
       // Hidden/zero-width slots must not be pushed. A ResizeObserver retries
       // only until the first successful request; no refresh timers or loops.
-      if (!near || requested || node.getBoundingClientRect().width < 250) return;
+      if (requested || node.getBoundingClientRect().width < 250) return;
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
         requested = true;
@@ -79,22 +93,21 @@ export function AdsenseUnit({ slot, format, onFilled, onUnfilled }: {
     };
     const resize = new ResizeObserver(request);
     resize.observe(node);
-    const intersection = new IntersectionObserver(entries => {
-      near = entries.some(entry => entry.isIntersecting);
-      request();
-    }, { rootMargin: "300px" });
-    intersection.observe(node);
-    return () => { intersection.disconnect(); resize.disconnect(); status.disconnect(); window.removeEventListener("hh:ads-unavailable", unavailable); };
-  }, [slot, consent]);
+    request();
+    return () => { resize.disconnect(); status.disconnect(); window.removeEventListener("hh:ads-unavailable", unavailable); };
+  }, [slot, consent, near]);
 
   if (!adsenseEnabled || !consent || !/^\d+$/.test(slot)) return null;
-  return <>
+  // Google push({}) processes the first uninitialized ins in document order.
+  // Keep offscreen ins elements out of the DOM so jumping past an earlier slot
+  // cannot spend the visible unit's request on that earlier placement.
+  return <div ref={container} style={{ width: "100%", minHeight: 1 }}>
     <AdsenseScript />
-    <ins ref={ref} className="adsbygoogle" style={{ display: "block", width: "100%" }}
+    {near && <ins ref={ref} className="adsbygoogle" style={{ display: "block", width: "100%" }}
       data-ad-client={ADSENSE_CLIENT} data-ad-slot={slot}
       data-ad-format={format === "in_article" ? "fluid" : format === "multiplex" ? "autorelaxed" : "auto"}
       data-ad-layout={format === "in_article" ? "in-article" : undefined}
       data-full-width-responsive="false"
-      data-adtest={typeof window !== "undefined" && !["humblehalal.com", "www.humblehalal.com"].includes(window.location.hostname) ? "on" : undefined} />
-  </>;
+      data-adtest={typeof window !== "undefined" && !["humblehalal.com", "www.humblehalal.com"].includes(window.location.hostname) ? "on" : undefined} />}
+  </div>;
 }
