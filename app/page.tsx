@@ -32,12 +32,13 @@ export default async function Page() {
       <section className="editorial-hero hh-wrap">
         <div className="editorial-hero-copy">
           <span className="eyebrow">Made for Muslim life in Singapore</span>
-          <h1>Good guidance for the way you live.</h1>
-          <p>Explore halal food, understand what to check, and find practical tools for everyday life. Thoughtful guides, all in one place.</p>
+          <h1>Your guide to halal Singapore.</h1>
+          <p>Find your next meal, understand halal, and make everyday Muslim life a little easier.</p>
           <div className="editorial-hero-actions">
             <Link className="btn btn-primary btn-lg" href="/blog">Read the guides</Link>
             <Link className="btn btn-outline btn-lg" href="/tools">Explore tools</Link>
           </div>
+          <nav className="editorial-quick-links" aria-label="Popular guide topics"><Link href="/blog/category/restaurants-cafes">Where to eat</Link><Link href="/blog/category/halal-basics">Halal basics</Link><Link href="/blog#find-guides">Find a guide →</Link></nav>
         </div>
         {featured && (
           <Link className="editorial-feature" href={`/blog/${featured.slug}`}>
@@ -62,9 +63,9 @@ export default async function Page() {
           <Link href="/blog">All guides →</Link>
         </div>
         <div className="editorial-topics">
-          {topics.map((topic) => (
+          {topics.map((topic, index) => (
             <Link key={topic.href} className="editorial-topic" href={topic.href}>
-              <span className="editorial-topic-icon" aria-hidden="true">{topic.icon}</span>
+              <span className="editorial-topic-number" aria-hidden="true">0{index + 1}</span>
               <h3>{topic.title}</h3>
               <p>{topic.description}</p>
               <span aria-hidden="true">→</span>
