@@ -218,6 +218,7 @@
 .blog-index-head h1 { font-family: var(--serif); letter-spacing: -.025em; line-height: 1.15; margin-top: 8px; }
 .blog-index-head nav { min-height: 28px; }
 .blog-index > .hh-section { padding-top: 24px; }
+.blog-index > .hh-wrap.hh-section, .blog-category > .hh-wrap.hh-section { padding-inline: 20px; }
 .guide-finder { display: grid; grid-template-columns: minmax(180px, .65fr) minmax(280px, 1fr); align-items: center; gap: 24px; padding: 20px 0 28px; margin-bottom: 30px; border-bottom: 1px solid var(--line-strong); scroll-margin-top: 90px; }
 .guide-finder label { font-family: var(--serif); font-size: 1.4rem; font-weight: 600; }
 .guide-search-field { display: flex; align-items: center; gap: 12px; background: var(--white); border: 1px solid var(--line-strong); border-radius: 10px; padding: 4px 12px; }
@@ -300,3 +301,6 @@
   .article-related { padding-block: 40px; }
 }
 @media (prefers-reduced-motion: reduce) { .blog-card-media img, .blog-hero-media img { transition: none; } }
+@media (max-width: 380px) {
+  .blog-index > .hh-wrap.hh-section, .blog-category > .hh-wrap.hh-section { padding-inline: 16px; }
+}
