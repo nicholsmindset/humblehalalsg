@@ -33,7 +33,17 @@ Scope: homepage, blog index, category pages and article reading, on desktop and 
 - Browser at 320px and 390px: no horizontal document overflow on checked home/blog views. Mobile menu opens, receives focus and dismisses with Escape.
 - Article contents link reaches section 7 at 90px below the viewport top, clear of the header.
 - Added unit coverage for search normalization, multiple terms, empty query and compact client data; added E2E coverage for search recovery and article navigation.
+- Hosted production-environment preview built successfully with the AdSense publisher guard passing. Blog index has 3 placements; Vietnamese article has 4 on desktop and mobile. Quran has 0 placements and no Google ad loader. Ad fill is not asserted.
+- Tablet category gutters were corrected after browser review; the 768px grid now sits between x=20 and x=748.
+
+## Review preview
+
+[Hosted preview](https://humblehalalsg-r1eiixkdh-nicholsmindset-gmailcoms-projects.vercel.app/blog) · [PR #437](https://github.com/nicholsmindset/humblehalalsg/pull/437). This has not been promoted to humblehalal.com.
+
+Screenshots are saved in the task's `outputs/ux-audit-2026-10-08` folder: homepage before views, finished desktop blog, mobile article and mobile contents.
 
 ## Remaining measurement
 
-Actual revenue, click-through rate and reading completion need production traffic data. This audit makes no claim of a measured uplift. Google controls ad fill; available placements do not guarantee an impression on every visit. The existing unrelated `braces` dependency audit finding is not addressed by this visual change.
+Actual revenue, click-through rate and reading completion need production traffic data. This audit makes no claim of a measured uplift. Google controls ad fill; available placements do not guarantee an impression on every visit.
+
+The PR dependency security check fails on the unchanged dependency stack: `GHSA-cjq9-62q9-8jv4` (Next.js) and `GHSA-vfj7-8cjw-p6xm` (Keystatic → chokidar → braces). Resolve these before production release; this visual change does not bypass the security check.
