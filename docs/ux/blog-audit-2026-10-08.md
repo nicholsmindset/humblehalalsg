@@ -29,7 +29,7 @@ Scope: homepage, blog index, category pages and article reading, on desktop and 
 - Full unit suite: 68 files, 477 tests passed.
 - TypeScript: passed. Content validation: passed.
 - ESLint: no errors; 132 existing repository warnings.
-- Browser: search returns the Vietnamese guide; unmatched search displays an honest empty state; clearing restores 53 non-featured cards plus the featured guide.
+- Browser: search returns the Vietnamese guide; unmatched search displays an honest empty state; clearing restores the complete collection: one lead, two supporting stories and 51 other guides.
 - Browser at 320px and 390px: no horizontal document overflow on checked home/blog views. Mobile menu opens, receives focus and dismisses with Escape.
 - Article contents link reaches section 7 at 90px below the viewport top, clear of the header.
 - Added unit coverage for search normalization, multiple terms, empty query and compact client data; added E2E coverage for search recovery and article navigation.
@@ -38,7 +38,7 @@ Scope: homepage, blog index, category pages and article reading, on desktop and 
 
 ## Review preview
 
-[Hosted preview](https://humblehalalsg-r1eiixkdh-nicholsmindset-gmailcoms-projects.vercel.app/blog) · [PR #437](https://github.com/nicholsmindset/humblehalalsg/pull/437). This has not been promoted to humblehalal.com.
+[Hosted preview](https://humblehalalsg-ifxpcfkw2-nicholsmindset-gmailcoms-projects.vercel.app/blog) · [PR #437](https://github.com/nicholsmindset/humblehalalsg/pull/437). This has not been promoted to humblehalal.com.
 
 Screenshots are saved in the task's `outputs/ux-audit-2026-10-08` folder: homepage before views, finished desktop blog, mobile article and mobile contents.
 
@@ -47,3 +47,9 @@ Screenshots are saved in the task's `outputs/ux-audit-2026-10-08` folder: homepa
 Actual revenue, click-through rate and reading completion need production traffic data. This audit makes no claim of a measured uplift. Google controls ad fill; available placements do not guarantee an impression on every visit.
 
 The PR dependency security check fails on the unchanged dependency stack: `GHSA-cjq9-62q9-8jv4` (Next.js) and `GHSA-vfj7-8cjw-p6xm` (Keystatic → chokidar → braces). Resolve these before production release; this visual change does not bypass the security check.
+
+## Second layout pass
+
+Following layout feedback, the homepage introduction now spans the top above a compact lead story and two supporting stories. The blog moves topic navigation above that three-story lead; supporting stories are removed from the later list so all 54 guides appear once. Mobile blog/category lists pair square thumbnails with titles and dates to reduce scrolling. The desktop lead image uses a 4:3 crop instead of an oversized hero.
+
+TypeScript, changed-file lint and 14 discovery/ad-plan tests passed. Browser checks confirmed all 54 guide links, search for a supporting story, and no horizontal document overflow at 320px and 390px.
