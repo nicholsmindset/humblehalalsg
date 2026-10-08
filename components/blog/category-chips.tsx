@@ -3,13 +3,15 @@
    Server component. */
 import Link from "next/link";
 import { allCategories, type BlogCategorySlug } from "@/lib/blog-categories";
-import { categoryPostCount } from "@/lib/blog";
+import { allBlogPosts } from "@/lib/cms-blog";
 
-export function CategoryChips({ activeSlug }: { activeSlug?: BlogCategorySlug }) {
+export async function CategoryChips({ activeSlug }: { activeSlug?: BlogCategorySlug }) {
+  const posts = await allBlogPosts();
   return (
     <nav className="blog-cat-hub" aria-label="Blog categories">
+      <Link href="/blog" className={`blog-cat-chip${!activeSlug ? " is-active" : ""}`} aria-current={!activeSlug ? "page" : undefined}>All guides<span className="blog-cat-chip-count">{posts.length}</span></Link>
       {allCategories().map((c) => {
-        const count = categoryPostCount(c.slug);
+        const count = posts.filter(post => post.category === c.slug).length;
         if (count === 0) return null;
         const active = c.slug === activeSlug;
         return (

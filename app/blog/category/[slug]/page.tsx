@@ -50,7 +50,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           ]),
         ]}
       />
-      <div className="screen-in hh-page">
+      <div className="screen-in hh-page blog-category">
         <section className="seo-hero hh-pattern">
           <div className="hh-wrap">
             <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
@@ -71,6 +71,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         </section>
 
         <div className="hh-wrap hh-section">
+          <div className="guide-results-head"><h2>{posts.length} {posts.length === 1 ? "guide" : "guides"} to explore</h2><Link href="/blog#find-guides">Search all guides →</Link></div>
           {posts.length === 0 ? (
             <div className="card" style={{ padding: 32, textAlign: "center" }}>
               <h2 style={{ fontSize: "1.15rem" }}>No guides in this category yet</h2>
@@ -80,7 +81,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           ) : (
             <div className="blog-grid">
               {posts.map((p, i) => (
-                <Fragment key={p.slug}><BlogCard post={p} headingLevel="h2" priority={i === 0} />
+                <Fragment key={p.slug}><BlogCard post={p} headingLevel="h3" />
                   {adBreaks.includes(i) && <EditorialAd placement={`category-after-${i + 1}`} />}
                 </Fragment>
               ))}
