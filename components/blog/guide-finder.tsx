@@ -11,7 +11,9 @@ export function GuideFinder({ posts, featuredSlug, featured, categories }: {
 }) {
   const [query, setQuery] = useState("");
   const searching = query.trim().length > 0;
-  const results = searching ? filterGuides(posts, query) : posts.filter(p => p.slug !== featuredSlug);
+  const supporting = posts.filter(p => p.slug !== featuredSlug).slice(0, 2);
+  const spotlightSlugs = new Set([featuredSlug, ...supporting.map(p => p.slug)]);
+  const results = searching ? filterGuides(posts, query) : posts.filter(p => !spotlightSlugs.has(p.slug));
   // Search results stay focused on discovery. The editorial index retains its
   // existing ad positions; do not recreate/refresh ads on every keystroke.
   const adBreaks = searching ? [] : listingAdBreaks(results.length);
@@ -24,8 +26,11 @@ export function GuideFinder({ posts, featuredSlug, featured, categories }: {
         {query && <button type="button" onClick={() => setQuery("")}>Clear</button>}
       </div>
     </section>
-    {!searching && featured}
     {!searching && <div className="guide-topics"><h2 className="blog-hub-heading">Browse by topic</h2>{categories}</div>}
+    {!searching && <section className="guide-spotlight" aria-label="Featured guides">
+      {featured}
+      <div className="editorial-story-rail">{supporting.map(post => <BlogCard key={post.slug} post={post} headingLevel="h2" />)}</div>
+    </section>}
     <section className="guide-results" aria-labelledby="guide-results-title">
       <div className="guide-results-head">
         <h2 id="guide-results-title">{searching ? "Search results" : "Latest guides"}</h2>

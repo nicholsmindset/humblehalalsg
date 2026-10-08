@@ -53,6 +53,7 @@ export default async function Page() {
             </div>
           </Link>
         )}
+        <div className="editorial-story-rail">{latest.slice(0, 2).map(post => <BlogCard key={post.slug} post={post} headingLevel="h2" />)}</div>
       </section>
 
       <div className="hh-wrap"><EditorialAd placement="home-after-featured" /></div>
@@ -80,7 +81,7 @@ export default async function Page() {
             <div><span className="eyebrow">Fresh reads</span><h2 id="latest-heading">Latest from Humble Halal</h2></div>
             <Link href="/blog">Browse the blog →</Link>
           </div>
-          <div className="blog-grid">{latest.slice(0, 6).map((post) => <BlogCard key={post.slug} post={post} headingLevel="h3" />)}</div>
+          <div className="blog-grid">{latest.slice(2, 8).map((post) => <BlogCard key={post.slug} post={post} headingLevel="h3" />)}</div>
         </section>
       )}
 
