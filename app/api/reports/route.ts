@@ -9,6 +9,9 @@ import { reportAckEmail } from "@/lib/emails/templates";
    "thanks, we've received it" acknowledgement — best-effort, never blocks. */
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+const REPORT_REASONS = new Set(["halal", "closed", "hours", "address", "owner", "menu", "other"]);
+const MAX_DETAILS_LENGTH = 1500;
+const MAX_EMAIL_LENGTH = 254;
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "reports", 10, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
@@ -23,12 +26,18 @@ export async function POST(req: Request) {
 
   const businessId = String(body?.businessId || "").trim();
   const reason = String(body?.reason || "").trim();
-  const details = String(body?.details || "").trim().slice(0, 1500);
-  const emailRaw = String(body?.email || "").trim().slice(0, 200);
+  const details = String(body?.details || "").trim();
+  const emailRaw = String(body?.email || "").trim();
   const email = emailRaw && isEmail(emailRaw) ? emailRaw : null;
 
-  if (!reason) {
+  if (!REPORT_REASONS.has(reason)) {
     return NextResponse.json({ ok: false, error: "Pick what's wrong." }, { status: 422 });
+  }
+  if (details.length > MAX_DETAILS_LENGTH || emailRaw.length > MAX_EMAIL_LENGTH) {
+    return NextResponse.json({ ok: false, error: "One or more fields are too long." }, { status: 422 });
+  }
+  if (emailRaw && !email) {
+    return NextResponse.json({ ok: false, error: "Enter a valid email address." }, { status: 422 });
   }
 
   try {
