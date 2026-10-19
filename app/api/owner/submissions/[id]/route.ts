@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { parseCoordinate } from "@/lib/geo";
 
 const TEXT_FIELDS = ["desc", "phone", "whatsapp", "cat", "address", "region", "town", "postal", "halal", "certNo"] as const;
 const clean = (value: unknown, max = 2000) => String(value ?? "").trim().slice(0, max);
@@ -53,11 +54,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
 
+  const lat = parseCoordinate("lat" in body ? body.lat : row.lat, 90);
+  const lng = parseCoordinate("lng" in body ? body.lng : row.lng, 180);
+  if (("lat" in body && lat === undefined) || ("lng" in body && lng === undefined)) {
+    return NextResponse.json({ ok: false, reason: "invalid_coordinates" }, { status: 422 });
+  }
+
   const nextRaw: Record<string, unknown> = { ...raw };
   for (const field of TEXT_FIELDS) if (field in body) nextRaw[field] = clean(body[field], field === "desc" ? 2000 : 300);
   if ("photoUrls" in body || "photos" in body) nextRaw.photos = photos(body.photoUrls ?? body.photos);
-  if ("lat" in body && Number.isFinite(Number(body.lat))) nextRaw.lat = Number(body.lat);
-  if ("lng" in body && Number.isFinite(Number(body.lng))) nextRaw.lng = Number(body.lng);
+  if ("lat" in body) nextRaw.lat = lat;
+  if ("lng" in body) nextRaw.lng = lng;
 
   const name = clean(body.name ?? row.name, 160);
   if (name.length < 2) return NextResponse.json({ ok: false, reason: "name_required" }, { status: 422 });
@@ -66,8 +73,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     address: clean(body.address ?? row.address, 300) || null,
     postal: clean(body.postal ?? row.postal, 20) || null,
     category_suggested: clean(body.cat ?? row.category_suggested, 100) || null,
-    lat: Number.isFinite(Number(body.lat ?? row.lat)) ? Number(body.lat ?? row.lat) : null,
-    lng: Number.isFinite(Number(body.lng ?? row.lng)) ? Number(body.lng ?? row.lng) : null,
+    lat: lat ?? null,
+    lng: lng ?? null,
     raw: nextRaw,
     review_status: "reviewing",
   };
