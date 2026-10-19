@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { liteapiConfigured, searchFlights } from "@/lib/liteapi";
-import { normalizeItineraries } from "@/lib/flights";
+import { normalizeFlightPassengerCount, normalizeItineraries } from "@/lib/flights";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 
 /* Flight search → LiteAPI /flights/rates, normalized to rich itinerary cards.
@@ -38,9 +38,9 @@ export async function POST(req: Request) {
     const country = /^[A-Z]{2}$/.test(String(body.country || "").toUpperCase()) ? String(body.country).toUpperCase() : "SG";
     const data = await searchFlights({
       legs,
-      adults: Math.min(9, Math.max(1, Number(body.adults) || 1)),
-      children: Math.min(8, Math.max(0, Number(body.children) || 0)),
-      infants: Math.min(8, Math.max(0, Number(body.infants) || 0)),
+      adults: normalizeFlightPassengerCount(body.adults, { min: 1, max: 9, fallback: 1 }),
+      children: normalizeFlightPassengerCount(body.children, { min: 0, max: 8, fallback: 0 }),
+      infants: normalizeFlightPassengerCount(body.infants, { min: 0, max: 8, fallback: 0 }),
       cabin,
       currency: String(body.currency || "SGD").toUpperCase().slice(0, 3),
       country,
