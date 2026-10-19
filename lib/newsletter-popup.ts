@@ -10,6 +10,7 @@ export function newsletterPopupHandled(value: string | null, now = Date.now()): 
   const dismissedAt = Number(value.slice("dismissed:".length));
   return Number.isFinite(dismissedAt)
     && dismissedAt > 0
+    && dismissedAt <= now
     && now - dismissedAt < NEWSLETTER_POPUP_DISMISS_COOLDOWN_MS;
 }
 
