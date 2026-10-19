@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   const rating = Number(body?.rating);
   const text = String(body?.text || "").trim().slice(0, TEXT_MAX);
 
-  if ((!businessSlug && !businessId) || !(rating >= 1 && rating <= 5) || text.length < 4) {
+  if ((!businessSlug && !businessId) || !Number.isInteger(rating) || rating < 1 || rating > 5 || text.length < 4) {
     return NextResponse.json(
       { ok: false, error: "Add a rating (1–5) and a short review." },
       { status: 422 },
