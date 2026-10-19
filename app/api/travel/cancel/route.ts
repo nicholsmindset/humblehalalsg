@@ -20,18 +20,21 @@ export async function POST(req: Request) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ ok: false, reason: "not_configured" });
 
-  const { data: bk } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
+  const { data: bk, error: lookupError } = await admin.from("hotel_bookings").select("id, liteapi_booking_id, user_id, status").eq("id", id).maybeSingle();
+  if (lookupError) return NextResponse.json({ ok: false, error: "Could not load this booking." }, { status: 503 });
   if (!bk || bk.user_id !== userId) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
   if (bk.status !== "confirmed") return NextResponse.json({ ok: true, status: bk.status });
 
   if (!liteapiConfigured() || !bk.liteapi_booking_id) {
-    await admin.from("hotel_bookings").update({ status: "cancelled" }).eq("id", id);
+    const { error } = await admin.from("hotel_bookings").update({ status: "cancelled" }).eq("id", id);
+    if (error) return NextResponse.json({ ok: false, error: "Could not update the booking status." }, { status: 503 });
     return NextResponse.json({ ok: true, status: "cancelled", simulated: true });
   }
 
   try {
     await cancelBooking(String(bk.liteapi_booking_id));
-    await admin.from("hotel_bookings").update({ status: "cancelled" }).eq("id", id);
+    const { error } = await admin.from("hotel_bookings").update({ status: "cancelled" }).eq("id", id);
+    if (error) return NextResponse.json({ ok: false, error: "Cancellation completed, but the booking status could not be updated. Please contact support." }, { status: 503 });
     return NextResponse.json({ ok: true, status: "cancelled" });
   } catch {
     return NextResponse.json({ ok: false, error: "Could not cancel — this rate may be non-refundable." }, { status: 502 });
