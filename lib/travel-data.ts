@@ -136,6 +136,13 @@ export function sanitizeOccupancies(value: unknown): { adults: number; children?
   });
 }
 
+/** Keep the public rates API limit finite, integral, and within LiteAPI's bounds. */
+export function normalizeHotelSearchLimit(value: unknown): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed === 0) return 30;
+  return Math.min(50, Math.max(1, Math.trunc(parsed)));
+}
+
 /** Parse + sanitize native LiteAPI rate filters from a request body. Shared by the
  *  search and ai-search routes so both narrow the rate query identically. Returns
  *  undefined when nothing valid is present (so the request stays clean). */
@@ -196,7 +203,7 @@ export async function runHotelSearch(
     ...(placeId ? { placeId } : cityName ? { cityName } : {}),
     ...(!placeId && countryCode ? { countryCode } : {}),
     ...(hotelIds ? { hotelIds } : {}),
-    limit: Math.min(50, Math.max(1, params.limit || 30)),
+    limit: normalizeHotelSearchLimit(params.limit),
     ...(params.sessionId ? { sessionId: params.sessionId } : {}),
     ...(params.filters || {}),
   };

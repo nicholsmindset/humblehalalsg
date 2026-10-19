@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeOccupancies } from "@/lib/travel-data";
+import { normalizeHotelSearchLimit, sanitizeOccupancies } from "@/lib/travel-data";
 
 describe("sanitizeOccupancies", () => {
   it("preserves valid room and child-age blocks", () => {
@@ -36,5 +36,19 @@ describe("sanitizeOccupancies", () => {
   it("normalizes malformed room entries without throwing", () => {
     expect(sanitizeOccupancies([null, "room", { adults: "3.6", children: "none" }]))
       .toEqual([{ adults: 2 }, { adults: 2 }, { adults: 4 }]);
+  });
+});
+
+describe("normalizeHotelSearchLimit", () => {
+  it("uses the default for missing and non-finite limits", () => {
+    expect(normalizeHotelSearchLimit(undefined)).toBe(30);
+    expect(normalizeHotelSearchLimit(Number.NaN)).toBe(30);
+    expect(normalizeHotelSearchLimit(Number.POSITIVE_INFINITY)).toBe(30);
+  });
+
+  it("truncates fractional limits and clamps them to LiteAPI bounds", () => {
+    expect(normalizeHotelSearchLimit(12.9)).toBe(12);
+    expect(normalizeHotelSearchLimit(-4.2)).toBe(1);
+    expect(normalizeHotelSearchLimit(100)).toBe(50);
   });
 });
