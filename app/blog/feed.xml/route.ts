@@ -18,7 +18,10 @@ export async function GET() {
   const items = posts
     .map((p) => {
       const url = `${SITE.url}/blog/${p.slug}`;
-      const pub = new Date(`${p.dateModified || p.datePublished}T09:00:00+08:00`).toUTCString();
+      // RSS pubDate describes when an item was first published. Using the
+      // modification date makes an edited or pre-scheduled post appear older
+      // (or newer) than its actual release and breaks feed chronology.
+      const pub = new Date(`${p.datePublished}T09:00:00+08:00`).toUTCString();
       const cat = getCategory(p.category)?.name || "";
       return [
         "    <item>",
