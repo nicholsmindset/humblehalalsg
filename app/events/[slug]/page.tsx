@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EventDetailScreen } from "@/components/screens/events";
 import { SimilarEvents } from "@/components/events/similar-events";
-import { getEvents, getGoneEventMeta } from "@/lib/events-source";
+import { getEvents, getGoneEventMeta, todaySG } from "@/lib/events-source";
 import { eventRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags } from "@/lib/feature-flags";
@@ -47,13 +47,12 @@ async function organiserCertVerified(businessId: string | null): Promise<boolean
   const supa = getSupabaseAdmin();
   if (!supa) return false;
   try {
-    const today = new Date().toISOString().slice(0, 10);
     const { count } = await supa
       .from("halal_certs")
       .select("id", { count: "exact", head: true })
       .eq("business_id", businessId)
       .eq("status", "approved")
-      .gte("expires_on", today);
+      .gte("expires_on", todaySG());
     return (count ?? 0) > 0;
   } catch {
     return false; // badge is best-effort — absence is the safe default
