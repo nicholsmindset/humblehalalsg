@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isSafeEventRef } from "@/lib/event-ref";
 import { attributionFromLanding, serializeAttributionCookie, sanitizeAttribution } from "@/lib/attribution";
@@ -32,24 +32,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   if (safeSlug && attr?.ref) {
     const supa = getSupabaseAdmin();
     if (supa) {
-      try {
-        const { data: ev } = await supa
-          .from("events")
-          .select("id")
-          .or(`id.eq.${safeSlug},slug.eq.${safeSlug}`)
-          .maybeSingle();
-        if (ev?.id) {
-          const { data: rc } = await supa
-            .from("event_ref_codes")
+      after(async () => {
+        try {
+          const { data: ev } = await supa
+            .from("events")
             .select("id")
-            .eq("event_id", ev.id)
-            .eq("code", attr.ref)
+            .or(`id.eq.${safeSlug},slug.eq.${safeSlug}`)
             .maybeSingle();
-          if (rc?.id) await supa.rpc("increment_ref_click", { p_id: rc.id });
+          if (ev?.id) {
+            const { data: rc } = await supa
+              .from("event_ref_codes")
+              .select("id")
+              .eq("event_id", ev.id)
+              .eq("code", attr.ref)
+              .maybeSingle();
+            if (rc?.id) await supa.rpc("increment_ref_click", { p_id: rc.id });
+          }
+        } catch {
+          /* never block the redirect */
         }
-      } catch {
-        /* never block the redirect */
-      }
+      });
     }
   }
 
