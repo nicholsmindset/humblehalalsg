@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { slugify } from "@/lib/slug";
+import { eventCapacity } from "@/lib/event-capacity";
 
 /* Create an event from the host wizard. Persists to `events` as status='pending'
    (an admin approves → 'published', after which the events data-seam surfaces it).
@@ -31,6 +32,10 @@ export async function POST(req: Request) {
 
   const title = String(b.title || "").trim();
   if (!title) return NextResponse.json({ ok: false, reason: "title_required" }, { status: 422 });
+  const capacity = b.capacity == null ? 0 : eventCapacity(b.capacity);
+  if (capacity == null) {
+    return NextResponse.json({ ok: false, reason: "bad_capacity" }, { status: 422 });
+  }
 
   // Link to the host's business (for organiser payouts on paid events).
   const { data: biz } = await admin
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
     slug,
     title,
     is_free: free,
-    capacity: Math.max(0, Number(b.capacity) || 0),
+    capacity,
     taken: 0,
     status: "pending", // admin approves → published
     date_iso: b.dateISO || null,
@@ -116,7 +121,7 @@ export async function POST(req: Request) {
   if (tiers) {
     try {
       await admin.from("ticket_tiers").insert(tiers.map((t) => ({
-        event_id: id, name: t.name, price_cents: Math.round((Number(t.price) || 0) * 100), qty: Math.max(0, Number(b.capacity) || 0), sold: 0,
+        event_id: id, name: t.name, price_cents: Math.round((Number(t.price) || 0) * 100), qty: capacity, sold: 0,
       })));
     } catch { /* tiers best-effort */ }
   }
