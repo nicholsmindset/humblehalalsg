@@ -11,6 +11,7 @@ import { newsletterSignupEmail } from "@/lib/emails/newsletter";
    Missing configuration is simulated only outside production. */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254;
 
 export async function POST(req: Request) {
   // Throttle to stop list-poisoning / signing a victim up repeatedly (M6).
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid request" }, { status: 400 });
   }
 
-  if (!EMAIL_RE.test(email)) {
+  if (email.length > MAX_EMAIL_LENGTH || !EMAIL_RE.test(email)) {
     return NextResponse.json({ ok: false, error: "Please enter a valid email" }, { status: 422 });
   }
 
