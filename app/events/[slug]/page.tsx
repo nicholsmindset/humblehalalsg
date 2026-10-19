@@ -7,6 +7,7 @@ import { eventRedirectTarget, recordRedirect } from "@/lib/gone-redirects";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getServerFlags } from "@/lib/feature-flags";
 import { pageMeta } from "@/lib/seo";
+import { sgDateKey } from "@/lib/rotate";
 import { JsonLd, eventJsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
 
 // 15-min ISR: without ISR these pages were cached FOREVER — edits, sold-out
@@ -47,7 +48,7 @@ async function organiserCertVerified(businessId: string | null): Promise<boolean
   const supa = getSupabaseAdmin();
   if (!supa) return false;
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = sgDateKey();
     const { count } = await supa
       .from("halal_certs")
       .select("id", { count: "exact", head: true })
