@@ -9,6 +9,12 @@ import { logAudit } from "@/lib/audit";
    flight services. Graceful without a key. */
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+function isIsoDate(value: string): boolean {
+  if (!DATE_RE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export async function POST(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
@@ -34,10 +40,16 @@ export async function POST(req: Request) {
   };
   const vStart = String(body.validityStart || "");
   const vEnd = String(body.validityEnd || "");
-  if (DATE_RE.test(vStart)) payload.validity_start = vStart;
-  if (DATE_RE.test(vEnd)) payload.validity_end = vEnd;
+  if ((vStart && !isIsoDate(vStart)) || (vEnd && !isIsoDate(vEnd)) || (vStart && vEnd && vEnd < vStart)) {
+    return NextResponse.json({ ok: false, error: "Enter a valid voucher date range." }, { status: 422 });
+  }
+  if (vStart) payload.validity_start = vStart;
+  if (vEnd) payload.validity_end = vEnd;
   const usagesLimit = Number(body.usagesLimit);
-  if (Number.isFinite(usagesLimit) && usagesLimit > 0) payload.usages_limit = Math.round(usagesLimit);
+  if (body.usagesLimit != null && body.usagesLimit !== "" && (!Number.isInteger(usagesLimit) || usagesLimit <= 0)) {
+    return NextResponse.json({ ok: false, error: "Enter a positive whole-number usage limit." }, { status: 422 });
+  }
+  if (Number.isInteger(usagesLimit) && usagesLimit > 0) payload.usages_limit = usagesLimit;
   const minSpend = Number(body.minimumSpend);
   if (Number.isFinite(minSpend) && minSpend > 0) payload.minimum_spend = minSpend;
 
