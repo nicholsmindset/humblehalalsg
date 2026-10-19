@@ -3,6 +3,13 @@ import { minRates, liteapiConfigured } from "@/lib/liteapi";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isValidHotelStay } from "@/lib/hotel-dates";
 
+const normalizeAdults = (value: unknown): number => {
+  const adults = Number(value);
+  return Number.isFinite(adults)
+    ? Math.min(8, Math.max(1, Math.round(adults)))
+    : 2;
+};
+
 /* Cheapest "from $X" rate per hotel for a date range — used to label city/hub
    cards. POST { hotelIds[], checkin, checkout, nationality, currency, adults }.
    Graceful without a key. */
@@ -21,7 +28,7 @@ export async function POST(req: Request) {
   if (!liteapiConfigured()) return NextResponse.json({ ok: true, simulated: true, rates: {} });
 
   try {
-    const rates = await minRates(hotelIds, checkin, checkout, String(body.nationality || "SG").toUpperCase().slice(0, 2), String(body.currency || "USD").toUpperCase().slice(0, 3), Math.min(8, Math.max(1, Number(body.adults) || 2)));
+    const rates = await minRates(hotelIds, checkin, checkout, String(body.nationality || "SG").toUpperCase().slice(0, 2), String(body.currency || "USD").toUpperCase().slice(0, 3), normalizeAdults(body.adults));
     return NextResponse.json({ ok: true, rates });
   } catch {
     return NextResponse.json({ ok: false, error: "rates unavailable" }, { status: 502 });
