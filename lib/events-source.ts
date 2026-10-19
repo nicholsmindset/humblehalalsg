@@ -10,6 +10,7 @@
 import "server-only";
 import { cache } from "react";
 import type { EventItem, EventTier, GenderArrangement, LatLng } from "./types";
+import { isSafeEventRef } from "./event-ref";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 
@@ -115,7 +116,10 @@ export const getEvents = cache(async (): Promise<EventItem[]> => {
  *  finished or cancelled /events/<slug> can resolve a relevant 301 target. Null
  *  when no such event ever existed → the route then 404s honestly. */
 export async function getGoneEventMeta(slug: string): Promise<{ catId: string; area: string } | null> {
-  if (!supabaseConfigured) return null;
+  // `slug` comes directly from the route. Never interpolate PostgREST control
+  // characters into `.or()`, where they could broaden this lookup to another
+  // event and create a redirect for a path that never existed.
+  if (!isSafeEventRef(slug) || !supabaseConfigured) return null;
   const db = getSupabaseAdmin();
   if (!db) return null;
   try {
