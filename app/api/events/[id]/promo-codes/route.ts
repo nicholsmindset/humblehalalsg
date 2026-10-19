@@ -106,9 +106,15 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (!promo) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
 
   if (Number(promo.redeemed) > 0) {
-    await a.admin.from("promo_codes").update({ active: false }).eq("id", promo.id);
+    const { error } = await a.admin.from("promo_codes").update({ active: false }).eq("id", promo.id);
+    if (error) {
+      return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+    }
     return NextResponse.json({ ok: true, deactivated: true });
   }
-  await a.admin.from("promo_codes").delete().eq("id", promo.id);
+  const { error } = await a.admin.from("promo_codes").delete().eq("id", promo.id);
+  if (error) {
+    return NextResponse.json({ ok: false, reason: "db_error" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, deleted: true });
 }
