@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseCsv } from "@/lib/csv";
-import { mapCat, mapHalalHint, mapArea, postalFrom } from "@/lib/import-mapping";
+import { mapCat, mapHalalHint, mapArea, parseImportCoordinates, postalFrom } from "@/lib/import-mapping";
 
 describe("parseCsv (RFC-4180)", () => {
   it("parses plain rows", () => {
@@ -39,5 +39,16 @@ describe("import mapping", () => {
     expect(postalFrom("460123", "")).toBe("460123");
     expect(postalFrom("", "1 Bedok Rd Singapore 460123")).toBe("460123");
     expect(postalFrom("12345", "no postal here")).toBeNull();
+  });
+  it("accepts blank or valid coordinate pairs", () => {
+    expect(parseImportCoordinates("", "")).toEqual({ ok: true, lat: null, lng: null });
+    expect(parseImportCoordinates("1.3521", "103.8198")).toEqual({ ok: true, lat: 1.3521, lng: 103.8198 });
+    expect(parseImportCoordinates("-90", "180")).toEqual({ ok: true, lat: -90, lng: 180 });
+  });
+  it("rejects partial, non-finite, and out-of-range locations", () => {
+    expect(parseImportCoordinates("1.3521", "")).toMatchObject({ ok: false });
+    expect(parseImportCoordinates("Infinity", "103.8198")).toMatchObject({ ok: false });
+    expect(parseImportCoordinates("91", "103.8198")).toMatchObject({ ok: false });
+    expect(parseImportCoordinates("1.3521", "181")).toMatchObject({ ok: false });
   });
 });
