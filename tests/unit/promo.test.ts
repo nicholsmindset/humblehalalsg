@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizePromoCode, validatePromoCode, PROMO_MESSAGES } from "@/lib/promo";
+import { normalizePromoCode, normalizePromoPositiveInt, validatePromoCode, PROMO_MESSAGES } from "@/lib/promo";
 
 /* Promo validation is the server-side trust boundary for discounts: the client
    preview from /api/checkout/validate-promo is NEVER trusted, and the
@@ -71,6 +71,22 @@ describe("normalizePromoCode", () => {
   it("rejects null / undefined", () => {
     expect(normalizePromoCode(null)).toBeNull();
     expect(normalizePromoCode(undefined)).toBeNull();
+  });
+});
+
+describe("normalizePromoPositiveInt", () => {
+  it("accepts positive integers within the requested bound", () => {
+    expect(normalizePromoPositiveInt(1)).toBe(1);
+    expect(normalizePromoPositiveInt("25", 100)).toBe(25);
+    expect(normalizePromoPositiveInt(100, 100)).toBe(100);
+  });
+
+  it("rejects fractional, non-finite, and PostgreSQL-overflowing values", () => {
+    expect(normalizePromoPositiveInt(1.5)).toBeNull();
+    expect(normalizePromoPositiveInt(Infinity)).toBeNull();
+    expect(normalizePromoPositiveInt("not-a-number")).toBeNull();
+    expect(normalizePromoPositiveInt(2_147_483_648)).toBeNull();
+    expect(normalizePromoPositiveInt(101, 100)).toBeNull();
   });
 });
 

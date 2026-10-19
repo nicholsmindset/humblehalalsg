@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authoriseEventManager } from "@/lib/event-auth";
-import { normalizePromoCode } from "@/lib/promo";
+import { normalizePromoCode, normalizePromoPositiveInt } from "@/lib/promo";
 
 /* Organiser promo-code management for one event (owner/admin only; RLS-bypassing
    writes stay behind this authorisation, per the 0017 service-role convention).
@@ -49,17 +49,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const kind = body.kind === "fixed" ? "fixed" : body.kind === "percent" ? "percent" : null;
   if (!kind) return NextResponse.json({ ok: false, reason: "bad_kind" }, { status: 422 });
-  const percentOff = kind === "percent" ? Math.round(Number(body.percentOff)) : null;
-  const amountOffCents = kind === "fixed" ? Math.round(Number(body.amountOffCents)) : null;
-  if (kind === "percent" && !(percentOff! >= 1 && percentOff! <= 100)) {
+  const percentOff = kind === "percent" ? normalizePromoPositiveInt(body.percentOff, 100) : null;
+  const amountOffCents = kind === "fixed" ? normalizePromoPositiveInt(body.amountOffCents) : null;
+  if (kind === "percent" && percentOff == null) {
     return NextResponse.json({ ok: false, reason: "bad_percent" }, { status: 422 });
   }
-  if (kind === "fixed" && !(amountOffCents! > 0)) {
+  if (kind === "fixed" && amountOffCents == null) {
     return NextResponse.json({ ok: false, reason: "bad_amount" }, { status: 422 });
   }
 
-  const maxRedemptions = body.maxRedemptions != null ? Math.max(1, Math.round(Number(body.maxRedemptions)) || 0) : null;
-  const minQty = Math.max(1, Math.round(Number(body.minQty)) || 1);
+  const maxRedemptions = body.maxRedemptions != null ? normalizePromoPositiveInt(body.maxRedemptions) : null;
+  if (body.maxRedemptions != null && maxRedemptions == null) {
+    return NextResponse.json({ ok: false, reason: "bad_max_redemptions" }, { status: 422 });
+  }
+  const minQty = body.minQty != null ? normalizePromoPositiveInt(body.minQty) : 1;
+  if (minQty == null) {
+    return NextResponse.json({ ok: false, reason: "bad_min_qty" }, { status: 422 });
+  }
   const startsAt = body.startsAt && !Number.isNaN(Date.parse(body.startsAt)) ? new Date(body.startsAt).toISOString() : null;
   const expiresAt = body.expiresAt && !Number.isNaN(Date.parse(body.expiresAt)) ? new Date(body.expiresAt).toISOString() : null;
 
