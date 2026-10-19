@@ -100,7 +100,10 @@ export async function POST(req: Request) {
       qty,
     });
     if (!check.ok) {
-      return NextResponse.json({ ok: false, reason: `promo_${check.reason}`, minQty: check.minQty }, { status: 422 });
+      return NextResponse.json(
+        { ok: false, reason: `promo_${check.reason}`, minQty: check.minQty },
+        { status: check.reason === "service_unavailable" ? 503 : 422 },
+      );
     }
     promo = check;
   }

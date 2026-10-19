@@ -46,7 +46,10 @@ export async function POST(req: Request) {
   });
 
   if (!check.ok) {
-    return NextResponse.json({ ok: false, reason: check.reason, minQty: check.minQty, message: PROMO_MESSAGES[check.reason] }, { status: 422 });
+    return NextResponse.json(
+      { ok: false, reason: check.reason, minQty: check.minQty, message: PROMO_MESSAGES[check.reason] },
+      { status: check.reason === "service_unavailable" ? 503 : 422 },
+    );
   }
   return NextResponse.json({ ok: true, code: check.code, kind: check.kind, discountCents: check.discountCents });
 }
