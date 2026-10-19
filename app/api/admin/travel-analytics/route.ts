@@ -7,6 +7,12 @@ import { analyticsWeekly, liteapiConfigured, LiteApiError } from "@/lib/liteapi"
    Admin-gated; graceful without a key. Defaults to the last 12 weeks. */
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+function isIsoDate(value: string): boolean {
+  if (!DATE_RE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 export async function GET(req: Request) {
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
@@ -17,8 +23,14 @@ export async function GET(req: Request) {
   const today = new Date();
   const toQ = url.searchParams.get("to");
   const fromQ = url.searchParams.get("from");
-  const to = toQ && DATE_RE.test(toQ) ? toQ : day(today);
-  const from = fromQ && DATE_RE.test(fromQ) ? fromQ : day(new Date(today.getTime() - 84 * 864e5));
+  if ((toQ !== null && !isIsoDate(toQ)) || (fromQ !== null && !isIsoDate(fromQ))) {
+    return NextResponse.json({ ok: false, error: "invalid_range" }, { status: 400 });
+  }
+  const to = toQ ?? day(today);
+  const from = fromQ ?? day(new Date(today.getTime() - 84 * 864e5));
+  if (from > to) {
+    return NextResponse.json({ ok: false, error: "invalid_range" }, { status: 400 });
+  }
 
   try {
     const weeks = await analyticsWeekly(from, to);
