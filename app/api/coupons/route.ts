@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { queryLimit } from "@/lib/query-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
   if (!db) return NextResponse.json({ ok: true, coupons: [] });
   const url = new URL(req.url);
   const businessId = String(url.searchParams.get("business") || "");
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 30));
+  const limit = queryLimit(url.searchParams.get("limit"), 30, 100);
   const now = new Date().toISOString();
   let q = db
     .from("business_promotions")
