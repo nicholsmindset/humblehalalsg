@@ -31,3 +31,12 @@ export function parseCsv(text: string): string[][] {
   if (row.some((c) => c.trim() !== "")) rows.push(row);
   return rows;
 }
+
+const FORMULA_PREFIX = /^[\t\r ]*[=+\-@]/;
+
+/** Encode a value as a CSV cell and neutralize spreadsheet formulas. */
+export function csvCell(value: unknown): string {
+  const raw = value == null ? "" : String(value);
+  const safe = FORMULA_PREFIX.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
