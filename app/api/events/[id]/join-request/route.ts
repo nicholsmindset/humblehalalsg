@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { rateLimit, tooMany } from "@/lib/ratelimit";
 import { isSafeEventRef } from "@/lib/event-ref";
+import { clampTicketQty } from "@/lib/ticket-checkout";
 
 /* "Request to join" for an approval-gated event. Creates a PENDING order (no
    tickets, no taken++) the organiser later approves/declines. Zero-migration:
@@ -16,7 +17,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (body.email && !EMAIL_RE.test(body.email)) {
     return NextResponse.json({ ok: false, reason: "bad_email" }, { status: 422 });
   }
-  const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
+  const qty = clampTicketQty(body.qty, 10);
 
   const admin = getSupabaseAdmin();
   // Without Supabase wired we can't verify the event — simulate success (matches

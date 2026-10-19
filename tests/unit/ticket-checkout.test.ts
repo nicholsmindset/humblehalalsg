@@ -47,6 +47,11 @@ describe("clampTicketQty", () => {
     expect(clampTicketQty(2.9)).toBe(2);
     expect(clampTicketQty("19.8")).toBe(19);
   });
+
+  it("honors a lower endpoint-specific cap", () => {
+    expect(clampTicketQty(8.9, 10)).toBe(8);
+    expect(clampTicketQty(12, 10)).toBe(10);
+  });
 });
 
 describe("buildTicketLineItems", () => {
