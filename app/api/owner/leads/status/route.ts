@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 const NEXT = new Set(["contacted", "won", "lost"]);
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
-async function ownsBusiness(db: Db, businessId: string, userId: string): Promise<boolean> {
-  const { data } = await db
+async function ownsBusiness(db: Db, businessId: string, userId: string) {
+  const { data, error } = await db
     .from("businesses").select("id").eq("id", businessId)
     .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
-  return !!data;
+  return { owned: !!data, failed: !!error };
 }
 
 export async function POST(req: Request) {
@@ -28,9 +28,12 @@ export async function POST(req: Request) {
   try { const b = (await req.json()) as { routeId?: string; status?: string }; routeId = String(b.routeId || ""); status = String(b.status || ""); } catch { /* noop */ }
   if (!routeId || !NEXT.has(status)) return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });
 
-  const { data: route } = await db.from("lead_routes").select("id, business_id, status").eq("id", routeId).maybeSingle();
+  const { data: route, error: routeError } = await db.from("lead_routes").select("id, business_id, status").eq("id", routeId).maybeSingle();
+  if (routeError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 502 });
   if (!route) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
-  if (!(await ownsBusiness(db, route.business_id, userId))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const ownership = await ownsBusiness(db, route.business_id, userId);
+  if (ownership.failed) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 502 });
+  if (!ownership.owned) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!["accepted", "contacted", "won", "lost"].includes(route.status))
     return NextResponse.json({ ok: false, error: "accept_first" }, { status: 409 });
 
