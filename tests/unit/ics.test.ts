@@ -54,6 +54,16 @@ describe("buildIcs", () => {
     expect(ics).toContain("DTEND:20260803T210000");
   });
 
+  it.each(["25:90 – 30:75", "7:00ish PM – later", "13:00 PM – 14:00 PM"])(
+    "falls back to valid calendar times for malformed label %s",
+    (timeLabel) => {
+      const ics = buildIcs(event({ timeLabel }));
+
+      expect(ics).toContain("DTSTART:20260801T090000");
+      expect(ics).toContain("DTEND:20260801T100000");
+    },
+  );
+
   it("escapes every newline style inside text properties", () => {
     const ics = buildIcs(event({
       title: "First\r\nSecond\rThird\nFourth",
