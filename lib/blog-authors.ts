@@ -25,7 +25,7 @@ export const DEFAULT_AUTHOR: BlogAuthor = {
   name: "The Humble Halal Team",
   type: "Organization",
   role: "Editorial team",
-  bio: "The editorial team at Humble Halal — Singapore's halal & Muslim-owned business directory. We map the scene and explain it plainly; the MUIS HalalSG register is always the final word.",
+  bio: "The Humble Halal editorial team publishes practical guides for Muslim life in Singapore. Check the MUIS HalalSG register for current certification.",
   url: "https://www.humblehalal.com/about",
 };
 
