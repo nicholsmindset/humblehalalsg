@@ -412,5 +412,14 @@
     "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
     "rightsConfirmed": true,
     "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "halal-airline-meals-singapore-flight-planning",
+    "url": "/blog/hh-flight-planning-inline.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration for flight planning; fictional scene, not a real airline or booking.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
   }
 ]
