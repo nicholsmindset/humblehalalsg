@@ -33,5 +33,6 @@
       "path": "/api/cron/verdict-drafts",
       "schedule": "20 3 * * *"
     }
-  ]
+  ],
+  "buildCommand": "npm run check:content && npm run build"
 }
