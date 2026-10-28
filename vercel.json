@@ -4,15 +4,34 @@
   "git": {
     "deploymentEnabled": {
       "master": true,
-      "**": false
+      "**": false,
+      "review/humblehalal-five-articles-2026-10-28": true
     }
   },
   "crons": [
-    { "path": "/api/cron/social-enqueue", "schedule": "0 1 * * *" },
-    { "path": "/api/cron/social-dispatch", "schedule": "0 */6 * * *" },
-    { "path": "/api/cron/index-health", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/event-payouts", "schedule": "30 6 * * *" },
-    { "path": "/api/cron/lead-retention", "schedule": "0 4 * * 2" },
-    { "path": "/api/cron/verdict-drafts", "schedule": "20 3 * * *" }
+    {
+      "path": "/api/cron/social-enqueue",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/social-dispatch",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/index-health",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/event-payouts",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/lead-retention",
+      "schedule": "0 4 * * 2"
+    },
+    {
+      "path": "/api/cron/verdict-drafts",
+      "schedule": "20 3 * * *"
+    }
   ]
 }
