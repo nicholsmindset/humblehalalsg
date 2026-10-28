@@ -367,5 +367,59 @@
     "note": "respectful aqiqah and new-parent still life; no text, logo, people, or decorative religious imagery",
     "rightsConfirmed": true,
     "updatedAt": "2026-08-30"
+  },
+  {
+    "slug": "halal-hawker-centre-guide-singapore",
+    "url": "/blog/hh-hawker-stall-feature.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "vegetarian-vegan-halal-singapore",
+    "url": "/blog/vegetarian-hummus-falafel.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "halal-airline-meals-singapore",
+    "url": "/blog/hh-airline-meal-feature.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "halal-imported-groceries-singapore",
+    "url": "/blog/hh-imported-groceries-feature.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "halal-office-potluck-singapore",
+    "url": "/blog/hh-office-potluck-feature.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration; fictional scene, not evidence of certification, an actual venue or current conditions.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
+  },
+  {
+    "slug": "halal-airline-meals-singapore-flight-planning",
+    "url": "/blog/hh-flight-planning-inline.webp",
+    "source": "brand-generated",
+    "model": "OpenAI Imagegen",
+    "note": "Built-in AI-generated editorial illustration for flight planning; fictional scene, not a real airline or booking.",
+    "rightsConfirmed": true,
+    "updatedAt": "2026-10-28"
   }
 ]
