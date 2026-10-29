@@ -11,7 +11,6 @@ import { allBlogPosts, getBlogPost, relatedBlogPosts, resolveBlogAuthor } from "
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, blogPostingJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/components/seo/json-ld";
-import { Newsletter } from "@/components/newsletter";
 import { BlogCard } from "@/components/blog/blog-card";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { PullQuote } from "@/components/blog/pull-quote";
@@ -126,7 +125,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             By {p.author}
             <span className="sep">·</span> {fmtDate(p.datePublished)}
             <span className="sep">·</span> {p.readMins} min read
-            {p.dateModified && (<><span className="sep">·</span> Updated {fmtDate(p.dateModified)}</>)}
+            {p.dateModified && p.dateModified > p.datePublished && (<><span className="sep">·</span> Updated {fmtDate(p.dateModified)}</>)}
           </div>
         </header>
 
@@ -155,13 +154,21 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           </div>
 
 
+          {p.sections.length >= 3 && <details className="article-contents">
+            <summary>In this guide <span>{p.sections.length} sections <span aria-hidden="true">+</span></span></summary>
+            <nav aria-label="In this guide"><ol>
+              {p.sections.map((section, i) => <li key={i}><a href={`#section-${i + 1}`}>{section.h2}</a></li>)}
+              {p.faq.length > 0 && <li><a href="#article-questions">Frequently asked questions</a></li>}
+            </ol></nav>
+          </details>}
+
           {ads.intro && <EditorialAd placement="article-after-summary" />}
 
           <div className="article-body">
             {p.sections.map((s, i) => (
               <Fragment key={s.h2}>
                 <section>
-                  <h2>{s.h2}</h2>
+                  <h2 id={`section-${i + 1}`} tabIndex={-1}>{s.h2}</h2>
                   {s.body?.map((para, j) => (
                     <p key={j} className={i === 0 && j === 0 && p.dropcap ? "has-dropcap" : undefined}>{para}</p>
                   ))}
@@ -198,7 +205,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
                     <span className="eyebrow">🌙 The weekly halal guide</span>
                     <strong>Enjoying this guide?</strong>
                     <p>One useful guide to halal food and Muslim life in Singapore, free every Friday.</p>
-                    <Newsletter source="blog-mid" variant="inline" cta="Get weekly finds" />
+                    <a className="article-newsletter-link" href="#article-newsletter">Get the Friday guide <span aria-hidden="true">→</span></a>
                   </div>
                 )}
 
@@ -208,7 +215,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
           <SectionDivider />
 
-          <h3 className="article-faq-h">Frequently asked questions</h3>
+          <h2 id="article-questions" tabIndex={-1} className="article-faq-h">Frequently asked questions</h2>
           <div className="faq-list">
             {p.faq.map((f) => (
               <details key={f.q} className="faq-item">
@@ -231,21 +238,22 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </div>
           </div>
 
-          <BlogNewsletterBand source="blog" />
+          <div id="article-newsletter"><BlogNewsletterBand source="blog" /></div>
 
           <ShareRow url={`${SITE.url}/blog/${p.slug}`} title={p.title} />
 
+        </article>
+
           {related.length > 0 && (
-            <>
-              <h3 className="article-related-h">Keep reading</h3>
+            <section className="article-related hh-wrap" aria-labelledby="related-guides-title">
+              <div className="guide-results-head"><h2 id="related-guides-title" className="article-related-h">Your next read</h2><Link href="/blog">All guides →</Link></div>
               <div className="blog-grid">
                 {related.map((r) => (
                   <BlogCard key={r.slug} post={r} headingLevel="h3" />
                 ))}
               </div>
-            </>
+            </section>
           )}
-        </article>
       </div>
     </>
   );

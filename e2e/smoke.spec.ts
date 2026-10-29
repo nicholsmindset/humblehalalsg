@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test";
 test("home renders key sections", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/Humble Halal/);
-  await expect(page.getByRole("heading", { name: "Good guidance for the way you live." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your guide to halal Singapore." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "What would you like to explore?" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore tools" })).toBeVisible();
   await expect(page.getByText("Configure your application")).toHaveCount(0);

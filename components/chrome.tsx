@@ -423,7 +423,7 @@ export function TopNav() {
         <div className="spacer" />
         <div className="top-actions flex g8 center">
           <LangToggle />
-          <ScreenLink screen="blog" className="btn btn-primary btn-sm">Read the guides</ScreenLink>
+          <Link href="/blog#find-guides" className="btn btn-primary btn-sm">Search guides</Link>
         </div>
       </div>
     </header>

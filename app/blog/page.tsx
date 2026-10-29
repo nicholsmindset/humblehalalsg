@@ -1,6 +1,5 @@
-import { listingAdBreaks } from "@/lib/editorial-ads";
-import { Fragment } from "react";
-import { EditorialAd } from "@/components/ads/editorial-ad";
+import { GuideFinder } from "@/components/blog/guide-finder";
+import { guideCard } from "@/lib/blog-discovery";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +7,6 @@ import { allBlogPosts, featuredBlogPost } from "@/lib/cms-blog";
 import { getCategory } from "@/lib/blog-categories";
 import { SITE, pageMeta } from "@/lib/seo";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/json-ld";
-import { BlogCard } from "@/components/blog/blog-card";
 import { CategoryChips } from "@/components/blog/category-chips";
 import { BlogNewsletterBand } from "@/components/blog/blog-newsletter-band";
 import { isUnoptimizedImageSrc } from "@/lib/img";
@@ -34,8 +32,6 @@ function fmtDate(iso: string) {
 export default async function Page() {
   const posts = await allBlogPosts();
   const featured = posts[0];
-  const rest = posts.filter((p) => p.slug !== featured.slug);
-  const adBreaks = listingAdBreaks(rest.length);
   const featuredCat = getCategory(featured.category);
 
   const blogLd = {
@@ -55,8 +51,8 @@ export default async function Page() {
   return (
     <>
       <JsonLd data={[blogLd, breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Blog", path: "/blog" }])]} />
-      <div className="screen-in hh-page">
-        <section className="seo-hero hh-pattern">
+      <div className="screen-in hh-page blog-index">
+        <section className="blog-index-head">
           <div className="hh-wrap">
             <nav className="flex g6 center faint" aria-label="Breadcrumb" style={{ fontSize: ".82rem", fontWeight: 600, marginBottom: 10 }}>
               <Link className="link-inline" href="/">Home</Link><span>›</span><span style={{ color: "var(--ink)" }}>Blog</span>
@@ -64,13 +60,13 @@ export default async function Page() {
             <span className="eyebrow">The Humble Halal blog</span>
             <h1 style={{ fontSize: "clamp(1.8rem,4vw,2.6rem)", maxWidth: 720 }}>Halal guides &amp; stories</h1>
             <p className="muted" style={{ maxWidth: 660, marginTop: 10, fontSize: "1.05rem" }}>
-              Practical guides to eating halal in Singapore — what halal means, how MUIS certification works, and where to find the best halal food.
+              Find your next meal, explore a neighbourhood, or get a clear answer to an everyday halal question.
             </p>
           </div>
         </section>
 
         <div className="hh-wrap hh-section">
-          {/* Featured / hero post */}
+          <GuideFinder posts={posts.map(guideCard)} featuredSlug={featured.slug} categories={<CategoryChips />} featured={
           <Link href={`/blog/${featured.slug}`} className="blog-hero">
             <div className="blog-hero-media">
               <Image
@@ -88,29 +84,11 @@ export default async function Page() {
               <h2 className="blog-hero-title">{featured.title}</h2>
               <p className="blog-hero-dek">{featured.dek}</p>
               <span className="blog-card-meta">{fmtDate(featured.datePublished)} · {featured.readMins} min read</span>
+              <span className="editorial-read-more">Read the guide <span aria-hidden="true">→</span></span>
             </div>
           </Link>
 
-          {/* Category hub */}
-          <div className="blog-section" style={{ marginTop: 32 }}>
-            <h2 className="blog-hub-heading">Browse by topic</h2>
-            <CategoryChips />
-          </div>
-
-
-          {/* Latest posts */}
-          {rest.length > 0 && (
-            <div className="blog-section" style={{ marginTop: 8 }}>
-              <h2 className="blog-hub-heading">Latest guides</h2>
-              <div className="blog-grid">
-                {rest.map((p, i) => (
-                  <Fragment key={p.slug}><BlogCard post={p} headingLevel="h3" />
-                    {adBreaks.includes(i) && <EditorialAd placement={`blog-after-${i + 1}`} />}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-          )}
+          } />
 
           {/* Newsletter */}
           <div className="blog-inline-cta">

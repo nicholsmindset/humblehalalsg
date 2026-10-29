@@ -19,13 +19,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // navigation inside the admin dashboard.
   if (pathname.startsWith("/keystatic")) return <>{children}</>;
 
+  const isEditorial = pathname === "/" || pathname === "/blog" || pathname.startsWith("/blog/");
   const screen = pathToScreen(pathname);
   const isChromeless = CHROMELESS_SCREENS.includes(screen);
   const isMapFull = screen === "map";
   const showPrayerStrip = !isChromeless;
 
   return (
-    <div className="hh-app">
+    <div className={`hh-app${isEditorial ? " editorial-shell" : ""}`}>
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -42,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isChromeless && <BottomNav />}
       {!isChromeless && !isMapFull && <Footer />}
       <Toast msg={toastMsg} />
-      {state.hydrated && state.prefs.onboarded && !isChromeless && <NewsletterPopup />}
+      {state.hydrated && state.prefs.onboarded && !isChromeless && !isEditorial && <NewsletterPopup />}
       <HHTweaks />
     </div>
   );

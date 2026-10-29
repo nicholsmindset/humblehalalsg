@@ -23,6 +23,6 @@ for (const path of [
 test("homepage no longer promotes hotels or flights", async ({ page }) => {
   await page.goto("/");
   const main = page.locator("#main-content");
-  await expect(main.getByRole("heading", { name: "Good guidance for the way you live." })).toBeVisible();
+  await expect(main.getByRole("heading", { name: "Your guide to halal Singapore." })).toBeVisible();
   await expect(main.getByRole("button", { name: /Find a hotel|Search flights/ })).toHaveCount(0);
 });
