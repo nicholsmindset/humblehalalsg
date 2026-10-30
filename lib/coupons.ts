@@ -31,6 +31,19 @@ export function couponDateInput(value: unknown): string | null {
     : date.toISOString();
 }
 
+export function couponTimeInput(value: unknown): string | null {
+  const input = typeof value === "string" ? value.trim() : "";
+  return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(input) ? input : null;
+}
+
+export function couponPositiveInteger(value: unknown, fallback: number, max?: number): number;
+export function couponPositiveInteger(value: unknown, fallback: null, max?: number): number | null;
+export function couponPositiveInteger(value: unknown, fallback: number | null, max = 2_147_483_647): number | null {
+  const input = Number(value);
+  if (!Number.isFinite(input) || input <= 0) return fallback;
+  return Math.min(max, Math.max(1, Math.round(input)));
+}
+
 export function couponValue(c: Pick<PublicCoupon, "discount_type" | "discount_value" | "reward_text">): string {
   if (c.discount_type === "percent") return `${c.discount_value || 0}% off`;
   if (c.discount_type === "fixed") return `$${((c.discount_value || 0) / 100).toFixed(2)} off`;

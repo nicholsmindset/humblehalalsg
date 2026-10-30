@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { couponAvailability, couponDateInput, couponValue } from "@/lib/coupons";
+import {
+  couponAvailability,
+  couponDateInput,
+  couponPositiveInteger,
+  couponTimeInput,
+  couponValue,
+} from "@/lib/coupons";
 
 describe("business coupons", () => {
   it("formats percentage and fixed-value discounts without ambiguity", () => {
@@ -22,5 +28,20 @@ describe("business coupons", () => {
     expect(couponDateInput("2026-08-09")).toBe("2026-08-09T00:00:00.000Z");
     expect(couponDateInput("2026-02-30")).toBeNull();
     expect(couponDateInput("not-a-date")).toBeNull();
+  });
+
+  it("accepts only real 24-hour redemption times", () => {
+    expect(couponTimeInput(" 09:30 ")).toBe("09:30");
+    expect(couponTimeInput("23:59")).toBe("23:59");
+    expect(couponTimeInput("24:00")).toBeNull();
+    expect(couponTimeInput("12:60")).toBeNull();
+  });
+
+  it("normalizes coupon limits to bounded database integers", () => {
+    expect(couponPositiveInteger("2.6", 1, 20)).toBe(3);
+    expect(couponPositiveInteger(100, 1, 20)).toBe(20);
+    expect(couponPositiveInteger("not-a-number", 1, 20)).toBe(1);
+    expect(couponPositiveInteger("", null)).toBeNull();
+    expect(couponPositiveInteger(Number.MAX_SAFE_INTEGER, null)).toBe(2_147_483_647);
   });
 });
