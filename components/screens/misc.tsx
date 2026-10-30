@@ -935,10 +935,10 @@ export function ReportScreen() {
               </button>
             ))}
           </div>
-          <div className="field mt16"><label htmlFor="rp-details">Details <span className="hint">(optional)</span></label><textarea id="rp-details" className="textarea" placeholder="Add any detail that helps us verify" value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
+          <div className="field mt16"><label htmlFor="rp-details">Details <span className="hint">(optional)</span></label><textarea id="rp-details" className="textarea" placeholder="Add any detail that helps us verify" maxLength={1500} value={details} onChange={(e)=>setDetails(e.target.value)} /></div>
           <div className="field mt16">
             <label htmlFor="rp-email">Your email <span className="hint">(optional — we’ll confirm we got it)</span></label>
-            <input id="rp-email" className="input" type="email" placeholder="you@email.com" value={email} onChange={(e)=>setEmail(e.target.value)}
+            <input id="rp-email" className="input" type="email" placeholder="you@email.com" maxLength={254} value={email} onChange={(e)=>setEmail(e.target.value)}
               aria-invalid={touched && !!emailErr} aria-describedby={touched && emailErr ? "rp-email-err" : undefined} />
             {touched && emailErr && <span id="rp-email-err" className="field-error"><Icon name="warning" size={13}/> {emailErr}</span>}
           </div>
