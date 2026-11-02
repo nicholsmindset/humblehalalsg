@@ -29,7 +29,11 @@ export async function POST(req: Request) {
     .or(`owner_id.eq.${userId},claimed_by.eq.${userId}`)
     .not("stripe_customer_id", "is", null);
   if (businessId) q = q.eq("id", businessId);
-  const { data: rows } = await q.limit(1);
+  const { data: rows, error } = await q.limit(1);
+  if (error) {
+    console.error("[portal] customer lookup failed:", error.message);
+    return NextResponse.json({ ok: false, reason: "service_unavailable" }, { status: 503 });
+  }
   const customerId = (rows?.[0]?.stripe_customer_id as string | undefined) || undefined;
   if (!customerId) return NextResponse.json({ ok: false, reason: "no_customer" });
 
