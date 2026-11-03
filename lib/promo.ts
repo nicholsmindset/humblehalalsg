@@ -13,6 +13,7 @@ export type PromoCheck =
   | { ok: false; reason: PromoReason; minQty?: number };
 
 const SAFE_REF = /^[a-zA-Z0-9_-]{1,64}$/;
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
 /** Human-readable messages the checkout UI can show per rejection reason. */
 export const PROMO_MESSAGES: Record<PromoReason, string> = {
@@ -26,6 +27,13 @@ export const PROMO_MESSAGES: Record<PromoReason, string> = {
 export function normalizePromoCode(raw: unknown): string | null {
   const code = String(raw ?? "").trim().toUpperCase();
   return /^[A-Z0-9_-]{3,32}$/.test(code) ? code : null;
+}
+
+/** Promo constraints are stored in PostgreSQL `int` columns. Reject values
+ * that would be rounded, overflow the column, or serialize as non-finite. */
+export function normalizePromoPositiveInt(raw: unknown, max = POSTGRES_INTEGER_MAX): number | null {
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1 && value <= max ? value : null;
 }
 
 /** Validate a code against an event + organiser and compute the discount for a
