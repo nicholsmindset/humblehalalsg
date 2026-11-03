@@ -45,12 +45,12 @@ function row(over: Partial<PromoRow> = {}): PromoRow {
 }
 
 /** Minimal chainable Supabase stub: from().select().eq().eq().or().limit() → {data}. */
-function fakeAdmin(rows: PromoRow[] | null): SupabaseClient {
+function fakeAdmin(rows: PromoRow[] | null, error: { message: string } | null = null): SupabaseClient {
   const builder = {
     select: () => builder,
     eq: () => builder,
     or: () => builder,
-    limit: () => Promise.resolve({ data: rows }),
+    limit: () => Promise.resolve({ data: rows, error }),
   };
   return { from: () => builder } as unknown as SupabaseClient;
 }
@@ -99,6 +99,13 @@ describe("validatePromoCode — rejection paths", () => {
     });
     expect(unknown).toEqual({ ok: false, reason: "invalid_code" });
     expect(inactive).toEqual({ ok: false, reason: "invalid_code" });
+  });
+
+  it("distinguishes a database failure from an invalid code", async () => {
+    const r = await validatePromoCode(fakeAdmin(null, { message: "connection failed" }), {
+      code: "SAVE10", eventId: EVENT, businessId: BIZ, subtotalCents: 1000, qty: 1,
+    });
+    expect(r).toEqual({ ok: false, reason: "service_unavailable" });
   });
 
   it("not_started before starts_at, expired after expires_at", async () => {
@@ -177,7 +184,7 @@ describe("validatePromoCode — discount computation", () => {
 
 describe("PROMO_MESSAGES", () => {
   it("has a human message for every rejection reason", () => {
-    for (const reason of ["invalid_code", "not_started", "expired", "min_qty", "exhausted"] as const) {
+    for (const reason of ["invalid_code", "not_started", "expired", "min_qty", "exhausted", "service_unavailable"] as const) {
       expect(PROMO_MESSAGES[reason]).toBeTruthy();
     }
   });
