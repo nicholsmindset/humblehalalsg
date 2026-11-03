@@ -1,6 +1,15 @@
 /* Humble Halal — geo helpers */
 import type { LatLng } from "./types";
 
+/** Normalize an optional coordinate while rejecting non-numeric and out-of-range values. */
+export function parseCoordinate(value: unknown, limit: 90 | 180): number | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "number" && typeof value !== "string") return undefined;
+  if (typeof value === "string" && value.trim() === "") return undefined;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) && Math.abs(coordinate) <= limit ? coordinate : undefined;
+}
+
 /** Great-circle distance in kilometres (haversine). */
 export function haversineKm(a: LatLng, b: LatLng): number {
   const R = 6371;
