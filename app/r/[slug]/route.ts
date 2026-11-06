@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /* Review-request short link: /r/[slug] → 302 /business/[slug]?tab=reviews.
@@ -20,16 +20,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   if (safe) {
     const db = getSupabaseAdmin();
     if (db) {
-      try {
-        await db.from("analytics_events").insert({
-          event_type: "page_view",
-          listing_slug: safe,
-          path: `/r/${safe}`,
-          referrer: req.headers.get("referer") || null,
-        });
-      } catch {
-        /* never block the redirect */
-      }
+      const referrer = req.headers.get("referer") || null;
+      after(async () => {
+        try {
+          await db.from("analytics_events").insert({
+            event_type: "page_view",
+            listing_slug: safe,
+            path: `/r/${safe}`,
+            referrer,
+          });
+        } catch {
+          /* never block the redirect */
+        }
+      });
     }
   }
 
