@@ -7,6 +7,7 @@ import { rateLimit, tooMany } from "@/lib/ratelimit";
    rate-limited, honeypot-guarded, graceful in mock mode. Service-role writes. */
 
 const CLOSED_PENDING_THRESHOLD = 3;
+const CLOSED_REPORT_COOLDOWN_SECONDS = 24 * 60 * 60;
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "freshness", 20, 3600);
@@ -20,6 +21,18 @@ export async function POST(req: Request) {
   const state = String(body?.state || "").trim();
   if (!businessId) return NextResponse.json({ ok: false, error: "Missing business" }, { status: 422 });
   if (state !== "here" && state !== "closed") return NextResponse.json({ ok: false, error: "Bad state" }, { status: 422 });
+
+  // The threshold is meant to represent independent community reports. Do not
+  // let one client hide a listing by submitting the same report three times.
+  if (state === "closed") {
+    const reportLimit = await rateLimit(
+      req,
+      `freshness-closed:${businessId.slice(0, 100)}`,
+      1,
+      CLOSED_REPORT_COOLDOWN_SECONDS,
+    );
+    if (!reportLimit.ok) return tooMany(reportLimit.retryAfter);
+  }
 
   try {
     const { getSupabaseAdmin } = await import("@/lib/supabase/server");
