@@ -20,16 +20,21 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   const gate = await requireAdmin(); if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
   const db = getSupabaseAdmin()!; const body = (await req.json().catch(() => ({}))) as { id?: string; action?: string; reason?: string; caption?: string; altText?: string };
-  const { data: row } = await db.from("photos").select("id,business_id,url,businesses(slug)").eq("id", String(body.id || "")).maybeSingle();
+  const { data: row, error: rowError } = await db.from("photos").select("id,business_id,url,businesses(slug)").eq("id", String(body.id || "")).maybeSingle();
+  if (rowError) return NextResponse.json({ ok: false, error: "query_failed" }, { status: 502 });
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (body.action === "edit") {
-    await db.from("photos").update({ caption: String(body.caption || "").slice(0,120) || null, alt_text: String(body.altText || "").slice(0,180) || null }).eq("id", row.id);
+    const { error } = await db.from("photos").update({ caption: String(body.caption || "").slice(0,120) || null, alt_text: String(body.altText || "").slice(0,180) || null }).eq("id", row.id);
+    if (error) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
   } else if (body.action === "approve" || body.action === "reject") {
-    await db.from("photos").update({ status: body.action === "approve" ? "approved" : "rejected", rejection_reason: body.action === "reject" ? String(body.reason || "Image does not meet our listing standards").slice(0,500) : null, reviewed_by: gate.userId, reviewed_at: new Date().toISOString() }).eq("id", row.id);
+    const { error } = await db.from("photos").update({ status: body.action === "approve" ? "approved" : "rejected", rejection_reason: body.action === "reject" ? String(body.reason || "Image does not meet our listing standards").slice(0,500) : null, reviewed_by: gate.userId, reviewed_at: new Date().toISOString() }).eq("id", row.id);
+    if (error) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
     if (body.action === "reject") {
-      const { data: b } = await db.from("businesses").select("photos").eq("id", row.business_id).maybeSingle();
+      const { data: b, error: businessError } = await db.from("businesses").select("photos").eq("id", row.business_id).maybeSingle();
+      if (businessError) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
       const photos = Array.isArray(b?.photos) ? b.photos.filter((p: { url?: string }) => p?.url !== row.url) : [];
-      await db.from("businesses").update({ photos }).eq("id", row.business_id);
+      const { error: photoListError } = await db.from("businesses").update({ photos }).eq("id", row.business_id);
+      if (photoListError) return NextResponse.json({ ok: false, error: "update_failed" }, { status: 502 });
     }
   } else return NextResponse.json({ ok: false, error: "bad_action" }, { status: 422 });
   await logAudit(db, { actor: gate.userId, action: `media_${body.action}`, target: row.id, meta: { businessId: row.business_id } });
