@@ -20,9 +20,10 @@ const EDITABLE = ["phone", "website", "address", "postal", "description", "price
 
 type Db = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 async function ownership(db: Db, id: string, userId: string) {
-  const { data } = await db.from("businesses").select("id, slug, owner_id, claimed_by, plan").eq("id", id).maybeSingle();
-  if (!data) return { row: null as null, owns: false };
-  return { row: data, owns: data.owner_id === userId || data.claimed_by === userId };
+  const { data, error } = await db.from("businesses").select("id, slug, owner_id, claimed_by, plan").eq("id", id).maybeSingle();
+  if (error) return { row: null as null, owns: false, error };
+  if (!data) return { row: null as null, owns: false, error: null };
+  return { row: data, owns: data.owner_id === userId || data.claimed_by === userId, error: null };
 }
 
 export async function GET(req: Request) {
@@ -32,7 +33,11 @@ export async function GET(req: Request) {
   if (!db) return NextResponse.json({ ok: false, error: "service_not_configured" }, { status: 503 });
 
   const id = new URL(req.url).searchParams.get("id") || "";
-  const { row, owns } = await ownership(db, id, userId);
+  const { row, owns, error: ownershipError } = await ownership(db, id, userId);
+  if (ownershipError) {
+    console.error(`[owner/listing] ownership lookup failed (business=${id}):`, ownershipError.message);
+    return NextResponse.json({ ok: false, error: "load_failed" }, { status: 503 });
+  }
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!owns) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 
@@ -56,7 +61,11 @@ export async function PATCH(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const id = String(body.id || "");
-  const { row, owns } = await ownership(db, id, userId);
+  const { row, owns, error: ownershipError } = await ownership(db, id, userId);
+  if (ownershipError) {
+    console.error(`[owner/listing] ownership lookup failed (business=${id}):`, ownershipError.message);
+    return NextResponse.json({ ok: false, error: "load_failed" }, { status: 503 });
+  }
   if (!row) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   if (!owns) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 
