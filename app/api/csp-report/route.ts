@@ -9,12 +9,40 @@ import { rateLimit } from "@/lib/ratelimit";
 export const dynamic = "force-dynamic";
 
 const IGNORE = /^(chrome|moz|safari|webkit)-extension:|^about:|^data:|extension/i;
+const MAX_REPORT_BYTES = 32_768;
+
+async function readReportBody(req: Request): Promise<string | null> {
+  const declaredLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REPORT_BYTES) return null;
+  if (!req.body) return "";
+
+  const reader = req.body.getReader();
+  const decoder = new TextDecoder();
+  let total = 0;
+  let body = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_REPORT_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      body += decoder.decode(value, { stream: true });
+    }
+    return body + decoder.decode();
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "csp-report", 30, 60);
   if (!rl.ok) return new Response(null, { status: 204 });
 
-  const raw = (await req.text().catch(() => "")).slice(0, 32_768);
+  const raw = await readReportBody(req);
   if (!raw) return new Response(null, { status: 204 });
 
   try {
