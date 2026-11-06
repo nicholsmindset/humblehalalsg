@@ -67,12 +67,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const db = getSupabaseAdmin();
   if (!db) return new Response("Not available", { status: 503 });
 
-  const { data: biz } = await db
+  const { data: biz, error } = await db
     .from("businesses")
     .select("name,halal_tier,attributes")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
+  if (error) return new Response("Not available", { status: 503 });
   if (!biz) return new Response("Not found", { status: 404 });
 
   const url = new URL(req.url);
