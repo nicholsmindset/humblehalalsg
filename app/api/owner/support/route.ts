@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { sendEmail } from "@/lib/email";
 import { canUse, planKey } from "@/lib/plans";
@@ -39,12 +39,15 @@ export async function POST(req: Request) {
   if (error || !ticket) return NextResponse.json({ ok: false, error: "save_failed" }, { status: 500 });
 
   const safe = (value: string) => value.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;" }[c] || c));
-  await sendEmail({
-    to: process.env.CONTACT_INBOX || "hello@humblehalal.com",
-    subject: `${priority === "high" ? "[Priority support]" : "[Owner support]"} ${subject}`,
-    template: "owner-support",
-    businessId: business.id,
-    html: `<p><strong>${safe(business.name)}</strong> (${safe(plan)} plan)</p><p>${safe(message).replace(/\n/g, "<br>")}</p><p>Request: ${ticket.id}</p>`,
+  after(async () => {
+    const sent = await sendEmail({
+      to: process.env.CONTACT_INBOX || "hello@humblehalal.com",
+      subject: `${priority === "high" ? "[Priority support]" : "[Owner support]"} ${subject}`,
+      template: "owner-support",
+      businessId: business.id,
+      html: `<p><strong>${safe(business.name)}</strong> (${safe(plan)} plan)</p><p>${safe(message).replace(/\n/g, "<br>")}</p><p>Request: ${ticket.id}</p>`,
+    });
+    if (!sent.ok) console.error("[owner/support] notification delivery failed", { ticketId: ticket.id });
   });
   return NextResponse.json({ ok: true, id: ticket.id, priority });
 }
