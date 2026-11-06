@@ -59,6 +59,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, simulated: true, ref });
   }
 
+  // Only publicly listed events may accept RSVPs. The status was already
+  // selected above, but without this gate a caller who knew a draft, cancelled,
+  // or archived event ref could still reserve capacity and create an order.
+  // Return the same response as an unknown event so unpublished records are not
+  // disclosed through this public endpoint.
+  if (row.status !== "published") {
+    return NextResponse.json({ ok: false, reason: "event_not_found" }, { status: 404 });
+  }
+
   // Past events can't be RSVP'd (listing filters them out, but a direct POST or
   // stale tab could still hit this). Judged on the event's LAST day (ends_at,
   // 0079) so an ongoing multi-day event stays RSVP-able. Singapore time.
