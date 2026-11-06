@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { couponAvailability, couponValue, type PublicCoupon } from "@/lib/coupons";
 import { track } from "@/lib/analytics";
 import { Icon } from "./ui";
 
 export function CouponCard({ coupon, compact = false }: { coupon: PublicCoupon; compact?: boolean }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [claimed, setClaimed] = useState<{ token: string; short_code: string; expires_at: string | null } | null>(null);
@@ -35,7 +38,7 @@ export function CouponCard({ coupon, compact = false }: { coupon: PublicCoupon; 
       const r = await fetch("/api/coupons/claim", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ promotionId: coupon.id }) });
       const d = await r.json().catch(() => ({}));
       if (r.status === 401) {
-        window.location.href = `/sign-in?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        router.push(`/sign-in?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
       if (d?.ok && d.redemption) { setClaimed(d.redemption); if (slug) track.couponClaim(slug, coupon.id); }
@@ -49,7 +52,9 @@ export function CouponCard({ coupon, compact = false }: { coupon: PublicCoupon; 
     <article className={`coupon-card ${compact ? "is-compact" : ""}`}>
       <div className="coupon-value">{couponValue(coupon)}</div>
       <div className="coupon-content">
-        {coupon.business_name && <a className="coupon-business" href={coupon.business_slug ? `/business/${coupon.business_slug}` : undefined}>{coupon.business_name}</a>}
+        {coupon.business_name && (coupon.business_slug
+          ? <Link className="coupon-business" href={`/business/${coupon.business_slug}`}>{coupon.business_name}</Link>
+          : <span className="coupon-business">{coupon.business_name}</span>)}
         <h3>{coupon.title}</h3>
         {coupon.details && <p>{coupon.details}</p>}
         <div className="coupon-meta">
