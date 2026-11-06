@@ -11,12 +11,17 @@ import type { WeekHours } from "./hours";
 import { slugify } from "./slug";
 import { supabaseConfigured, getSupabaseAdmin } from "./supabase/server";
 import { isBlockedFoodListing } from "./listing-safety";
+import { sgDateKey } from "./rotate";
 
 const catLabel = (id: string) => categories.find((c) => c.id === id)?.label || "Muslim-Owned";
 
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (v == null ? "" : String(v));
 const num = (v: unknown, d = 0) => (typeof v === "number" ? v : Number(v) || d);
+
+export function isMuisExpiryCurrent(expiry: string, now: Date = new Date()): boolean {
+  return !expiry || expiry >= sgDateKey(now);
+}
 
 /** Map a Supabase `businesses` row → the app's Listing shape. Best-effort:
  *  unknown/missing columns degrade gracefully. Refine to match your seed. */
@@ -30,7 +35,7 @@ export function rowToListing(r: Row): Listing {
   const expiry = str(r.muis_expiry);
   const checkedTime = checkedAt ? Date.parse(checkedAt) : Number.NaN;
   const checkedRecently = Number.isFinite(checkedTime) && Date.now() - checkedTime <= 90 * 24 * 60 * 60 * 1000;
-  const notExpired = !expiry || expiry >= new Date().toISOString().slice(0, 10);
+  const notExpired = isMuisExpiryCurrent(expiry);
   // Fail closed: a spreadsheet/import tag is not certification evidence. A
   // MUIS badge requires a current official-register check tied to a certificate
   // number. Unsupported legacy claims remain discoverable only as Pending
