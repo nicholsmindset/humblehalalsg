@@ -101,11 +101,11 @@ export function ContactScreen() {
                 <h2 style={{ fontSize: "1.15rem" }}>Send us a message</h2>
                 <input type="text" name="website" value={form.website} onChange={(e) => set("website", e.target.value)} style={{ display: "none" }} tabIndex={-1} autoComplete="off" aria-hidden />
                 <div className="form-row">
-                  <div className="field"><label htmlFor="contact-name">Your name *</label><input id="contact-name" required value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
-                  <div className="field"><label htmlFor="contact-email">Email *</label><input id="contact-email" required type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
+                  <div className="field"><label htmlFor="contact-name">Your name *</label><input id="contact-name" required maxLength={120} value={form.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" /></div>
+                  <div className="field"><label htmlFor="contact-email">Email *</label><input id="contact-email" required maxLength={254} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="you@email.com" autoComplete="email" /></div>
                 </div>
                 <div className="field"><label htmlFor="contact-subject">Subject</label><select id="contact-subject" value={form.subject} onChange={(e) => set("subject", e.target.value)}><option>General enquiry</option><option>Guide correction</option><option>Tool feedback</option><option>Newsletter</option><option>Privacy &amp; data request</option><option>Press / media</option></select></div>
-                <div className="field"><label htmlFor="contact-message">Message *</label><textarea id="contact-message" required rows={5} value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="How can we help?" /></div>
+                <div className="field"><label htmlFor="contact-message">Message *</label><textarea id="contact-message" required maxLength={4000} rows={5} value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="How can we help?" /></div>
                 {state === "error" && <p style={{ color: "var(--danger)", fontSize: ".9rem" }}>Please enter your name, a valid email and a short message.</p>}
                 <Turnstile onToken={setTsToken} />
                 <button className="btn btn-primary btn-lg" type="submit" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send message"}</button>

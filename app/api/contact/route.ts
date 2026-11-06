@@ -8,16 +8,25 @@ import { contactAutoReplyEmail } from "@/lib/emails/templates";
 /* Contact form intake. Graceful: validates + accepts; emails the team via Resend
    when configured (otherwise simulated). Honeypot-protected. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_LENGTH = { name: 120, email: 254, subject: 120, message: 4000 } as const;
 
 export async function POST(req: Request) {
   const rl = await rateLimit(req, "contact", 5, 3600); if (!rl.ok) return tooMany(rl.retryAfter);
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   if (body.website) return NextResponse.json({ ok: true, simulated: true }); // honeypot
   if (!(await verifyTurnstile(body.turnstileToken))) return NextResponse.json({ ok: false, error: "captcha" }, { status: 403 });
-  const name = String(body.name || "").trim().slice(0, 120);
-  const email = String(body.email || "").trim().slice(0, 160);
-  const subject = String(body.subject || "General enquiry").slice(0, 120);
-  const message = String(body.message || "").trim().slice(0, 4000);
+  const name = String(body.name || "").trim();
+  const email = String(body.email || "").trim();
+  const subject = String(body.subject || "General enquiry").trim();
+  const message = String(body.message || "").trim();
+  if (
+    name.length > MAX_LENGTH.name
+    || email.length > MAX_LENGTH.email
+    || subject.length > MAX_LENGTH.subject
+    || message.length > MAX_LENGTH.message
+  ) {
+    return NextResponse.json({ ok: false, error: "One or more fields are too long" }, { status: 422 });
+  }
   if (name.length < 2 || !EMAIL.test(email) || message.length < 5) return NextResponse.json({ ok: false, error: "Please complete the form" }, { status: 422 });
 
   const to = process.env.CONTACT_INBOX || CONTACT_EMAILS.general;
