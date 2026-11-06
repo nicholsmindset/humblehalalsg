@@ -30,12 +30,15 @@ export async function POST(req: Request) {
 
   const eventId = String(form.get("eventId") || "").trim();
   if (eventId) {
-    const { data: ev } = await admin.from("events").select("id, business_id, submitted_by").eq("id", eventId).maybeSingle();
+    const { data: ev, error: eventError } = await admin.from("events").select("id, business_id, submitted_by").eq("id", eventId).maybeSingle();
+    if (eventError) return NextResponse.json({ ok: false, reason: "lookup_failed" }, { status: 502 });
     if (!ev) return NextResponse.json({ ok: false, reason: "not_found" }, { status: 404 });
-    const { data: profile } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    const { data: profile, error: profileError } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    if (profileError) return NextResponse.json({ ok: false, reason: "lookup_failed" }, { status: 502 });
     let allowed = profile?.role === "admin" || ev.submitted_by === userId;
     if (!allowed && ev.business_id) {
-      const { data: biz } = await admin.from("businesses").select("id").eq("id", ev.business_id).or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
+      const { data: biz, error: businessError } = await admin.from("businesses").select("id").eq("id", ev.business_id).or(`owner_id.eq.${userId},claimed_by.eq.${userId}`).maybeSingle();
+      if (businessError) return NextResponse.json({ ok: false, reason: "lookup_failed" }, { status: 502 });
       allowed = !!biz;
     }
     if (!allowed) return NextResponse.json({ ok: false, reason: "forbidden" }, { status: 403 });
